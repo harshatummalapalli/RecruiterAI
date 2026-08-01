@@ -1,0 +1,61 @@
+Extract hiring intent from the following job description and return valid JSON with this structure:
+
+{{
+  "role": {{
+    "title": "",
+    "seniority": "",
+    "employment_type": "",
+    "confidence_score": 0
+  }},
+  "location": {{
+    "countries": [],
+    "cities": [],
+    "work_mode": "",
+    "confidence_score": 0
+  }},
+  "experience": {{
+    "minimum_years": 0,
+    "maximum_years": 0,
+    "confidence_score": 0
+  }},
+  "titles": {{
+    "include_titles": [],
+    "exclude_titles": [],
+    "confidence_score": 0
+  }},
+  "skills": {{
+    "required_skills": [],
+    "preferred_skills": [],
+    "required_weight": 0,
+    "preferred_weight": 0,
+    "confidence_score": 0
+  }},
+  "previous_background": {{
+    "preferred_technologies": [],
+    "preferred_companies": [],
+    "confidence_score": 0
+  }},
+  "ai_focus": {{
+    "llm": false,
+    "rag": false,
+    "agentic_ai": false,
+    "mcp": false,
+    "semantic_kernel": false,
+    "confidence_score": 0
+  }},
+  "company_preferences": {{
+    "exclude_current_companies": [],
+    "preferred_company_types": [],
+    "confidence_score": 0
+  }},
+  "ranking": {{
+    "must_have": [],
+    "nice_to_have": [],
+    "bonus": [],
+    "confidence_score": 0
+  }},
+  "confidence_score": 0
+}}
+
+Job Description:
+{job_description}
