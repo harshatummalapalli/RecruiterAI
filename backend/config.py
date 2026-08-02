@@ -13,3 +13,8 @@ load_dotenv(ENV_PATH)
 def get_openai_api_key() -> str | None:
     """Return the configured OpenAI API key from the environment or .env file."""
     return os.getenv("OPENAI_API_KEY")
+
+
+def get_crustdata_api_key() -> str | None:
+    """Return the configured CrustData API key from the environment or .env file."""
+    return os.getenv("CRUSTDATA_API_KEY")

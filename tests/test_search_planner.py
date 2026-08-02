@@ -13,7 +13,7 @@ from backend.models.search_intent import (
 from backend.services.search_planner import SearchPlanner
 
 
-def test_build_creates_single_deterministic_query():
+def test_build_creates_multiple_deterministic_queries():
     intent = SearchIntent(
         role=Role(title="Machine Learning Engineer", seniority="senior", employment_type="full_time"),
         location=Location(countries=["US"], cities=["New York"], work_mode="hybrid"),
@@ -29,8 +29,10 @@ def test_build_creates_single_deterministic_query():
 
     plan = SearchPlanner().build(intent)
 
-    assert len(plan.searches) == 1
-    assert plan.searches[0].include_titles == ["ML Engineer"]
+    assert len(plan.searches) == 2
+    assert [query.query_name for query in plan.searches] == ["Primary", "Alternate 1"]
+    assert plan.searches[0].include_titles == ["Machine Learning Engineer"]
+    assert plan.searches[1].include_titles == ["ML Engineer"]
     assert plan.searches[0].exclude_titles == ["Manager"]
     assert plan.searches[0].required_skills == ["Python", "PyTorch"]
     assert plan.searches[0].preferred_skills == ["LLM"]
@@ -45,6 +47,6 @@ def test_build_creates_single_deterministic_query():
     assert plan.searches[0].must_have == ["Python"]
     assert plan.searches[0].nice_to_have == ["LLM"]
     assert plan.searches[0].bonus == ["MLOps"]
-    assert plan.strategy == "single_query"
-    assert plan.reasoning == "Deterministic mapping from SearchIntent to a single SearchQuery"
+    assert plan.strategy == "multi_query"
+    assert plan.reasoning == "Deterministic mapping from SearchIntent to multiple title-based SearchQuery variants"
     assert plan.confidence_score == 88

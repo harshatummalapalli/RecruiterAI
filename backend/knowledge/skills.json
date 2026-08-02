@@ -1,0 +1,7 @@
+{
+  "Python": ["Python 3", "PySpark"],
+  "PyTorch": ["Torch", "Deep Learning"],
+  "AWS": ["Amazon Web Services"],
+  "LLM": ["Large Language Models"],
+  "MLOps": ["Machine Learning Operations"]
+}

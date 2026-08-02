@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 
 class SearchQuery(BaseModel):
+    query_name: Optional[str] = None
     include_titles: List[str] = Field(default_factory=list)
     exclude_titles: List[str] = Field(default_factory=list)
     required_skills: List[str] = Field(default_factory=list)
