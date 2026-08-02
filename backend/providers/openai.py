@@ -43,7 +43,7 @@ class OpenAIProvider(BaseLLMProvider):
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
-            response_format={"type": "json_object"},
+            text={"format": {"type": "json_object"}},
         )
 
         content = self._extract_response_text(response)

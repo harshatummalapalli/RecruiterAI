@@ -3,9 +3,10 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
+import backend.api as api_module
 from backend.api import create_app
 from backend.models.candidate import Candidate
-from backend.models.search_intent import SearchIntent
+from backend.models.search_intent import Role, SearchIntent
 from backend.providers.base import BaseLLMProvider, BaseProvider
 from backend.services.candidate_ranker import CandidateRanker
 from backend.services.capability_mapper import CapabilityMapper
@@ -94,7 +95,7 @@ def test_providers_endpoint_lists_registered_providers() -> None:
     response = client.get("/providers")
 
     assert response.status_code == 200
-    assert response.json() == {"providers": ["mock"]}
+    assert response.json()["providers"] == ["crustdata", "mock"]
 
 
 def test_parse_jd_endpoint_returns_search_intent() -> None:
@@ -104,6 +105,27 @@ def test_parse_jd_endpoint_returns_search_intent() -> None:
     assert response.status_code == 200
     assert response.json()["role"]["title"] == "Software Engineer"
     assert response.json()["skills"]["required_skills"] == ["Python"]
+
+
+def test_create_app_uses_openai_provider_by_default() -> None:
+    class StubOpenAIProvider(BaseLLMProvider):
+        def parse_job_description(self, job_description: str) -> SearchIntent:
+            return SearchIntent(role=Role(title="Senior AI Engineer"))
+
+    original_provider = api_module.OpenAIProvider
+    api_module.OpenAIProvider = StubOpenAIProvider
+    try:
+        app = create_app()
+        client = TestClient(app)
+        response = client.post(
+            "/parse-jd",
+            json={"jd_text": "We are looking for a Senior AI Engineer with Python, FastAPI, Azure, OpenAI, RAG and Kubernetes."},
+        )
+    finally:
+        api_module.OpenAIProvider = original_provider
+
+    assert response.status_code == 200
+    assert response.json()["role"]["title"] == "Senior AI Engineer"
 
 
 def test_search_endpoint_returns_structured_result() -> None:
