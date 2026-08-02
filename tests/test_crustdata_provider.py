@@ -1,3 +1,5 @@
+import json
+
 import httpx
 
 from backend.models.candidate import Candidate
@@ -36,25 +38,39 @@ def test_search_returns_candidate_objects_from_search_plan(monkeypatch) -> None:
 
     def handler(request: httpx.Request) -> httpx.Response:
         assert request.headers["authorization"] == "Bearer test-key"
-        payload = request.read().decode("utf-8")
-        if "Primary" in payload:
+        assert request.headers["x-api-version"] == "2025-11-01"
+        payload = json.loads(request.read().decode("utf-8"))
+        if payload.get("search", {}).get("query") == "Machine Learning Engineer Python PyTorch":
             request_names.append("Primary")
-        elif "Alternate 1" in payload:
+        elif payload.get("search", {}).get("query") == "ML Engineer Python PyTorch":
             request_names.append("Alternate 1")
+        assert payload["filters"]
+        assert payload["limit"] == 10
+        assert payload["fields"] == ["crustdata_person_id", "basic_profile", "experience", "social_handles"]
         return httpx.Response(
             200,
             json={
-                "results": [
+                "profiles": [
                     {
-                        "id": "crust-001",
-                        "name": "Alicia Chen",
-                        "title": "Senior Machine Learning Engineer",
-                        "company": "OpenAI",
-                        "location": "New York, US",
-                        "score": 0.97,
-                        "profile_url": "https://example.com/candidates/alicia-chen",
+                        "crustdata_person_id": "crust-001",
+                        "score": 0.91,
+                        "basic_profile": {
+                            "name": "Alicia Chen",
+                            "headline": "Senior Machine Learning Engineer",
+                            "location": {"raw": "New York, US"},
+                        },
+                        "experience": {
+                            "employment_details": {
+                                "current": [{"title": "Senior Machine Learning Engineer", "name": "OpenAI"}]
+                            }
+                        },
+                        "social_handles": {
+                            "professional_network_identifier": {"profile_url": "https://example.com/candidates/alicia-chen"}
+                        },
                     }
-                ]
+                ],
+                "next_cursor": None,
+                "total_count": 1,
             },
         )
 
@@ -70,4 +86,67 @@ def test_search_returns_candidate_objects_from_search_plan(monkeypatch) -> None:
     assert candidates[0].title == "Senior Machine Learning Engineer"
     assert candidates[0].company == "OpenAI"
     assert candidates[0].location == "New York, US"
-    assert candidates[0].provider_score == 0.97
+    assert candidates[0].provider_score == 0.91
+
+
+def test_build_payload_maps_richer_search_query_to_crustdata_filters() -> None:
+    provider = CrustDataProvider()
+    plan = SearchPlan(
+        searches=[
+            SearchQuery(
+                query_name="Primary",
+                include_titles=["Software Engineer"],
+                exclude_titles=["Manager", "Director"],
+                required_skills=["Python"],
+                preferred_skills=["AWS"],
+                countries=["US"],
+                cities=["New York"],
+                work_mode="hybrid",
+                minimum_years=5,
+                maximum_years=10,
+                preferred_companies=["OpenAI"],
+                exclude_current_companies=["Google"],
+                preferred_company_types=["startup"],
+            )
+        ]
+    )
+
+    payload = provider._build_payload(plan.searches[0])
+    filters = payload["filters"]
+
+    assert filters["op"] == "and"
+    assert any(
+        condition == {"field": "experience.employment_details.current.title", "type": "(.)", "value": "Software Engineer"}
+        for condition in filters["conditions"]
+    )
+    assert any(
+        condition == {"field": "experience.employment_details.title", "type": "not_in", "value": ["Manager", "Director"]}
+        for condition in filters["conditions"]
+    )
+    assert any(
+        condition == {"field": "years_of_experience_raw", "type": "=>", "value": 5}
+        for condition in filters["conditions"]
+    )
+    assert any(
+        condition == {"field": "years_of_experience_raw", "type": "=<", "value": 10}
+        for condition in filters["conditions"]
+    )
+    assert any(
+        condition == {"field": "experience.employment_details.company_name", "type": "in", "value": ["OpenAI"]}
+        for condition in filters["conditions"]
+    )
+    assert any(
+        condition == {"field": "experience.employment_details.current.company_name", "type": "not_in", "value": ["Google"]}
+        for condition in filters["conditions"]
+    )
+    assert any(
+        condition == {"field": "experience.employment_details.current.company_type", "type": "in", "value": ["startup"]}
+        for condition in filters["conditions"]
+    )
+    assert payload["search"]["query"] == "Software Engineer Python AWS"
+
+
+def test_candidate_normalizes_missing_raw_data_to_empty_dict() -> None:
+    candidate = Candidate(raw_data=None)
+
+    assert candidate.raw_data == {}

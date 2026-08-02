@@ -39,13 +39,19 @@ class Settings(BaseModel):
 
 
 _settings: Optional[Settings] = None
+_settings_env_signature: Optional[tuple[Optional[str], Optional[str]]] = None
 
 
 def get_settings() -> Settings:
-    """Return a cached settings object for the application."""
-    global _settings
-    if _settings is None:
+    """Return the current settings object for the application."""
+    global _settings, _settings_env_signature
+    env_signature = (
+        os.environ.get("OPENAI_API_KEY"),
+        os.environ.get("CRUSTDATA_API_KEY"),
+    )
+    if _settings is None or _settings_env_signature != env_signature:
         _settings = Settings.from_environment()
+        _settings_env_signature = env_signature
     return _settings
 
 

@@ -1,9 +1,13 @@
-from typing import List, Optional
+from typing import Any, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class SearchQuery(BaseModel):
+    """Provider-agnostic representation of recruiter intent for a single search query."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
     query_name: Optional[str] = None
     include_titles: List[str] = Field(default_factory=list)
     exclude_titles: List[str] = Field(default_factory=list)
@@ -21,8 +25,55 @@ class SearchQuery(BaseModel):
     nice_to_have: List[str] = Field(default_factory=list)
     bonus: List[str] = Field(default_factory=list)
 
+    @field_validator(
+        "include_titles",
+        "exclude_titles",
+        "required_skills",
+        "preferred_skills",
+        "countries",
+        "cities",
+        "preferred_companies",
+        "exclude_current_companies",
+        "preferred_company_types",
+        "must_have",
+        "nice_to_have",
+        "bonus",
+        mode="before",
+    )
+    @classmethod
+    def _normalize_string_list(cls, value: Any) -> List[str]:
+        if value is None:
+            return []
+        if isinstance(value, (list, tuple, set)):
+            normalized: List[str] = []
+            for item in value:
+                if item is None:
+                    continue
+                if isinstance(item, str):
+                    stripped = item.strip()
+                    if stripped:
+                        normalized.append(stripped)
+                    continue
+                normalized.append(item)
+            return normalized
+        return [value]
+
+    @field_validator("query_name", "work_mode", mode="before")
+    @classmethod
+    def _normalize_optional_string(cls, value: Any) -> Optional[str]:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
+
 
 class SearchPlan(BaseModel):
+    """Provider-agnostic plan composed of one or more recruiter-intent queries."""
+
+    model_config = ConfigDict(validate_assignment=True)
+
     searches: List[SearchQuery] = Field(default_factory=list)
     strategy: Optional[str] = None
     reasoning: Optional[str] = None
