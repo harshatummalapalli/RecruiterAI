@@ -63,6 +63,28 @@ class FakeProvider(BaseProvider):
         ]
 
 
+class OptionAwareProvider(BaseProvider):
+    def __init__(self) -> None:
+        self.seen_options = []
+
+    def search(self, plan):
+        return []
+
+    def search_with_options(self, plan, options=None):
+        self.seen_options.append(options or {})
+        return [
+            Candidate(
+                name="Bob",
+                title="Backend Engineer",
+                company="Acme",
+                location="US",
+                provider_score=0.88,
+                final_score=8.8,
+                raw_data={"skills": ["Python"], "years_experience": 6},
+            )
+        ]
+
+
 def build_test_app() -> TestClient:
     ProviderRegistry._providers.clear()
     ProviderRegistry.register("mock", FakeProvider())
@@ -138,6 +160,39 @@ def test_search_endpoint_returns_structured_result() -> None:
     assert payload["candidate_count"] == 1
     assert payload["candidates"][0]["name"] == "Alice"
     assert payload["explanations"][0]["title_match"] is True
+
+
+def test_search_endpoint_passes_provider_options() -> None:
+    ProviderRegistry._providers.clear()
+    provider = OptionAwareProvider()
+    ProviderRegistry.register("options", provider)
+
+    app = create_app(
+        jd_parser=JDParser(provider=FakeParser()),
+        search_planner=SearchPlanner(),
+        query_expander=QueryExpansionService(),
+        capability_mapper=CapabilityMapper(),
+        provider_registry=ProviderRegistry,
+        candidate_merger=CandidateMerger(),
+        candidate_ranker=CandidateRanker(),
+        match_explainer=MatchExplainer(),
+        search_diagnostics=SearchDiagnostics(),
+        excel_exporter=ExcelExporter(),
+    )
+    client = TestClient(app)
+    response = client.post(
+        "/search",
+        json={
+            "jd_text": "Need a Python engineer",
+            "provider": "options",
+            "page_size": 7,
+            "max_pages": 2,
+            "autocomplete": True,
+        },
+    )
+
+    assert response.status_code == 200
+    assert provider.seen_options == [{"page_size": 7, "max_pages": 2, "autocomplete": True}]
 
 
 def test_export_endpoint_returns_excel_file() -> None:

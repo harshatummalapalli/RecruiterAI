@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Any, Dict, List, Optional
 
 from backend.models.candidate import Candidate
 from backend.models.search_intent import SearchIntent
@@ -13,6 +13,10 @@ class BaseProvider(ABC):
     def search(self, plan: SearchPlan) -> List[Candidate]:
         """Execute a search plan and return normalized candidates."""
         raise NotImplementedError
+
+    def search_with_options(self, plan: SearchPlan, options: Optional[Dict[str, Any]] = None) -> List[Candidate]:
+        """Execute a search plan with optional provider-specific execution controls."""
+        return self.search(plan)
 
 
 class BaseLLMProvider(BaseProvider, ABC):

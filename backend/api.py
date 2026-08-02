@@ -38,6 +38,12 @@ class ParseRequest(BaseModel):
 
 class SearchRequest(ParseRequest):
     provider: str
+    page_size: Optional[int] = None
+    max_pages: Optional[int] = None
+    max_retries: Optional[int] = None
+    retry_backoff_base: Optional[float] = None
+    autocomplete: Optional[bool] = None
+    cursor: Optional[str] = None
 
 
 class SearchResponse(BaseModel):
@@ -134,7 +140,19 @@ def create_app(
             logger.info("Capability mapping complete")
 
             logger.info("Executing provider: %s", request.provider)
-            candidates = provider.search(mapped_plan)
+            options = {
+                "page_size": request.page_size,
+                "max_pages": request.max_pages,
+                "max_retries": request.max_retries,
+                "retry_backoff_base": request.retry_backoff_base,
+                "autocomplete": request.autocomplete,
+                "cursor": request.cursor,
+            }
+            options = {key: value for key, value in options.items() if value is not None}
+            if hasattr(provider, "search_with_options"):
+                candidates = provider.search_with_options(mapped_plan, options=options)
+            else:
+                candidates = provider.search(mapped_plan)
             if not isinstance(candidates, list):
                 raise ProviderError("Provider returned an invalid candidate list")
             logger.info("Provider returned %s candidates", len(candidates))
@@ -195,7 +213,19 @@ def create_app(
         capabilities = ProviderCapabilities(supported_filters=["include_titles", "required_skills", "countries", "preferred_companies"])
         mapped_plan, _ = capability_mapper.map(expanded_plan, capabilities)
 
-        candidates = provider.search(mapped_plan)
+        options = {
+            "page_size": request.page_size,
+            "max_pages": request.max_pages,
+            "max_retries": request.max_retries,
+            "retry_backoff_base": request.retry_backoff_base,
+            "autocomplete": request.autocomplete,
+            "cursor": request.cursor,
+        }
+        options = {key: value for key, value in options.items() if value is not None}
+        if hasattr(provider, "search_with_options"):
+            candidates = provider.search_with_options(mapped_plan, options=options)
+        else:
+            candidates = provider.search(mapped_plan)
         merged_candidates = candidate_merger.merge(candidates)
         ranked_candidates = candidate_ranker.rank(merged_candidates, intent)
 

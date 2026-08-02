@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 API_VERSION = "2025-11-01"
 DEFAULT_LIMIT = 10
 DEFAULT_FIELDS = ["crustdata_person_id", "basic_profile", "experience", "social_handles"]
+DEFAULT_MAX_RETRIES = 3
+DEFAULT_RETRY_BACKOFF_BASE = 0.5
 
 
 class CrustDataProvider(BaseProvider):
@@ -26,6 +28,11 @@ class CrustDataProvider(BaseProvider):
 
     def search(self, plan: SearchPlan) -> List[Candidate]:
         """Execute one request per search query and merge all normalized candidates."""
+        return self.search_with_options(plan)
+
+    def search_with_options(self, plan: SearchPlan, options: Optional[Dict[str, Any]] = None) -> List[Candidate]:
+        """Execute one or more paginated requests per search query and merge the normalized candidates."""
+        options = options or {}
         if not plan.searches:
             logger.warning("No searches were provided to the CrustData provider")
             return []
@@ -33,33 +40,62 @@ class CrustDataProvider(BaseProvider):
         all_candidates: List[Candidate] = []
 
         for search in plan.searches:
-            payload = self._build_payload(search)
-            started_at = time.perf_counter()
-            response = self._search_api(payload)
-            duration_ms = round((time.perf_counter() - started_at) * 1000, 2)
-            candidates = self._parse_candidates(response)
-            logger.info(
-                "CrustData query completed",
-                extra={
-                    "query_name": search.query_name or "unnamed",
-                    "request_duration_ms": duration_ms,
-                    "candidate_count": len(candidates),
-                },
-            )
-            all_candidates.extend(candidates)
+            page_number = 1
+            cursor = options.get("cursor")
+            max_pages = options.get("max_pages")
+            if max_pages is None:
+                max_pages = 1
+            elif not isinstance(max_pages, int):
+                max_pages = int(max_pages)
+            if max_pages < 1:
+                max_pages = 1
+
+            while True:
+                payload = self._build_payload(search, options=options, cursor=cursor)
+                started_at = time.perf_counter()
+                response = self._search_api(payload, options=options)
+                duration_ms = round((time.perf_counter() - started_at) * 1000, 2)
+                candidates = self._parse_candidates(response)
+                logger.info(
+                    "CrustData query completed",
+                    extra={
+                        "query_name": search.query_name or "unnamed",
+                        "request_duration_ms": duration_ms,
+                        "candidate_count": len(candidates),
+                        "page_number": page_number,
+                        "cursor": cursor,
+                        **self._extract_credit_metadata(response),
+                    },
+                )
+                all_candidates.extend(candidates)
+
+                if page_number >= max_pages:
+                    break
+
+                next_cursor = self._extract_next_cursor(response)
+                if not next_cursor:
+                    break
+
+                cursor = next_cursor
+                page_number += 1
 
         return all_candidates
 
-    def _build_payload(self, search: SearchQuery) -> Dict[str, Any]:
+    def _build_payload(self, search: SearchQuery, options: Optional[Dict[str, Any]] = None, cursor: Optional[str] = None) -> Dict[str, Any]:
         """Translate a provider-agnostic SearchQuery into a CrustData-compatible payload."""
+        options = options or {}
         conditions = self._build_filter_conditions(search)
         filters = self._build_filters(conditions)
 
         payload: Dict[str, Any] = {
             "filters": filters,
-            "limit": DEFAULT_LIMIT,
+            "limit": int(options.get("page_size") or DEFAULT_LIMIT),
             "fields": DEFAULT_FIELDS,
         }
+        if cursor is not None:
+            payload["cursor"] = cursor
+        if options.get("autocomplete"):
+            payload["autocomplete"] = True
 
         query_text = self._build_search_query(search)
         if query_text:
@@ -163,8 +199,9 @@ class CrustDataProvider(BaseProvider):
             "x-api-version": API_VERSION,
         }
 
-    def _search_api(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+    def _search_api(self, payload: Dict[str, Any], options: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Execute the CrustData API request and return the parsed JSON payload."""
+        options = options or {}
         api_key = get_crustdata_api_key()
         if not api_key:
             logger.error("CRUSTDATA_API_KEY is not configured")
@@ -172,15 +209,41 @@ class CrustDataProvider(BaseProvider):
 
         client = self._client or httpx.Client(timeout=10.0)
         should_close_client = self._client is None
+        max_retries = int(options.get("max_retries") or DEFAULT_MAX_RETRIES)
+        retry_backoff_base = float(options.get("retry_backoff_base") or DEFAULT_RETRY_BACKOFF_BASE)
+
         try:
-            response = client.post(self._base_url, json=payload, headers=self._build_headers(api_key))
-            response.raise_for_status()
-        except httpx.HTTPStatusError as exc:
-            logger.error("CrustData search request failed with HTTP status %s", exc.response.status_code)
-            raise ProviderError(f"CrustData search request failed with status {exc.response.status_code}: {exc.response.text}") from exc
-        except httpx.RequestError as exc:
-            logger.error("CrustData search request failed due to a request error", exc_info=True)
-            raise ProviderError(f"CrustData search request failed: {exc}") from exc
+            for attempt in range(max_retries + 1):
+                try:
+                    response = client.post(self._base_url, json=payload, headers=self._build_headers(api_key))
+                    response.raise_for_status()
+                    break
+                except httpx.HTTPStatusError as exc:
+                    status_code = exc.response.status_code
+                    if attempt < max_retries and (status_code == 429 or status_code >= 500):
+                        delay_seconds = retry_backoff_base * (2**attempt)
+                        logger.warning(
+                            "CrustData retrying request after HTTP status %s",
+                            status_code,
+                            extra={"retry_attempt": attempt + 1, "retry_delay_seconds": delay_seconds},
+                        )
+                        time.sleep(delay_seconds)
+                        continue
+                    logger.error("CrustData search request failed with HTTP status %s", status_code)
+                    raise ProviderError(f"CrustData search request failed with status {status_code}: {exc.response.text}") from exc
+                except httpx.RequestError as exc:
+                    if attempt < max_retries:
+                        delay_seconds = retry_backoff_base * (2**attempt)
+                        logger.warning(
+                            "CrustData retrying request due to request error",
+                            extra={"retry_attempt": attempt + 1, "retry_delay_seconds": delay_seconds},
+                        )
+                        time.sleep(delay_seconds)
+                        continue
+                    logger.error("CrustData search request failed due to a request error", exc_info=True)
+                    raise ProviderError(f"CrustData search request failed: {exc}") from exc
+            else:
+                raise ProviderError("CrustData search request failed after retries")
         finally:
             if should_close_client:
                 client.close()
@@ -193,7 +256,7 @@ class CrustDataProvider(BaseProvider):
 
     def _parse_candidates(self, response: Dict[str, Any]) -> List[Candidate]:
         """Normalize the provider response into Candidate objects."""
-        profiles = response.get("profiles") or response.get("results") or []
+        profiles = self._extract_profiles(response)
         candidates: List[Candidate] = []
 
         if not profiles:
@@ -221,11 +284,32 @@ class CrustDataProvider(BaseProvider):
                     provider_score=self._extract_provider_score(item),
                     profile_url=professional_network.get("profile_url"),
                     source="crustdata",
-                    raw_data=item,
+                    raw_data=self._normalize_item(item, response),
                 )
             )
 
         return candidates
+
+    def _extract_profiles(self, response: Dict[str, Any]) -> List[Dict[str, Any]]:
+        for key in ("profiles", "results", "data", "items"):
+            value = response.get(key)
+            if isinstance(value, list):
+                return [item for item in value if isinstance(item, dict)]
+        return []
+
+    def _normalize_item(self, item: Dict[str, Any], response: Dict[str, Any]) -> Dict[str, Any]:
+        normalized_item = dict(item)
+        metadata = self._extract_response_metadata(response)
+        if metadata:
+            normalized_item["__response_metadata"] = metadata
+        return normalized_item
+
+    def _extract_response_metadata(self, response: Dict[str, Any]) -> Dict[str, Any]:
+        metadata: Dict[str, Any] = {}
+        for key in ("next_cursor", "total_count", "has_more", "credits_remaining", "credits_used", "credit_usage"):
+            if key in response:
+                metadata[key] = response[key]
+        return metadata
 
     def _coerce_mapping(self, value: Any) -> Dict[str, Any]:
         return value if isinstance(value, dict) else {}
@@ -236,6 +320,17 @@ class CrustDataProvider(BaseProvider):
             if isinstance(value, (int, float)):
                 return float(value)
         return None
+
+    def _extract_next_cursor(self, response: Dict[str, Any]) -> Optional[str]:
+        value = response.get("next_cursor") or response.get("cursor")
+        return value if isinstance(value, str) and value else None
+
+    def _extract_credit_metadata(self, response: Dict[str, Any]) -> Dict[str, Any]:
+        metadata: Dict[str, Any] = {}
+        for key in ("credits_remaining", "credits_used", "credit_usage"):
+            if key in response:
+                metadata[key] = response[key]
+        return metadata
 
     def _extract_location(self, basic_profile: Dict[str, Any]) -> Optional[str]:
         location_data = basic_profile.get("location")

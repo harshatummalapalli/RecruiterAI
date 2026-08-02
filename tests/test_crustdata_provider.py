@@ -146,6 +146,59 @@ def test_build_payload_maps_richer_search_query_to_crustdata_filters() -> None:
     assert payload["search"]["query"] == "Software Engineer Python AWS"
 
 
+def test_search_with_options_paginates_and_uses_page_size(monkeypatch) -> None:
+    monkeypatch.setenv("CRUSTDATA_API_KEY", "test-key")
+    seen_payloads: list[dict[str, object]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        payload = json.loads(request.read().decode("utf-8"))
+        seen_payloads.append(payload)
+        if len(seen_payloads) == 1:
+            return httpx.Response(200, json={"profiles": [{"crustdata_person_id": "crust-001"}], "next_cursor": "cursor-2"})
+        return httpx.Response(200, json={"profiles": [{"crustdata_person_id": "crust-002"}]})
+
+    provider = CrustDataProvider(client=httpx.Client(transport=httpx.MockTransport(handler)))
+    plan = SearchPlan(searches=[SearchQuery(query_name="Primary", include_titles=["Software Engineer"], required_skills=["Python"])])
+
+    candidates = provider.search_with_options(plan, options={"page_size": 7, "max_pages": 2})
+
+    assert len(candidates) == 2
+    assert [payload["limit"] for payload in seen_payloads] == [7, 7]
+    assert seen_payloads[1]["cursor"] == "cursor-2"
+    assert [candidate.candidate_id for candidate in candidates] == ["crust-001", "crust-002"]
+
+
+def test_search_with_options_retries_rate_limit(monkeypatch) -> None:
+    monkeypatch.setenv("CRUSTDATA_API_KEY", "test-key")
+    sleep_calls: list[float] = []
+    monkeypatch.setattr("backend.providers.crustdata.time.sleep", lambda seconds: sleep_calls.append(seconds))
+
+    attempts = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            return httpx.Response(429, json={"error": "rate limited"})
+        return httpx.Response(200, json={"profiles": [{"crustdata_person_id": "crust-003"}]})
+
+    provider = CrustDataProvider(client=httpx.Client(transport=httpx.MockTransport(handler)))
+    plan = SearchPlan(searches=[SearchQuery(query_name="Primary", include_titles=["Software Engineer"])])
+
+    candidates = provider.search_with_options(plan, options={"max_retries": 1, "retry_backoff_base": 0.25})
+
+    assert len(candidates) == 1
+    assert sleep_calls == [0.25]
+
+
+def test_build_payload_includes_autocomplete_when_requested() -> None:
+    provider = CrustDataProvider()
+    payload = provider._build_payload(SearchQuery(include_titles=["Software Engineer"], required_skills=["Python"]), options={"autocomplete": True})
+
+    assert payload["autocomplete"] is True
+    assert payload["search"]["query"] == "Software Engineer Python"
+
+
 def test_candidate_normalizes_missing_raw_data_to_empty_dict() -> None:
     candidate = Candidate(raw_data=None)
 
