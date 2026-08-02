@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 import httpx
 
 from backend.config import get_crustdata_api_key
+from backend.errors import ConfigurationError, ProviderError
 from backend.models.candidate import Candidate
 from backend.models.search_plan import SearchPlan, SearchQuery
 from backend.providers.base import BaseProvider
@@ -80,7 +81,7 @@ class CrustDataProvider(BaseProvider):
         api_key = get_crustdata_api_key()
         if not api_key:
             logger.error("CRUSTDATA_API_KEY is not configured")
-            raise RuntimeError("CRUSTDATA_API_KEY is not configured. Set it in your environment or .env file.")
+            raise ConfigurationError("CRUSTDATA_API_KEY is not configured. Set it in your environment or .env file.")
 
         client = self._client or httpx.Client(timeout=10.0)
         try:
@@ -92,10 +93,10 @@ class CrustDataProvider(BaseProvider):
             response.raise_for_status()
         except httpx.HTTPStatusError as exc:
             logger.error("CrustData search request failed with HTTP status %s", exc.response.status_code)
-            raise RuntimeError(f"CrustData search request failed with status {exc.response.status_code}: {exc.response.text}") from exc
+            raise ProviderError(f"CrustData search request failed with status {exc.response.status_code}: {exc.response.text}") from exc
         except httpx.RequestError as exc:
             logger.error("CrustData search request failed due to a request error", exc_info=True)
-            raise RuntimeError(f"CrustData search request failed: {exc}") from exc
+            raise ProviderError(f"CrustData search request failed: {exc}") from exc
         finally:
             if self._client is None:
                 client.close()
@@ -104,7 +105,7 @@ class CrustDataProvider(BaseProvider):
             return response.json()
         except ValueError as exc:
             logger.error("CrustData search response was not valid JSON")
-            raise RuntimeError("CrustData search response was not valid JSON") from exc
+            raise ProviderError("CrustData search response was not valid JSON") from exc
 
     def _parse_candidates(self, response: Dict[str, Any]) -> List[Candidate]:
         """Normalize the provider response into Candidate objects."""

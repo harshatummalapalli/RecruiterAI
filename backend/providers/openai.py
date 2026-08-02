@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 from openai import OpenAI
 
 from backend.config import get_openai_api_key
+from backend.errors import ConfigurationError, ParsingError
 from backend.models.search_intent import (
     AIFocus,
     CompanyPreferences,
@@ -30,7 +31,7 @@ class OpenAIProvider(BaseLLMProvider):
         """Convert a raw job description into a SearchIntent using the OpenAI API."""
         api_key = get_openai_api_key()
         if not api_key:
-            raise RuntimeError("OPENAI_API_KEY is not configured. Set it in your environment or .env file.")
+            raise ConfigurationError("OPENAI_API_KEY is not configured. Set it in your environment or .env file.")
 
         client = self._client or OpenAI(api_key=api_key)
         system_prompt = self._load_prompt("system.txt")
@@ -46,7 +47,10 @@ class OpenAIProvider(BaseLLMProvider):
         )
 
         content = self._extract_response_text(response)
-        raw_response = json.loads(content)
+        try:
+            raw_response = json.loads(content)
+        except json.JSONDecodeError as exc:
+            raise ParsingError("OpenAI response was not valid JSON") from exc
         return self._build_search_intent(raw_response)
 
     def _load_prompt(self, filename: str) -> str:
