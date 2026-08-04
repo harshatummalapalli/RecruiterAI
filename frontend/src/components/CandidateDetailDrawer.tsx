@@ -6,11 +6,12 @@ import { Tabs } from './Tabs'
 
 type CandidateDetailDrawerProps = {
   candidate: Candidate | null
-  selectedCandidateState: { shortlist: boolean; rejected: boolean; notes: Array<{ id: string; text: string; createdAt: string }>; resumes: Array<{ name: string; uploadedAt: string }>; activity: Array<{ id: string; type: string; label: string; detail: string; timestamp: string }>; exported: boolean; status: string } | null
-  onAction?: (action: 'shortlist' | 'reject' | 'note' | 'export', payload?: string) => void
+  selectedCandidateState: { shortlist: boolean; reviewed: boolean; rejected: boolean; notes: Array<{ id: string; text: string; createdAt: string; updatedAt?: string; pinned?: boolean }>; resumes: Array<{ name: string; uploadedAt: string; size?: string; version?: string; status?: string }>; activity: Array<{ id: string; type: string; label: string; detail: string; timestamp: string }>; exported: boolean; status: string } | null
+  onAction?: (action: 'shortlist' | 'review' | 'submit' | 'interview' | 'offer' | 'reject' | 'note' | 'export', payload?: string) => void
   onUploadResume?: (candidate: Candidate, fileName: string) => void
-  onEditNote?: (candidate: Candidate, noteId: string, noteText: string) => void
+  onEditNote?: (candidate: Candidate, noteId: string, noteText: string, pinned?: boolean) => void
   onDeleteNote?: (candidate: Candidate, noteId: string) => void
+  onTogglePin?: (candidate: Candidate, noteId: string) => void
 }
 
 const tabs = [
@@ -30,15 +31,17 @@ function formatValue(value: unknown): string {
   return String(value)
 }
 
-export function CandidateDetailDrawer({ candidate, selectedCandidateState, onAction, onUploadResume, onEditNote, onDeleteNote }: CandidateDetailDrawerProps) {
+export function CandidateDetailDrawer({ candidate, selectedCandidateState, onAction, onUploadResume, onEditNote, onDeleteNote, onTogglePin }: CandidateDetailDrawerProps) {
   const [activeTab, setActiveTab] = useState('overview')
   const [noteDraft, setNoteDraft] = useState('')
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [editingText, setEditingText] = useState('')
+  const [editingPinned, setEditingPinned] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
-  const candidateState = useMemo(() => selectedCandidateState ?? { shortlist: false, rejected: false, notes: [], resumes: [], activity: [], exported: false, status: 'New' }, [selectedCandidateState])
+  const candidateState = useMemo(() => selectedCandidateState ?? { shortlist: false, reviewed: false, rejected: false, notes: [], resumes: [], activity: [], exported: false, status: 'New' }, [selectedCandidateState])
   const aiSkills = (candidate?.ai_skills ?? (Array.isArray(candidate?.raw_data?.ai_skills) ? candidate?.raw_data?.ai_skills : [])) as unknown[]
+  const explanation = candidate?.match_explanation
 
   if (!candidate) {
     return (
@@ -74,8 +77,20 @@ export function CandidateDetailDrawer({ candidate, selectedCandidateState, onAct
           <UploadCloud size={14} />
           Upload resume
         </button>
+        <button className="button secondary" type="button" onClick={() => onAction?.('review')}>
+          Review
+        </button>
         <button className="button secondary" type="button" onClick={() => onAction?.('shortlist')}>
           Shortlist
+        </button>
+        <button className="button secondary" type="button" onClick={() => onAction?.('submit')}>
+          Submit
+        </button>
+        <button className="button secondary" type="button" onClick={() => onAction?.('interview')}>
+          Interview
+        </button>
+        <button className="button secondary" type="button" onClick={() => onAction?.('offer')}>
+          Offer
         </button>
         <button className="button secondary" type="button" onClick={() => onAction?.('reject')}>
           Reject
@@ -127,8 +142,24 @@ export function CandidateDetailDrawer({ candidate, selectedCandidateState, onAct
         ) : null}
         {activeTab === 'match' ? (
           <div className="detail-panel">
-            <p className="muted">Match score: {formatValue(candidate.final_score ?? candidate.provider_score)}</p>
-            <p className="muted">The match explanation is displayed in the recruiting workspace and can be expanded with future enrichment signals.</p>
+            <div className="detail-panel__grid">
+              <div>
+                <h4>Match explanation</h4>
+                <p className="muted">Match score: {formatValue(candidate.final_score ?? candidate.provider_score)}</p>
+                <p className="muted">Matched titles: {formatValue(explanation?.matched_titles?.join(', ') || '—')}</p>
+                <p className="muted">Matched skills: {formatValue(explanation?.matched_skills?.join(', ') || '—')}</p>
+                <p className="muted">Missing skills: {formatValue(explanation?.missing_skills?.join(', ') || '—')}</p>
+                <p className="muted">Matched location: {formatValue(explanation?.matched_location || '—')}</p>
+                <p className="muted">Matched experience: {formatValue(explanation?.matched_experience || '—')}</p>
+                <p className="muted">AI technologies: {formatValue(explanation?.matched_ai_technologies?.join(', ') || '—')}</p>
+              </div>
+              <div>
+                <h4>Potential risks</h4>
+                <ul className="note-list">
+                  {(explanation?.potential_risks?.length ? explanation.potential_risks : ['No critical risks surfaced.']).map((risk) => <li key={risk}>{risk}</li>)}
+                </ul>
+              </div>
+            </div>
           </div>
         ) : null}
         {activeTab === 'notes' ? (
@@ -143,9 +174,10 @@ export function CandidateDetailDrawer({ candidate, selectedCandidateState, onAct
                   <li key={note.id}>
                     <div className="note-item">
                       <div>{note.text}</div>
-                      <div className="note-item__meta">{note.createdAt}</div>
+                      <div className="note-item__meta">{note.createdAt}{note.updatedAt ? ` • Updated ${note.updatedAt}` : ''}</div>
                       <div className="note-item__actions">
-                        <button className="button secondary" type="button" onClick={() => { setEditingNoteId(note.id); setEditingText(note.text) }}>Edit</button>
+                        <button className="button secondary" type="button" onClick={() => { setEditingNoteId(note.id); setEditingText(note.text); setEditingPinned(Boolean(note.pinned)) }}>Edit</button>
+                        <button className="button secondary" type="button" onClick={() => onTogglePin?.(candidate, note.id)}>{note.pinned ? 'Unpin' : 'Pin'}</button>
                         <button className="button secondary" type="button" onClick={() => onDeleteNote?.(candidate, note.id)}>Delete</button>
                       </div>
                     </div>
@@ -158,7 +190,7 @@ export function CandidateDetailDrawer({ candidate, selectedCandidateState, onAct
             {editingNoteId ? (
               <div className="detail-actions">
                 <textarea rows={2} value={editingText} onChange={(event) => setEditingText(event.target.value)} />
-                <button className="button secondary" type="button" onClick={() => { onEditNote?.(candidate, editingNoteId, editingText); setEditingNoteId(null); setEditingText('') }}>Update note</button>
+                <button className="button secondary" type="button" onClick={() => { onEditNote?.(candidate, editingNoteId, editingText, editingPinned); setEditingNoteId(null); setEditingText(''); setEditingPinned(false) }}>Update note</button>
               </div>
             ) : null}
           </div>

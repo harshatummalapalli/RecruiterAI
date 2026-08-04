@@ -1,14 +1,17 @@
 import { useRecruiterWorkbench } from './hooks/useRecruiterWorkbench'
 import { Button } from './components/Button'
+import { CandidateComparisonPanel } from './components/CandidateComparisonPanel'
 import { CandidateDetailDrawer } from './components/CandidateDetailDrawer'
 import { CandidateTable } from './components/CandidateTable'
 import { Panel } from './components/Panel'
 import { ProgressSummary } from './components/ProgressSummary'
-import { getCandidateKey } from './services/recruiterWorkflow'
 import { SearchBriefEditor } from './components/SearchBriefEditor'
+import { SearchHistoryPanel } from './components/SearchHistoryPanel'
+import { SearchInsightsPanel } from './components/SearchInsightsPanel'
 import { StatusBanner } from './components/StatusBanner'
 import { TextAreaField } from './components/TextField'
 import { WorkflowHeader } from './components/WorkflowHeader'
+import { getCandidateKey } from './services/recruiterWorkflow'
 import './App.css'
 
 function App() {
@@ -27,14 +30,19 @@ function App() {
     parsedIntentSummary,
     providerAvailable,
     searchSummary,
+    analytics,
     selectedCandidateState,
+    comparisonCandidates,
+    history,
     demoMode,
     applyCandidateAction,
     addResume,
     addNote,
     editNote,
     deleteNote,
+    togglePin,
     viewCandidate,
+    reopenHistoryEntry,
     parseIntent,
     runSearch,
     exportResults,
@@ -121,6 +129,9 @@ function App() {
               </div>
             ) : null}
             <CandidateTable candidates={searchResponse?.candidates ?? []} selectedKey={selectedCandidateKey} onSelect={(key) => { handleCandidateSelect(key); const candidate = searchResponse?.candidates.find((item) => getCandidateKey(item) === key); if (candidate) { viewCandidate(candidate) } }} isLoading={busyState === 'searching'} candidateCount={searchResponse?.candidates.length ?? 0} />
+            <SearchInsightsPanel summary={searchSummary} analytics={analytics} />
+            <CandidateComparisonPanel candidates={comparisonCandidates} />
+            <SearchHistoryPanel history={history} onReopen={reopenHistoryEntry} />
             <CandidateDetailDrawer candidate={selectedCandidate} selectedCandidateState={selectedCandidateState} onAction={(action, payload) => {
               if (!selectedCandidate) {
                 return
@@ -130,7 +141,7 @@ function App() {
                 return
               }
               applyCandidateAction(selectedCandidate, action, payload)
-            }} onUploadResume={(candidate, fileName) => addResume(candidate, fileName)} onEditNote={(candidate, noteId, noteText) => editNote(candidate, noteId, noteText)} onDeleteNote={(candidate, noteId) => deleteNote(candidate, noteId)} />
+            }} onUploadResume={(candidate, fileName) => addResume(candidate, fileName)} onEditNote={(candidate, noteId, noteText, pinned) => editNote(candidate, noteId, noteText, pinned)} onDeleteNote={(candidate, noteId) => deleteNote(candidate, noteId)} onTogglePin={(candidate, noteId) => togglePin(candidate, noteId)} />
           </div>
         </Panel>
       </main>
