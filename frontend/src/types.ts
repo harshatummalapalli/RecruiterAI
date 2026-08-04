@@ -55,49 +55,6 @@ export interface SearchIntent {
   confidence_score?: number | null
 }
 
-export interface CandidateNote {
-  id: string
-  text: string
-  createdAt: string
-  updatedAt?: string
-  pinned?: boolean
-}
-
-export interface CandidateResume {
-  name: string
-  uploadedAt: string
-  size?: string
-  version?: string
-  status?: string
-}
-
-export interface CandidateActivityItem {
-  id: string
-  type: string
-  label: string
-  detail: string
-  timestamp: string
-}
-
-export interface MatchExplanationSnapshot {
-  final_score?: number | null
-  matched_titles?: string[]
-  matched_skills?: string[]
-  missing_skills?: string[]
-  matched_location?: string | null
-  matched_experience?: string | null
-  matched_ai_technologies?: string[]
-  missing_experience?: string | null
-  potential_risks?: string[]
-  summary?: string | null
-  matched_required_skills?: string[]
-  missing_required_skills?: string[]
-  matched_preferred_skills?: string[]
-  missing_preferred_skills?: string[]
-}
-
-export type RecruiterStatus = 'New' | 'Reviewed' | 'Shortlisted' | 'Submitted' | 'Interviewing' | 'Offer' | 'Rejected'
-
 export interface Candidate {
   name?: string | null
   title?: string | null
@@ -113,37 +70,13 @@ export interface Candidate {
   ai_skills?: string[] | null
   summary?: string | null
   shortlist?: boolean
-  reviewed?: boolean
   rejected?: boolean
   exported?: boolean
-  status?: RecruiterStatus | null
-  notes?: CandidateNote[] | null
-  resumes?: CandidateResume[] | null
-  activity?: CandidateActivityItem[] | null
-  match_explanation?: MatchExplanationSnapshot | null
+  notes?: Array<{ id: string; text: string; createdAt: string }> | null
+  resumes?: Array<{ name: string; uploadedAt: string }> | null
+  activity?: Array<{ id: string; type: string; label: string; detail: string; timestamp: string }> | null
   raw_data?: Record<string, unknown>
   [key: string]: unknown
-}
-
-export interface SearchAnalytics {
-  candidateCount: number
-  averageMatch: string
-  medianMatch: string
-  highestScore: string
-  lowestScore: string
-  topCompanies: string[]
-  topLocations: string[]
-  topSkills: string[]
-}
-
-export interface SearchHistoryEntry {
-  id: string
-  jd: string
-  brief: string
-  createdAt: string
-  candidateCount: number
-  duration: string
-  intent: SearchIntent
 }
 
 export interface SearchResponse {

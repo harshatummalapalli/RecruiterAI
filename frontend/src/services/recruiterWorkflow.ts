@@ -1,8 +1,6 @@
-import type { Candidate, SearchAnalytics, SearchHistoryEntry, SearchIntent, SearchResponse } from '../types'
+import type { Candidate, SearchIntent, SearchResponse } from '../types'
 
-export type RecruiterAction = 'shortlist' | 'review' | 'submit' | 'interview' | 'offer' | 'reject' | 'note' | 'export' | 'view'
-export type ExportScope = 'all' | 'shortlisted' | 'reviewed'
-export type ExportFormat = 'csv' | 'excel'
+export type RecruiterAction = 'shortlist' | 'reject' | 'note' | 'export' | 'view'
 
 export const API_BASE_URL = 'http://127.0.0.1:8000'
 
@@ -17,12 +15,9 @@ export type Notice = {
 export type SearchSummary = {
   candidateCount: number
   averageMatch: string
-  medianMatch: string
   highestMatch: string
-  lowestMatch: string
   topLocations: string[]
   topCompanies: string[]
-  topSkills: string[]
   searchDuration: string
   searchConfidence: string
   lastUpdated: string
@@ -138,20 +133,6 @@ const toPercent = (value: number) => {
   return `${Math.round(normalized)}%`
 }
 
-const getMedian = (values: number[]) => {
-  if (!values.length) {
-    return 0
-  }
-
-  const sorted = [...values].sort((left, right) => left - right)
-  const midpoint = Math.floor(sorted.length / 2)
-  if (sorted.length % 2 === 0) {
-    return (sorted[midpoint - 1] + sorted[midpoint]) / 2
-  }
-
-  return sorted[midpoint]
-}
-
 export const buildSearchSummary = (payload: SearchResponse): SearchSummary => {
   const candidates = payload.candidates ?? []
   const scores = candidates
@@ -159,9 +140,7 @@ export const buildSearchSummary = (payload: SearchResponse): SearchSummary => {
     .filter((score) => Number.isFinite(score))
 
   const averageMatch = scores.length ? toPercent(scores.reduce((sum, value) => sum + value, 0) / scores.length) : '0%'
-  const medianMatch = scores.length ? toPercent(getMedian(scores)) : '0%'
   const highestMatch = scores.length ? toPercent(Math.max(...scores)) : '0%'
-  const lowestMatch = scores.length ? toPercent(Math.min(...scores)) : '0%'
   const locationCounts = candidates.reduce<Record<string, number>>((accumulator, candidate) => {
     const location = candidate.location?.trim() || 'Unspecified'
     accumulator[location] = (accumulator[location] ?? 0) + 1
@@ -172,87 +151,19 @@ export const buildSearchSummary = (payload: SearchResponse): SearchSummary => {
     accumulator[company] = (accumulator[company] ?? 0) + 1
     return accumulator
   }, {})
-  const skillCounts = candidates.reduce<Record<string, number>>((accumulator, candidate) => {
-    const skills = [
-      ...(candidate.ai_skills ?? []),
-      ...(candidate.raw_data?.skills ? candidate.raw_data.skills as string[] : []),
-    ].filter((skill): skill is string => typeof skill === 'string' && Boolean(skill.trim()))
-
-    skills.forEach((skill) => {
-      accumulator[skill] = (accumulator[skill] ?? 0) + 1
-    })
-    return accumulator
-  }, {})
 
   return {
     candidateCount: payload.candidate_count ?? candidates.length,
     averageMatch,
-    medianMatch,
     highestMatch,
-    lowestMatch,
     topLocations: Object.entries(locationCounts).sort((left, right) => right[1] - left[1]).slice(0, 3).map(([location]) => location),
     topCompanies: Object.entries(companyCounts).sort((left, right) => right[1] - left[1]).slice(0, 3).map(([company]) => company),
-    topSkills: Object.entries(skillCounts).sort((left, right) => right[1] - left[1]).slice(0, 3).map(([skill]) => skill),
     searchDuration: '0.8s',
     searchConfidence: payload.demo ? 'Demo' : 'High',
     lastUpdated: new Date().toLocaleString(),
     demo: Boolean(payload.demo),
   }
 }
-
-export const buildAnalytics = (payload: SearchResponse): SearchAnalytics => {
-  const candidates = payload.candidates ?? []
-  const scores = candidates
-    .map((candidate) => Number(candidate.final_score ?? candidate.provider_score ?? 0))
-    .filter((score) => Number.isFinite(score))
-  const averageMatch = scores.length ? toPercent(scores.reduce((sum, value) => sum + value, 0) / scores.length) : '0%'
-  const medianMatch = scores.length ? toPercent(getMedian(scores)) : '0%'
-  const highestScore = scores.length ? toPercent(Math.max(...scores)) : '0%'
-  const lowestScore = scores.length ? toPercent(Math.min(...scores)) : '0%'
-
-  const locationCounts = candidates.reduce<Record<string, number>>((accumulator, candidate) => {
-    const location = candidate.location?.trim() || 'Unspecified'
-    accumulator[location] = (accumulator[location] ?? 0) + 1
-    return accumulator
-  }, {})
-  const companyCounts = candidates.reduce<Record<string, number>>((accumulator, candidate) => {
-    const company = candidate.company?.trim() || 'Unspecified'
-    accumulator[company] = (accumulator[company] ?? 0) + 1
-    return accumulator
-  }, {})
-  const skillCounts = candidates.reduce<Record<string, number>>((accumulator, candidate) => {
-    const skills = [
-      ...(candidate.ai_skills ?? []),
-      ...(candidate.raw_data?.skills ? candidate.raw_data.skills as string[] : []),
-    ].filter((skill): skill is string => typeof skill === 'string' && Boolean(skill.trim()))
-
-    skills.forEach((skill) => {
-      accumulator[skill] = (accumulator[skill] ?? 0) + 1
-    })
-    return accumulator
-  }, {})
-
-  return {
-    candidateCount: payload.candidate_count ?? candidates.length,
-    averageMatch,
-    medianMatch,
-    highestScore,
-    lowestScore,
-    topCompanies: Object.entries(companyCounts).sort((left, right) => right[1] - left[1]).slice(0, 3).map(([company]) => company),
-    topLocations: Object.entries(locationCounts).sort((left, right) => right[1] - left[1]).slice(0, 3).map(([location]) => location),
-    topSkills: Object.entries(skillCounts).sort((left, right) => right[1] - left[1]).slice(0, 3).map(([skill]) => skill),
-  }
-}
-
-export const createHistoryEntry = (jdText: string, briefText: string, candidateCount: number, duration: string, intent: SearchIntent): SearchHistoryEntry => ({
-  id: `history-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-  jd: jdText,
-  brief: briefText,
-  createdAt: new Date().toLocaleString(),
-  candidateCount,
-  duration,
-  intent,
-})
 
 export const parseJobDescription = async (jdText: string) => {
   const response = await fetch(`${API_BASE_URL}/parse-jd`, {
