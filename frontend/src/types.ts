@@ -64,12 +64,24 @@ export interface Candidate {
   final_score?: number | null
   profile_url?: string | null
   source?: string | null
+  experience_years?: number | null
+  years_of_experience?: number | null
+  resume_status?: string | null
+  ai_skills?: string[] | null
+  summary?: string | null
+  shortlist?: boolean
+  rejected?: boolean
+  exported?: boolean
+  notes?: Array<{ id: string; text: string; createdAt: string }> | null
+  resumes?: Array<{ name: string; uploadedAt: string }> | null
+  activity?: Array<{ id: string; type: string; label: string; detail: string; timestamp: string }> | null
   raw_data?: Record<string, unknown>
   [key: string]: unknown
 }
 
 export interface SearchResponse {
   provider: string
+  demo?: boolean
   candidate_count: number
   candidates: Candidate[]
   explanations: Array<Record<string, unknown>>

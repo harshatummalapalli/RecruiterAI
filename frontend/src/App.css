@@ -348,6 +348,12 @@ textarea {
   text-overflow: ellipsis;
 }
 
+.pill--accent {
+  background: rgba(59, 130, 246, 0.16);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #dbeafe;
+}
+
 .candidate-table {
   display: grid;
   gap: 8px;
@@ -363,7 +369,7 @@ textarea {
 .candidate-table__header,
 .candidate-row {
   display: grid;
-  grid-template-columns: 84px minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 0.9fr) 96px 88px;
+  grid-template-columns: 84px minmax(0, 1.1fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 0.8fr) minmax(0, 0.9fr) 96px 88px;
   gap: 8px;
   align-items: center;
 }
@@ -632,7 +638,7 @@ textarea {
 .search-summary-card {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   border: 1px solid #334155;
   border-radius: 12px;
@@ -646,6 +652,23 @@ textarea {
   gap: 8px;
   color: #94a3b8;
   font-size: 0.85rem;
+}
+
+.note-item {
+  display: grid;
+  gap: 4px;
+}
+
+.note-item__meta {
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+.note-item__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
 }
 
 .workflow-progress {
@@ -725,6 +748,10 @@ pre {
 @media (max-width: 640px) {
   .app-shell {
     padding: 16px;
+  }
+
+  .search-summary-card {
+    flex-direction: column;
   }
 
   .panel {

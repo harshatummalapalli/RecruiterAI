@@ -28,8 +28,13 @@ function App() {
     providerAvailable,
     searchSummary,
     selectedCandidateState,
+    demoMode,
     applyCandidateAction,
     addResume,
+    addNote,
+    editNote,
+    deleteNote,
+    viewCandidate,
     parseIntent,
     runSearch,
     exportResults,
@@ -49,6 +54,7 @@ function App() {
         actions={
           <div className="workflow-pill-row">
             {hasPendingParse ? <span className="pill">Needs refresh</span> : null}
+            {demoMode ? <span className="pill pill--accent">Demo Mode</span> : null}
             <span className="pill pill--muted">{parsedIntentSummary}</span>
           </div>
         }
@@ -62,7 +68,7 @@ function App() {
             actions={
               <div className="button-stack">
                 <Button onClick={parseIntent} disabled={busyState === 'parsing'}>{busyState === 'parsing' ? 'Parsing…' : 'Parse JD'}</Button>
-                <Button tone="secondary" onClick={runSearch} disabled={busyState === 'searching' || !providerAvailable}>{busyState === 'searching' ? 'Searching…' : 'Search candidates'}</Button>
+                <Button tone="secondary" onClick={runSearch} disabled={busyState === 'searching'}>{busyState === 'searching' ? 'Searching…' : 'Search candidates'}</Button>
                 <Button tone="secondary" onClick={exportResults} disabled={busyState === 'exporting'}>{busyState === 'exporting' ? 'Exporting…' : 'Export'}</Button>
               </div>
             }
@@ -102,16 +108,29 @@ function App() {
                 <div>
                   <p className="eyebrow">Search summary</p>
                   <h3>{searchSummary.candidateCount} candidates found</h3>
+                  {searchSummary.demo ? <p className="muted">No sourcing providers are configured. Showing representative candidates.</p> : null}
                 </div>
                 <div className="search-summary-card__metrics">
+                  <span>Average: {searchSummary.averageMatch}</span>
+                  <span>Highest: {searchSummary.highestMatch}</span>
+                  <span>Top locations: {searchSummary.topLocations.join(', ')}</span>
+                  <span>Top companies: {searchSummary.topCompanies.join(', ')}</span>
                   <span>Duration: {searchSummary.searchDuration}</span>
                   <span>Confidence: {searchSummary.searchConfidence}</span>
-                  <span>Updated: {searchSummary.lastUpdated}</span>
                 </div>
               </div>
             ) : null}
-            <CandidateTable candidates={searchResponse?.candidates ?? []} selectedKey={selectedCandidateKey} onSelect={handleCandidateSelect} isLoading={busyState === 'searching'} candidateCount={searchResponse?.candidates.length ?? 0} />
-            <CandidateDetailDrawer candidate={selectedCandidate} selectedCandidateState={selectedCandidateState} onAction={(action, payload) => selectedCandidate ? applyCandidateAction(selectedCandidate, action, payload) : undefined} onUploadResume={(candidate, fileName) => addResume(candidate, fileName)} />
+            <CandidateTable candidates={searchResponse?.candidates ?? []} selectedKey={selectedCandidateKey} onSelect={(key) => { handleCandidateSelect(key); const candidate = searchResponse?.candidates.find((item) => getCandidateKey(item) === key); if (candidate) { viewCandidate(candidate) } }} isLoading={busyState === 'searching'} candidateCount={searchResponse?.candidates.length ?? 0} />
+            <CandidateDetailDrawer candidate={selectedCandidate} selectedCandidateState={selectedCandidateState} onAction={(action, payload) => {
+              if (!selectedCandidate) {
+                return
+              }
+              if (action === 'note') {
+                addNote(selectedCandidate, payload ?? '')
+                return
+              }
+              applyCandidateAction(selectedCandidate, action, payload)
+            }} onUploadResume={(candidate, fileName) => addResume(candidate, fileName)} onEditNote={(candidate, noteId, noteText) => editNote(candidate, noteId, noteText)} onDeleteNote={(candidate, noteId) => deleteNote(candidate, noteId)} />
           </div>
         </Panel>
       </main>

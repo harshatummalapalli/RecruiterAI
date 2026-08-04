@@ -1,6 +1,38 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Candidate, SearchIntent, SearchResponse } from '../types'
-import { buildParsedIntentSummary, buildSearchSummary, defaultIntent, exportCandidateResults, getCandidateKey, getProviderAvailability, parseJobDescription, runCandidateSearch, validateIntent, type BusyState, type Notice, type RecruiterAction } from '../services/recruiterWorkflow'
+import {
+  buildParsedIntentSummary,
+  buildSearchSummary,
+  defaultIntent,
+  exportCandidateResults,
+  getCandidateKey,
+  getProviderAvailability,
+  parseJobDescription,
+  runCandidateSearch,
+  validateIntent,
+  type BusyState,
+  type Notice,
+  type RecruiterAction,
+  type SearchSummary,
+} from '../services/recruiterWorkflow'
+
+type CandidateWorkspaceState = {
+  shortlist: boolean
+  rejected: boolean
+  notes: Array<{ id: string; text: string; createdAt: string }>
+  resumes: Array<{ name: string; uploadedAt: string }>
+  activity: Array<{ id: string; type: string; label: string; detail: string; timestamp: string }>
+  exported: boolean
+  status: string
+}
+
+const buildActivityEntry = (type: string, label: string, detail: string) => ({
+  id: `${type}-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+  type,
+  label,
+  detail,
+  timestamp: new Date().toLocaleString(),
+})
 
 export function useRecruiterWorkbench() {
   const [jdText, setJdText] = useState('We are hiring a Senior Software Engineer with Python, FastAPI, AWS, and cloud-native experience for a hybrid role in New York.')
@@ -13,7 +45,8 @@ export function useRecruiterWorkbench() {
   const [lastParsedJd, setLastParsedJd] = useState('')
   const [validationErrors, setValidationErrors] = useState<string[]>([])
   const [providerAvailable, setProviderAvailable] = useState(true)
-  const [searchSummary, setSearchSummary] = useState<{ candidateCount: number; searchDuration: string; searchConfidence: string; lastUpdated: string } | null>(null)
+  const [searchSummary, setSearchSummary] = useState<SearchSummary | null>(null)
+  const [demoMode, setDemoMode] = useState(false)
 
   const parsedIntentSummary = useMemo(() => buildParsedIntentSummary(intent), [intent])
   const hasPendingParse = hasParsed && jdText.trim() !== lastParsedJd.trim()
@@ -39,7 +72,7 @@ export function useRecruiterWorkbench() {
     return searchResponse.candidates.find((candidate) => getCandidateKey(candidate) === selectedCandidateKey) ?? searchResponse.candidates[0] ?? null
   }, [searchResponse, selectedCandidateKey])
 
-  const selectedCandidateState = useMemo(() => {
+  const selectedCandidateState = useMemo<CandidateWorkspaceState | null>(() => {
     if (!selectedCandidate) {
       return null
     }
@@ -47,15 +80,22 @@ export function useRecruiterWorkbench() {
     const candidateWithState = selectedCandidate as Candidate & {
       shortlist?: boolean
       rejected?: boolean
-      notes?: string[]
+      notes?: Array<{ id: string; text: string; createdAt: string }>
       resumes?: Array<{ name: string; uploadedAt: string }>
+      activity?: Array<{ id: string; type: string; label: string; detail: string; timestamp: string }>
+      exported?: boolean
     }
+
+    const status = candidateWithState.rejected ? 'Rejected' : candidateWithState.shortlist ? 'Shortlisted' : candidateWithState.exported ? 'Exported' : 'New'
 
     return {
       shortlist: candidateWithState.shortlist ?? false,
       rejected: candidateWithState.rejected ?? false,
       notes: candidateWithState.notes ?? [],
       resumes: candidateWithState.resumes ?? [],
+      activity: candidateWithState.activity ?? [],
+      exported: candidateWithState.exported ?? false,
+      status,
     }
   }, [selectedCandidate])
 
@@ -96,10 +136,6 @@ export function useRecruiterWorkbench() {
   const runSearch = async () => {
     const availability = await getProviderAvailability()
     setProviderAvailable(availability.available)
-    if (!availability.available) {
-      setNotice({ type: 'info', message: availability.message })
-      return
-    }
     const nextValidation = validateIntent(intent)
     setValidationErrors(nextValidation)
 
@@ -126,8 +162,15 @@ export function useRecruiterWorkbench() {
       const payload = await runCandidateSearch(jdText, parsedIntent ?? intent)
       setSearchResponse(payload)
       setSelectedCandidateKey(payload.candidates[0] ? getCandidateKey(payload.candidates[0]) : null)
-      setSearchSummary(buildSearchSummary(payload))
-      setNotice({ type: 'success', message: `Found ${payload.candidate_count ?? 0} candidates.` })
+      const nextSummary = buildSearchSummary(payload)
+      setSearchSummary(nextSummary)
+      setDemoMode(Boolean(payload.demo || !availability.available))
+      setNotice({
+        type: 'success',
+        message: nextSummary.demo
+          ? 'No sourcing providers are configured. Showing representative candidates.'
+          : `Found ${payload.candidate_count ?? 0} candidates.`,
+      })
     } catch (error) {
       setNotice({ type: 'error', message: error instanceof Error ? error.message : 'Unable to run search' })
     } finally {
@@ -183,16 +226,35 @@ export function useRecruiterWorkbench() {
           const nextCandidate = item as Candidate & {
             shortlist?: boolean
             rejected?: boolean
-            notes?: string[]
+            notes?: Array<{ id: string; text: string; createdAt: string }>
             resumes?: Array<{ name: string; uploadedAt: string }>
+            activity?: Array<{ id: string; type: string; label: string; detail: string; timestamp: string }>
+            exported?: boolean
+          }
+
+          const nextNotes = action === 'note' && payload?.trim()
+            ? [...(nextCandidate.notes ?? []), { id: `note-${Date.now()}`, text: payload.trim(), createdAt: new Date().toLocaleString() }]
+            : (nextCandidate.notes ?? [])
+
+          const activity = [...(nextCandidate.activity ?? [])]
+          if (action === 'shortlist') {
+            activity.push(buildActivityEntry('shortlist', 'Shortlisted', 'Recruiter marked the candidate for follow-up.'))
+          }
+          if (action === 'reject') {
+            activity.push(buildActivityEntry('reject', 'Rejected', 'Recruiter moved the candidate out of the active slate.'))
+          }
+          if (action === 'export') {
+            activity.push(buildActivityEntry('export', 'Exported', 'Candidate export prepared from the local workspace.'))
           }
 
           return {
             ...item,
             shortlist: action === 'shortlist' ? true : nextCandidate.shortlist ?? false,
             rejected: action === 'reject' ? true : nextCandidate.rejected ?? false,
-            notes: action === 'note' && payload ? [...(nextCandidate.notes ?? []), payload] : (nextCandidate.notes ?? []),
+            notes: nextNotes,
             resumes: nextCandidate.resumes ?? [],
+            activity,
+            exported: action === 'export' ? true : nextCandidate.exported ?? false,
           }
         }),
       }
@@ -213,10 +275,126 @@ export function useRecruiterWorkbench() {
             return item
           }
 
-          const nextCandidate = item as Candidate & { resumes?: Array<{ name: string; uploadedAt: string }> }
+          const nextCandidate = item as Candidate & {
+            resumes?: Array<{ name: string; uploadedAt: string }>
+            activity?: Array<{ id: string; type: string; label: string; detail: string; timestamp: string }>
+          }
+          const resumes = [...(nextCandidate.resumes ?? []), { name, uploadedAt: new Date().toLocaleString() }]
+          const activity = [...(nextCandidate.activity ?? []), buildActivityEntry('resume', 'Resume uploaded', 'Recruiter attached a resume in the candidate workspace.')]
           return {
             ...item,
-            resumes: [...(nextCandidate.resumes ?? []), { name, uploadedAt: new Date().toLocaleString() }],
+            resumes,
+            activity,
+            resume_status: 'Uploaded',
+          }
+        }),
+      }
+    })
+  }
+
+  const addNote = (candidate: Candidate, text: string) => {
+    if (!text.trim()) {
+      return
+    }
+
+    const key = getCandidateKey(candidate)
+    setSearchResponse((current) => {
+      if (!current) {
+        return current
+      }
+
+      return {
+        ...current,
+        candidates: current.candidates.map((item) => {
+          if (getCandidateKey(item) !== key) {
+            return item
+          }
+
+          const nextCandidate = item as Candidate & {
+            notes?: Array<{ id: string; text: string; createdAt: string }>
+            activity?: Array<{ id: string; type: string; label: string; detail: string; timestamp: string }>
+          }
+          return {
+            ...item,
+            notes: [...(nextCandidate.notes ?? []), { id: `note-${Date.now()}`, text: text.trim(), createdAt: new Date().toLocaleString() }],
+            activity: [...(nextCandidate.activity ?? []), buildActivityEntry('note', 'Note added', 'Recruiter captured an internal note for this candidate.')],
+          }
+        }),
+      }
+    })
+  }
+
+  const editNote = (candidate: Candidate, noteId: string, text: string) => {
+    if (!text.trim()) {
+      return
+    }
+
+    const key = getCandidateKey(candidate)
+    setSearchResponse((current) => {
+      if (!current) {
+        return current
+      }
+
+      return {
+        ...current,
+        candidates: current.candidates.map((item) => {
+          if (getCandidateKey(item) !== key) {
+            return item
+          }
+
+          const nextCandidate = item as Candidate & { notes?: Array<{ id: string; text: string; createdAt: string }> }
+          return {
+            ...item,
+            notes: (nextCandidate.notes ?? []).map((note) => (note.id === noteId ? { ...note, text: text.trim() } : note)),
+          }
+        }),
+      }
+    })
+  }
+
+  const deleteNote = (candidate: Candidate, noteId: string) => {
+    const key = getCandidateKey(candidate)
+    setSearchResponse((current) => {
+      if (!current) {
+        return current
+      }
+
+      return {
+        ...current,
+        candidates: current.candidates.map((item) => {
+          if (getCandidateKey(item) !== key) {
+            return item
+          }
+
+          const nextCandidate = item as Candidate & { notes?: Array<{ id: string; text: string; createdAt: string }> }
+          return {
+            ...item,
+            notes: (nextCandidate.notes ?? []).filter((note) => note.id !== noteId),
+          }
+        }),
+      }
+    })
+  }
+
+  const viewCandidate = (candidate: Candidate) => {
+    const key = getCandidateKey(candidate)
+    setSelectedCandidateKey(key)
+    setSearchResponse((current) => {
+      if (!current) {
+        return current
+      }
+
+      return {
+        ...current,
+        candidates: current.candidates.map((item) => {
+          if (getCandidateKey(item) !== key) {
+            return item
+          }
+
+          const nextCandidate = item as Candidate & { activity?: Array<{ id: string; type: string; label: string; detail: string; timestamp: string }> }
+          return {
+            ...item,
+            activity: [...(nextCandidate.activity ?? []), buildActivityEntry('view', 'Candidate viewed', 'Recruiter opened the profile workspace.')],
           }
         }),
       }
@@ -239,8 +417,13 @@ export function useRecruiterWorkbench() {
     providerAvailable,
     searchSummary,
     selectedCandidateState,
+    demoMode,
     applyCandidateAction,
     addResume,
+    addNote,
+    editNote,
+    deleteNote,
+    viewCandidate,
     parseIntent,
     runSearch,
     exportResults,

@@ -1,6 +1,6 @@
 import type { Candidate, SearchIntent, SearchResponse } from '../types'
 
-export type RecruiterAction = 'shortlist' | 'reject' | 'note' | 'export'
+export type RecruiterAction = 'shortlist' | 'reject' | 'note' | 'export' | 'view'
 
 export const API_BASE_URL = 'http://127.0.0.1:8000'
 
@@ -10,6 +10,18 @@ export type NoticeType = 'error' | 'success' | 'info'
 export type Notice = {
   type: NoticeType
   message: string
+}
+
+export type SearchSummary = {
+  candidateCount: number
+  averageMatch: string
+  highestMatch: string
+  topLocations: string[]
+  topCompanies: string[]
+  searchDuration: string
+  searchConfidence: string
+  lastUpdated: string
+  demo: boolean
 }
 
 export const defaultIntent: SearchIntent = {
@@ -116,12 +128,42 @@ export const getProviderAvailability = async () => {
   }
 }
 
-export const buildSearchSummary = (payload: SearchResponse) => ({
-  candidateCount: payload.candidate_count ?? 0,
-  searchDuration: '0.8s',
-  searchConfidence: 'High',
-  lastUpdated: new Date().toLocaleString(),
-})
+const toPercent = (value: number) => {
+  const normalized = value > 1 ? value : value * 100
+  return `${Math.round(normalized)}%`
+}
+
+export const buildSearchSummary = (payload: SearchResponse): SearchSummary => {
+  const candidates = payload.candidates ?? []
+  const scores = candidates
+    .map((candidate) => Number(candidate.final_score ?? candidate.provider_score ?? 0))
+    .filter((score) => Number.isFinite(score))
+
+  const averageMatch = scores.length ? toPercent(scores.reduce((sum, value) => sum + value, 0) / scores.length) : '0%'
+  const highestMatch = scores.length ? toPercent(Math.max(...scores)) : '0%'
+  const locationCounts = candidates.reduce<Record<string, number>>((accumulator, candidate) => {
+    const location = candidate.location?.trim() || 'Unspecified'
+    accumulator[location] = (accumulator[location] ?? 0) + 1
+    return accumulator
+  }, {})
+  const companyCounts = candidates.reduce<Record<string, number>>((accumulator, candidate) => {
+    const company = candidate.company?.trim() || 'Unspecified'
+    accumulator[company] = (accumulator[company] ?? 0) + 1
+    return accumulator
+  }, {})
+
+  return {
+    candidateCount: payload.candidate_count ?? candidates.length,
+    averageMatch,
+    highestMatch,
+    topLocations: Object.entries(locationCounts).sort((left, right) => right[1] - left[1]).slice(0, 3).map(([location]) => location),
+    topCompanies: Object.entries(companyCounts).sort((left, right) => right[1] - left[1]).slice(0, 3).map(([company]) => company),
+    searchDuration: '0.8s',
+    searchConfidence: payload.demo ? 'Demo' : 'High',
+    lastUpdated: new Date().toLocaleString(),
+    demo: Boolean(payload.demo),
+  }
+}
 
 export const parseJobDescription = async (jdText: string) => {
   const response = await fetch(`${API_BASE_URL}/parse-jd`, {
@@ -173,6 +215,27 @@ export const exportCandidateResults = async (_jdText: string, intent: SearchInte
   const anchor = document.createElement('a')
   anchor.href = url
   anchor.download = 'recruiterai-results.xlsx'
+  anchor.click()
+  window.URL.revokeObjectURL(url)
+}
+
+export const downloadCandidateExport = (candidate: Candidate) => {
+  const payload = {
+    candidate: {
+      name: candidate.name,
+      title: candidate.title,
+      company: candidate.company,
+      location: candidate.location,
+      match: candidate.final_score ?? candidate.provider_score,
+      summary: candidate.summary,
+      uploadedAt: new Date().toISOString(),
+    },
+  }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+  const url = window.URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `${(candidate.name ?? 'candidate').toLowerCase().replace(/\s+/g, '-')}-export.json`
   anchor.click()
   window.URL.revokeObjectURL(url)
 }
