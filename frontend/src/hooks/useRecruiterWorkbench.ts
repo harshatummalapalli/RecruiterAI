@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
-import type { SearchIntent, SearchResponse } from '../types'
-import { buildParsedIntentSummary, defaultIntent, exportCandidateResults, getCandidateKey, parseJobDescription, runCandidateSearch, validateIntent, type BusyState, type Notice } from '../services/recruiterWorkflow'
+import { useEffect, useMemo, useState } from 'react'
+import type { Candidate, SearchIntent, SearchResponse } from '../types'
+import { buildParsedIntentSummary, buildSearchSummary, defaultIntent, exportCandidateResults, getCandidateKey, getProviderAvailability, parseJobDescription, runCandidateSearch, validateIntent, type BusyState, type Notice, type RecruiterAction } from '../services/recruiterWorkflow'
 
 export function useRecruiterWorkbench() {
   const [jdText, setJdText] = useState('We are hiring a Senior Software Engineer with Python, FastAPI, AWS, and cloud-native experience for a hybrid role in New York.')
@@ -12,9 +12,20 @@ export function useRecruiterWorkbench() {
   const [hasParsed, setHasParsed] = useState(false)
   const [lastParsedJd, setLastParsedJd] = useState('')
   const [validationErrors, setValidationErrors] = useState<string[]>([])
+  const [providerAvailable, setProviderAvailable] = useState(true)
+  const [searchSummary, setSearchSummary] = useState<{ candidateCount: number; searchDuration: string; searchConfidence: string; lastUpdated: string } | null>(null)
 
   const parsedIntentSummary = useMemo(() => buildParsedIntentSummary(intent), [intent])
   const hasPendingParse = hasParsed && jdText.trim() !== lastParsedJd.trim()
+
+  useEffect(() => {
+    const checkProviderAvailability = async () => {
+      const availability = await getProviderAvailability()
+      setProviderAvailable(availability.available)
+    }
+
+    void checkProviderAvailability()
+  }, [])
 
   const selectedCandidate = useMemo(() => {
     if (!searchResponse?.candidates.length) {
@@ -27,6 +38,26 @@ export function useRecruiterWorkbench() {
 
     return searchResponse.candidates.find((candidate) => getCandidateKey(candidate) === selectedCandidateKey) ?? searchResponse.candidates[0] ?? null
   }, [searchResponse, selectedCandidateKey])
+
+  const selectedCandidateState = useMemo(() => {
+    if (!selectedCandidate) {
+      return null
+    }
+
+    const candidateWithState = selectedCandidate as Candidate & {
+      shortlist?: boolean
+      rejected?: boolean
+      notes?: string[]
+      resumes?: Array<{ name: string; uploadedAt: string }>
+    }
+
+    return {
+      shortlist: candidateWithState.shortlist ?? false,
+      rejected: candidateWithState.rejected ?? false,
+      notes: candidateWithState.notes ?? [],
+      resumes: candidateWithState.resumes ?? [],
+    }
+  }, [selectedCandidate])
 
   const updateIntent = (updater: (current: SearchIntent) => SearchIntent) => {
     setIntent((current) => {
@@ -63,6 +94,12 @@ export function useRecruiterWorkbench() {
   }
 
   const runSearch = async () => {
+    const availability = await getProviderAvailability()
+    setProviderAvailable(availability.available)
+    if (!availability.available) {
+      setNotice({ type: 'info', message: availability.message })
+      return
+    }
     const nextValidation = validateIntent(intent)
     setValidationErrors(nextValidation)
 
@@ -89,6 +126,7 @@ export function useRecruiterWorkbench() {
       const payload = await runCandidateSearch(jdText, parsedIntent ?? intent)
       setSearchResponse(payload)
       setSelectedCandidateKey(payload.candidates[0] ? getCandidateKey(payload.candidates[0]) : null)
+      setSearchSummary(buildSearchSummary(payload))
       setNotice({ type: 'success', message: `Found ${payload.candidate_count ?? 0} candidates.` })
     } catch (error) {
       setNotice({ type: 'error', message: error instanceof Error ? error.message : 'Unable to run search' })
@@ -128,6 +166,63 @@ export function useRecruiterWorkbench() {
     }
   }
 
+  const applyCandidateAction = (candidate: Candidate, action: RecruiterAction, payload?: string) => {
+    const key = getCandidateKey(candidate)
+    setSearchResponse((current) => {
+      if (!current) {
+        return current
+      }
+
+      return {
+        ...current,
+        candidates: current.candidates.map((item) => {
+          if (getCandidateKey(item) !== key) {
+            return item
+          }
+
+          const nextCandidate = item as Candidate & {
+            shortlist?: boolean
+            rejected?: boolean
+            notes?: string[]
+            resumes?: Array<{ name: string; uploadedAt: string }>
+          }
+
+          return {
+            ...item,
+            shortlist: action === 'shortlist' ? true : nextCandidate.shortlist ?? false,
+            rejected: action === 'reject' ? true : nextCandidate.rejected ?? false,
+            notes: action === 'note' && payload ? [...(nextCandidate.notes ?? []), payload] : (nextCandidate.notes ?? []),
+            resumes: nextCandidate.resumes ?? [],
+          }
+        }),
+      }
+    })
+  }
+
+  const addResume = (candidate: Candidate, name: string) => {
+    const key = getCandidateKey(candidate)
+    setSearchResponse((current) => {
+      if (!current) {
+        return current
+      }
+
+      return {
+        ...current,
+        candidates: current.candidates.map((item) => {
+          if (getCandidateKey(item) !== key) {
+            return item
+          }
+
+          const nextCandidate = item as Candidate & { resumes?: Array<{ name: string; uploadedAt: string }> }
+          return {
+            ...item,
+            resumes: [...(nextCandidate.resumes ?? []), { name, uploadedAt: new Date().toLocaleString() }],
+          }
+        }),
+      }
+    })
+  }
+
   return {
     jdText,
     setJdText,
@@ -141,6 +236,11 @@ export function useRecruiterWorkbench() {
     hasPendingParse,
     validationErrors,
     parsedIntentSummary,
+    providerAvailable,
+    searchSummary,
+    selectedCandidateState,
+    applyCandidateAction,
+    addResume,
     parseIntent,
     runSearch,
     exportResults,

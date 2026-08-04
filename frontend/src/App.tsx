@@ -3,6 +3,7 @@ import { Button } from './components/Button'
 import { CandidateDetailDrawer } from './components/CandidateDetailDrawer'
 import { CandidateTable } from './components/CandidateTable'
 import { Panel } from './components/Panel'
+import { ProgressSummary } from './components/ProgressSummary'
 import { getCandidateKey } from './services/recruiterWorkflow'
 import { SearchBriefEditor } from './components/SearchBriefEditor'
 import { StatusBanner } from './components/StatusBanner'
@@ -24,6 +25,11 @@ function App() {
     hasPendingParse,
     validationErrors,
     parsedIntentSummary,
+    providerAvailable,
+    searchSummary,
+    selectedCandidateState,
+    applyCandidateAction,
+    addResume,
     parseIntent,
     runSearch,
     exportResults,
@@ -38,8 +44,8 @@ function App() {
   return (
     <div className="app-shell">
       <WorkflowHeader
-        title="Refine the search brief before you source candidates."
-        description="Paste a job description, review and edit the parsed search brief, then run a CrustData search from the refined brief."
+        title="Recruiter workbench"
+        description="Shape the search brief, review matching talent, and prepare the next recruiting step without leaving the workflow."
         actions={
           <div className="workflow-pill-row">
             {hasPendingParse ? <span className="pill">Needs refresh</span> : null}
@@ -56,7 +62,7 @@ function App() {
             actions={
               <div className="button-stack">
                 <Button onClick={parseIntent} disabled={busyState === 'parsing'}>{busyState === 'parsing' ? 'Parsing…' : 'Parse JD'}</Button>
-                <Button tone="secondary" onClick={runSearch} disabled={busyState === 'searching'}>{busyState === 'searching' ? 'Searching…' : 'Search Candidates'}</Button>
+                <Button tone="secondary" onClick={runSearch} disabled={busyState === 'searching' || !providerAvailable}>{busyState === 'searching' ? 'Searching…' : 'Search candidates'}</Button>
                 <Button tone="secondary" onClick={exportResults} disabled={busyState === 'exporting'}>{busyState === 'exporting' ? 'Exporting…' : 'Export'}</Button>
               </div>
             }
@@ -71,15 +77,15 @@ function App() {
                 rows={10}
                 placeholder="Paste the job description here…"
               />
-              {busyState ? <div className="progress-bar" aria-hidden="true"><span /></div> : null}
+              <ProgressSummary busyState={busyState} />
+              {!providerAvailable ? <StatusBanner tone="info" message="Sourcing has not yet been configured. Parsing and editing the search brief continue to work normally." /> : null}
               {notice ? <StatusBanner tone={notice.type} message={notice.message} /> : null}
-              {busyState ? <p className="muted">Working on your request…</p> : null}
             </div>
           </Panel>
 
           <Panel
             title="Search brief"
-            description="The recruiter remains in control of every decision."
+            description="Adjust hire criteria quickly."
           >
             <SearchBriefEditor intent={intent} onChange={updateIntent} validationErrors={validationErrors} />
           </Panel>
@@ -87,12 +93,25 @@ function App() {
 
         <Panel
           title="Candidate workspace"
-          description="Review ranked candidates and keep the workbench focused on sourcing and decision-making."
+          description="Review ranked candidates, upload resumes, and prepare the next recruiting step."
           className="workspace-grid__right"
         >
           <div className="stack">
-            <CandidateTable candidates={searchResponse?.candidates ?? []} selectedKey={selectedCandidateKey} onSelect={handleCandidateSelect} />
-            <CandidateDetailDrawer candidate={selectedCandidate} />
+            {searchSummary ? (
+              <div className="search-summary-card">
+                <div>
+                  <p className="eyebrow">Search summary</p>
+                  <h3>{searchSummary.candidateCount} candidates found</h3>
+                </div>
+                <div className="search-summary-card__metrics">
+                  <span>Duration: {searchSummary.searchDuration}</span>
+                  <span>Confidence: {searchSummary.searchConfidence}</span>
+                  <span>Updated: {searchSummary.lastUpdated}</span>
+                </div>
+              </div>
+            ) : null}
+            <CandidateTable candidates={searchResponse?.candidates ?? []} selectedKey={selectedCandidateKey} onSelect={handleCandidateSelect} isLoading={busyState === 'searching'} candidateCount={searchResponse?.candidates.length ?? 0} />
+            <CandidateDetailDrawer candidate={selectedCandidate} selectedCandidateState={selectedCandidateState} onAction={(action, payload) => selectedCandidate ? applyCandidateAction(selectedCandidate, action, payload) : undefined} onUploadResume={(candidate, fileName) => addResume(candidate, fileName)} />
           </div>
         </Panel>
       </main>

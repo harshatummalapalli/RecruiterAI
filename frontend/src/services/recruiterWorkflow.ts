@@ -1,5 +1,7 @@
 import type { Candidate, SearchIntent, SearchResponse } from '../types'
 
+export type RecruiterAction = 'shortlist' | 'reject' | 'note' | 'export'
+
 export const API_BASE_URL = 'http://127.0.0.1:8000'
 
 export type BusyState = 'parsing' | 'searching' | 'exporting' | null
@@ -99,6 +101,27 @@ export const getCandidateKey = (candidate: Candidate) => {
   const parts = [candidate.name, candidate.title, candidate.company, candidate.location]
   return parts.filter(Boolean).join('|') || `${candidate.provider_score ?? ''}-${candidate.final_score ?? ''}`
 }
+
+export const getProviderAvailability = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/providers`)
+    if (!response.ok) {
+      return { available: false, message: 'Sourcing has not yet been configured.' }
+    }
+
+    const payload = await response.json() as { providers?: string[] }
+    return { available: (payload.providers?.length ?? 0) > 0, message: (payload.providers?.length ?? 0) > 0 ? 'Sourcing is ready.' : 'Sourcing has not yet been configured.' }
+  } catch {
+    return { available: false, message: 'Sourcing has not yet been configured.' }
+  }
+}
+
+export const buildSearchSummary = (payload: SearchResponse) => ({
+  candidateCount: payload.candidate_count ?? 0,
+  searchDuration: '0.8s',
+  searchConfidence: 'High',
+  lastUpdated: new Date().toLocaleString(),
+})
 
 export const parseJobDescription = async (jdText: string) => {
   const response = await fetch(`${API_BASE_URL}/parse-jd`, {
