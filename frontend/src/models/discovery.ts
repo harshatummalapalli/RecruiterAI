@@ -16,6 +16,10 @@ export type MatchExplanation = {
   missingExperience: string | null
   potentialRisks: string[]
   summary: string | null
+  titleMatch: boolean | null
+  locationMatch: boolean | null
+  companyMatch: boolean | null
+  experienceMatch: boolean | null
 }
 
 export type DiscoveryCandidate = {
@@ -42,6 +46,10 @@ function readStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
 }
 
+function readBoolean(value: unknown): boolean | null {
+  return typeof value === 'boolean' ? value : null
+}
+
 export function buildDiscoveryCandidates(response: SearchResponse): DiscoveryCandidate[] {
   const candidates = response.candidates ?? []
   const explanations = response.explanations ?? []
@@ -61,6 +69,10 @@ export function buildDiscoveryCandidates(response: SearchResponse): DiscoveryCan
       missingExperience: readString(explanationRaw.missing_experience),
       potentialRisks: readStringArray(explanationRaw.potential_risks),
       summary: readString(explanationRaw.summary),
+      titleMatch: readBoolean(explanationRaw.title_match),
+      locationMatch: readBoolean(explanationRaw.location_match),
+      companyMatch: readBoolean(explanationRaw.company_match),
+      experienceMatch: readBoolean(explanationRaw.experience_match),
     }
 
     return {

@@ -13,12 +13,12 @@ import {
 import { buildClarificationQuestions, type ClarificationQuestion } from '../models/clarification'
 import { SearchBriefReview } from './SearchBriefReview'
 import { ClarificationReview } from './ClarificationReview'
-import { CandidateDiscoveryScreen } from './CandidateDiscoveryScreen'
+import { CandidateReviewScreen } from './CandidateReviewScreen'
 import type { SearchResponse } from '../types'
 import './RecruiterWorkspaceScreen.css'
 
 type ParseState = 'idle' | 'parsing' | 'success' | 'error'
-type Step = 'jd' | 'clarify' | 'brief' | 'discovery'
+type Step = 'jd' | 'clarify' | 'brief' | 'review'
 type SearchState = 'idle' | 'searching' | 'done' | 'error'
 
 const RECRUITER_NAME = 'Harsha'
@@ -172,7 +172,7 @@ export function RecruiterWorkspaceScreen() {
       const response = await runCandidateSearch('', briefToSearchIntent(brief))
       setSearchResponse(response)
       setSearchState('done')
-      setStep('discovery')
+      setStep('review')
     } catch {
       setSearchState('error')
     }
@@ -331,8 +331,8 @@ export function RecruiterWorkspaceScreen() {
           />
         ) : null}
 
-        {step === 'discovery' ? (
-          <CandidateDiscoveryScreen
+        {step === 'review' ? (
+          <CandidateReviewScreen
             brief={brief}
             onChangeBrief={updateBriefField}
             searchResponse={searchResponse}
