@@ -13,10 +13,12 @@ import {
 import { buildClarificationQuestions, type ClarificationQuestion } from '../models/clarification'
 import { SearchBriefReview } from './SearchBriefReview'
 import { ClarificationReview } from './ClarificationReview'
+import { CandidateDiscoveryScreen } from './CandidateDiscoveryScreen'
+import type { SearchResponse } from '../types'
 import './RecruiterWorkspaceScreen.css'
 
 type ParseState = 'idle' | 'parsing' | 'success' | 'error'
-type Step = 'jd' | 'clarify' | 'brief'
+type Step = 'jd' | 'clarify' | 'brief' | 'discovery'
 type SearchState = 'idle' | 'searching' | 'done' | 'error'
 
 const RECRUITER_NAME = 'Harsha'
@@ -65,6 +67,7 @@ export function RecruiterWorkspaceScreen() {
   const [clarificationQuestions, setClarificationQuestions] = useState<ClarificationQuestion[]>([])
   const [clarificationAnswers, setClarificationAnswers] = useState<Record<string, string>>({})
   const [searchState, setSearchState] = useState<SearchState>('idle')
+  const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null)
   const titleInputRef = useRef<HTMLInputElement | null>(null)
 
   const greeting = `${getGreeting(new Date().getHours())}, ${RECRUITER_NAME}.`
@@ -166,8 +169,10 @@ export function RecruiterWorkspaceScreen() {
     setSearchState('searching')
 
     try {
-      await runCandidateSearch('', briefToSearchIntent(brief))
+      const response = await runCandidateSearch('', briefToSearchIntent(brief))
+      setSearchResponse(response)
       setSearchState('done')
+      setStep('discovery')
     } catch {
       setSearchState('error')
     }
@@ -323,6 +328,16 @@ export function RecruiterWorkspaceScreen() {
             onBackToJd={() => setStep('jd')}
             isSearching={searchState === 'searching'}
             searchState={searchState}
+          />
+        ) : null}
+
+        {step === 'discovery' ? (
+          <CandidateDiscoveryScreen
+            brief={brief}
+            onChangeBrief={updateBriefField}
+            searchResponse={searchResponse}
+            searchState={searchState}
+            onRunSearch={handleFindCandidates}
           />
         ) : null}
       </div>

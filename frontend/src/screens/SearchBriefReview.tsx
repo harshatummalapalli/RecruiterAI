@@ -10,10 +10,14 @@ type FieldChange = (path: string, updater: (current: SearchBrief) => SearchBrief
 type SearchBriefReviewProps = {
   brief: SearchBrief
   onChange: FieldChange
-  onFindCandidates: () => void
-  onBackToJd: () => void
-  isSearching: boolean
-  searchState: 'idle' | 'searching' | 'done' | 'error'
+  onFindCandidates?: () => void
+  onBackToJd?: () => void
+  isSearching?: boolean
+  searchState?: 'idle' | 'searching' | 'done' | 'error'
+  variant?: 'standalone' | 'embedded'
+  submitLabel?: string
+  submitBusyLabel?: string
+  backLabel?: string
 }
 
 const SEARCH_GEOGRAPHIES: Array<{ value: SearchGeography; label: string }> = [
@@ -36,7 +40,7 @@ function locationLabel(entry: LocationEntry): string {
   return parts.length ? parts.join(', ') : 'Not specified'
 }
 
-function summarizeLocations(brief: SearchBrief): string {
+export function summarizeLocations(brief: SearchBrief): string {
   if (brief.location.searchGeography === 'global') {
     return 'Global'
   }
@@ -53,14 +57,14 @@ function summarizeLocations(brief: SearchBrief): string {
   return base
 }
 
-function summarizeCompanies(include: string[], exclude: string[]): string {
+export function summarizeCompanies(include: string[], exclude: string[]): string {
   const parts: string[] = []
   if (include.length) parts.push(`${include.length} target${include.length === 1 ? '' : 's'}`)
   if (exclude.length) parts.push(`${exclude.length} excluded`)
   return parts.length ? parts.join(' · ') : 'Not specified'
 }
 
-function summarizeSkills(required: string[], preferred: string[], excluded: string[]): string {
+export function summarizeSkills(required: string[], preferred: string[], excluded: string[]): string {
   const parts: string[] = []
   if (required.length) parts.push(`${required.length} required`)
   if (preferred.length) parts.push(`${preferred.length} preferred`)
@@ -68,7 +72,7 @@ function summarizeSkills(required: string[], preferred: string[], excluded: stri
   return parts.length ? parts.join(' · ') : 'Not specified'
 }
 
-function summarizeExperience(brief: SearchBrief): string {
+export function summarizeExperience(brief: SearchBrief): string {
   const { minimumYears, maximumYears } = brief.experience
   if (minimumYears && maximumYears) return `${minimumYears}–${maximumYears} years`
   if (minimumYears) return `${minimumYears}+ years`
@@ -76,7 +80,18 @@ function summarizeExperience(brief: SearchBrief): string {
   return 'Not specified'
 }
 
-export function SearchBriefReview({ brief, onChange, onFindCandidates, onBackToJd, isSearching, searchState }: SearchBriefReviewProps) {
+export function SearchBriefReview({
+  brief,
+  onChange,
+  onFindCandidates,
+  onBackToJd,
+  isSearching = false,
+  searchState = 'idle',
+  variant = 'standalone',
+  submitLabel = 'Find Candidates',
+  submitBusyLabel = 'Searching Crustdata…',
+  backLabel = 'Back to JD',
+}: SearchBriefReviewProps) {
   const scalarInput = (path: string, value: string, apply: (b: SearchBrief, v: string) => SearchBrief) => ({
     value,
     onChange: (event: ChangeEvent<HTMLInputElement>) => onChange(path, (current) => apply(current, event.target.value)),
@@ -144,8 +159,8 @@ export function SearchBriefReview({ brief, onChange, onFindCandidates, onBackToJ
   const radiusLocation = brief.location.locations[0]
   const showRadiusInput = brief.location.searchGeography === 'radius' && Boolean(radiusLocation?.zip)
 
-  return (
-    <div className="workspace__grid">
+  const fields = (
+    <>
       <section className="brief-panel" aria-label="Search brief">
         <div className="brief-section">
           <h2 className="brief-section__title">Role</h2>
@@ -388,6 +403,16 @@ export function SearchBriefReview({ brief, onChange, onFindCandidates, onBackToJ
           </div>
         </div>
       </section>
+    </>
+  )
+
+  if (variant === 'embedded') {
+    return fields
+  }
+
+  return (
+    <div className="workspace__grid">
+      {fields}
 
       <aside className="workspace__preview" aria-label="Search summary">
         <p className="workspace__preview-label">Search Summary</p>
@@ -432,15 +457,10 @@ export function SearchBriefReview({ brief, onChange, onFindCandidates, onBackToJ
       <div className="brief-actions">
         <button type="button" className="brief-back" onClick={onBackToJd}>
           <ArrowLeft size={15} aria-hidden="true" />
-          Back to JD
+          {backLabel}
         </button>
 
         <div className="brief-find-slot">
-          {searchState === 'done' ? (
-            <p className="workspace__status workspace__status--success">
-              <span aria-hidden="true">✓</span> Candidates found — review isn't built yet.
-            </p>
-          ) : null}
           {searchState === 'error' ? (
             <div className="workspace__status workspace__status--error" role="alert">
               <p>Unable to reach the search provider.</p>
@@ -459,10 +479,10 @@ export function SearchBriefReview({ brief, onChange, onFindCandidates, onBackToJ
             {isSearching ? (
               <>
                 <span className="workspace__spinner" aria-hidden="true" />
-                <span>Searching Crustdata…</span>
+                <span>{submitBusyLabel}</span>
               </>
             ) : (
-              <span>Find Candidates</span>
+              <span>{submitLabel}</span>
             )}
           </button>
         </div>
