@@ -88,6 +88,17 @@ export function detectPrimaryTechCandidates(text: string): string[] {
   return found
 }
 
+/** Character offset of a primary-tech candidate's first mention, for callers
+ * that need to reason about nearby words (e.g. "primarily", "nice to have"). */
+export function findPrimaryTechMentionIndex(text: string, label: string): number {
+  const candidate = PRIMARY_TECH_CANDIDATES.find((entry) => entry.label === label)
+  if (!candidate) {
+    return -1
+  }
+  const match = candidate.pattern.exec(text)
+  return match ? match.index : -1
+}
+
 const US_STATE_CODES = new Set([
   'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME',
   'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA',

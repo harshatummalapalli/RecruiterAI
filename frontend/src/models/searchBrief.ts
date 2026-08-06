@@ -9,6 +9,9 @@
 import type { SearchIntent } from '../types'
 import type { LocalExtraction, LocationEntry } from '../screens/localJdExtraction'
 import { extractLocally, normalizeSkillList, rootTechLabelForSkill } from '../screens/localJdExtraction'
+import { classifyLanguageSignal } from '../intelligence/languageReasoning'
+import { expandTitle } from '../intelligence/titleIntelligence'
+import { detectAiConcepts, createEmptyAiConceptFlags, type AiConceptFlags } from '../intelligence/technologyGraph'
 
 export type WorkMode = 'remote' | 'hybrid' | 'onsite'
 export type EmploymentType = 'Full-time' | 'Contract' | 'Contract-to-hire' | 'Internship' | 'Part-time'
@@ -24,6 +27,10 @@ export type SearchBrief = {
     excludedTitles: string[]
     seniority: string
   }
+  /** Internal-only, Intelligence-Layer-derived signal — never rendered in
+   * the UI. Populated straight from explicit JD text mentions, never
+   * inferred beyond that evidence. */
+  aiFocus: AiConceptFlags
   location: {
     searchGeography: SearchGeography
     country: string
@@ -41,7 +48,7 @@ export type SearchBrief = {
     excluded: string[]
     primaryTechnology: {
       candidates: string[]
-      mode: 'single' | 'multiple' | null
+      mode: 'single' | 'multiple' | 'acceptable' | null
       selected: string | null
     }
   }
@@ -69,6 +76,7 @@ export function createEmptySearchBrief(): SearchBrief {
       excludedTitles: [...DEFAULT_EXCLUDED_TITLES],
       seniority: '',
     },
+    aiFocus: createEmptyAiConceptFlags(),
     location: {
       searchGeography: 'multiple',
       country: '',
@@ -124,13 +132,14 @@ function withholdAmbiguousTech(skills: string[], ambiguousCandidates: string[]):
 export function applyLocalExtraction(brief: SearchBrief, jdText: string, locked: ReadonlySet<string>): SearchBrief {
   const extraction: LocalExtraction = extractLocally(jdText)
 
-  return {
+  let next: SearchBrief = {
     ...brief,
     role: {
       ...brief.role,
       primaryTitle: locked.has('role.primaryTitle') ? brief.role.primaryTitle : extraction.roleTitle ?? '',
       seniority: locked.has('role.seniority') ? brief.role.seniority : extraction.seniority ?? '',
     },
+    aiFocus: detectAiConcepts(jdText),
     location: {
       ...brief.location,
       locations: locked.has('location.locations') ? brief.location.locations : extraction.locations,
@@ -157,6 +166,24 @@ export function applyLocalExtraction(brief: SearchBrief, jdText: string, locked:
       ? brief.employmentTypes
       : (extraction.employmentTypes as EmploymentType[]),
   }
+
+  // Multi-language reasoning: only leave this unresolved (mode: null) when
+  // the Intelligence Layer is genuinely unsure — in every other case, apply
+  // the same resolution a recruiter would have picked, so a clarifying
+  // question is never asked for something already answerable from the text.
+  if (!locked.has('skills.primaryTechnology') && extraction.primaryTechCandidates.length > 1) {
+    const classification = classifyLanguageSignal(jdText, extraction.primaryTechCandidates)
+    if (classification.signal === 'polyglot') {
+      next = resolveMultiplePrimaryTechnologies(next)
+    } else if (classification.signal === 'primary-with-support' && classification.dominant) {
+      next = resolveSinglePrimaryTechnology(next, classification.dominant)
+    } else if (classification.signal === 'acceptable-backgrounds') {
+      next = resolveAcceptableBackgrounds(next)
+    }
+    // 'ambiguous' — leave mode null; the clarification engine will ask.
+  }
+
+  return next
 }
 
 /** Stage 2 — AI parse. Enriches empty/unlocked fields with the backend's understanding; never blanks a field the recruiter already has. */
@@ -180,13 +207,28 @@ export function applyAiParse(brief: SearchBrief, intent: SearchIntent, locked: R
   // arbitration applies regardless of which stage produced the skill.
   const activeCandidates = locked.has('skills.primaryTechnology') ? [] : brief.skills.primaryTechnology.candidates
 
-  return {
+  // Title Intelligence: the backend parser only ever returns "equivalent"
+  // titles (as include_titles), never past titles. When it comes back empty,
+  // or to seed past titles at all, reason from the resolved title/seniority
+  // instead of leaving the recruiter to type every variant by hand.
+  const resolvedTitle = pick('role.primaryTitle', intent.role.title, brief.role.primaryTitle)
+  const resolvedSeniority = pick('role.seniority', intent.role.seniority, brief.role.seniority)
+  const titleExpansion = expandTitle(resolvedTitle, resolvedSeniority)
+
+  let next: SearchBrief = {
     ...brief,
     role: {
       ...brief.role,
-      primaryTitle: pick('role.primaryTitle', intent.role.title, brief.role.primaryTitle),
-      equivalentTitles: pickList('role.equivalentTitles', intent.titles.include_titles, brief.role.equivalentTitles),
-      seniority: pick('role.seniority', intent.role.seniority, brief.role.seniority),
+      primaryTitle: resolvedTitle,
+      equivalentTitles: pickList(
+        'role.equivalentTitles',
+        intent.titles.include_titles?.length ? intent.titles.include_titles : titleExpansion.equivalentTitles,
+        brief.role.equivalentTitles,
+      ),
+      pastTitles: locked.has('role.pastTitles')
+        ? brief.role.pastTitles
+        : (brief.role.pastTitles.length ? brief.role.pastTitles : titleExpansion.pastTitles),
+      seniority: resolvedSeniority,
     },
     location: {
       ...brief.location,
@@ -233,6 +275,30 @@ export function applyAiParse(brief: SearchBrief, intent: SearchIntent, locked: R
       brief.employmentTypes,
     ),
   }
+
+  // The Intelligence Layer may have already confidently resolved the
+  // primary-technology question during local extraction (stage 1), before
+  // this AI parse ever ran. That resolution isn't locked — it wasn't a
+  // recruiter decision — so the AI's own required/preferred arrays above
+  // would otherwise silently drop it. Re-apply it on top, the same way an
+  // explicit recruiter clarification answer is applied after AI parse.
+  if (!locked.has('skills.primaryTechnology')) {
+    switch (brief.skills.primaryTechnology.mode) {
+      case 'multiple':
+        next = resolveMultiplePrimaryTechnologies(next)
+        break
+      case 'acceptable':
+        next = resolveAcceptableBackgrounds(next)
+        break
+      case 'single':
+        if (brief.skills.primaryTechnology.selected) {
+          next = resolveSinglePrimaryTechnology(next, brief.skills.primaryTechnology.selected)
+        }
+        break
+    }
+  }
+
+  return next
 }
 
 /** Mode 1 — a single primary technology: it moves into Required, the rest
@@ -249,6 +315,22 @@ export function resolveSinglePrimaryTechnology(brief: SearchBrief, selected: str
       required: Array.from(new Set([...brief.skills.required, ...selectedSkills])),
       preferred: Array.from(new Set([...brief.skills.preferred, ...otherSkills])),
       primaryTechnology: { ...brief.skills.primaryTechnology, mode: 'single', selected },
+    },
+  }
+}
+
+/** Multiple acceptable backgrounds — any one of the candidates is fine, so
+ * none of them are individually required. All move to Preferred instead,
+ * where matching any of them still lifts a candidate's score. */
+export function resolveAcceptableBackgrounds(brief: SearchBrief): SearchBrief {
+  const allSkills = normalizeSkillList(brief.skills.primaryTechnology.candidates)
+
+  return {
+    ...brief,
+    skills: {
+      ...brief.skills,
+      preferred: Array.from(new Set([...brief.skills.preferred, ...allSkills])),
+      primaryTechnology: { ...brief.skills.primaryTechnology, mode: 'acceptable', selected: null },
     },
   }
 }
@@ -301,6 +383,22 @@ export function applyClarificationAnswer(brief: SearchBrief, questionId: string,
     case 'seniority':
       return { ...brief, role: { ...brief.role, seniority: value } }
 
+    case 'overConstrainedSkills':
+      if (value === '__loosen__') {
+        return {
+          ...brief,
+          skills: {
+            ...brief.skills,
+            required: [],
+            preferred: Array.from(new Set([...brief.skills.preferred, ...brief.skills.required])),
+          },
+        }
+      }
+      return brief
+
+    case 'titleExperienceMismatch':
+      return value === '__keep__' ? brief : { ...brief, experience: { ...brief.experience, minimumYears: value } }
+
     default:
       return brief
   }
@@ -314,6 +412,8 @@ export const CLARIFICATION_LOCK_PATHS: Record<string, string[]> = {
   experienceRange: ['experience.minimumYears', 'experience.maximumYears'],
   workMode: ['location.workModes'],
   seniority: ['role.seniority'],
+  overConstrainedSkills: ['skills.required', 'skills.preferred'],
+  titleExperienceMismatch: ['experience.minimumYears'],
 }
 
 /** For calling the existing /search endpoint — maps only the fields that endpoint understands today. */
@@ -351,10 +451,15 @@ export function briefToSearchIntent(brief: SearchBrief): SearchIntent {
       preferred_skills: brief.skills.preferred,
     },
     previous_background: {
-      preferred_technologies: [],
+      preferred_technologies: brief.skills.primaryTechnology.candidates,
       preferred_companies: brief.companies.include,
     },
-    ai_focus: {},
+    ai_focus: {
+      llm: brief.aiFocus.llm,
+      rag: brief.aiFocus.rag,
+      agentic_ai: brief.aiFocus.agentic,
+      mcp: brief.aiFocus.mcp,
+    },
     company_preferences: {
       exclude_current_companies: brief.companies.exclude,
       preferred_company_types: [],

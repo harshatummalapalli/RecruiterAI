@@ -5,10 +5,12 @@
 // single tap (radio/chip), never free text.
 
 import { detectAllCountryHints, detectAllExperienceRanges, detectPrimaryTechCandidates, extractLocally } from '../screens/localJdExtraction'
+import { classifyLanguageSignal } from '../intelligence/languageReasoning'
+import { detectOverConstrainedSkills, detectTitleExperienceMismatch } from '../intelligence/ruleEngine'
 
 export type ClarificationOption = { value: string; label: string }
 export type ClarificationQuestion = {
-  id: 'primaryTechnology' | 'locationCountry' | 'experienceRange' | 'workMode' | 'seniority'
+  id: string
   question: string
   options: ClarificationOption[]
 }
@@ -28,9 +30,13 @@ export function buildClarificationQuestions(jdText: string): ClarificationQuesti
   const extraction = extractLocally(text)
   const questions: ClarificationQuestion[] = []
 
-  // 1. Multiple backend languages / major technologies detected.
+  // 1. Multiple backend languages / major technologies detected — but only
+  // ask when the Intelligence Layer can't confidently tell whether this is a
+  // genuine polyglot requirement, a set of interchangeable backgrounds, or a
+  // primary language with supporting technologies. Confident cases resolve
+  // silently in the Search Brief (see applyLocalExtraction).
   const primaryTechCandidates = detectPrimaryTechCandidates(text)
-  if (primaryTechCandidates.length > 1) {
+  if (primaryTechCandidates.length > 1 && classifyLanguageSignal(text, primaryTechCandidates).signal === 'ambiguous') {
     questions.push({
       id: 'primaryTechnology',
       question: 'Multiple major technologies were detected — how should we treat them?',
@@ -91,6 +97,17 @@ export function buildClarificationQuestions(jdText: string): ClarificationQuesti
       question: `"${extraction.roleTitle}" is a fairly broad title — what level are you hiring for?`,
       options: SENIORITY_OPTIONS.map((level) => ({ value: level, label: level })),
     })
+  }
+
+  // 6. Rule Engine — unrealistic or over-constrained combinations.
+  const overConstrained = detectOverConstrainedSkills(extraction.requiredSkills.length)
+  if (overConstrained) {
+    questions.push(overConstrained)
+  }
+
+  const titleExperienceMismatch = detectTitleExperienceMismatch(extraction.roleTitle, extraction.experience.minimumYears)
+  if (titleExperienceMismatch) {
+    questions.push(titleExperienceMismatch)
   }
 
   return questions.slice(0, MAX_QUESTIONS)
