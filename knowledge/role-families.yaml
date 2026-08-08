@@ -1,0 +1,260 @@
+# Role Families — recruiter knowledge, not detection logic.
+#
+# Each entry describes what's generally true about a role family:
+# responsibilities, the technology families it typically draws from, common
+# career transitions, and related families. `detection_hints` is the one
+# section aimed at helping automated matching find a candidate family at
+# all — plain keyword/phrase lists, not regular expressions, so this stays
+# engine-agnostic.
+#
+# `ts_role_family` cross-references the exact string used today by the
+# `RoleFamily` union in frontend/src/intelligence/knowledge/roleFamilies.ts.
+
+role_families:
+  - id: backend-engineering
+    label: Backend Engineering
+    ts_role_family: Backend Engineer
+    common_responsibilities:
+      - API design
+      - service architecture
+      - database design
+      - system reliability
+      - performance and scalability
+    common_technology_families: [programming-languages, databases, cloud, containers, messaging]
+    common_career_transitions:
+      - Senior Backend Engineer
+      - Staff Engineer
+      - Platform Engineer
+      - Engineering Manager
+    related_role_families: [full-stack-engineering, platform-engineering, data-engineering]
+    detection_hints:
+      title_phrases: [backend engineer, back-end engineer, server-side engineer]
+      technology_phrases: [api, microservices, database, server-side]
+
+  - id: frontend-engineering
+    label: Frontend Engineering
+    ts_role_family: Frontend Engineer
+    common_responsibilities:
+      - UI implementation
+      - client-side performance
+      - accessibility
+      - design-system work
+    common_technology_families: [frameworks, programming-languages]
+    common_career_transitions:
+      - Senior Frontend Engineer
+      - Staff Engineer
+      - Full Stack Engineer
+    related_role_families: [full-stack-engineering, mobile-engineering]
+    detection_hints:
+      title_phrases: [frontend engineer, front-end engineer]
+      technology_phrases: [react, angular, vue, css, accessibility]
+
+  - id: full-stack-engineering
+    label: Full Stack Engineering
+    ts_role_family: Full Stack Engineer
+    common_responsibilities:
+      - end-to-end feature delivery
+      - API design
+      - UI implementation
+    common_technology_families: [programming-languages, frameworks, databases, cloud]
+    common_career_transitions:
+      - Senior Full Stack Engineer
+      - Backend Engineer
+      - Frontend Engineer
+      - Staff Engineer
+    related_role_families: [backend-engineering, frontend-engineering]
+    detection_hints:
+      title_phrases: [full stack engineer, full-stack engineer]
+      technology_phrases: [react, node.js, end-to-end feature]
+
+  - id: ai-engineering
+    label: AI Engineering
+    ts_role_family: AI Software Engineer
+    common_responsibilities:
+      - LLM application development
+      - retrieval pipelines
+      - production AI integration
+    common_technology_families: [ai, vector-databases, programming-languages, cloud]
+    common_career_transitions:
+      - Senior AI Engineer
+      - Applied AI Engineer
+      - ML Engineer
+      - Staff Engineer
+    related_role_families: [applied-ai-engineering, ml-engineering, backend-engineering]
+    detection_hints:
+      title_phrases: [ai engineer, ai software engineer]
+      technology_phrases: [llm, large language model, generative ai, rag, agentic, prompt engineering]
+
+  - id: applied-ai-engineering
+    label: Applied AI Engineering
+    ts_role_family: Applied AI Engineer
+    common_responsibilities:
+      - applying foundation models to product problems
+      - evaluation pipelines
+      - fine-tuning
+    common_technology_families: [ai, vector-databases, programming-languages]
+    common_career_transitions:
+      - AI Software Engineer
+      - ML Engineer
+      - Staff Engineer
+    related_role_families: [ai-engineering, ml-engineering]
+    detection_hints:
+      title_phrases: [applied ai engineer]
+      technology_phrases: [llm, rag, fine-tuning, fine tuning, production ai]
+
+  - id: ml-engineering
+    label: ML Engineering
+    ts_role_family: ML Engineer
+    common_responsibilities:
+      - model training
+      - MLOps
+      - feature pipelines
+      - model serving
+    common_technology_families: [ai, databases, cloud, infrastructure]
+    common_career_transitions:
+      - Senior ML Engineer
+      - Applied AI Engineer
+      - Data Scientist
+      - Staff Engineer
+    related_role_families: [applied-ai-engineering, ai-engineering, data-science, data-engineering]
+    detection_hints:
+      title_phrases: [ml engineer, machine learning engineer]
+      technology_phrases: [pytorch, tensorflow, mlops, model training, feature engineering]
+
+  - id: data-engineering
+    label: Data Engineering
+    ts_role_family: Data Engineer
+    common_responsibilities:
+      - data pipeline design
+      - data warehousing
+      - data quality
+    common_technology_families: [databases, messaging, cloud, infrastructure]
+    common_career_transitions:
+      - Senior Data Engineer
+      - Data Scientist
+      - ML Engineer
+      - Staff Engineer
+    related_role_families: [data-science, ml-engineering, platform-engineering]
+    detection_hints:
+      title_phrases: [data engineer]
+      technology_phrases: [etl, airflow, spark, data pipeline, data warehouse]
+
+  - id: data-science
+    label: Data Science
+    ts_role_family: Data Scientist
+    common_responsibilities:
+      - statistical modeling
+      - experimentation
+      - analysis and reporting
+    common_technology_families: [databases, ai]
+    common_career_transitions:
+      - Senior Data Scientist
+      - ML Engineer
+      - Staff Data Scientist
+    related_role_families: [ml-engineering, data-engineering]
+    detection_hints:
+      title_phrases: [data scientist]
+      technology_phrases: [statistics, pandas, jupyter, experimentation, a/b testing]
+
+  - id: devops
+    label: DevOps
+    ts_role_family: DevOps Engineer
+    common_responsibilities:
+      - CI/CD pipelines
+      - infrastructure automation
+      - release engineering
+    common_technology_families: [infrastructure, cloud, containers, observability]
+    common_career_transitions:
+      - Senior DevOps Engineer
+      - Platform Engineer
+      - Staff Engineer
+    related_role_families: [platform-engineering, security-engineering]
+    detection_hints:
+      title_phrases: [devops engineer]
+      technology_phrases: [ci/cd, terraform, ansible, infrastructure as code]
+
+  - id: platform-engineering
+    label: Platform Engineering
+    ts_role_family: Platform Engineer
+    common_responsibilities:
+      - internal developer platforms
+      - developer experience
+      - infrastructure reliability
+    common_technology_families: [infrastructure, cloud, containers, observability]
+    common_career_transitions:
+      - Senior Platform Engineer
+      - Staff Engineer
+      - Principal Engineer
+    related_role_families: [devops, backend-engineering, security-engineering]
+    detection_hints:
+      title_phrases: [platform engineer]
+      technology_phrases: [internal tooling, developer experience, kubernetes, golden path]
+
+  - id: security-engineering
+    label: Security Engineering
+    ts_role_family: Security Engineer
+    common_responsibilities:
+      - threat modeling
+      - vulnerability management
+      - security tooling
+    common_technology_families: [infrastructure, cloud, observability]
+    common_career_transitions:
+      - Senior Security Engineer
+      - Staff Security Engineer
+      - Security Architect
+    related_role_families: [platform-engineering, devops]
+    detection_hints:
+      title_phrases: [security engineer]
+      technology_phrases: [penetration testing, vulnerability, soc 2, threat model]
+
+  - id: qa
+    label: QA
+    ts_role_family: QA Engineer
+    common_responsibilities:
+      - test automation
+      - quality processes
+      - release validation
+    common_technology_families: [programming-languages, infrastructure]
+    common_career_transitions:
+      - Senior QA Engineer
+      - SDET
+      - QA Lead
+    related_role_families: [backend-engineering, devops]
+    detection_hints:
+      title_phrases: [qa engineer, quality assurance engineer, sdet]
+      technology_phrases: [test automation, selenium, cypress, test coverage]
+
+  - id: mobile-engineering
+    label: Mobile Engineering
+    ts_role_family: Mobile Engineer
+    common_responsibilities:
+      - native app development
+      - app performance
+      - release management
+    common_technology_families: [programming-languages, frameworks]
+    common_career_transitions:
+      - Senior Mobile Engineer
+      - Staff Engineer
+      - Mobile Lead
+    related_role_families: [frontend-engineering, full-stack-engineering]
+    detection_hints:
+      title_phrases: [mobile engineer]
+      technology_phrases: [ios, android, swift, kotlin, react native]
+
+  - id: management
+    label: Management
+    ts_role_family: Engineering Manager
+    common_responsibilities:
+      - people management
+      - team roadmap ownership
+      - hiring and growth
+      - cross-team coordination
+    common_technology_families: []
+    common_career_transitions:
+      - Senior Engineering Manager
+      - Director of Engineering
+      - VP of Engineering
+    related_role_families: [backend-engineering, platform-engineering]
+    detection_hints:
+      title_phrases: [engineering manager, em, manager engineering]
+      responsibility_phrases: [manage a team, direct reports, people management, 1:1s, growing engineers]

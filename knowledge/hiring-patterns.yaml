@@ -1,0 +1,63 @@
+# Hiring Patterns — recruiter guidance, not rules.
+#
+# Nothing here filters, blocks, or validates a candidate or a search. It is
+# advisory context a future reasoning stage may surface to a recruiter — the
+# same way an experienced colleague might mention "these usually come from
+# backend" in passing. It should never change what a Search Brief actually
+# requires.
+
+by_role_family:
+  - role_family_id: ai-engineering
+    guidance:
+      - AI Engineers usually require backend experience.
+      - Strong AI Engineer candidates often come from general backend roles that later added LLM/RAG work, not from research backgrounds alone.
+
+  - role_family_id: applied-ai-engineering
+    guidance:
+      - AI Engineers usually require backend experience.
+
+  - role_family_id: platform-engineering
+    guidance:
+      - Platform Engineers commonly come from backend or infrastructure.
+      - A Platform Engineering JD that only lists Kubernetes/Terraform without any developer-experience language may really be describing a DevOps Engineer role.
+
+  - role_family_id: ml-engineering
+    guidance:
+      - ML Engineers often overlap with Data Scientists on modeling background.
+      - Production ML Engineering (serving, monitoring, retraining pipelines) is a distinct skill set from research-oriented modeling; a JD emphasizing "production" usually wants the former.
+
+  - role_family_id: devops
+    guidance:
+      - DevOps Engineers commonly come from backend or infrastructure.
+
+  - role_family_id: management
+    guidance:
+      - Engineering Managers are usually hired from senior IC ranks within the same domain.
+      - A first-time EM candidate from Senior/Lead is common; expecting prior formal management experience for a first-line EM role is often an unrealistic constraint (see common-hiring-mistakes.yaml).
+
+  - role_family_id: security-engineering
+    guidance:
+      - Security Engineers often come from platform, infrastructure, or backend backgrounds with an added security specialization, rather than security being their only background.
+
+  - role_family_id: data-engineering
+    guidance:
+      - Data Engineers and Analytics Engineers are commonly confused in JDs; see data-roles.yaml.
+
+by_seniority:
+  - seniority: Staff
+    guidance:
+      - Staff Engineers are usually architecture-focused.
+      - Staff-level JDs that read like a list of hands-on coding tasks with no mention of cross-team influence may be mis-leveled (likely Senior).
+
+  - seniority: Principal
+    guidance:
+      - Principal Engineers often overlap with Architects.
+      - Principal-level searches are usually small and slow by nature — a large candidate pool at this level is uncommon; an "over-constrained search" flag at Principal level deserves extra scrutiny before assuming it's a JD problem rather than a genuinely narrow market.
+
+  - seniority: Lead
+    guidance:
+      - Lead Engineer is a technical-coordination title, not a people-management title — pairing it with "direct reports" language in a JD usually signals the recruiter actually means Engineering Manager.
+
+  - seniority: Junior
+    guidance:
+      - Junior searches with a long required-skills list are unusually constrained for the level — most Junior hiring should weight fundamentals and trajectory over specific tool experience.

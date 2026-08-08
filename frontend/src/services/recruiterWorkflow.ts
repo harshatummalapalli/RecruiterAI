@@ -1,4 +1,5 @@
 import type { Candidate, SearchIntent, SearchResponse } from '../types'
+import type { LocationDetail } from '../models/searchBrief'
 
 export type RecruiterAction = 'shortlist' | 'reject' | 'note' | 'export' | 'view'
 
@@ -179,7 +180,12 @@ export const parseJobDescription = async (jdText: string) => {
   return response.json() as Promise<SearchIntent>
 }
 
-export const runCandidateSearch = async (_jdText: string, intent: SearchIntent) => {
+export const runCandidateSearch = async (
+  _jdText: string,
+  intent: SearchIntent,
+  location?: LocationDetail,
+  options?: { searchId?: string; debug?: boolean },
+) => {
   const response = await fetch(`${API_BASE_URL}/search`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -189,6 +195,9 @@ export const runCandidateSearch = async (_jdText: string, intent: SearchIntent) 
       page_size: 10,
       max_pages: 1,
       autocomplete: true,
+      location,
+      search_id: options?.searchId,
+      debug: options?.debug ?? false,
     }),
   })
 
@@ -197,6 +206,33 @@ export const runCandidateSearch = async (_jdText: string, intent: SearchIntent) 
   }
 
   return response.json() as Promise<SearchResponse>
+}
+
+export const loadPersistedSearch = async (searchId: string): Promise<SearchResponse | null> => {
+  const response = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(searchId)}`)
+  if (response.status === 404) {
+    return null
+  }
+  if (!response.ok) {
+    throw new Error('Failed to reload search')
+  }
+  return response.json() as Promise<SearchResponse>
+}
+
+export const updateCandidateRecord = async (
+  searchId: string,
+  candidateId: string,
+  update: { decision?: string; note?: string },
+): Promise<{ recruiter_decisions: Record<string, string>; notes: Record<string, Array<{ text: string; created_at: string }>> }> => {
+  const response = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(searchId)}/candidate`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ candidate_id: candidateId, ...update }),
+  })
+  if (!response.ok) {
+    throw new Error('Failed to save candidate update')
+  }
+  return response.json()
 }
 
 export const exportCandidateResults = async (_jdText: string, intent: SearchIntent) => {

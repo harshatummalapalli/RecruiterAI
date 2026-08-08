@@ -191,11 +191,14 @@ def test_search_with_options_retries_rate_limit(monkeypatch) -> None:
     assert sleep_calls == [0.25]
 
 
-def test_build_payload_includes_autocomplete_when_requested() -> None:
+def test_build_payload_never_forwards_autocomplete_to_crustdata() -> None:
+    # CrustData's /person/search API rejects an "autocomplete" field outright
+    # (400 invalid_request, extra_forbidden) — the generic `autocomplete`
+    # request option must never reach the actual CrustData payload.
     provider = CrustDataProvider()
     payload = provider._build_payload(SearchQuery(include_titles=["Software Engineer"], required_skills=["Python"]), options={"autocomplete": True})
 
-    assert payload["autocomplete"] is True
+    assert "autocomplete" not in payload
     assert payload["search"]["query"] == "Software Engineer Python"
 
 

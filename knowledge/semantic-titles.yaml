@@ -1,0 +1,52 @@
+# Semantic Title Knowledge — title equivalence groups.
+#
+# Groups of titles recruiters treat as effectively interchangeable, even
+# though the strings don't match. Membership in a group does not imply the
+# titles are identical in every organization — only that they commonly
+# describe the same role.
+
+title_equivalence_groups:
+  - id: applied-ai-engineer-group
+    titles: [Applied AI Engineer, LLM Engineer, Generative AI Engineer]
+    notes: >
+      All three commonly describe an engineer building product features on
+      top of foundation models (prompting, retrieval, fine-tuning) rather
+      than training models from scratch.
+
+  - id: sre-group
+    titles: [Site Reliability Engineer, SRE, Platform Reliability Engineer]
+
+  - id: backend-group
+    titles: [Backend Engineer, Backend Developer, Server-side Engineer]
+
+  - id: frontend-group
+    titles: [Frontend Engineer, Frontend Developer, UI Engineer]
+
+  - id: full-stack-group
+    titles: [Full Stack Engineer, Full Stack Developer, Generalist Engineer]
+
+  - id: ml-engineer-group
+    titles: [ML Engineer, Machine Learning Engineer]
+
+  - id: data-engineer-group
+    titles: [Data Engineer, Data Pipeline Engineer]
+
+  - id: devops-group
+    titles: [DevOps Engineer, Infrastructure Engineer, Release Engineer]
+
+  - id: qa-group
+    titles: [QA Engineer, SDET, Test Engineer]
+
+  - id: engineering-manager-group
+    titles: ["Engineering Manager", "Team Lead, Engineering"]
+
+  - id: mlops-group
+    titles: [MLOps Engineer, ML Platform Engineer, ML Infrastructure Engineer]
+    notes: >
+      Distinct from "ML Engineer" in some organizations — MLOps skews
+      toward serving/training infrastructure rather than model development
+      itself. See ai-engineering-roles.yaml for the fuller distinction.
+
+  - id: analytics-engineer-group
+    titles: [Analytics Engineer, BI Engineer, Business Intelligence Engineer]
+    notes: See data-roles.yaml for how this differs from Data Engineer.

@@ -1,4 +1,5 @@
 import json
+import logging
 from pathlib import Path
 from typing import Any, Dict, Optional
 
@@ -20,6 +21,8 @@ from backend.models.search_intent import (
 )
 from backend.providers.base import BaseLLMProvider
 
+logger = logging.getLogger(__name__)
+
 
 class OpenAIProvider(BaseLLMProvider):
     """Concrete LLM provider that calls the OpenAI Responses API and returns a SearchIntent."""
@@ -31,7 +34,7 @@ class OpenAIProvider(BaseLLMProvider):
         """Convert a raw job description into a SearchIntent using the OpenAI API."""
         api_key = get_openai_api_key()
         if not api_key:
-            raise ConfigurationError("OPENAI_API_KEY is not configured. Set it in your environment or .env file.")
+            raise ConfigurationError("The language model configuration is unavailable.")
 
         client = self._client or OpenAI(api_key=api_key)
         system_prompt = self._load_prompt("system.txt")
@@ -46,11 +49,22 @@ class OpenAIProvider(BaseLLMProvider):
             text={"format": {"type": "json_object"}},
         )
 
+        usage = getattr(response, "usage", None)
+        if usage is not None:
+            logger.info(
+                "OpenAI JD parse completed",
+                extra={
+                    "input_tokens": getattr(usage, "input_tokens", None),
+                    "output_tokens": getattr(usage, "output_tokens", None),
+                    "total_tokens": getattr(usage, "total_tokens", None),
+                },
+            )
+
         content = self._extract_response_text(response)
         try:
             raw_response = json.loads(content)
         except json.JSONDecodeError as exc:
-            raise ParsingError("OpenAI response was not valid JSON") from exc
+            raise ParsingError("The search brief could not be prepared.") from exc
         return self._build_search_intent(raw_response)
 
     def _load_prompt(self, filename: str) -> str:
@@ -94,6 +108,8 @@ class OpenAIProvider(BaseLLMProvider):
             location=Location(
                 countries=location_data.get("countries", []),
                 cities=location_data.get("cities", []),
+                zip_codes=location_data.get("zip_codes", []),
+                radius_miles=location_data.get("radius_miles"),
                 work_mode=location_data.get("work_mode"),
                 confidence_score=location_data.get("confidence_score"),
             ),

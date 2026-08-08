@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { Pencil } from 'lucide-react'
-import { parseJobDescription, runCandidateSearch } from '../services/recruiterWorkflow'
+import { parseJobDescription, runCandidateSearch, loadPersistedSearch } from '../services/recruiterWorkflow'
 import {
   applyAiParse,
   applyClarificationAnswer,
   applyLocalExtraction,
   briefToSearchIntent,
+  briefToLocationDetail,
   createEmptySearchBrief,
   CLARIFICATION_LOCK_PATHS,
   type SearchBrief,
@@ -14,6 +15,7 @@ import { buildClarificationQuestions, type ClarificationQuestion } from '../mode
 import { SearchBriefReview } from './SearchBriefReview'
 import { ClarificationReview } from './ClarificationReview'
 import { CandidateReviewScreen } from './CandidateReviewScreen'
+import { DebugPanel } from './DebugPanel'
 import type { SearchResponse } from '../types'
 import './RecruiterWorkspaceScreen.css'
 
@@ -22,6 +24,45 @@ type Step = 'jd' | 'clarify' | 'brief' | 'review'
 type SearchState = 'idle' | 'searching' | 'done' | 'error'
 
 const RECRUITER_NAME = 'Harsha'
+
+// A page refresh must reload the last search, not re-run OpenAI/CrustData.
+// The search RESULT lives on the backend (see backend/services/search_store.py);
+// this only remembers *which* search to reload, plus enough of the
+// recruiter's Search Brief editing state to make "Edit Brief" work
+// immediately after a reload without re-deriving it from scratch.
+const PERSISTED_SEARCH_KEY = 'recruiterai:lastSearch'
+
+type PersistedSearchPointer = {
+  searchId: string
+  jdText: string
+  brief: SearchBrief
+  lockedFields: string[]
+}
+
+function savePersistedSearchPointer(pointer: PersistedSearchPointer): void {
+  try {
+    window.localStorage.setItem(PERSISTED_SEARCH_KEY, JSON.stringify(pointer))
+  } catch {
+    // Best-effort only — persistence is a convenience, not a correctness requirement.
+  }
+}
+
+function readPersistedSearchPointer(): PersistedSearchPointer | null {
+  try {
+    const raw = window.localStorage.getItem(PERSISTED_SEARCH_KEY)
+    return raw ? (JSON.parse(raw) as PersistedSearchPointer) : null
+  } catch {
+    return null
+  }
+}
+
+function clearPersistedSearchPointer(): void {
+  try {
+    window.localStorage.removeItem(PERSISTED_SEARCH_KEY)
+  } catch {
+    // Best-effort only.
+  }
+}
 
 function getGreeting(hour: number): string {
   if (hour < 12) return 'Good morning'
@@ -68,12 +109,43 @@ export function RecruiterWorkspaceScreen() {
   const [clarificationAnswers, setClarificationAnswers] = useState<Record<string, string>>({})
   const [searchState, setSearchState] = useState<SearchState>('idle')
   const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null)
+  const [searchId, setSearchId] = useState<string | null>(null)
   const titleInputRef = useRef<HTMLInputElement | null>(null)
 
   const greeting = `${getGreeting(new Date().getHours())}, ${RECRUITER_NAME}.`
   const hasJdText = jdText.trim().length > 0
   const canParse = hasJdText && parseState !== 'parsing'
   const isBusy = parseState === 'parsing'
+
+  // On mount: if a previous search was persisted, reload it from the
+  // backend store and restore straight to Candidate Review — a refresh
+  // must never re-run OpenAI or CrustData. Only an explicit "Find
+  // Candidates" / "Run Search Again" click (handleFindCandidates) does that.
+  useEffect(() => {
+    const pointer = readPersistedSearchPointer()
+    if (!pointer) {
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      const response = await loadPersistedSearch(pointer.searchId).catch(() => null)
+      if (cancelled || !response) {
+        return
+      }
+      setJdText(pointer.jdText)
+      setBrief(pointer.brief)
+      setLockedFields(new Set(pointer.lockedFields))
+      setSearchId(pointer.searchId)
+      setSearchResponse(response)
+      setSearchState('done')
+      setParseState('success')
+      setStep('review')
+    })()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Stage 1 — local extraction. Recomputes on every keystroke and writes
   // straight into the canonical SearchBrief; fields the recruiter has
@@ -169,13 +241,41 @@ export function RecruiterWorkspaceScreen() {
     setSearchState('searching')
 
     try {
-      const response = await runCandidateSearch('', briefToSearchIntent(brief))
+      const response = await runCandidateSearch('', briefToSearchIntent(brief), briefToLocationDetail(brief), {
+        searchId: searchId ?? undefined,
+        debug: import.meta.env.DEV,
+      })
       setSearchResponse(response)
       setSearchState('done')
       setStep('review')
+      setSearchId(response.search_id)
+      savePersistedSearchPointer({
+        searchId: response.search_id,
+        jdText,
+        brief,
+        lockedFields: Array.from(lockedFields),
+      })
     } catch {
       setSearchState('error')
     }
+  }
+
+  // Persistence means a page load always restores the last search — this is
+  // the only way back to a blank slate. Clears the pointer (not the backend
+  // record itself, which stays reloadable by its old URL/id) and resets to
+  // the JD step.
+  const handleStartNewSearch = () => {
+    clearPersistedSearchPointer()
+    setJdText('')
+    setBrief(createEmptySearchBrief())
+    setLockedFields(new Set())
+    setParseState('idle')
+    setStep('jd')
+    setClarificationQuestions([])
+    setClarificationAnswers({})
+    setSearchState('idle')
+    setSearchResponse(null)
+    setSearchId(null)
   }
 
   const locationText = formatLocations(brief)
@@ -187,8 +287,15 @@ export function RecruiterWorkspaceScreen() {
     <main className="workspace">
       <div className="workspace__content">
         <header className="workspace__greeting">
-          <h1>{greeting}</h1>
-          <p>What are you hiring for today?</p>
+          <div>
+            <h1>{greeting}</h1>
+            <p>What are you hiring for today?</p>
+          </div>
+          {step !== 'jd' ? (
+            <button type="button" className="workspace__new-search" onClick={handleStartNewSearch}>
+              Start New Search
+            </button>
+          ) : null}
         </header>
 
         {step === 'jd' ? (
@@ -338,8 +445,11 @@ export function RecruiterWorkspaceScreen() {
             searchResponse={searchResponse}
             searchState={searchState}
             onRunSearch={handleFindCandidates}
+            searchId={searchId}
           />
         ) : null}
+
+        <DebugPanel jdText={jdText} brief={brief} searchResponse={searchResponse} />
       </div>
     </main>
   )

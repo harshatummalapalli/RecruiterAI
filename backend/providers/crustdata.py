@@ -30,6 +30,14 @@ class CrustDataProvider(BaseProvider):
         """Execute one request per search query and merge all normalized candidates."""
         return self.search_with_options(plan)
 
+    def debug_payloads(self, plan: SearchPlan, options: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+        """Build (without sending) the exact payload each query in the plan would
+        send to CrustData. Reuses the real payload-building code path — this is
+        never a mock/approximation — so Debug Mode shows the true request, and no
+        CrustData credits are spent computing it."""
+        options = options or {}
+        return [self._build_payload(search, options=options, cursor=options.get("cursor")) for search in plan.searches]
+
     def search_with_options(self, plan: SearchPlan, options: Optional[Dict[str, Any]] = None) -> List[Candidate]:
         """Execute one or more paginated requests per search query and merge the normalized candidates."""
         options = options or {}
@@ -94,8 +102,10 @@ class CrustDataProvider(BaseProvider):
         }
         if cursor is not None:
             payload["cursor"] = cursor
-        if options.get("autocomplete"):
-            payload["autocomplete"] = True
+        # Note: CrustData's /person/search API rejects an "autocomplete" field
+        # outright (400 invalid_request, extra_forbidden) as of API version
+        # 2025-11-01 — the generic `autocomplete` request option is accepted
+        # by our own /search endpoint but deliberately not forwarded here.
 
         query_text = self._build_search_query(search)
         if query_text:
@@ -204,8 +214,8 @@ class CrustDataProvider(BaseProvider):
         options = options or {}
         api_key = get_crustdata_api_key()
         if not api_key:
-            logger.error("CRUSTDATA_API_KEY is not configured")
-            raise ConfigurationError("CRUSTDATA_API_KEY is not configured. Set it in your environment or .env file.")
+            logger.warning("Sourcing configuration is unavailable")
+            raise ConfigurationError("Sourcing configuration is unavailable.")
 
         client = self._client or httpx.Client(timeout=10.0)
         should_close_client = self._client is None
@@ -229,8 +239,13 @@ class CrustDataProvider(BaseProvider):
                         )
                         time.sleep(delay_seconds)
                         continue
-                    logger.error("CrustData search request failed with HTTP status %s", status_code)
-                    raise ProviderError(f"CrustData search request failed with status {status_code}: {exc.response.text}") from exc
+                    logger.warning(
+                        "Sourcing request failed with HTTP status %s | payload=%s | response_body=%s",
+                        status_code,
+                        payload,
+                        exc.response.text[:2000],
+                    )
+                    raise ProviderError("The sourcing service could not complete the request.") from exc
                 except httpx.RequestError as exc:
                     if attempt < max_retries:
                         delay_seconds = retry_backoff_base * (2**attempt)
@@ -251,8 +266,8 @@ class CrustDataProvider(BaseProvider):
         try:
             return response.json()
         except ValueError as exc:
-            logger.error("CrustData search response was not valid JSON")
-            raise ProviderError("CrustData search response was not valid JSON") from exc
+            logger.warning("Sourcing response was invalid")
+            raise ProviderError("The sourcing service returned an invalid response.") from exc
 
     def _parse_candidates(self, response: Dict[str, Any]) -> List[Candidate]:
         """Normalize the provider response into Candidate objects."""

@@ -81,6 +81,6 @@ def test_search_endpoint_runs_full_pipeline_with_mock_provider() -> None:
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["provider"] == "mock"
+    assert payload["provider"] == "platform"
     assert payload["candidate_count"] == 1
     assert payload["diagnostics"]["total_queries"] >= 1

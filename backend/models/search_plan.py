@@ -15,6 +15,8 @@ class SearchQuery(BaseModel):
     preferred_skills: List[str] = Field(default_factory=list)
     countries: List[str] = Field(default_factory=list)
     cities: List[str] = Field(default_factory=list)
+    zip_codes: List[str] = Field(default_factory=list)
+    radius_miles: Optional[float] = None
     work_mode: Optional[str] = None
     minimum_years: Optional[int] = None
     maximum_years: Optional[int] = None
@@ -32,6 +34,7 @@ class SearchQuery(BaseModel):
         "preferred_skills",
         "countries",
         "cities",
+        "zip_codes",
         "preferred_companies",
         "exclude_current_companies",
         "preferred_company_types",

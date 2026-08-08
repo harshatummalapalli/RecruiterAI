@@ -3,9 +3,9 @@
 // here is assembled from fields the backend actually returned. Nothing is
 // invented, scored by a hidden model, or inferred beyond that evidence.
 
-import type { DiscoveryCandidate } from './discovery'
+import { matchVerdictFor, type DiscoveryCandidate, type MatchVerdict } from './discovery'
 
-export type Verdict = 'Strong Match' | 'Good Match' | 'Partial Match' | 'Weak Match'
+export type Verdict = MatchVerdict
 
 export type CandidateAssessment = {
   verdict: Verdict
@@ -34,24 +34,6 @@ function buildNarrative(candidate: DiscoveryCandidate): string {
     .map((clause) => toSentence(clause))
     .filter(Boolean)
     .join(' ')
-}
-
-function buildVerdict(candidate: DiscoveryCandidate): Verdict {
-  const { matchedRequiredSkills, missingRequiredSkills, titleMatch, experienceMatch } = candidate.explanation
-  const requiredTotal = matchedRequiredSkills.length + missingRequiredSkills.length
-  const requiredRatio = requiredTotal > 0 ? matchedRequiredSkills.length / requiredTotal : 0
-  const positives = [titleMatch, experienceMatch].filter((value) => value === true).length
-
-  if (requiredTotal > 0 && missingRequiredSkills.length === 0 && experienceMatch !== false) {
-    return 'Strong Match'
-  }
-  if (requiredRatio >= 0.5 || positives >= 1) {
-    return 'Good Match'
-  }
-  if (requiredRatio > 0 || matchedRequiredSkills.length > 0) {
-    return 'Partial Match'
-  }
-  return 'Weak Match'
 }
 
 function buildStrengths(candidate: DiscoveryCandidate): string[] {
@@ -110,7 +92,7 @@ function buildConcerns(candidate: DiscoveryCandidate): string[] {
 
 export function buildAssessment(candidate: DiscoveryCandidate): CandidateAssessment {
   return {
-    verdict: buildVerdict(candidate),
+    verdict: matchVerdictFor(candidate),
     narrative: buildNarrative(candidate),
     strengths: buildStrengths(candidate),
     concerns: buildConcerns(candidate),

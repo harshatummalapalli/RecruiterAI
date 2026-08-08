@@ -24,6 +24,21 @@ class MatchExplainer:
         company_match = self._matches_company(candidate.company, intent.previous_background.preferred_companies)
         experience_match = self._matches_experience(candidate.raw_data, intent.experience.minimum_years, intent.experience.maximum_years)
 
+        matched_titles = [candidate.title] if title_match and candidate.title else []
+        matched_skills = deduplicate_preserve_order(matched_required_skills + matched_preferred_skills)
+        missing_skills = deduplicate_preserve_order(missing_required_skills)
+        matched_location = candidate.location if location_match else None
+        matched_ai_technologies = self._candidate_ai_technologies(candidate)
+        matched_experience, missing_experience = self._experience_summary(candidate.raw_data, intent.experience.minimum_years, intent.experience.maximum_years)
+        potential_risks = self._build_potential_risks(
+            title_match=title_match,
+            location_match=location_match,
+            company_match=company_match,
+            experience_match=experience_match,
+            missing_skills=missing_skills,
+            missing_experience=missing_experience,
+        )
+
         summary = self._build_summary(
             title_match=title_match,
             location_match=location_match,
@@ -40,6 +55,14 @@ class MatchExplainer:
             missing_required_skills=missing_required_skills,
             matched_preferred_skills=matched_preferred_skills,
             missing_preferred_skills=missing_preferred_skills,
+            matched_titles=matched_titles,
+            matched_skills=matched_skills,
+            missing_skills=missing_skills,
+            matched_location=matched_location,
+            matched_experience=matched_experience,
+            matched_ai_technologies=matched_ai_technologies,
+            missing_experience=missing_experience,
+            potential_risks=potential_risks,
             title_match=title_match,
             location_match=location_match,
             company_match=company_match,
@@ -66,6 +89,28 @@ class MatchExplainer:
         if not candidate_title or not expected_titles:
             return False
         return equals_normalized_text(candidate_title, next((title for title in expected_titles if title), None))
+
+    def _candidate_ai_technologies(self, candidate: Candidate) -> List[str]:
+        raw_data = candidate.raw_data or {}
+        ai_technologies: List[str] = []
+        if isinstance(raw_data.get("ai_skills"), list):
+            ai_technologies.extend([skill for skill in raw_data["ai_skills"] if isinstance(skill, str)])
+        if isinstance(raw_data.get("skills"), list):
+            ai_technologies.extend([skill for skill in raw_data["skills"] if isinstance(skill, str)])
+        return deduplicate_preserve_order(ai_technologies)
+
+    def _experience_summary(self, raw_data: Optional[dict], minimum_years: Optional[int], maximum_years: Optional[int]) -> tuple[Optional[str], Optional[str]]:
+        years = None
+        if isinstance(raw_data, dict):
+            years = raw_data.get("years_experience")
+        if years is None:
+            return None, None
+        text = f"{years} years"
+        if minimum_years is not None and years < minimum_years:
+            return f"Requires at least {minimum_years} years of experience", f"Requires at least {minimum_years} years of experience"
+        if maximum_years is not None and years > maximum_years:
+            return f"Requires at most {maximum_years} years of experience", f"Requires at most {maximum_years} years of experience"
+        return text, None
 
     def _matches_location(
         self,
@@ -99,6 +144,19 @@ class MatchExplainer:
         if maximum_years is not None and years > maximum_years:
             return False
         return True
+
+    def _build_potential_risks(
+        self,
+        title_match: bool,
+        location_match: bool,
+        company_match: bool,
+        experience_match: bool,
+        missing_skills: List[str],
+        missing_experience: Optional[str],
+    ) -> List[str]:
+        if not experience_match and missing_experience:
+            return ["Experience is below the requested range"]
+        return []
 
     def _build_summary(
         self,

@@ -478,3 +478,41 @@ export function briefToSearchIntent(brief: SearchBrief): SearchIntent {
     ranking: { must_have: brief.skills.required, nice_to_have: brief.skills.preferred, bonus: [] },
   }
 }
+
+export type LocationDetail = {
+  search_geography: SearchGeography
+  countries: string[]
+  cities: string[]
+  zip_codes: string[]
+  radius_miles: number | null
+  work_mode: string | null
+}
+
+/** The recruiter's exact, already-resolved location — sent to the backend
+ * alongside the prose JD so it never has to re-derive location from a
+ * second, lossy OpenAI pass. Unlike `briefToSearchIntent`'s `cities` field
+ * (which munges city+state+zip into one string for the legacy prose-based
+ * pipeline), every field here stays a clean, independently filterable list —
+ * this is what actually reaches the provider's structured filters. */
+export function briefToLocationDetail(brief: SearchBrief): LocationDetail {
+  const geography = brief.location.searchGeography
+  const locations = geography === 'multiple' || geography === 'radius' ? brief.location.locations : []
+
+  const countries =
+    geography === 'country' && brief.location.country
+      ? [brief.location.country]
+      : Array.from(new Set(locations.map((entry) => entry.country).filter((value) => value.trim())))
+
+  const cities = Array.from(new Set(locations.map((entry) => entry.city).filter((value) => value.trim())))
+  const zipCodes = Array.from(new Set(locations.map((entry) => entry.zip).filter((value) => value.trim())))
+  const parsedRadius = geography === 'radius' && brief.location.radius ? Number(brief.location.radius) : NaN
+
+  return {
+    search_geography: geography,
+    countries,
+    cities,
+    zip_codes: zipCodes,
+    radius_miles: Number.isFinite(parsedRadius) ? parsedRadius : null,
+    work_mode: brief.location.workModes[0] ?? null,
+  }
+}

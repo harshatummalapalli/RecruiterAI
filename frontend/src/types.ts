@@ -82,8 +82,11 @@ export interface Candidate {
 export interface SearchResponse {
   provider: string
   demo?: boolean
+  search_id: string
   candidate_count: number
   candidates: Candidate[]
   explanations: Array<Record<string, unknown>>
   diagnostics: Record<string, unknown>
+  warnings?: string[]
+  debug?: Record<string, unknown> | null
 }

@@ -1,0 +1,56 @@
+# Technology Families — relationships only. No ranking.
+#
+# Each family is a flat set of related-but-distinct technologies. Order
+# carries no meaning — there is no "primary" or "best" member of a family.
+# This is what lets reasoning ask "what family does this technology belong
+# to, and what else is in it?" without hardcoding technology-specific logic.
+#
+# Note: `.NET Ecosystem` is deliberately its own family, separate from
+# `Programming Languages` — C#, .NET, .NET Core, ASP.NET, ASP.NET Core, and
+# Entity Framework are related but individually distinct and individually
+# searchable technologies, not synonyms for "C#."
+
+technology_families:
+  - id: programming-languages
+    label: Programming Languages
+    members: [Python, Java, Go, C#, Rust, Ruby, PHP, JavaScript, TypeScript, Swift, Kotlin]
+
+  - id: dotnet
+    label: .NET Ecosystem
+    members: [C#, .NET, .NET Core, ASP.NET, ASP.NET Core, Entity Framework]
+
+  - id: frameworks
+    label: Frameworks
+    members: [React, Angular, Vue, Django, Flask, FastAPI, Spring, Node.js, Next.js]
+
+  - id: cloud
+    label: Cloud
+    members: [AWS, GCP, Azure]
+
+  - id: containers
+    label: Containers
+    members: [Docker, Kubernetes]
+
+  - id: ai
+    label: AI
+    members: [LLM, Generative AI, RAG, AI Agents, Prompt Engineering, Fine Tuning, MCP]
+
+  - id: vector-databases
+    label: Vector Databases
+    members: [Pinecone, Weaviate, Milvus, Chroma, pgvector]
+
+  - id: databases
+    label: Databases
+    members: [SQL, PostgreSQL, MySQL, MongoDB, Redis]
+
+  - id: messaging
+    label: Messaging
+    members: [Kafka, RabbitMQ, SQS, Pub/Sub]
+
+  - id: observability
+    label: Observability
+    members: [Prometheus, Grafana, Datadog, OpenTelemetry]
+
+  - id: infrastructure
+    label: Infrastructure
+    members: [Terraform, Ansible, CI/CD]

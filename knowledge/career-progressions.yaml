@@ -1,0 +1,50 @@
+# Career Progressions — the common title ladders.
+#
+# The IC (individual contributor) ladder and the management ladder are kept
+# fully separate: they are different careers, not two points on the same
+# line. A Staff Engineer did not "become more senior than" a first-line
+# Engineering Manager, and an Engineering Manager did not "level up from"
+# Staff Engineer — they moved to a different track.
+
+ic_ladder:
+  - level: Junior
+    notes: Early career; works within well-defined tasks with close guidance.
+  - level: Mid-level
+    notes: Works independently on well-scoped features; developing technical judgment.
+  - level: Senior
+    notes: Owns significant features/services end to end; mentors others.
+  - level: Lead
+    notes: Technical lead for a team or initiative; coordinates other engineers without formal people-management authority.
+  - level: Staff
+    notes: Cross-team technical scope; often architecture-focused (see hiring-patterns.yaml).
+  - level: Principal
+    notes: Organization-wide technical scope; often overlaps with an Architect role (see hiring-patterns.yaml).
+
+management_ladder:
+  - level: Engineering Manager
+    notes: First-line people manager; typically owns one team.
+  - level: Senior Engineering Manager
+    notes: Manages a larger team or multiple teams, sometimes through other managers.
+  - level: Director of Engineering
+    notes: Owns a department-level area; sets multi-quarter direction.
+  - level: VP of Engineering
+    notes: Owns engineering organization strategy; reports to executive leadership.
+
+# How a career commonly moves between the two ladders — guidance, not a
+# guarantee any individual candidate follows this path.
+track_transition_notes:
+  - from_track: ic
+    to_track: management
+    typical_departure_level: Senior or Lead
+    notes: >
+      The most common jump into first-line management happens from Senior or
+      Lead, not from Staff/Principal — those levels more often stay
+      individual-contributor for the rest of the career (see
+      common-career-transitions.yaml for the Staff/Principal ↔ Architect
+      overlap specifically).
+  - from_track: management
+    to_track: ic
+    typical_departure_level: Engineering Manager
+    notes: >
+      "Return to IC" moves happen, most commonly from Engineering Manager
+      back to Staff, less commonly from Director/VP.

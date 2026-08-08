@@ -1,0 +1,95 @@
+# AI Engineering Roles — a closer look at the AI-adjacent role cluster.
+#
+# The general role-families.yaml entries for `ai-engineering`,
+# `applied-ai-engineering`, and `ml-engineering` cover the basics; this file
+# exists because this cluster is unusually prone to title/responsibility
+# confusion (see common-hiring-mistakes.yaml) and deserves more detail than
+# the general dataset carries.
+
+cluster: AI Engineering
+
+roles:
+  - id: ai-software-engineer
+    title: AI Software Engineer
+    distinguishing_focus: >
+      General software engineering with LLM/generative-AI features as part
+      of the product surface — building the application around a model, not
+      building the model.
+    typical_stack: [Python, LLM, RAG, Prompt Engineering, cloud, a general-purpose backend framework]
+    commonly_confused_with: [applied-ai-engineer, ml-engineer]
+
+  - id: applied-ai-engineer
+    title: Applied AI Engineer
+    distinguishing_focus: >
+      Applying foundation models to specific product problems, often
+      including evaluation and fine-tuning — sits between AI Software
+      Engineer and ML Engineer.
+    typical_stack: [Python, LLM, RAG, Fine Tuning, vector-databases]
+    commonly_confused_with: [ai-software-engineer, ml-engineer]
+    notes: See semantic-titles.yaml's applied-ai-engineer-group — often posted under "LLM Engineer" or "Generative AI Engineer" instead.
+
+  - id: ml-engineer
+    title: ML Engineer
+    distinguishing_focus: >
+      Model training, MLOps, and serving infrastructure — the engineering
+      discipline around building and operating models, not just using
+      pre-trained ones.
+    typical_stack: [Python, PyTorch or TensorFlow, MLOps tooling, cloud, infrastructure]
+    commonly_confused_with: [data-scientist, mlops-engineer]
+
+  - id: mlops-engineer
+    title: MLOps Engineer
+    distinguishing_focus: >
+      Infrastructure and pipelines for training/serving/monitoring models at
+      scale — closer to platform/infrastructure engineering than to model
+      development itself.
+    typical_stack: [infrastructure, containers, cloud, observability]
+    commonly_confused_with: [ml-engineer, platform-engineer]
+    notes: >
+      A JD titled "ML Engineer" whose responsibilities are entirely about
+      pipeline reliability and infrastructure, with no model-development
+      language, may really be describing this role.
+
+  - id: prompt-engineer
+    title: Prompt Engineer
+    distinguishing_focus: >
+      A narrower, less common standalone role focused specifically on
+      prompt design and evaluation — increasingly absorbed into Applied AI
+      Engineer / AI Software Engineer rather than hired as a distinct title.
+    typical_stack: [Prompt Engineering, LLM]
+    commonly_confused_with: [applied-ai-engineer]
+
+  - id: data-scientist
+    title: Data Scientist
+    distinguishing_focus: >
+      Statistical modeling and experimentation, not production engineering
+      — included here because ML Engineer and Data Scientist searches are
+      frequently conflated (see data-roles.yaml for the fuller treatment).
+    typical_stack: [statistics, pandas, jupyter, experimentation]
+    commonly_confused_with: [ml-engineer]
+
+pairwise_distinctions:
+  - pair: [ai-software-engineer, applied-ai-engineer]
+    distinction: >
+      AI Software Engineer skews general-product with AI features bolted
+      on; Applied AI Engineer skews AI-capability-first, often including
+      evaluation/fine-tuning work an AI Software Engineer wouldn't do.
+
+  - pair: [applied-ai-engineer, ml-engineer]
+    distinction: >
+      Applied AI Engineer works with pre-trained foundation models; ML
+      Engineer more often trains models from scratch or does heavier
+      fine-tuning/serving infrastructure work.
+
+  - pair: [ml-engineer, data-scientist]
+    distinction: >
+      ML Engineer is production/engineering-oriented (serving, pipelines,
+      reliability); Data Scientist is research/analysis-oriented
+      (experimentation, statistical rigor, reporting). A JD combining both
+      in full is unusually broad — worth flagging as over-constrained (see
+      common-hiring-mistakes.yaml).
+
+  - pair: [ml-engineer, mlops-engineer]
+    distinction: >
+      ML Engineer includes model-development work; MLOps Engineer is
+      specifically the infrastructure/reliability layer underneath it.

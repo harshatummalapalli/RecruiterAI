@@ -1,0 +1,62 @@
+# Common Hiring Mistakes — recurring JD/search pitfalls.
+#
+# For future ambiguity- and over-constraint-detection to draw on. Every
+# entry is phrased as a pattern to *watch for*, not a rule to enforce — the
+# right response to spotting one is almost always a clarifying question to
+# the recruiter, never a silent rejection or silent "fix."
+
+mistakes:
+  - id: unrealistic-experience-for-technology-age
+    summary: Requiring more years of experience with a technology than the technology has existed.
+    example: Requiring "10+ years of Kubernetes experience" (Kubernetes shipped in 2014).
+    recommended_handling: Flag for recruiter confirmation rather than searching literally — the number was likely meant as general seniority, not technology-specific tenure.
+
+  - id: over-constrained-required-skills
+    summary: Listing a long "required" skill list that essentially no real candidate matches in full.
+    example: 10+ required skills spanning multiple unrelated technology families.
+    recommended_handling: Ask the recruiter which of the list are truly must-have vs. nice-to-have, rather than searching on the full list literally.
+
+  - id: title-seniority-mismatch
+    summary: A senior-sounding title (Staff, Principal, Director) paired with junior-level experience requirements.
+    example: A "Staff Engineer" JD requiring only 1-2 years of experience.
+    recommended_handling: Ask which signal should win — the title or the stated years — rather than guessing.
+
+  - id: conflicting-experience-ranges
+    summary: The JD states more than one experience requirement that don't agree.
+    example: '"3+ years" in the summary paragraph, "8-10 years" in the requirements section.'
+    recommended_handling: Ask the recruiter which range is correct; never average or silently pick one.
+
+  - id: genuine-polyglot-vs-acceptable-backgrounds-confusion
+    summary: Listing multiple programming languages without making clear whether all are required, any one is acceptable, or one is primary with the others as a plus.
+    example: '"Python, Java, Go" with no further qualifier.'
+    recommended_handling: Look for connecting language ("or", "primarily", "nice to have") before assuming all are simultaneously required; ask only when genuinely unclear.
+
+  - id: conflating-data-scientist-and-data-engineer
+    summary: Using "Data Scientist" and "Data Engineer" responsibilities interchangeably in one JD.
+    example: A "Data Scientist" JD whose responsibilities are entirely ETL/pipeline work.
+    recommended_handling: See data-roles.yaml for the distinction; flag when a title and its responsibility list point at different role families.
+
+  - id: staff-principal-treated-as-generic-senior
+    summary: Treating Staff/Principal as "Senior but a bit more" rather than as a distinct scope of impact (architecture, cross-team, org-wide).
+    example: A "Principal Engineer" JD whose responsibilities read identically to a Senior Engineer JD.
+    recommended_handling: See hiring-patterns.yaml, by_seniority — Staff/Principal levels usually imply architecture-level scope; a mismatch is worth surfacing.
+
+  - id: management-experience-required-for-first-line-em
+    summary: Requiring prior formal people-management experience for a first-line Engineering Manager role.
+    example: '"5+ years managing engineering teams" for an EM role at a company hiring its first EM cohort.'
+    recommended_handling: See hiring-patterns.yaml — most first-line EMs are promoted/hired from senior IC, not lateral from another EM role; an unusually strict management-tenure requirement may be worth a clarifying question.
+
+  - id: ambiguous-remote-onsite-language
+    summary: JD mentions both remote and onsite work without clarifying whether that means hybrid, team-dependent, or a genuine either/or.
+    example: "This role can be remote or fully onsite depending on team needs."
+    recommended_handling: Ask which applies rather than defaulting to either.
+
+  - id: ai-buzzword-stacking
+    summary: Listing every AI-adjacent term (LLM, GenAI, RAG, Agents, MCP, Fine-Tuning) as if they're synonyms or a single monolithic requirement.
+    example: "Must have experience with LLM/GenAI/RAG/Agents."
+    recommended_handling: Treat as independent concepts (see technology-families.yaml's `ai` family and technology-relationships.yaml) — ask which specific capabilities are actually required rather than assuming all are.
+
+  - id: exhaustive-title-exclusion-creep
+    summary: Excluding a broad swath of adjacent titles "just in case," which can accidentally exclude strong candidates with unconventional title histories.
+    example: Excluding every title containing "Lead" when the intent was only to exclude people-management candidates.
+    recommended_handling: Prefer excluding specific known-leadership titles (see the default excluded-titles list) over broad substring exclusions.

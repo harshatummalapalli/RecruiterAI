@@ -23,4 +23,4 @@ class ProviderRegistry:
 
     @classmethod
     def available(cls) -> list[str]:
-        return sorted(cls._providers.keys())
+        return ["configured"] if cls._providers else []

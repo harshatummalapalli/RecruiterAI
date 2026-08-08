@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Pencil, Upload, X } from 'lucide-react'
+import { ExternalLink, Pencil, Upload, X } from 'lucide-react'
 import type { SearchBrief } from '../models/searchBrief'
 import type { SearchResponse } from '../types'
 import {
   buildDiscoveryCandidates,
   formatExperienceYears,
-  formatMatchScore,
+  matchVerdictFor,
   sortDiscoveryCandidates,
   type DiscoveryCandidate,
   type SortKey,
 } from '../models/discovery'
 import { buildAssessment, type Verdict } from '../models/candidateAssessment'
+import { updateCandidateRecord } from '../services/recruiterWorkflow'
 import { SearchBriefReview, summarizeCompanies, summarizeExperience, summarizeLocations, summarizeSkills } from './SearchBriefReview'
 
 type FieldChange = (path: string, updater: (current: SearchBrief) => SearchBrief) => void
@@ -23,6 +24,7 @@ type CandidateReviewScreenProps = {
   searchResponse: SearchResponse | null
   searchState: SearchState
   onRunSearch: () => void
+  searchId: string | null
 }
 
 type Note = { id: string; text: string; createdAt: string }
@@ -52,10 +54,12 @@ function pipelineLabel(decision: Decision | undefined): string {
 }
 
 function verdictClassName(verdict: Verdict): string {
+  if (verdict === 'Excellent Match') return 'assessment-verdict--excellent'
   if (verdict === 'Strong Match') return 'assessment-verdict--strong'
   if (verdict === 'Good Match') return 'assessment-verdict--good'
   if (verdict === 'Partial Match') return 'assessment-verdict--partial'
-  return 'assessment-verdict--weak'
+  if (verdict === 'Weak Match') return 'assessment-verdict--weak'
+  return 'assessment-verdict--poor'
 }
 
 function SkeletonRows() {
@@ -99,7 +103,9 @@ function ComparisonPanel({ candidates, onClose }: { candidates: DiscoveryCandida
 
               <div className="comparison-row">
                 <span className="comparison-row__label">Match</span>
-                <span className="candidate-badge candidate-badge--score">{formatMatchScore(candidate.matchScore)}</span>
+                <span className={`candidate-badge candidate-badge--verdict ${verdictClassName(matchVerdictFor(candidate))}`}>
+                  {matchVerdictFor(candidate)}
+                </span>
               </div>
 
               <div className="comparison-row">
@@ -139,7 +145,7 @@ function ComparisonPanel({ candidates, onClose }: { candidates: DiscoveryCandida
   )
 }
 
-export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, searchState, onRunSearch }: CandidateReviewScreenProps) {
+export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, searchState, onRunSearch, searchId }: CandidateReviewScreenProps) {
   const [sortKey, setSortKey] = useState<SortKey>('match')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isEditingBrief, setIsEditingBrief] = useState(false)
@@ -170,8 +176,12 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
   }
 
   const setDecision = (id: string, decision: Decision) => {
-    setDecisions((current) => ({ ...current, [id]: current[id] === decision ? undefined : decision } as Record<string, Decision>))
+    const next = decisions[id] === decision ? undefined : decision
+    setDecisions((current) => ({ ...current, [id]: next } as Record<string, Decision>))
     touch(id)
+    if (searchId && next) {
+      updateCandidateRecord(searchId, id, { decision: next }).catch(() => {})
+    }
   }
 
   const toggleCompare = (id: string) => {
@@ -198,6 +208,9 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
       ...current,
       [id]: [...(current[id] ?? []), { id: `${Date.now()}`, text, createdAt: new Date().toISOString() }],
     }))
+    if (searchId) {
+      updateCandidateRecord(searchId, id, { note: text }).catch(() => {})
+    }
     setNoteDraft('')
     touch(id)
   }
@@ -375,7 +388,9 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
                       {formatExperienceYears(candidate.experienceYears)}
                     </button>
                     <button type="button" className="candidate-row__open" onClick={() => setSelectedId(candidate.id)}>
-                      <span className="candidate-badge candidate-badge--score">{formatMatchScore(candidate.matchScore)}</span>
+                      <span className={`candidate-badge candidate-badge--verdict ${verdictClassName(matchVerdictFor(candidate))}`}>
+                        {matchVerdictFor(candidate)}
+                      </span>
                     </button>
                     <button type="button" className="candidate-row__open" onClick={() => setSelectedId(candidate.id)}>
                       <span className={`candidate-badge${resumes[candidate.id] ? ' candidate-badge--positive' : ''}`}>
@@ -401,6 +416,17 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
                   <p>
                     {selectedCandidate.title} · {selectedCandidate.company}
                   </p>
+                  {selectedCandidate.profileUrl ? (
+                    <a
+                      className="discovery-profile__linkedin"
+                      href={selectedCandidate.profileUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                    >
+                      <ExternalLink size={13} aria-hidden="true" />
+                      LinkedIn · Open Profile
+                    </a>
+                  ) : null}
                 </div>
                 <button type="button" className="discovery-profile__close" onClick={() => setSelectedId(null)} aria-label="Close profile">
                   <X size={16} />

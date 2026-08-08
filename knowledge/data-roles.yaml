@@ -1,0 +1,70 @@
+# Data Roles — a closer look at the data-adjacent role cluster.
+
+cluster: Data
+
+roles:
+  - id: data-engineer
+    title: Data Engineer
+    distinguishing_focus: >
+      Building and operating data pipelines and warehouses — the
+      infrastructure that makes data available and reliable for others to
+      use. Engineering-first, not analysis-first.
+    typical_stack: [databases, messaging, cloud, infrastructure]
+    commonly_confused_with: [analytics-engineer, data-scientist]
+
+  - id: analytics-engineer
+    title: Analytics Engineer
+    distinguishing_focus: >
+      Sits between Data Engineer and Data Analyst — transforms raw data
+      into clean, modeled, analysis-ready datasets (commonly using
+      transformation tooling), without owning the raw ingestion pipelines
+      themselves.
+    typical_stack: [databases, SQL-heavy transformation tooling]
+    commonly_confused_with: [data-engineer, data-scientist]
+    notes: See semantic-titles.yaml's analytics-engineer-group.
+
+  - id: data-scientist
+    title: Data Scientist
+    distinguishing_focus: >
+      Statistical modeling, experimentation, and analysis — research- and
+      insight-oriented rather than infrastructure-oriented.
+    typical_stack: [databases, ai]
+    commonly_confused_with: [ml-engineer, analytics-engineer]
+
+  - id: data-platform-engineer
+    title: Data Platform Engineer
+    distinguishing_focus: >
+      Platform Engineering specifically for data infrastructure — the tools
+      and infrastructure Data Engineers and Data Scientists build on top of,
+      analogous to how Platform Engineer relates to Backend Engineer.
+    typical_stack: [infrastructure, cloud, databases, messaging]
+    commonly_confused_with: [data-engineer, platform-engineer]
+
+pairwise_distinctions:
+  - pair: [data-engineer, analytics-engineer]
+    distinction: >
+      Data Engineer owns ingestion and pipeline infrastructure end to end;
+      Analytics Engineer owns the transformation/modeling layer on top of
+      data a Data Engineer has already made available. A JD requiring both
+      full ingestion-pipeline ownership and deep analytics-modeling work is
+      unusually broad for one role — worth flagging (see
+      common-hiring-mistakes.yaml's conflating-data-scientist-and-data-engineer,
+      which applies to this pairing too).
+
+  - pair: [data-engineer, data-scientist]
+    distinction: >
+      Data Engineer is infrastructure/pipeline-oriented; Data Scientist is
+      modeling/analysis-oriented. The two are commonly conflated in JDs —
+      see common-hiring-mistakes.yaml.
+
+  - pair: [data-scientist, analytics-engineer]
+    distinction: >
+      Data Scientist builds statistical/ML models and runs experiments;
+      Analytics Engineer builds the clean datasets those models and
+      dashboards depend on, without necessarily doing the modeling itself.
+
+  - pair: [data-platform-engineer, data-engineer]
+    distinction: >
+      Data Platform Engineer builds the infrastructure Data Engineers use
+      (orchestration systems, warehouse infrastructure, access tooling);
+      Data Engineer builds pipelines on top of that infrastructure.

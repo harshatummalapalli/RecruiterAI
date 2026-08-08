@@ -1,0 +1,68 @@
+# Backend Roles — a closer look at the backend-adjacent role cluster.
+
+cluster: Backend Engineering
+
+roles:
+  - id: backend-engineer
+    title: Backend Engineer
+    distinguishing_focus: >
+      General-purpose server-side engineering: APIs, services, databases —
+      the broadest and most common role in this cluster.
+    typical_stack: [programming-languages, databases, cloud, containers]
+    commonly_confused_with: [api-engineer, full-stack-engineer]
+
+  - id: api-engineer
+    title: API Engineer
+    distinguishing_focus: >
+      A narrower specialization within backend engineering, focused
+      specifically on API design/contracts (REST, GraphQL, gRPC) rather
+      than the full service stack.
+    typical_stack: [programming-languages, API design tooling, databases]
+    commonly_confused_with: [backend-engineer]
+    notes: >
+      Rarely a standalone hiring title outside larger platform/API-product
+      teams — usually just "Backend Engineer" with API-heavy
+      responsibilities.
+
+  - id: distributed-systems-engineer
+    title: Distributed Systems Engineer
+    distinguishing_focus: >
+      Backend engineering at the systems level — consistency, partitioning,
+      fault tolerance — typically at companies with large-scale
+      infrastructure needs.
+    typical_stack: [programming-languages, messaging, databases, infrastructure]
+    commonly_confused_with: [backend-engineer, platform-engineer]
+    notes: >
+      Often a Staff+ specialization rather than an entry title; a JD
+      combining this title with junior experience requirements is worth a
+      title/experience-mismatch check (see common-hiring-mistakes.yaml).
+
+  - id: backend-sre-adjacent
+    title: Backend Engineer (SRE-adjacent)
+    distinguishing_focus: >
+      Backend engineers whose responsibilities lean toward reliability and
+      on-call ownership of the services they build, without being a
+      dedicated Platform/SRE role.
+    typical_stack: [programming-languages, databases, observability, cloud]
+    commonly_confused_with: [backend-engineer, platform-engineer]
+
+pairwise_distinctions:
+  - pair: [backend-engineer, full-stack-engineer]
+    distinction: >
+      Backend Engineer owns server-side/data-layer work only; Full Stack
+      Engineer owns that plus the UI. See role-families.yaml for the
+      general Full Stack Engineering entry.
+
+  - pair: [backend-engineer, platform-engineer]
+    distinction: >
+      Backend Engineer builds product-facing services; Platform Engineer
+      builds the infrastructure/tooling other engineers (including backend
+      engineers) build on top of. See platform-roles.yaml.
+
+  - pair: [distributed-systems-engineer, platform-engineer]
+    distinction: >
+      Distributed Systems Engineer focuses on the correctness/scale
+      properties of a specific system; Platform Engineer focuses on
+      developer-facing infrastructure and tooling broadly. Real JDs
+      sometimes blend both — worth noting rather than forcing a single
+      classification.

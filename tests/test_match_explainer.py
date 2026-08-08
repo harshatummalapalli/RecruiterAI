@@ -45,6 +45,12 @@ def test_explainer_builds_structured_match_summary() -> None:
     assert explanation.location_match is True
     assert explanation.company_match is True
     assert explanation.experience_match is True
+    assert explanation.matched_titles == ["Machine Learning Engineer"]
+    assert explanation.matched_skills == ["Python", "PyTorch"]
+    assert explanation.missing_skills == []
+    assert explanation.matched_location == "US"
+    assert explanation.matched_experience == "6 years"
+    assert explanation.potential_risks == []
     assert "title matches" in explanation.summary
 
 
@@ -74,3 +80,9 @@ def test_explainer_reports_missing_matches() -> None:
     assert explanation.location_match is False
     assert explanation.company_match is False
     assert explanation.experience_match is False
+    assert explanation.matched_titles == []
+    assert explanation.matched_skills == []
+    assert explanation.missing_skills == ["Python"]
+    assert explanation.matched_location is None
+    assert explanation.matched_experience == "Requires at least 5 years of experience"
+    assert explanation.potential_risks == ["Experience is below the requested range"]

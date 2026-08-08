@@ -1,0 +1,75 @@
+# Platform Roles — a closer look at the platform-adjacent role cluster.
+#
+# This cluster (Platform, DevOps, Infrastructure, SRE) is the second most
+# commonly conflated group after AI Engineering (see
+# common-hiring-mistakes.yaml) — the responsibilities genuinely overlap, and
+# organizations don't use these titles consistently with each other.
+
+cluster: Platform Engineering
+
+roles:
+  - id: platform-engineer
+    title: Platform Engineer
+    distinguishing_focus: >
+      Building internal developer platforms — the "golden path" that makes
+      other engineers productive. Developer-experience-oriented, not just
+      infrastructure-oriented.
+    typical_stack: [infrastructure, cloud, containers, observability]
+    commonly_confused_with: [devops-engineer, infrastructure-engineer]
+
+  - id: devops-engineer
+    title: DevOps Engineer
+    distinguishing_focus: >
+      CI/CD pipelines, release engineering, and infrastructure automation —
+      process- and pipeline-oriented rather than platform-product-oriented.
+    typical_stack: [infrastructure, cloud, containers, observability]
+    commonly_confused_with: [platform-engineer, infrastructure-engineer]
+    notes: >
+      "DevOps Engineer" is sometimes used generically for any infrastructure
+      role at smaller companies that don't distinguish it from Platform
+      Engineering — check responsibilities, not just the title.
+
+  - id: infrastructure-engineer
+    title: Infrastructure Engineer
+    distinguishing_focus: >
+      Core infrastructure (networking, compute, storage) rather than the
+      developer-facing tooling layer Platform Engineering emphasizes.
+    typical_stack: [cloud, infrastructure, containers]
+    commonly_confused_with: [devops-engineer, platform-engineer]
+
+  - id: sre
+    title: Site Reliability Engineer
+    distinguishing_focus: >
+      Reliability engineering specifically — SLOs, incident response,
+      capacity planning — a distinct discipline from platform-building,
+      though the tooling overlaps heavily.
+    typical_stack: [observability, infrastructure, cloud, containers]
+    commonly_confused_with: [devops-engineer, platform-engineer]
+    notes: See semantic-titles.yaml's sre-group for title variants.
+
+pairwise_distinctions:
+  - pair: [platform-engineer, devops-engineer]
+    distinction: >
+      Platform Engineering treats internal developer experience as a
+      product with users (other engineers); DevOps Engineering treats
+      CI/CD and release process as the core deliverable. Significant
+      overlap in practice — many orgs use the titles interchangeably.
+
+  - pair: [devops-engineer, infrastructure-engineer]
+    distinction: >
+      DevOps Engineer is process/pipeline-oriented; Infrastructure Engineer
+      is closer to the underlying compute/network/storage layer those
+      pipelines run on.
+
+  - pair: [sre, devops-engineer]
+    distinction: >
+      SRE is reliability-outcome-oriented (SLOs, error budgets, incident
+      response); DevOps is pipeline/process-oriented. A JD asking for
+      "SRE/DevOps" as if interchangeable is worth a second look — they
+      draw from overlapping but not identical skill sets.
+
+  - pair: [platform-engineer, sre]
+    distinction: >
+      Platform Engineer builds the tools; SRE ensures what runs on those
+      tools stays reliable. Some organizations merge the two into one team
+      or one title.

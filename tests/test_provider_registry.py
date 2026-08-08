@@ -16,7 +16,7 @@ def test_provider_registry_registers_and_resolves_providers() -> None:
     ProviderRegistry.register("dummy", provider)
 
     assert ProviderRegistry.get("dummy") is provider
-    assert ProviderRegistry.available() == ["dummy"]
+    assert ProviderRegistry.available() == ["configured"]
 
 
 def test_provider_registry_raises_for_unknown_provider() -> None:
@@ -35,7 +35,7 @@ def test_bootstrap_registers_crustdata_provider() -> None:
 
     bootstrap()
 
-    assert "crustdata" in ProviderRegistry.available()
+    assert "configured" in ProviderRegistry.available()
     assert isinstance(ProviderRegistry.get("crustdata"), CrustDataProvider)
 
 
@@ -49,7 +49,7 @@ def test_bootstrap_is_idempotent() -> None:
     second_provider = ProviderRegistry.get("crustdata")
 
     assert second_provider is first_provider
-    assert ProviderRegistry.available() == ["crustdata"]
+    assert ProviderRegistry.available() == ["configured"]
 
 
 def test_provider_registry_available_returns_registered_providers() -> None:
@@ -57,4 +57,4 @@ def test_provider_registry_available_returns_registered_providers() -> None:
 
     bootstrap()
 
-    assert ProviderRegistry.available() == ["crustdata"]
+    assert ProviderRegistry.available() == ["configured"]

@@ -1,0 +1,110 @@
+# Technology Relationships — typed, pairwise relationships between specific
+# technologies. More specific than technology-families.yaml's flat
+# grouping: a relationship says *how* two technologies relate, not just
+# that they're in the same bucket.
+#
+# relationship_types (vocabulary used below):
+#   requires        — using "from" in practice typically requires "to"
+#   built-on        — "from" is built on top of "to"
+#   orchestrates     — "from" manages/orchestrates "to"
+#   alternative-to   — "from" and "to" solve the same problem; not synonyms
+#   complements      — commonly used together, neither depends on the other
+#   includes         — "from" is an umbrella that includes "to" as a part
+
+technology_relationships:
+  - from: RAG
+    to: Vector Databases
+    relationship: requires
+    notes: Retrieval-augmented generation needs a retrieval store; vector databases are the common choice.
+
+  - from: LLM
+    to: Prompt Engineering
+    relationship: complements
+    notes: Prompt engineering is a technique applied when working with LLMs, not a separate technology stack.
+
+  - from: AI Agents
+    to: LLM
+    relationship: built-on
+    notes: Agentic systems are typically built on top of an LLM as the reasoning component.
+
+  - from: Fine Tuning
+    to: LLM
+    relationship: complements
+    notes: Fine-tuning customizes an existing LLM; it is not itself a model architecture.
+
+  - from: MCP
+    to: AI Agents
+    relationship: complements
+    notes: Model Context Protocol standardizes how agents connect to tools/data sources.
+
+  - from: Kubernetes
+    to: Docker
+    relationship: orchestrates
+    notes: Kubernetes commonly orchestrates containers built with Docker, though it does not require Docker specifically.
+
+  - from: ASP.NET
+    to: .NET
+    relationship: built-on
+  - from: ASP.NET Core
+    to: .NET Core
+    relationship: built-on
+  - from: Entity Framework
+    to: .NET
+    relationship: complements
+    notes: An ORM commonly paired with .NET, not a required part of it.
+
+  - from: Next.js
+    to: React
+    relationship: built-on
+
+  - from: Django
+    to: Python
+    relationship: built-on
+  - from: Flask
+    to: Python
+    relationship: built-on
+  - from: FastAPI
+    to: Python
+    relationship: built-on
+  - from: FastAPI
+    to: Flask
+    relationship: alternative-to
+    notes: Both are Python web frameworks; FastAPI leans async/typed, Flask leans minimal/unopinionated. Not interchangeable in a JD's intent without recruiter confirmation.
+  - from: Django
+    to: Flask
+    relationship: alternative-to
+    notes: Django is full-featured/batteries-included; Flask is minimal. Requiring "Django or Flask" usually signals "a Python web framework," not that either is acceptable for a Django-specific role.
+
+  - from: Spring
+    to: Java
+    relationship: built-on
+
+  - from: Kafka
+    to: RabbitMQ
+    relationship: alternative-to
+    notes: Both are messaging systems; Kafka favors high-throughput event streaming, RabbitMQ favors flexible message routing. A JD that lists both usually means "a message broker," not literally both.
+
+  - from: Terraform
+    to: Ansible
+    relationship: complements
+    notes: Terraform provisions infrastructure; Ansible configures it. Commonly used together, not alternatives.
+
+  - from: Prometheus
+    to: Grafana
+    relationship: complements
+    notes: Prometheus collects/stores metrics; Grafana visualizes them. The pairing is so common that "Prometheus" alone often implies Grafana too.
+
+  - from: Datadog
+    to: Prometheus
+    relationship: alternative-to
+    notes: Datadog is a commercial all-in-one observability platform; Prometheus+Grafana is the common open-source alternative.
+
+  - from: OpenTelemetry
+    to: Prometheus
+    relationship: complements
+    notes: OpenTelemetry standardizes instrumentation; Prometheus is one of several backends it can export to.
+
+  - from: pgvector
+    to: PostgreSQL
+    relationship: built-on
+    notes: pgvector is a PostgreSQL extension, not a standalone database — a JD requiring it implicitly requires PostgreSQL experience.

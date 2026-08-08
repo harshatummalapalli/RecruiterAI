@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 import backend.api as api_module
 from backend.api import create_app
+from backend.errors import ConfigurationError, ProviderError
 from backend.models.candidate import Candidate
 from backend.models.search_intent import Role, SearchIntent
 from backend.providers.base import BaseLLMProvider, BaseProvider
@@ -37,7 +38,7 @@ class FakeParser(BaseLLMProvider):
 
         return SearchIntent(
             role=Role(title="Software Engineer"),
-            location=Location(countries=["US"]),
+            location=Location(countries=["US"], cities=["Hyderabad"]),
             experience=Experience(minimum_years=3),
             titles=Titles(include_titles=["Software Engineer"]),
             skills=Skills(required_skills=["Python"], preferred_skills=["FastAPI"]),
@@ -84,6 +85,39 @@ class OptionAwareProvider(BaseProvider):
             )
         ]
 
+class PlanCapturingProvider(BaseProvider):
+    def __init__(self) -> None:
+        self.seen_plans = []
+        self.seen_options = []
+
+    def search(self, plan):
+        return self.search_with_options(plan)
+
+    def search_with_options(self, plan, options=None):
+        self.seen_plans.append(plan)
+        self.seen_options.append(options or {})
+        return [
+            Candidate(
+                name="Priya Rao",
+                title="Software Engineer",
+                company="Acme India",
+                location="Hyderabad, India",
+                provider_score=0.9,
+                final_score=9.0,
+                raw_data={"skills": ["Python"], "years_experience": 4},
+            )
+        ]
+
+
+class FailingProvider(BaseProvider):
+    def search(self, plan):
+        raise ProviderError("Provider response failed")
+
+
+class FailingParser(BaseLLMProvider):
+    def parse_job_description(self, job_description: str) -> SearchIntent:
+        raise ConfigurationError("OPENAI_API_KEY is missing")
+
 
 def build_test_app() -> TestClient:
     ProviderRegistry._providers.clear()
@@ -112,12 +146,12 @@ def test_health_endpoint() -> None:
     assert response.json() == {"status": "ok"}
 
 
-def test_providers_endpoint_lists_registered_providers() -> None:
+def test_providers_endpoint_reports_configuration_status() -> None:
     client = build_test_app()
     response = client.get("/providers")
 
     assert response.status_code == 200
-    assert response.json()["providers"] == ["crustdata", "mock"]
+    assert response.json()["providers"] == ["configured"]
 
 
 def test_parse_jd_endpoint_returns_search_intent() -> None:
@@ -156,10 +190,60 @@ def test_search_endpoint_returns_structured_result() -> None:
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["provider"] == "mock"
+    assert payload["provider"] == "platform"
     assert payload["candidate_count"] == 1
     assert payload["candidates"][0]["name"] == "Alice"
     assert payload["explanations"][0]["title_match"] is True
+
+
+def test_search_endpoint_returns_real_empty_state_when_provider_finds_no_candidates() -> None:
+    class EmptyResultsProvider(BaseProvider):
+        def search(self, plan):
+            return []
+
+    ProviderRegistry._providers.clear()
+    ProviderRegistry.register("mock", EmptyResultsProvider())
+    app = create_app(
+        jd_parser=JDParser(provider=FakeParser()),
+        search_planner=SearchPlanner(),
+        query_expander=QueryExpansionService(),
+        capability_mapper=CapabilityMapper(),
+        provider_registry=ProviderRegistry,
+        candidate_merger=CandidateMerger(),
+        candidate_ranker=CandidateRanker(),
+        match_explainer=MatchExplainer(),
+        search_diagnostics=SearchDiagnostics(),
+        excel_exporter=ExcelExporter(),
+    )
+    client = TestClient(app)
+    response = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["candidate_count"] == 0
+    assert payload["candidates"] == []
+    assert payload["demo"] is False
+
+
+def test_search_endpoint_returns_recruiter_friendly_error_without_provider_configuration() -> None:
+    ProviderRegistry._providers.clear()
+    app = create_app(
+        jd_parser=JDParser(provider=FakeParser()),
+        search_planner=SearchPlanner(),
+        query_expander=QueryExpansionService(),
+        capability_mapper=CapabilityMapper(),
+        provider_registry=ProviderRegistry,
+        candidate_merger=CandidateMerger(),
+        candidate_ranker=CandidateRanker(),
+        match_explainer=MatchExplainer(),
+        search_diagnostics=SearchDiagnostics(),
+        excel_exporter=ExcelExporter(),
+    )
+    client = TestClient(app)
+    response = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"})
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "No sourcing provider is currently configured."
 
 
 def test_search_endpoint_passes_provider_options() -> None:
@@ -195,6 +279,49 @@ def test_search_endpoint_passes_provider_options() -> None:
     assert provider.seen_options == [{"page_size": 7, "max_pages": 2, "autocomplete": True}]
 
 
+def test_parse_jd_endpoint_returns_recruiter_friendly_error_for_configuration_failures() -> None:
+    ProviderRegistry._providers.clear()
+    app = create_app(
+        jd_parser=JDParser(provider=FailingParser()),
+        search_planner=SearchPlanner(),
+        query_expander=QueryExpansionService(),
+        capability_mapper=CapabilityMapper(),
+        provider_registry=ProviderRegistry,
+        candidate_merger=CandidateMerger(),
+        candidate_ranker=CandidateRanker(),
+        match_explainer=MatchExplainer(),
+        search_diagnostics=SearchDiagnostics(),
+        excel_exporter=ExcelExporter(),
+    )
+    client = TestClient(app)
+    response = client.post("/parse-jd", json={"jd_text": "Need a Python engineer"})
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "Unable to prepare the search brief right now."
+
+
+def test_search_endpoint_returns_recruiter_friendly_error_for_provider_failures() -> None:
+    ProviderRegistry._providers.clear()
+    ProviderRegistry.register("mock", FailingProvider())
+    app = create_app(
+        jd_parser=JDParser(provider=FakeParser()),
+        search_planner=SearchPlanner(),
+        query_expander=QueryExpansionService(),
+        capability_mapper=CapabilityMapper(),
+        provider_registry=ProviderRegistry,
+        candidate_merger=CandidateMerger(),
+        candidate_ranker=CandidateRanker(),
+        match_explainer=MatchExplainer(),
+        search_diagnostics=SearchDiagnostics(),
+        excel_exporter=ExcelExporter(),
+    )
+    client = TestClient(app)
+    response = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"})
+
+    assert response.status_code == 502
+    assert response.json()["detail"] == "The sourcing provider could not complete this search. Please try again."
+
+
 def test_export_endpoint_returns_excel_file() -> None:
     client = build_test_app()
     response = client.post("/export", json={"jd_text": "Need a Python engineer", "provider": "mock"})
@@ -205,3 +332,172 @@ def test_export_endpoint_returns_excel_file() -> None:
     actual_path = Path(tempfile.gettempdir()) / "recruiterai-api" / "results.xlsx"
     assert actual_path.exists()
     actual_path.unlink(missing_ok=True)
+
+
+def test_search_endpoint_preserves_city_and_experience_filters_through_to_provider(tmp_path) -> None:
+    # Regression test for the location pipeline bug: CapabilityMapper's
+    # hardcoded supported_filters whitelist used to silently strip cities
+    # (and exclude_titles/minimum_years/etc.) from every search before it
+    # ever reached the provider, even though the provider genuinely
+    # supports filtering on them.
+    from backend.services.search_store import SearchStore
+
+    ProviderRegistry._providers.clear()
+    provider = PlanCapturingProvider()
+    ProviderRegistry.register("mock", provider)
+
+    app = create_app(
+        jd_parser=JDParser(provider=FakeParser()),
+        search_planner=SearchPlanner(),
+        query_expander=QueryExpansionService(),
+        capability_mapper=CapabilityMapper(),
+        provider_registry=ProviderRegistry,
+        candidate_merger=CandidateMerger(),
+        candidate_ranker=CandidateRanker(),
+        match_explainer=MatchExplainer(),
+        search_diagnostics=SearchDiagnostics(),
+        excel_exporter=ExcelExporter(),
+        search_store=SearchStore(storage_dir=tmp_path),
+    )
+    client = TestClient(app)
+    response = client.post("/search", json={"jd_text": "Need a Python engineer in Hyderabad", "provider": "mock"})
+
+    assert response.status_code == 200
+    sent_plan = provider.seen_plans[0]
+    assert sent_plan.searches[0].cities == ["Hyderabad"]
+    assert sent_plan.searches[0].minimum_years == 3
+
+
+def test_search_endpoint_location_override_from_search_brief_is_authoritative(tmp_path) -> None:
+    # The recruiter's already-resolved Search Brief location must win over
+    # whatever the JD-text re-parse guesses — including replacing a city
+    # the parser found with the exact one the recruiter locked in, and
+    # carrying zip/radius through even though the parser has no concept of them.
+    from backend.services.search_store import SearchStore
+
+    ProviderRegistry._providers.clear()
+    provider = PlanCapturingProvider()
+    ProviderRegistry.register("mock", provider)
+
+    app = create_app(
+        jd_parser=JDParser(provider=FakeParser()),
+        search_planner=SearchPlanner(),
+        query_expander=QueryExpansionService(),
+        capability_mapper=CapabilityMapper(),
+        provider_registry=ProviderRegistry,
+        candidate_merger=CandidateMerger(),
+        candidate_ranker=CandidateRanker(),
+        match_explainer=MatchExplainer(),
+        search_diagnostics=SearchDiagnostics(),
+        excel_exporter=ExcelExporter(),
+        search_store=SearchStore(storage_dir=tmp_path),
+    )
+    client = TestClient(app)
+    response = client.post(
+        "/search",
+        json={
+            "jd_text": "Need a Python engineer in Hyderabad",
+            "provider": "mock",
+            "location": {
+                "search_geography": "radius",
+                "countries": ["India"],
+                "cities": ["Gachibowli"],
+                "zip_codes": ["500032"],
+                "radius_miles": 15,
+                "work_mode": "hybrid",
+            },
+        },
+    )
+
+    assert response.status_code == 200
+    sent_plan = provider.seen_plans[0]
+    # City/country are genuinely supported — they must reach the provider
+    # exactly as the recruiter resolved them.
+    assert sent_plan.searches[0].cities == ["Gachibowli"]
+    assert sent_plan.searches[0].countries == ["India"]
+    # Zip/radius/work_mode are NOT supported by this provider — they must be
+    # cleared before dispatch (never sent as a false promise), and a
+    # graceful-degradation warning must explain why.
+    assert sent_plan.searches[0].zip_codes == []
+    assert sent_plan.searches[0].radius_miles is None
+
+    payload = response.json()
+    warning_text = " ".join(payload["warnings"])
+    assert "search radius" in warning_text
+    assert "postal/zip code" in warning_text
+    assert "work mode" in warning_text
+
+
+def test_search_endpoint_persists_and_reloads_without_rerunning_pipeline(tmp_path) -> None:
+    from backend.services.search_store import SearchStore
+
+    ProviderRegistry._providers.clear()
+    provider = PlanCapturingProvider()
+    ProviderRegistry.register("mock", provider)
+
+    app = create_app(
+        jd_parser=JDParser(provider=FakeParser()),
+        search_planner=SearchPlanner(),
+        query_expander=QueryExpansionService(),
+        capability_mapper=CapabilityMapper(),
+        provider_registry=ProviderRegistry,
+        candidate_merger=CandidateMerger(),
+        candidate_ranker=CandidateRanker(),
+        match_explainer=MatchExplainer(),
+        search_diagnostics=SearchDiagnostics(),
+        excel_exporter=ExcelExporter(),
+        search_store=SearchStore(storage_dir=tmp_path),
+    )
+    client = TestClient(app)
+    response = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"})
+    assert response.status_code == 200
+    search_id = response.json()["search_id"]
+    assert search_id
+
+    assert len(provider.seen_plans) == 1
+
+    reload_response = client.get(f"/search/{search_id}")
+    assert reload_response.status_code == 200
+    assert reload_response.json()["search_id"] == search_id
+    assert reload_response.json()["candidates"][0]["name"] == "Priya Rao"
+    # Reloading must not call the provider again.
+    assert len(provider.seen_plans) == 1
+
+
+def test_get_search_returns_404_for_unknown_search_id() -> None:
+    client = build_test_app()
+    response = client.get("/search/does-not-exist")
+    assert response.status_code == 404
+
+
+def test_patch_candidate_persists_decision_and_note(tmp_path) -> None:
+    from backend.services.search_store import SearchStore
+
+    ProviderRegistry._providers.clear()
+    ProviderRegistry.register("mock", PlanCapturingProvider())
+
+    app = create_app(
+        jd_parser=JDParser(provider=FakeParser()),
+        search_planner=SearchPlanner(),
+        query_expander=QueryExpansionService(),
+        capability_mapper=CapabilityMapper(),
+        provider_registry=ProviderRegistry,
+        candidate_merger=CandidateMerger(),
+        candidate_ranker=CandidateRanker(),
+        match_explainer=MatchExplainer(),
+        search_diagnostics=SearchDiagnostics(),
+        excel_exporter=ExcelExporter(),
+        search_store=SearchStore(storage_dir=tmp_path),
+    )
+    client = TestClient(app)
+    response = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"})
+    search_id = response.json()["search_id"]
+    candidate_id = response.json()["candidates"][0]["candidate_id"] or "candidate-1"
+
+    patch_response = client.patch(
+        f"/search/{search_id}/candidate",
+        json={"candidate_id": candidate_id, "decision": "shortlist", "note": "Strong fit"},
+    )
+    assert patch_response.status_code == 200
+    assert patch_response.json()["recruiter_decisions"][candidate_id] == "shortlist"
+    assert patch_response.json()["notes"][candidate_id][0]["text"] == "Strong fit"

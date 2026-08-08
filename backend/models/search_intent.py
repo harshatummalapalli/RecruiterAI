@@ -14,6 +14,8 @@ class Role:
 class Location:
     countries: List[str] = field(default_factory=list)
     cities: List[str] = field(default_factory=list)
+    zip_codes: List[str] = field(default_factory=list)
+    radius_miles: Optional[float] = None
     work_mode: Optional[str] = None
     confidence_score: Optional[int] = None
 

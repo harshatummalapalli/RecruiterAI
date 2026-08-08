@@ -1,0 +1,71 @@
+# Common Career Transitions — moves between role families, not the IC/
+# management ladder (see career-progressions.yaml for that). Each entry
+# describes how common the move is and why, so a recruiter widening a
+# search can be told "candidates from X commonly move into this role"
+# with a reason, not just a bare suggestion.
+
+transitions:
+  - from_role_family_id: data-science
+    to_role_family_id: ml-engineering
+    commonality: common
+    notes: The most frequent adjacent move for Data Scientists who want more production/engineering ownership.
+
+  - from_role_family_id: data-engineering
+    to_role_family_id: ml-engineering
+    commonality: common
+    notes: Pipeline/infrastructure experience transfers directly to ML serving and feature-pipeline work.
+
+  - from_role_family_id: devops
+    to_role_family_id: platform-engineering
+    commonality: common
+    notes: Platform Engineering is often described as "DevOps with a developer-experience focus" — the tooling overlap is large.
+
+  - from_role_family_id: backend-engineering
+    to_role_family_id: platform-engineering
+    commonality: common
+    notes: Backend engineers who gravitate toward infrastructure/tooling work commonly move into platform roles.
+
+  - from_role_family_id: backend-engineering
+    to_role_family_id: ai-engineering
+    commonality: common
+    notes: The dominant path into AI Engineering today is backend engineers picking up LLM/RAG work, not AI researchers moving into product engineering.
+
+  - from_role_family_id: qa
+    to_role_family_id: backend-engineering
+    commonality: occasional
+    notes: SDETs with strong automation/coding backgrounds sometimes move into general backend roles.
+
+  - from_role_family_id: qa
+    to_role_family_id: devops
+    commonality: occasional
+    notes: Test-infrastructure and release-validation work overlaps with DevOps tooling.
+
+  - from_role_family_id: frontend-engineering
+    to_role_family_id: mobile-engineering
+    commonality: occasional
+    notes: Component-based UI thinking transfers, but platform-specific (iOS/Android) skills still need to be built.
+
+  - from_role_family_id: security-engineering
+    to_role_family_id: platform-engineering
+    commonality: occasional
+
+  - from_role_family_id: backend-engineering
+    to_role_family_id: management
+    commonality: common
+    notes: The most common path into first-line Engineering Management is Senior/Lead ICs from backend, given how common the backend family itself is.
+
+  - from_role_family_id: any-senior-ic
+    to_role_family_id: management
+    commonality: common
+    notes: >
+      Generalized version of the IC → management transition: most first-line
+      Engineering Managers are hired from Senior or Lead in the *same*
+      domain they'll manage, rarely from an unrelated function.
+
+  - from_role_family_id: staff-or-principal-ic
+    to_role_family_id: architect
+    commonality: common
+    notes: >
+      Not a distinct role family in this library yet, but common enough to
+      name: Staff/Principal Engineers and Architects are frequently the
+      same candidate pool (see hiring-patterns.yaml, by_seniority).

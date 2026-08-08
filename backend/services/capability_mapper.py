@@ -58,6 +58,10 @@ class CapabilityMapper:
             query.countries = []
         elif field_name == "cities":
             query.cities = []
+        elif field_name == "zip_codes":
+            query.zip_codes = []
+        elif field_name == "radius_miles":
+            query.radius_miles = None
         elif field_name == "work_mode":
             query.work_mode = None
         elif field_name == "minimum_years":
@@ -91,6 +95,8 @@ class CapabilityMapper:
             "preferred_skills",
             "countries",
             "cities",
+            "zip_codes",
+            "radius_miles",
             "work_mode",
             "minimum_years",
             "maximum_years",
