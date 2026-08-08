@@ -241,7 +241,7 @@ function extractLocations(text: string): LocationEntry[] {
   return entries
 }
 
-function extractExperience(text: string): LocalExtraction['experience'] {
+export function extractExperience(text: string): LocalExtraction['experience'] {
   const rangeMatch = text.match(/(\d+)\s*(?:-|–|to)\s*(\d+)\+?\s*years?/i)
   if (rangeMatch) {
     return { minimumYears: Number(rangeMatch[1]), maximumYears: Number(rangeMatch[2]) }

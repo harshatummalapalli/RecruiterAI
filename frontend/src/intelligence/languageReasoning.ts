@@ -13,8 +13,9 @@
 // asking) call into it, so the two can never disagree.
 
 import { findPrimaryTechMentionIndex } from '../screens/localJdExtraction'
+import type { LanguageSignal } from './types'
 
-export type LanguageSignal = 'polyglot' | 'acceptable-backgrounds' | 'primary-with-support' | 'ambiguous'
+export type { LanguageSignal }
 
 export type LanguageClassification = {
   signal: LanguageSignal
