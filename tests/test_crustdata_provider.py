@@ -146,6 +146,41 @@ def test_build_payload_maps_richer_search_query_to_crustdata_filters() -> None:
     assert payload["search"]["query"] == "Software Engineer Python AWS"
 
 
+def test_build_payload_treats_maximum_years_zero_as_no_maximum() -> None:
+    # maximum_years=0 is the JD parser's "not specified" placeholder, not a
+    # real upper bound of zero years. It must never combine with
+    # minimum_years=5 into a self-contradicting AND filter that guarantees
+    # zero results.
+    provider = CrustDataProvider()
+    payload = provider._build_payload(
+        SearchQuery(include_titles=["Software Engineer"], minimum_years=5, maximum_years=0)
+    )
+    filters = payload["filters"]
+
+    assert any(
+        condition == {"field": "years_of_experience_raw", "type": "=>", "value": 5}
+        for condition in filters["conditions"]
+    )
+    assert not any(condition["field"] == "years_of_experience_raw" and condition["type"] == "=<" for condition in filters["conditions"])
+
+
+def test_build_payload_keeps_explicit_maximum_years() -> None:
+    provider = CrustDataProvider()
+    payload = provider._build_payload(
+        SearchQuery(include_titles=["Software Engineer"], minimum_years=5, maximum_years=8)
+    )
+    filters = payload["filters"]
+
+    assert any(
+        condition == {"field": "years_of_experience_raw", "type": "=>", "value": 5}
+        for condition in filters["conditions"]
+    )
+    assert any(
+        condition == {"field": "years_of_experience_raw", "type": "=<", "value": 8}
+        for condition in filters["conditions"]
+    )
+
+
 def test_search_with_options_paginates_and_uses_page_size(monkeypatch) -> None:
     monkeypatch.setenv("CRUSTDATA_API_KEY", "test-key")
     seen_payloads: list[dict[str, object]] = []

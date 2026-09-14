@@ -50,3 +50,19 @@ def test_build_creates_multiple_deterministic_queries():
     assert plan.strategy == "multi_query"
     assert plan.reasoning == "Deterministic mapping from SearchIntent to multiple title-based SearchQuery variants"
     assert plan.confidence_score == 88
+
+
+def test_build_normalizes_maximum_years_zero_to_no_maximum():
+    # The JD parser's "not specified" placeholder for maximum_years is 0.
+    # SearchQuery must normalize this to None so it never reaches the
+    # provider as a real (and self-contradicting) upper bound.
+    intent = SearchIntent(
+        role=Role(title="Backend Engineer"),
+        location=Location(countries=["United States"], cities=["New York"], work_mode="hybrid"),
+        experience=Experience(minimum_years=5, maximum_years=0),
+    )
+
+    plan = SearchPlanner().build(intent)
+
+    assert plan.searches[0].minimum_years == 5
+    assert plan.searches[0].maximum_years is None

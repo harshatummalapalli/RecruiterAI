@@ -71,6 +71,23 @@ class SearchQuery(BaseModel):
             return stripped or None
         return value
 
+    @field_validator("maximum_years", mode="before")
+    @classmethod
+    def _normalize_maximum_years(cls, value: Any) -> Optional[int]:
+        """A maximum of 0 (or less) means "no maximum" throughout the app —
+        JD parsing emits 0 as its unspecified-value placeholder, and a real
+        upper bound of zero years of experience is not a meaningful search.
+        Normalizing here (rather than only in the provider adapter) keeps
+        every downstream consumer — capability mapping, query expansion,
+        diagnostics — seeing the same "no maximum" value."""
+        if value is None:
+            return None
+        try:
+            numeric_value = int(value)
+        except (TypeError, ValueError):
+            return None
+        return numeric_value if numeric_value > 0 else None
+
 
 class SearchPlan(BaseModel):
     """Provider-agnostic plan composed of one or more recruiter-intent queries."""

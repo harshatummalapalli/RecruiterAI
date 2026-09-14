@@ -14,8 +14,8 @@ Extract hiring intent from the following job description and return valid JSON w
     "confidence_score": 0
   }},
   "experience": {{
-    "minimum_years": 0,
-    "maximum_years": 0,
+    "minimum_years": null,
+    "maximum_years": null,
     "confidence_score": 0
   }},
   "titles": {{
@@ -56,6 +56,12 @@ Extract hiring intent from the following job description and return valid JSON w
   }},
   "confidence_score": 0
 }}
+
+Rules for the "experience" fields:
+- "minimum_years" and "maximum_years" are the number of years of experience, not confidence scores.
+- If the job description does not state a lower or upper bound on years of experience, set that field to `null`. Never use `0` to mean "not specified" — `0` means a real, literal bound of zero years.
+- For a JD stated as "5+ years" or "at least 5 years", set minimum_years=5 and maximum_years=null (no upper bound).
+- For a JD stated as "5-8 years", set minimum_years=5 and maximum_years=8.
 
 Job Description:
 {job_description}

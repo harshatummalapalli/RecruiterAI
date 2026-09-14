@@ -150,7 +150,7 @@ class CrustDataProvider(BaseProvider):
             conditions,
             "years_of_experience_raw",
             "=<",
-            search.maximum_years,
+            self._normalize_maximum_years(search.maximum_years),
         )
         self._append_condition(
             conditions,
@@ -198,6 +198,17 @@ class CrustDataProvider(BaseProvider):
         query_terms.extend(self._clean_string_values(search.required_skills))
         query_terms.extend(self._clean_string_values(search.preferred_skills))
         return " ".join(query_terms)
+
+    def _normalize_maximum_years(self, maximum_years: Optional[int]) -> Optional[int]:
+        """Defense-in-depth: a maximum of 0 (or less) means "no maximum" and
+        must never be sent as `years_of_experience_raw =< 0` — combined with
+        any minimum_years filter that would be a self-contradicting AND
+        condition guaranteeing zero results. SearchQuery already normalizes
+        this on construction; this guard covers any caller that builds a
+        payload from an un-normalized value."""
+        if maximum_years is None or maximum_years <= 0:
+            return None
+        return maximum_years
 
     def _clean_string_values(self, values: List[str]) -> List[str]:
         return [value for value in values if isinstance(value, str) and value.strip()]
