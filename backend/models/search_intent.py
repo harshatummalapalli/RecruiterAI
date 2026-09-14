@@ -7,7 +7,7 @@ class Role:
     title: Optional[str] = None
     seniority: Optional[str] = None
     employment_type: Optional[str] = None
-    confidence_score: Optional[int] = None
+    confidence_score: Optional[float] = None
 
 
 @dataclass
@@ -17,21 +17,21 @@ class Location:
     zip_codes: List[str] = field(default_factory=list)
     radius_miles: Optional[float] = None
     work_mode: Optional[str] = None
-    confidence_score: Optional[int] = None
+    confidence_score: Optional[float] = None
 
 
 @dataclass
 class Experience:
     minimum_years: Optional[int] = None
     maximum_years: Optional[int] = None
-    confidence_score: Optional[int] = None
+    confidence_score: Optional[float] = None
 
 
 @dataclass
 class Titles:
     include_titles: List[str] = field(default_factory=list)
     exclude_titles: List[str] = field(default_factory=list)
-    confidence_score: Optional[int] = None
+    confidence_score: Optional[float] = None
 
 
 @dataclass
@@ -40,14 +40,14 @@ class Skills:
     preferred_skills: List[str] = field(default_factory=list)
     required_weight: Optional[float] = None
     preferred_weight: Optional[float] = None
-    confidence_score: Optional[int] = None
+    confidence_score: Optional[float] = None
 
 
 @dataclass
 class PreviousBackground:
     preferred_technologies: List[str] = field(default_factory=list)
     preferred_companies: List[str] = field(default_factory=list)
-    confidence_score: Optional[int] = None
+    confidence_score: Optional[float] = None
 
 
 @dataclass
@@ -57,14 +57,14 @@ class AIFocus:
     agentic_ai: bool = False
     mcp: bool = False
     semantic_kernel: bool = False
-    confidence_score: Optional[int] = None
+    confidence_score: Optional[float] = None
 
 
 @dataclass
 class CompanyPreferences:
     exclude_current_companies: List[str] = field(default_factory=list)
     preferred_company_types: List[str] = field(default_factory=list)
-    confidence_score: Optional[int] = None
+    confidence_score: Optional[float] = None
 
 
 @dataclass
@@ -72,7 +72,7 @@ class Ranking:
     must_have: List[str] = field(default_factory=list)
     nice_to_have: List[str] = field(default_factory=list)
     bonus: List[str] = field(default_factory=list)
-    confidence_score: Optional[int] = None
+    confidence_score: Optional[float] = None
 
 
 @dataclass
@@ -86,4 +86,4 @@ class SearchIntent:
     ai_focus: AIFocus = field(default_factory=AIFocus)
     company_preferences: CompanyPreferences = field(default_factory=CompanyPreferences)
     ranking: Ranking = field(default_factory=Ranking)
-    confidence_score: Optional[int] = None
+    confidence_score: Optional[float] = None

@@ -368,6 +368,66 @@ def test_search_endpoint_preserves_city_and_experience_filters_through_to_provid
     assert sent_plan.searches[0].minimum_years == 3
 
 
+def test_search_endpoint_uses_provided_intent_without_reparsing_via_llm(tmp_path) -> None:
+    # The recruiter's edited Search Brief must be authoritative: /search must
+    # not re-parse jd_text (or a re-serialized version of it) through the LLM
+    # when a structured `intent` is supplied. A parser that raises if it's
+    # ever invoked proves no second LLM call happens.
+    from backend.services.search_store import SearchStore
+
+    class ExplodingParser(BaseLLMProvider):
+        def parse_job_description(self, job_description: str) -> SearchIntent:
+            raise AssertionError("jd_parser.parse() must not be called when request.intent is provided")
+
+    ProviderRegistry._providers.clear()
+    provider = PlanCapturingProvider()
+    ProviderRegistry.register("mock", provider)
+
+    app = create_app(
+        jd_parser=JDParser(provider=ExplodingParser()),
+        search_planner=SearchPlanner(),
+        query_expander=QueryExpansionService(),
+        capability_mapper=CapabilityMapper(),
+        provider_registry=ProviderRegistry,
+        candidate_merger=CandidateMerger(),
+        candidate_ranker=CandidateRanker(),
+        match_explainer=MatchExplainer(),
+        search_diagnostics=SearchDiagnostics(),
+        excel_exporter=ExcelExporter(),
+        search_store=SearchStore(storage_dir=tmp_path),
+    )
+    client = TestClient(app)
+
+    structured_intent = {
+        "role": {"title": "Principal Distributed Systems Engineer"},
+        "location": {"countries": ["United States"], "cities": ["New York"], "work_mode": "hybrid"},
+        "experience": {"minimum_years": 5, "maximum_years": None},
+        "titles": {"include_titles": [], "exclude_titles": []},
+        "skills": {"required_skills": ["Python"], "preferred_skills": []},
+        "previous_background": {"preferred_companies": []},
+        "ai_focus": {},
+        "company_preferences": {},
+        "ranking": {},
+    }
+
+    response = client.post(
+        "/search",
+        json={
+            "jd_text": "this prose must be ignored for parsing purposes",
+            "intent": structured_intent,
+            "provider": "mock",
+        },
+    )
+
+    assert response.status_code == 200
+    sent_plan = provider.seen_plans[0]
+    assert sent_plan.searches[0].include_titles == ["Principal Distributed Systems Engineer"]
+    assert sent_plan.searches[0].countries == ["United States"]
+    assert sent_plan.searches[0].cities == ["New York"]
+    assert sent_plan.searches[0].minimum_years == 5
+    assert sent_plan.searches[0].maximum_years is None
+
+
 def test_search_endpoint_location_override_from_search_brief_is_authoritative(tmp_path) -> None:
     # The recruiter's already-resolved Search Brief location must win over
     # whatever the JD-text re-parse guesses — including replacing a city

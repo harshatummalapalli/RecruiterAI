@@ -181,7 +181,7 @@ export const parseJobDescription = async (jdText: string) => {
 }
 
 export const runCandidateSearch = async (
-  _jdText: string,
+  jdText: string,
   intent: SearchIntent,
   location?: LocationDetail,
   options?: { searchId?: string; debug?: boolean },
@@ -190,7 +190,12 @@ export const runCandidateSearch = async (
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      jd_text: serializeIntentForSearch(intent),
+      // jd_text is kept only as a human-readable record for display/storage.
+      // `intent` is the recruiter-edited Search Brief and is authoritative —
+      // the backend uses it directly and does not re-parse jd_text through
+      // the LLM when it's present.
+      jd_text: jdText.trim() ? jdText : serializeIntentForSearch(intent),
+      intent,
       provider: 'crustdata',
       page_size: 10,
       max_pages: 1,
@@ -235,11 +240,15 @@ export const updateCandidateRecord = async (
   return response.json()
 }
 
-export const exportCandidateResults = async (_jdText: string, intent: SearchIntent) => {
+export const exportCandidateResults = async (jdText: string, intent: SearchIntent) => {
   const response = await fetch(`${API_BASE_URL}/export`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ jd_text: serializeIntentForSearch(intent), provider: 'crustdata' }),
+    body: JSON.stringify({
+      jd_text: jdText.trim() ? jdText : serializeIntentForSearch(intent),
+      intent,
+      provider: 'crustdata',
+    }),
   })
 
   if (!response.ok) {

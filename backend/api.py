@@ -112,6 +112,18 @@ class ParseRequest(BaseModel):
     jd_text: str
 
 
+def _resolve_search_intent(request: "SearchRequest", jd_parser: JDParser) -> SearchIntent:
+    """Use the recruiter's already-edited Search Brief when the caller sends
+    one; only fall back to an LLM parse of `jd_text` for backward-compatible
+    callers that don't. This is what keeps the Search Brief -> Search step
+    from re-parsing the JD (or a re-serialized version of it) a second time."""
+    if request.intent is not None:
+        logger.info("Using recruiter-provided Search Brief directly (no second LLM parse)")
+        return request.intent
+    logger.info("No structured Search Brief provided — parsing job description via LLM")
+    return jd_parser.parse(request.jd_text)
+
+
 class LocationOverride(BaseModel):
     """The recruiter's already-resolved Search Brief location — sent
     directly so the backend never has to re-derive location from a second,
@@ -138,6 +150,15 @@ class SearchRequest(ParseRequest):
     location: Optional[LocationOverride] = None
     debug: Optional[bool] = None
     search_id: Optional[str] = None
+    # The recruiter's already-parsed-and-edited Search Brief. When present,
+    # this is authoritative and the search pipeline uses it directly instead
+    # of re-parsing `jd_text` through the LLM a second time — a second pass
+    # over serialized prose is lossy (drops confidence scores, risks
+    # re-splitting/mis-reading list fields, and can re-derive numeric bounds
+    # like years of experience incorrectly) and non-deterministic. `jd_text`
+    # is still accepted/stored for display and for backward-compatible
+    # callers that don't send a structured intent.
+    intent: Optional[SearchIntent] = None
 
 
 class SearchResponse(BaseModel):
@@ -267,11 +288,9 @@ def create_app(
             _raise_recruiter_friendly_error("No sourcing provider is currently configured.")
 
         try:
-            logger.info("Parsing job description")
-            intent = jd_parser.parse(request.jd_text)
+            intent = _resolve_search_intent(request, jd_parser)
             if not isinstance(intent, SearchIntent):
                 raise ParsingError("JD parser returned an invalid SearchIntent")
-            logger.info("JD parsed")
 
             # Location fidelity fix: the recruiter's Search Brief has already
             # resolved location (search geography, exact cities, zip, radius)
@@ -458,7 +477,7 @@ def create_app(
         except KeyError as exc:
             raise HTTPException(status_code=503, detail="No sourcing provider is currently configured.") from exc
 
-        intent = jd_parser.parse(request.jd_text)
+        intent = _resolve_search_intent(request, jd_parser)
         if request.location is not None:
             intent.location.countries = list(request.location.countries)
             intent.location.cities = list(request.location.cities)

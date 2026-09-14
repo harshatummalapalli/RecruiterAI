@@ -241,7 +241,7 @@ export function RecruiterWorkspaceScreen() {
     setSearchState('searching')
 
     try {
-      const response = await runCandidateSearch('', briefToSearchIntent(brief), briefToLocationDetail(brief), {
+      const response = await runCandidateSearch(jdText, briefToSearchIntent(brief), briefToLocationDetail(brief), {
         searchId: searchId ?? undefined,
         debug: import.meta.env.DEV,
       })
