@@ -13,7 +13,39 @@ export type WorkMode = 'remote' | 'hybrid' | 'onsite'
 export type EmploymentType = 'Full-time' | 'Contract' | 'Contract-to-hire' | 'Internship' | 'Part-time'
 export type SearchGeography = 'global' | 'country' | 'multiple' | 'radius'
 
-export const DEFAULT_EXCLUDED_TITLES = ['CTO', 'CIO', 'CAIO', 'VP', 'Vice President', 'Director', 'Founder', 'Head of', 'Chief Architect']
+// Kept in sync with backend/services/search_planner.py's
+// EXECUTIVE_TITLE_EXCLUSIONS — the backend applies this standing policy
+// regardless of what the recruiter edits here, so this is the Search
+// Brief's transparent, editable starting point for the same list, not a
+// separate source of truth. Deliberately excludes ambiguous IC titles like
+// "Principal"/"Staff"/"Lead"/"Engineering Manager".
+export const DEFAULT_EXCLUDED_TITLES = [
+  'Founder',
+  'Co-Founder',
+  'CEO',
+  'Co-CEO',
+  'CTO',
+  'CIO',
+  'CPO',
+  'CAIO',
+  'Chief Technology Officer',
+  'Chief Information Officer',
+  'Chief Product Officer',
+  'Chief AI Officer',
+  'Chief Data Officer',
+  'VP',
+  'Vice President',
+  'SVP',
+  'EVP',
+  'Director',
+  'Managing Director',
+  'Head of Engineering',
+  'Head of Technology',
+  'Head of Product',
+  'Head of Data',
+  'Head of AI',
+  'Head of ML',
+]
 
 export type ClarificationOption = { value: string; label: string }
 export type ClarificationQuestion = {

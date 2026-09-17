@@ -7,12 +7,20 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from backend.auth import (
+    SESSION_COOKIE_NAME,
+    check_domain_allowed,
+    create_session_cookie_value,
+    require_session,
+    verify_google_id_token,
+)
 from backend.bootstrap import bootstrap
+from backend.config import get_session_cookie_secure, get_session_max_age_seconds
 from backend.errors import ConfigurationError, ParsingError, ProviderError, RecruiterAIError, RankingError
 from backend.models.match_explanation import MatchExplanation
 from backend.models.provider_capabilities import ProviderCapabilities
@@ -64,16 +72,25 @@ logging.basicConfig(level=logging.INFO, handlers=[_log_handler], force=True)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-# Fields CrustData's /person/search API has no way to filter on today. Kept
-# here (not guessed at request time) so Constraint mapping and Debug Mode
-# agree on exactly what gets dropped and why. See docs/LOCATION_PIPELINE.md.
+# Fields CrustData's /person/search API can actually filter on for this
+# account, verified through live API calls (see the V0.1 discovery
+# architecture notes) rather than assumed from general documentation.
+# zip_codes and work_mode are deliberately excluded: CrustData has no
+# ZIP/postal filter field at all (confirmed via a live 400 rejection), and
+# Remote/Hybrid/Onsite exists only on job_search, never person_search.
+# radius_place/radius_miles ARE supported (via geo_distance) provided a
+# place-name/ZIP-text anchor is given, not a raw postal filter.
 CRUSTDATA_SUPPORTED_FILTERS = [
     "include_titles",
     "exclude_titles",
     "required_skills",
     "preferred_skills",
     "countries",
+    "states",
     "cities",
+    "radius_place",
+    "radius_miles",
+    "employment_type",
     "minimum_years",
     "maximum_years",
     "preferred_companies",
@@ -83,7 +100,6 @@ CRUSTDATA_SUPPORTED_FILTERS = [
 
 FRIENDLY_UNSUPPORTED_FILTER_LABELS = {
     "zip_codes": "postal/zip code",
-    "radius_miles": "search radius",
     "work_mode": "work mode (remote/hybrid/onsite)",
     "must_have": "ranking hint (must-have)",
     "nice_to_have": "ranking hint (nice-to-have)",
@@ -91,8 +107,69 @@ FRIENDLY_UNSUPPORTED_FILTER_LABELS = {
 }
 
 
+# Target size of the candidate pool shown to the recruiter (Part 14: "target
+# approximately 20-30 candidates... do not retrieve 100+ unnecessarily").
+DISCOVERY_TARGET_POOL_SIZE = 20
+
+
+def _run_adaptive_discovery(
+    provider: BaseProvider,
+    mapped_plan: SearchPlan,
+    options: Dict[str, Any],
+    candidate_merger: CandidateMerger,
+    target_pool_size: int,
+) -> tuple[List[Any], SearchPlan]:
+    """Run the primary natural-language query alone first; only run the
+    supplementary title-expansion query if the primary didn't reach the
+    target pool size. Returns the raw candidates from whichever queries
+    actually ran, plus a SearchPlan reflecting only those queries (for
+    accurate diagnostics/logging — never claim a query ran that didn't)."""
+    primary_queries = [q for q in mapped_plan.searches if q.query_name == "natural_language"]
+    other_queries = [q for q in mapped_plan.searches if q.query_name != "natural_language"]
+
+    def run(searches: List[Any]) -> List[Any]:
+        sub_plan = SearchPlan(searches=searches, strategy=mapped_plan.strategy, reasoning=mapped_plan.reasoning, confidence_score=mapped_plan.confidence_score)
+        if hasattr(provider, "search_with_options"):
+            return provider.search_with_options(sub_plan, options=options)
+        return provider.search(sub_plan)
+
+    if not primary_queries:
+        # No natural-language query available (e.g. an intent with no
+        # skills/title at all) — fall back to running whatever the plan has.
+        candidates = run(mapped_plan.searches)
+        return candidates, mapped_plan
+
+    candidates = run(primary_queries)
+    executed_searches = list(primary_queries)
+
+    if other_queries:
+        unique_so_far = len(candidate_merger.merge(candidates))
+        if unique_so_far < target_pool_size:
+            candidates = candidates + run(other_queries)
+            executed_searches = executed_searches + other_queries
+
+    executed_plan = SearchPlan(
+        searches=executed_searches,
+        strategy=mapped_plan.strategy,
+        reasoning=mapped_plan.reasoning,
+        confidence_score=mapped_plan.confidence_score,
+    )
+    return candidates, executed_plan
+
+
 def _raise_recruiter_friendly_error(detail: str, status_code: int = 503) -> None:
     raise HTTPException(status_code=status_code, detail=detail)
+
+
+def _apply_radius_degradation(intent: SearchIntent) -> Optional[str]:
+    """Radius search needs an anchor place (CrustData's geo_distance has no
+    concept of a bare distance) — if the recruiter set a radius without one,
+    it can't be enforced. Never silently drop it: clear it and say so,
+    rather than pretending it was applied."""
+    if intent.location.radius_miles is not None and not intent.location.radius_place:
+        intent.location.radius_miles = None
+        return "Current provider cannot filter by search radius without a place or ZIP to search around. The search may include broader results."
+    return None
 
 
 def _friendly_capability_warnings(raw_warnings: List[str]) -> List[str]:
@@ -133,10 +210,17 @@ class LocationOverride(BaseModel):
 
     search_geography: Optional[str] = None
     countries: List[str] = Field(default_factory=list)
+    states: List[str] = Field(default_factory=list)
     cities: List[str] = Field(default_factory=list)
     zip_codes: List[str] = Field(default_factory=list)
     radius_miles: Optional[float] = None
+    # Free-form place name (or ZIP text) CrustData's geo_distance geocodes
+    # server-side — never sent as a zip_code filter field, which CrustData
+    # doesn't have.
+    radius_place: Optional[str] = None
+    radius_unit: str = "mi"
     work_mode: Optional[str] = None
+    employment_type: Optional[str] = None
 
 
 class SearchRequest(ParseRequest):
@@ -184,6 +268,10 @@ class ExportResponse(BaseModel):
     path: str
 
 
+class GoogleLoginRequest(BaseModel):
+    credential: str
+
+
 def create_app(
     jd_parser: Optional[JDParser] = None,
     search_planner: Optional[SearchPlanner] = None,
@@ -200,7 +288,7 @@ def create_app(
     app = FastAPI(title="RecruiterAI API")
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+        allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://140.245.235.18"],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -224,11 +312,35 @@ def create_app(
     def health() -> Dict[str, str]:
         return {"status": "ok"}
 
-    @app.get("/providers")
+    @app.post("/auth/google")
+    def auth_google(request: GoogleLoginRequest, response: Response) -> Dict[str, Any]:
+        claims = verify_google_id_token(request.credential)
+        check_domain_allowed(claims)
+        response.set_cookie(
+            SESSION_COOKIE_NAME,
+            create_session_cookie_value(),
+            httponly=True,
+            samesite="lax",
+            secure=get_session_cookie_secure(),
+            max_age=get_session_max_age_seconds(),
+        )
+        logger.info("[AUTH] Recruiter signed in")
+        return {"authenticated": True, "email": claims.get("email")}
+
+    @app.get("/auth/me", dependencies=[Depends(require_session)])
+    def auth_me() -> Dict[str, bool]:
+        return {"authenticated": True}
+
+    @app.post("/auth/logout")
+    def auth_logout(response: Response) -> Dict[str, bool]:
+        response.delete_cookie(SESSION_COOKIE_NAME)
+        return {"authenticated": False}
+
+    @app.get("/providers", dependencies=[Depends(require_session)])
     def providers() -> Dict[str, List[str]]:
         return {"providers": provider_registry.available()}
 
-    @app.post("/parse-jd")
+    @app.post("/parse-jd", dependencies=[Depends(require_session)])
     def parse_jd(request: ParseRequest) -> SearchIntent:
         try:
             intent = jd_parser.parse(request.jd_text)
@@ -246,7 +358,7 @@ def create_app(
             _raise_recruiter_friendly_error("Please contact your administrator.")
         return intent
 
-    @app.get("/search/{search_id}", response_model=SearchResponse)
+    @app.get("/search/{search_id}", response_model=SearchResponse, dependencies=[Depends(require_session)])
     def get_search(search_id: str) -> SearchResponse:
         record = search_store.load(search_id)
         if record is None:
@@ -254,7 +366,7 @@ def create_app(
         logger.info("[SEARCH] Reloaded persisted search | search_id=%s — no OpenAI or CrustData calls made", search_id)
         return SearchResponse(**record["response"])
 
-    @app.patch("/search/{search_id}/candidate")
+    @app.patch("/search/{search_id}/candidate", dependencies=[Depends(require_session)])
     def update_candidate(search_id: str, update: CandidateUpdateRequest) -> Dict[str, Any]:
         record = search_store.load(search_id)
         if record is None:
@@ -269,7 +381,7 @@ def create_app(
         logger.info("[SEARCH] Recruiter decision/note persisted | search_id=%s candidate_id=%s", search_id, update.candidate_id)
         return {"recruiter_decisions": record.get("recruiter_decisions", {}), "notes": record.get("notes", {})}
 
-    @app.post("/search", response_model=SearchResponse)
+    @app.post("/search", response_model=SearchResponse, dependencies=[Depends(require_session)])
     def search(request: SearchRequest) -> SearchResponse:
         search_id = request.search_id or str(uuid.uuid4())
         started_at = time.perf_counter()
@@ -301,18 +413,27 @@ def create_app(
             # constraint) choice isn't silently overridden by a stray guess.
             if request.location is not None:
                 intent.location.countries = list(request.location.countries)
+                intent.location.states = list(request.location.states)
                 intent.location.cities = list(request.location.cities)
                 intent.location.zip_codes = list(request.location.zip_codes)
                 intent.location.radius_miles = request.location.radius_miles
+                intent.location.radius_place = request.location.radius_place
+                intent.location.radius_unit = request.location.radius_unit or "mi"
                 intent.location.work_mode = request.location.work_mode
+                if request.location.employment_type:
+                    intent.role.employment_type = request.location.employment_type
                 logger.info(
-                    "[SEARCH] Location override applied from Search Brief | countries=%s cities=%s zip_codes=%s radius_miles=%s work_mode=%s",
+                    "[SEARCH] Location override applied from Search Brief | countries=%s states=%s cities=%s zip_codes=%s radius_place=%s radius_miles=%s work_mode=%s",
                     intent.location.countries,
+                    intent.location.states,
                     intent.location.cities,
                     intent.location.zip_codes,
+                    intent.location.radius_place,
                     intent.location.radius_miles,
                     intent.location.work_mode,
                 )
+
+            radius_degradation_warning = _apply_radius_degradation(intent)
 
             logger.info("Building search plan")
             plan = search_planner.build(intent)
@@ -332,6 +453,8 @@ def create_app(
             if not isinstance(mapped_plan, SearchPlan):
                 raise RankingError("Capability mapping returned an invalid plan")
             friendly_warnings = _friendly_capability_warnings(capability_warnings)
+            if radius_degradation_warning:
+                friendly_warnings.append(radius_degradation_warning)
             for raw_warning in capability_warnings:
                 logger.warning("[SEARCH] Constraint dropped for this provider | %s", raw_warning)
             logger.info("Capability mapping complete (%s constraint(s) dropped)", len(capability_warnings))
@@ -345,19 +468,22 @@ def create_app(
                 "cursor": request.cursor,
             }
             options = {key: value for key, value in options.items() if value is not None}
-            logger.info(
-                "[SEARCH] Provider Request dispatched | provider=%s queries=%s options=%s",
-                request.provider,
-                len(mapped_plan.searches),
-                options,
+
+            # Adaptive retrieval (Part 14): the primary natural-language
+            # query runs first. The supplementary title-expansion query only
+            # runs if the primary alone didn't produce enough candidates to
+            # review — this is what keeps a well-covered role to one cheap
+            # query instead of always spending credits on both.
+            candidates, executed_plan = _run_adaptive_discovery(
+                provider=provider,
+                mapped_plan=mapped_plan,
+                options=options,
+                candidate_merger=candidate_merger,
+                target_pool_size=DISCOVERY_TARGET_POOL_SIZE,
             )
-            if hasattr(provider, "search_with_options"):
-                candidates = provider.search_with_options(mapped_plan, options=options)
-            else:
-                candidates = provider.search(mapped_plan)
             if not isinstance(candidates, list):
                 raise ProviderError("Provider returned an invalid candidate list")
-            logger.info("[SEARCH] Candidates Returned | provider=%s count=%s", request.provider, len(candidates))
+            logger.info("[SEARCH] Candidates Returned | provider=%s count=%s queries_run=%s", request.provider, len(candidates), len(executed_plan.searches))
             if not candidates:
                 logger.info("No candidates were returned for this search — this is a real empty result, not an error.")
 
@@ -373,22 +499,26 @@ def create_app(
             logger.info("Explanations generated")
 
             logger.info("Generating diagnostics")
-            diagnostics = search_diagnostics.analyze(mapped_plan, ranked_candidates)
+            diagnostics = search_diagnostics.analyze(executed_plan, ranked_candidates)
             logger.info("Diagnostics generated")
 
             execution_time_ms = round((time.perf_counter() - started_at) * 1000, 2)
 
             debug_payload: Optional[Dict[str, Any]] = None
             if request.debug:
+                # Reflects the queries that were ACTUALLY dispatched
+                # (executed_plan), not the full candidate plan — adaptive
+                # retrieval may skip the title-expansion query entirely, and
+                # debug output must never look like more ran than did.
                 final_provider_payload = (
-                    provider.debug_payloads(mapped_plan, options) if hasattr(provider, "debug_payloads") else None
+                    provider.debug_payloads(executed_plan, options) if hasattr(provider, "debug_payloads") else None
                 )
                 debug_payload = {
                     "search_id": search_id,
                     "execution_time_ms": execution_time_ms,
                     "jd_text": request.jd_text,
                     "location_override": request.location.model_dump() if request.location else None,
-                    "generated_provider_query": [q.model_dump() for q in mapped_plan.searches],
+                    "generated_provider_query": [q.model_dump() for q in executed_plan.searches],
                     "final_provider_payload": final_provider_payload,
                     "capability_warnings": capability_warnings,
                     "candidates_returned": len(candidates),
@@ -438,7 +568,7 @@ def create_app(
                     "search_id": search_id,
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                     "execution_time_ms": execution_time_ms,
-                    "queries_dispatched": len(mapped_plan.searches),
+                    "queries_dispatched": len(executed_plan.searches),
                     "candidates_returned": len(ranked_candidates),
                     "validation_rules_fired": len(capability_warnings),
                     "final_search_constraints": {
@@ -470,7 +600,7 @@ def create_app(
             logger.exception("Unexpected search pipeline error")
             _raise_recruiter_friendly_error("Please contact your administrator.")
 
-    @app.post("/export")
+    @app.post("/export", dependencies=[Depends(require_session)])
     def export(request: SearchRequest) -> FileResponse:
         try:
             provider = provider_registry.get(request.provider)
@@ -480,10 +610,16 @@ def create_app(
         intent = _resolve_search_intent(request, jd_parser)
         if request.location is not None:
             intent.location.countries = list(request.location.countries)
+            intent.location.states = list(request.location.states)
             intent.location.cities = list(request.location.cities)
             intent.location.zip_codes = list(request.location.zip_codes)
             intent.location.radius_miles = request.location.radius_miles
+            intent.location.radius_place = request.location.radius_place
+            intent.location.radius_unit = request.location.radius_unit or "mi"
             intent.location.work_mode = request.location.work_mode
+            if request.location.employment_type:
+                intent.role.employment_type = request.location.employment_type
+        _apply_radius_degradation(intent)
         plan = search_planner.build(intent)
         expanded_plan = query_expander.expand(plan)
 

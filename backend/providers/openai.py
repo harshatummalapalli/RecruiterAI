@@ -107,9 +107,12 @@ class OpenAIProvider(BaseLLMProvider):
             ),
             location=Location(
                 countries=location_data.get("countries", []),
+                states=location_data.get("states", []),
                 cities=location_data.get("cities", []),
                 zip_codes=location_data.get("zip_codes", []),
                 radius_miles=location_data.get("radius_miles"),
+                radius_place=location_data.get("radius_place"),
+                radius_unit=location_data.get("radius_unit") or "mi",
                 work_mode=location_data.get("work_mode"),
                 confidence_score=location_data.get("confidence_score"),
             ),
@@ -155,4 +158,5 @@ class OpenAIProvider(BaseLLMProvider):
                 confidence_score=ranking_data.get("confidence_score"),
             ),
             confidence_score=raw_response.get("confidence_score"),
+            natural_language_search_query=raw_response.get("natural_language_search_query"),
         )

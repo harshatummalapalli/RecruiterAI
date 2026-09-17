@@ -26,12 +26,27 @@ def test_expand_query_uses_knowledge_files_and_deduplicates_values() -> None:
 
     assert query.include_titles == ["Machine Learning Engineer", "ML Engineer", "Applied Scientist"]
     assert query.exclude_titles == ["Software Engineer", "Engineer", "Application Developer"]
-    assert query.required_skills == ["Python", "PyTorch", "Python 3", "PySpark", "Torch", "Deep Learning"]
-    assert query.preferred_skills == ["LLM", "Large Language Models"]
-    assert query.must_have == ["AWS", "Amazon Web Services"]
-    assert query.nice_to_have == ["MLOps", "Machine Learning Operations"]
-    assert query.bonus == ["Python", "Python 3", "PySpark"]
+    # Skill expansion was removed — a recruiter-stated requirement (or
+    # preference) must never be silently turned into an unstated one (e.g.
+    # "Python" -> "PySpark"). Skills pass through unchanged.
+    assert query.required_skills == ["Python", "PyTorch"]
+    assert query.preferred_skills == ["LLM"]
+    assert query.must_have == ["AWS"]
+    assert query.nice_to_have == ["MLOps"]
+    assert query.bonus == ["Python"]
     assert query.work_mode == "lead"
+
+
+def test_expand_query_never_injects_unstated_technology() -> None:
+    # Regression test for the specific bug found in live discovery
+    # experiments: backend/knowledge/skills.json used to map "Python" ->
+    # ["Python 3", "PySpark"], silently adding a technology the recruiter
+    # never asked for.
+    plan = SearchPlan(searches=[SearchQuery(query_name="Primary", required_skills=["Python"])])
+
+    expanded_plan = QueryExpansionService().expand(plan)
+
+    assert expanded_plan.searches[0].required_skills == ["Python"]
 
 
 def test_expand_query_keeps_existing_plan_shape() -> None:

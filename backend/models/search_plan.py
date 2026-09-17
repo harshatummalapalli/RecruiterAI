@@ -14,10 +14,14 @@ class SearchQuery(BaseModel):
     required_skills: List[str] = Field(default_factory=list)
     preferred_skills: List[str] = Field(default_factory=list)
     countries: List[str] = Field(default_factory=list)
+    states: List[str] = Field(default_factory=list)
     cities: List[str] = Field(default_factory=list)
     zip_codes: List[str] = Field(default_factory=list)
     radius_miles: Optional[float] = None
+    radius_place: Optional[str] = None
+    radius_unit: str = "mi"
     work_mode: Optional[str] = None
+    employment_type: Optional[str] = None
     minimum_years: Optional[int] = None
     maximum_years: Optional[int] = None
     preferred_companies: List[str] = Field(default_factory=list)
@@ -26,6 +30,10 @@ class SearchQuery(BaseModel):
     must_have: List[str] = Field(default_factory=list)
     nice_to_have: List[str] = Field(default_factory=list)
     bonus: List[str] = Field(default_factory=list)
+    # Set only on the primary discovery query — when present, this is sent
+    # to CrustData's `search: {query, mode: "hybrid"}` verbatim instead of
+    # the title+skills keyword concatenation. See providers/crustdata.py.
+    natural_language_query: Optional[str] = None
 
     @field_validator(
         "include_titles",
@@ -33,6 +41,7 @@ class SearchQuery(BaseModel):
         "required_skills",
         "preferred_skills",
         "countries",
+        "states",
         "cities",
         "zip_codes",
         "preferred_companies",
@@ -61,7 +70,7 @@ class SearchQuery(BaseModel):
             return normalized
         return [value]
 
-    @field_validator("query_name", "work_mode", mode="before")
+    @field_validator("query_name", "work_mode", "employment_type", "radius_place", "natural_language_query", mode="before")
     @classmethod
     def _normalize_optional_string(cls, value: Any) -> Optional[str]:
         if value is None:

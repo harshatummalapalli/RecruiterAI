@@ -11,24 +11,21 @@ def test_search_returns_candidate_objects_from_search_plan(monkeypatch) -> None:
     plan = SearchPlan(
         searches=[
             SearchQuery(
-                query_name="Primary",
-                include_titles=["Machine Learning Engineer"],
-                required_skills=["Python", "PyTorch"],
+                query_name="natural_language",
+                natural_language_query="Senior ML engineer with strong Python and PyTorch experience.",
                 countries=["US"],
                 cities=["New York"],
                 minimum_years=5,
             ),
             SearchQuery(
-                query_name="Alternate 1",
-                include_titles=["ML Engineer"],
-                required_skills=["Python", "PyTorch"],
+                query_name="title_expansion",
+                include_titles=["Machine Learning Engineer", "ML Engineer"],
                 countries=["US"],
                 cities=["New York"],
                 minimum_years=5,
             ),
         ],
-        strategy="multi_query",
-        reasoning="Deterministic mapping from SearchIntent to multiple SearchQuery variants",
+        strategy="primary_natural_language_plus_title_expansion",
         confidence_score=88,
     )
 
@@ -40,12 +37,12 @@ def test_search_returns_candidate_objects_from_search_plan(monkeypatch) -> None:
         assert request.headers["authorization"] == "Bearer test-key"
         assert request.headers["x-api-version"] == "2025-11-01"
         payload = json.loads(request.read().decode("utf-8"))
-        if payload.get("search", {}).get("query") == "Machine Learning Engineer Python PyTorch":
-            request_names.append("Primary")
-        elif payload.get("search", {}).get("query") == "ML Engineer Python PyTorch":
-            request_names.append("Alternate 1")
+        if payload.get("search", {}).get("query") == "Senior ML engineer with strong Python and PyTorch experience.":
+            request_names.append("natural_language")
+        elif "search" not in payload:
+            request_names.append("title_expansion")
         assert payload["filters"]
-        assert payload["limit"] == 10
+        assert payload["limit"] == 25
         assert payload["fields"] == ["crustdata_person_id", "basic_profile", "experience", "social_handles"]
         return httpx.Response(
             200,
@@ -80,13 +77,48 @@ def test_search_returns_candidate_objects_from_search_plan(monkeypatch) -> None:
 
     assert isinstance(candidates, list)
     assert len(candidates) == 2
-    assert request_names == ["Primary", "Alternate 1"]
+    assert request_names == ["natural_language", "title_expansion"]
     assert all(isinstance(candidate, Candidate) for candidate in candidates)
     assert candidates[0].name == "Alicia Chen"
     assert candidates[0].title == "Senior Machine Learning Engineer"
     assert candidates[0].company == "OpenAI"
     assert candidates[0].location == "New York, US"
     assert candidates[0].provider_score == 0.91
+    # Each candidate is tagged with the query that found it (source
+    # tracking for merge-time convergence detection).
+    assert candidates[0].raw_data["matched_queries"] == ["natural_language"]
+    assert candidates[1].raw_data["matched_queries"] == ["title_expansion"]
+
+
+def test_build_payload_single_title_uses_plain_fuzzy_match() -> None:
+    provider = CrustDataProvider()
+    payload = provider._build_payload(SearchQuery(include_titles=["Software Engineer"]))
+    filters = payload["filters"]
+
+    assert {"field": "experience.employment_details.current.title", "type": "(.)", "value": "Software Engineer"} in filters["conditions"]
+
+
+def test_build_payload_multi_title_uses_structural_or_not_pipe_string() -> None:
+    # Regression test: joining titles into "A|B|C" with the "(.)" fuzzy
+    # operator was confirmed live to fuzzy-match the literal joined string
+    # (returning near-zero results), not to behave as OR.
+    provider = CrustDataProvider()
+    payload = provider._build_payload(
+        SearchQuery(include_titles=["Senior Backend Engineer", "Senior Software Engineer", "Backend Developer"])
+    )
+    filters = payload["filters"]
+
+    title_or = next(c for c in filters["conditions"] if c.get("op") == "or")
+    assert title_or == {
+        "op": "or",
+        "conditions": [
+            {"field": "experience.employment_details.current.title", "type": "(.)", "value": "Senior Backend Engineer"},
+            {"field": "experience.employment_details.current.title", "type": "(.)", "value": "Senior Software Engineer"},
+            {"field": "experience.employment_details.current.title", "type": "(.)", "value": "Backend Developer"},
+        ],
+    }
+    # No condition anywhere joins values with a pipe character.
+    assert not any("|" in str(condition.get("value", "")) for condition in filters["conditions"])
 
 
 def test_build_payload_maps_richer_search_query_to_crustdata_filters() -> None:
@@ -97,11 +129,10 @@ def test_build_payload_maps_richer_search_query_to_crustdata_filters() -> None:
                 query_name="Primary",
                 include_titles=["Software Engineer"],
                 exclude_titles=["Manager", "Director"],
-                required_skills=["Python"],
-                preferred_skills=["AWS"],
+                natural_language_query="Backend engineer with Python experience.",
                 countries=["US"],
+                states=["New York"],
                 cities=["New York"],
-                work_mode="hybrid",
                 minimum_years=5,
                 maximum_years=10,
                 preferred_companies=["OpenAI"],
@@ -119,8 +150,16 @@ def test_build_payload_maps_richer_search_query_to_crustdata_filters() -> None:
         condition == {"field": "experience.employment_details.current.title", "type": "(.)", "value": "Software Engineer"}
         for condition in filters["conditions"]
     )
+    # Exclusions are fuzzy-NOT ("(!)") on CURRENT title only — never
+    # `not_in`/`!=` (exact-match only, confirmed live to be unsafe for real
+    # compound executive titles like "Co-Founder & CTO") and never the
+    # unscoped `experience.employment_details.title` field, which would also
+    # match PAST roles.
+    assert {"field": "experience.employment_details.current.title", "type": "(!)", "value": "Manager"} in filters["conditions"]
+    assert {"field": "experience.employment_details.current.title", "type": "(!)", "value": "Director"} in filters["conditions"]
+    assert not any(condition.get("type") in ("not_in", "!=") and "title" in str(condition.get("field", "")) for condition in filters["conditions"])
     assert any(
-        condition == {"field": "experience.employment_details.title", "type": "not_in", "value": ["Manager", "Director"]}
+        condition == {"field": "basic_profile.location.state", "type": "in", "value": ["New York"]}
         for condition in filters["conditions"]
     )
     assert any(
@@ -143,7 +182,66 @@ def test_build_payload_maps_richer_search_query_to_crustdata_filters() -> None:
         condition == {"field": "experience.employment_details.current.company_type", "type": "in", "value": ["startup"]}
         for condition in filters["conditions"]
     )
-    assert payload["search"]["query"] == "Software Engineer Python AWS"
+    assert payload["search"]["query"] == "Backend engineer with Python experience."
+    assert payload["search"]["mode"] == "hybrid"
+
+
+def test_build_payload_title_exclusion_only_scopes_current_title_not_past() -> None:
+    # A candidate whose CURRENT title is "Principal Software Engineer" but
+    # who was a Founder/CTO in the past must remain eligible — the exclusion
+    # is built only against experience.employment_details.current.title,
+    # never the unscoped/past title field, so their history can't disqualify
+    # them.
+    provider = CrustDataProvider()
+    payload = provider._build_payload(SearchQuery(exclude_titles=["Founder", "CTO"]))
+    filters = payload["filters"]
+
+    for condition in filters["conditions"]:
+        if condition.get("type") == "(!)":
+            assert condition["field"] == "experience.employment_details.current.title"
+    assert not any(condition.get("field") == "experience.employment_details.past.title" for condition in filters["conditions"])
+    assert not any(condition.get("field") == "experience.employment_details.title" for condition in filters["conditions"])
+
+
+def test_build_payload_geo_distance_radius() -> None:
+    provider = CrustDataProvider()
+    payload = provider._build_payload(
+        SearchQuery(radius_place="New York, NY", radius_miles=25, radius_unit="mi")
+    )
+    filters = payload["filters"]
+
+    assert {
+        "field": "basic_profile.location",
+        "type": "geo_distance",
+        "value": {"location": "New York, NY", "distance": 25, "unit": "mi"},
+    } in filters["conditions"]
+
+
+def test_build_payload_never_sends_zip_code_filter() -> None:
+    # CrustData has no zip_code filter field at all (confirmed live: a 400
+    # "Unknown filter column" rejection). SearchQuery has no zip filter
+    # field for the provider to accidentally send — radius_place carries a
+    # ZIP-shaped string only as free-form geo_distance location text.
+    provider = CrustDataProvider()
+    payload = provider._build_payload(SearchQuery(radius_place="10001", radius_miles=10))
+    filters = payload["filters"]
+
+    assert not any("zip" in str(condition.get("field", "")).lower() for condition in filters["conditions"])
+    geo_condition = next(c for c in filters["conditions"] if c.get("type") == "geo_distance")
+    assert geo_condition["value"]["location"] == "10001"
+
+
+def test_build_payload_employment_type_only_forwards_known_values() -> None:
+    provider = CrustDataProvider()
+
+    valid_payload = provider._build_payload(SearchQuery(employment_type="Full-time"))
+    assert any(
+        condition == {"field": "experience.employment_details.current.employment_type", "type": "in", "value": ["Full-time"]}
+        for condition in valid_payload["filters"]["conditions"]
+    )
+
+    invalid_payload = provider._build_payload(SearchQuery(employment_type="Freelance", minimum_years=5))
+    assert not any("employment_type" in str(condition.get("field", "")) for condition in invalid_payload["filters"]["conditions"])
 
 
 def test_build_payload_treats_maximum_years_zero_as_no_maximum() -> None:
@@ -193,7 +291,7 @@ def test_search_with_options_paginates_and_uses_page_size(monkeypatch) -> None:
         return httpx.Response(200, json={"profiles": [{"crustdata_person_id": "crust-002"}]})
 
     provider = CrustDataProvider(client=httpx.Client(transport=httpx.MockTransport(handler)))
-    plan = SearchPlan(searches=[SearchQuery(query_name="Primary", include_titles=["Software Engineer"], required_skills=["Python"])])
+    plan = SearchPlan(searches=[SearchQuery(query_name="Primary", include_titles=["Software Engineer"])])
 
     candidates = provider.search_with_options(plan, options={"page_size": 7, "max_pages": 2})
 
@@ -231,10 +329,23 @@ def test_build_payload_never_forwards_autocomplete_to_crustdata() -> None:
     # (400 invalid_request, extra_forbidden) — the generic `autocomplete`
     # request option must never reach the actual CrustData payload.
     provider = CrustDataProvider()
-    payload = provider._build_payload(SearchQuery(include_titles=["Software Engineer"], required_skills=["Python"]), options={"autocomplete": True})
+    payload = provider._build_payload(
+        SearchQuery(include_titles=["Software Engineer"], natural_language_query="Backend engineer."),
+        options={"autocomplete": True},
+    )
 
     assert "autocomplete" not in payload
-    assert payload["search"]["query"] == "Software Engineer Python"
+    assert payload["search"]["query"] == "Backend engineer."
+
+
+def test_build_payload_no_search_block_without_natural_language_query() -> None:
+    # A query with only structural filters (e.g. the title-expansion query)
+    # must not get a fabricated "search" block from title/skill keywords —
+    # that was the old behavior this replaces.
+    provider = CrustDataProvider()
+    payload = provider._build_payload(SearchQuery(include_titles=["Software Engineer"], required_skills=["Python"]))
+
+    assert "search" not in payload
 
 
 def test_candidate_normalizes_missing_raw_data_to_empty_dict() -> None:

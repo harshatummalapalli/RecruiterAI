@@ -27,6 +27,12 @@ class CandidateMerger:
         return merged
 
     def _deduplication_key(self, candidate: Candidate) -> Optional[Tuple[Optional[str], Optional[str], Optional[str]]]:
+        # Prefer the provider's own stable identifier (CrustData person ID)
+        # over profile_url/name — an id is exact and can't collide the way a
+        # name+company pair can, and unlike profile_url it's always present
+        # on a CrustData-sourced candidate.
+        if candidate.candidate_id:
+            return ("candidate_id", candidate.candidate_id, None)
         if candidate.profile_url:
             return ("profile_url", candidate.profile_url, None)
         if candidate.email:

@@ -24,15 +24,15 @@ class QueryExpansionService:
         )
 
     def _expand_query(self, query: SearchQuery) -> SearchQuery:
+        # Skill expansion was deliberately removed: backend/knowledge/skills.json
+        # mapped e.g. "Python" -> ["Python 3", "PySpark"], silently turning a
+        # recruiter-stated requirement into an unstated one. Never re-add
+        # skill expansion here without the recruiter/JD explicitly naming the
+        # added skill — see the V0.1 discovery architecture notes.
         knowledge = self._load_knowledge()
         expanded_query = query.model_copy(deep=True)
 
         expanded_query.include_titles = self._expand_values(query.include_titles, knowledge.get("titles", {}))
-        expanded_query.required_skills = self._expand_values(query.required_skills, knowledge.get("skills", {}))
-        expanded_query.preferred_skills = self._expand_values(query.preferred_skills, knowledge.get("skills", {}))
-        expanded_query.must_have = self._expand_values(query.must_have, knowledge.get("skills", {}))
-        expanded_query.nice_to_have = self._expand_values(query.nice_to_have, knowledge.get("skills", {}))
-        expanded_query.bonus = self._expand_values(query.bonus, knowledge.get("skills", {}))
         expanded_query.exclude_titles = self._expand_values(query.exclude_titles, knowledge.get("titles", {}))
 
         if query.minimum_years is not None:

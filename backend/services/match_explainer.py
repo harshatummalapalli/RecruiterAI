@@ -131,14 +131,20 @@ class MatchExplainer:
         candidate_norm = normalize_text(candidate_company)
         return any(candidate_norm == normalize_text(company) for company in preferred_companies)
 
-    def _matches_experience(self, raw_data: Optional[dict], minimum_years: Optional[int], maximum_years: Optional[int]) -> bool:
+    def _matches_experience(self, raw_data: Optional[dict], minimum_years: Optional[int], maximum_years: Optional[int]) -> Optional[bool]:
+        """Tri-state: True/False when we have evidence either way, None when
+        the candidate's years of experience simply weren't returned. Missing
+        evidence is not the same as evidence of a mismatch — returning False
+        here previously caused candidates with "Not specified" experience to
+        be labeled a poor match even though nothing about them was actually
+        known to be wrong."""
         if minimum_years is None and maximum_years is None:
             return True
         years = None
         if isinstance(raw_data, dict):
             years = raw_data.get("years_experience")
         if years is None:
-            return False
+            return None
         if minimum_years is not None and years < minimum_years:
             return False
         if maximum_years is not None and years > maximum_years:
@@ -150,11 +156,15 @@ class MatchExplainer:
         title_match: bool,
         location_match: bool,
         company_match: bool,
-        experience_match: bool,
+        experience_match: Optional[bool],
         missing_skills: List[str],
         missing_experience: Optional[str],
     ) -> List[str]:
-        if not experience_match and missing_experience:
+        # experience_match is False (a confirmed mismatch) only when
+        # missing_experience is also set; None (no evidence either way)
+        # never reaches here as a "risk" — insufficient evidence is not a
+        # negative finding.
+        if experience_match is False and missing_experience:
             return ["Experience is below the requested range"]
         return []
 
@@ -163,7 +173,7 @@ class MatchExplainer:
         title_match: bool,
         location_match: bool,
         company_match: bool,
-        experience_match: bool,
+        experience_match: Optional[bool],
         matched_required_skills: List[str],
         missing_required_skills: List[str],
         matched_preferred_skills: List[str],
@@ -184,10 +194,12 @@ class MatchExplainer:
         else:
             parts.append("company is not in the preferred employer list")
 
-        if experience_match:
+        if experience_match is True:
             parts.append("experience satisfies the requested range")
-        else:
+        elif experience_match is False:
             parts.append("experience does not satisfy the requested range")
+        else:
+            parts.append("experience could not be verified from the available data")
 
         if matched_required_skills:
             parts.append(f"matched required skills: {', '.join(matched_required_skills)}")

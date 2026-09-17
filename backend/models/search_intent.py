@@ -13,9 +13,15 @@ class Role:
 @dataclass
 class Location:
     countries: List[str] = field(default_factory=list)
+    states: List[str] = field(default_factory=list)
     cities: List[str] = field(default_factory=list)
     zip_codes: List[str] = field(default_factory=list)
     radius_miles: Optional[float] = None
+    # A free-form place name (or, when only a ZIP was given, the ZIP string
+    # itself) used as the center point for CrustData's geo_distance filter.
+    # CrustData has no zip_code filter field — see backend/providers/crustdata.py.
+    radius_place: Optional[str] = None
+    radius_unit: str = "mi"
     work_mode: Optional[str] = None
     confidence_score: Optional[float] = None
 
@@ -87,3 +93,11 @@ class SearchIntent:
     company_preferences: CompanyPreferences = field(default_factory=CompanyPreferences)
     ranking: Ranking = field(default_factory=Ranking)
     confidence_score: Optional[float] = None
+    # A single recruiter-readable sentence describing actual work/seniority/
+    # genuinely required vs. preferred skills — used to drive CrustData's
+    # relevance-ranked natural-language person_search. Verified in live
+    # CrustData experiments to be the strongest discovery mechanism, and the
+    # only one that reliably surfaces candidates whose current title doesn't
+    # match the role. Falls back to a deterministic template (see
+    # SearchPlanner) when not provided, e.g. by non-LLM callers/tests.
+    natural_language_search_query: Optional[str] = None

@@ -9,6 +9,7 @@ Extract hiring intent from the following job description and return valid JSON w
   }},
   "location": {{
     "countries": [],
+    "states": [],
     "cities": [],
     "work_mode": "",
     "confidence_score": 0
@@ -54,8 +55,17 @@ Extract hiring intent from the following job description and return valid JSON w
     "bonus": [],
     "confidence_score": 0
   }},
-  "confidence_score": 0
+  "confidence_score": 0,
+  "natural_language_search_query": ""
 }}
+
+Rules for classifying skills:
+- "required_skills" must only contain things the job description explicitly states are required/mandatory/must-have.
+- "preferred_skills" must only contain things the job description calls a plus/nice-to-have/preferred/valuable/bonus.
+- Never add a technology, tool, or skill that the job description does not mention, even if it is commonly related to something that is mentioned (for example, do not add "PySpark" just because "Python" is mentioned, and do not add "RAG" or "agents" just because "LLM" is mentioned).
+
+Rules for "natural_language_search_query":
+- Write one natural-language sentence describing the actual work, seniority, and genuinely required vs. merely valuable skills — not a keyword list, not a copy of the job description, and not dominated by job titles.
 
 Rules for the "experience" fields:
 - "minimum_years" and "maximum_years" are the number of years of experience, not confidence scores.

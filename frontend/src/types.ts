@@ -7,6 +7,7 @@ export interface SearchIntent {
   }
   location: {
     countries: string[]
+    states?: string[]
     cities: string[]
     work_mode?: string
     confidence_score?: number | null
@@ -53,6 +54,7 @@ export interface SearchIntent {
     confidence_score?: number | null
   }
   confidence_score?: number | null
+  natural_language_search_query?: string | null
 }
 
 export interface Candidate {

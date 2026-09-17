@@ -13,10 +13,22 @@ from backend.providers.base import BaseProvider
 logger = logging.getLogger(__name__)
 
 API_VERSION = "2025-11-01"
-DEFAULT_LIMIT = 10
+DEFAULT_LIMIT = 25
 DEFAULT_FIELDS = ["crustdata_person_id", "basic_profile", "experience", "social_handles"]
 DEFAULT_MAX_RETRIES = 3
 DEFAULT_RETRY_BACKOFF_BASE = 0.5
+
+# CrustData's person_search employment_type vocabulary, confirmed live via
+# person_autocomplete on experience.employment_details.current.employment_type.
+# A guessed/unvalidated value silently returns zero rows, so we only ever
+# forward a value we've actually verified exists.
+SUPPORTED_EMPLOYMENT_TYPES = {
+    "full-time",
+    "part-time",
+    "internship",
+    "contract",
+    "self-employed",
+}
 
 
 class CrustDataProvider(BaseProvider):
@@ -63,7 +75,7 @@ class CrustDataProvider(BaseProvider):
                 started_at = time.perf_counter()
                 response = self._search_api(payload, options=options)
                 duration_ms = round((time.perf_counter() - started_at) * 1000, 2)
-                candidates = self._parse_candidates(response)
+                candidates = self._parse_candidates(response, query_name=search.query_name)
                 logger.info(
                     "CrustData query completed",
                     extra={
@@ -107,27 +119,44 @@ class CrustDataProvider(BaseProvider):
         # 2025-11-01 — the generic `autocomplete` request option is accepted
         # by our own /search endpoint but deliberately not forwarded here.
 
-        query_text = self._build_search_query(search)
-        if query_text:
-            payload["search"] = {"query": query_text, "mode": "hybrid"}
+        # A caller-supplied natural-language query (the primary discovery
+        # mechanism — verified live to be relevance-ranked and to surface
+        # candidates whose current title doesn't match) is sent verbatim.
+        # It deliberately does NOT fall back to a title/skill keyword
+        # concatenation: that old behavior merged required and preferred
+        # skills into one undifferentiated text blob with no required/
+        # preferred distinction, which is exactly what this replaces.
+        if search.natural_language_query:
+            payload["search"] = {"query": search.natural_language_query, "mode": "hybrid"}
 
         return payload
 
     def _build_filter_conditions(self, search: SearchQuery) -> List[Dict[str, Any]]:
         conditions: List[Dict[str, Any]] = []
 
-        self._append_condition(
-            conditions,
+        # Title inclusion: structural OR across conservative title variants —
+        # never a "A|B|C" string with the "(.)" fuzzy operator, which was
+        # confirmed live to silently fuzzy-match the literal joined string
+        # (returning near-zero results) rather than behaving as an OR.
+        title_or = self._fuzzy_or_conditions(
             "experience.employment_details.current.title",
-            "(.)",
-            "|".join(self._clean_string_values(search.include_titles)),
+            search.include_titles,
         )
-        self._append_condition(
-            conditions,
-            "experience.employment_details.title",
-            "not_in",
-            self._clean_string_values(search.exclude_titles),
-        )
+        if title_or is not None:
+            conditions.append(title_or)
+
+        # Title exclusion: fuzzy-NOT ("(!)") on the CURRENT title only, never
+        # `not_in`/`!=` — both were confirmed live to be exact-string-only
+        # matches that let virtually every real compound executive title
+        # ("Co-Founder & CTO") through unexcluded. Scoping to `current.title`
+        # (not the unscoped `experience.employment_details.title`) is what
+        # keeps a candidate's past Founder/CTO/Director history from
+        # disqualifying them — only their present title is evaluated.
+        for excluded_title in self._clean_string_values(search.exclude_titles):
+            conditions.append(
+                {"field": "experience.employment_details.current.title", "type": "(!)", "value": excluded_title}
+            )
+
         self._append_condition(
             conditions,
             "basic_profile.location.country",
@@ -136,10 +165,37 @@ class CrustDataProvider(BaseProvider):
         )
         self._append_condition(
             conditions,
+            "basic_profile.location.state",
+            "in",
+            self._clean_string_values(search.states),
+        )
+        self._append_condition(
+            conditions,
             "basic_profile.location.city",
             "in",
             self._clean_string_values(search.cities),
         )
+
+        # Radius: CrustData has no ZIP/postal filter field at all (confirmed
+        # live — an attempted zip_code filter is rejected with a 400).
+        # geo_distance takes a free-form place name (geocoded server-side) or
+        # explicit lat/lng — never a "zip_code" field. When the recruiter
+        # only gave a ZIP, `radius_place` may itself be that ZIP string,
+        # which CrustData geocodes the same as any other place text; we never
+        # send it as a distinct zip filter.
+        if search.radius_place and search.radius_miles:
+            conditions.append(
+                {
+                    "field": "basic_profile.location",
+                    "type": "geo_distance",
+                    "value": {
+                        "location": search.radius_place,
+                        "distance": search.radius_miles,
+                        "unit": search.radius_unit or "mi",
+                    },
+                }
+            )
+
         self._append_condition(
             conditions,
             "years_of_experience_raw",
@@ -152,6 +208,19 @@ class CrustDataProvider(BaseProvider):
             "=<",
             self._normalize_maximum_years(search.maximum_years),
         )
+
+        # Employment type: only forwarded when it matches a live-confirmed
+        # value (see SUPPORTED_EMPLOYMENT_TYPES) — an unvalidated categorical
+        # value silently returns zero rows rather than erroring, so an
+        # unrecognized value is dropped instead of risking a dead search.
+        if search.employment_type and search.employment_type.strip().lower() in SUPPORTED_EMPLOYMENT_TYPES:
+            self._append_condition(
+                conditions,
+                "experience.employment_details.current.employment_type",
+                "in",
+                [search.employment_type],
+            )
+
         self._append_condition(
             conditions,
             "experience.employment_details.company_name",
@@ -173,6 +242,17 @@ class CrustDataProvider(BaseProvider):
 
         return conditions
 
+    def _fuzzy_or_conditions(self, field: str, values: List[str]) -> Optional[Dict[str, Any]]:
+        """Build a genuine structural OR across fuzzy-match conditions on one
+        field. Never joins values into a single "A|B|C" string — that string
+        is fuzzy-matched as one literal phrase, not as alternation."""
+        cleaned = self._clean_string_values(values)
+        if not cleaned:
+            return None
+        if len(cleaned) == 1:
+            return {"field": field, "type": "(.)", "value": cleaned[0]}
+        return {"op": "or", "conditions": [{"field": field, "type": "(.)", "value": value} for value in cleaned]}
+
     def _append_condition(self, conditions: List[Dict[str, Any]], field: str, operator: str, value: Any) -> None:
         if value is None:
             return
@@ -192,12 +272,6 @@ class CrustDataProvider(BaseProvider):
         if not conditions:
             return {"field": "basic_profile.name", "type": "(.)", "value": "a"}
         return {"op": "and", "conditions": conditions}
-
-    def _build_search_query(self, search: SearchQuery) -> str:
-        query_terms = [*self._clean_string_values(search.include_titles)]
-        query_terms.extend(self._clean_string_values(search.required_skills))
-        query_terms.extend(self._clean_string_values(search.preferred_skills))
-        return " ".join(query_terms)
 
     def _normalize_maximum_years(self, maximum_years: Optional[int]) -> Optional[int]:
         """Defense-in-depth: a maximum of 0 (or less) means "no maximum" and
@@ -280,7 +354,7 @@ class CrustDataProvider(BaseProvider):
             logger.warning("Sourcing response was invalid")
             raise ProviderError("The sourcing service returned an invalid response.") from exc
 
-    def _parse_candidates(self, response: Dict[str, Any]) -> List[Candidate]:
+    def _parse_candidates(self, response: Dict[str, Any], query_name: Optional[str] = None) -> List[Candidate]:
         """Normalize the provider response into Candidate objects."""
         profiles = self._extract_profiles(response)
         candidates: List[Candidate] = []
@@ -300,6 +374,16 @@ class CrustDataProvider(BaseProvider):
             social_handles = self._coerce_mapping(item.get("social_handles"))
             professional_network = self._coerce_mapping(social_handles.get("professional_network_identifier"))
 
+            raw_data = self._normalize_item(item, response)
+            # Tags which discovery query found this candidate (e.g.
+            # "natural_language", "title_expansion"). CandidateMerger merges
+            # this list across duplicates so a candidate found by more than
+            # one query can be identified and given a small ranking boost —
+            # convergence across independent discovery paths is itself a
+            # positive signal.
+            if query_name:
+                raw_data["matched_queries"] = [query_name]
+
             candidates.append(
                 Candidate(
                     candidate_id=str(item.get("crustdata_person_id") or item.get("id") or ""),
@@ -310,7 +394,7 @@ class CrustDataProvider(BaseProvider):
                     provider_score=self._extract_provider_score(item),
                     profile_url=professional_network.get("profile_url"),
                     source="crustdata",
-                    raw_data=self._normalize_item(item, response),
+                    raw_data=raw_data,
                 )
             )
 

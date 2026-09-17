@@ -56,14 +56,20 @@ class CapabilityMapper:
             query.preferred_skills = []
         elif field_name == "countries":
             query.countries = []
+        elif field_name == "states":
+            query.states = []
         elif field_name == "cities":
             query.cities = []
         elif field_name == "zip_codes":
             query.zip_codes = []
         elif field_name == "radius_miles":
             query.radius_miles = None
+        elif field_name == "radius_place":
+            query.radius_place = None
         elif field_name == "work_mode":
             query.work_mode = None
+        elif field_name == "employment_type":
+            query.employment_type = None
         elif field_name == "minimum_years":
             query.minimum_years = None
         elif field_name == "maximum_years":
@@ -94,10 +100,13 @@ class CapabilityMapper:
             "required_skills",
             "preferred_skills",
             "countries",
+            "states",
             "cities",
             "zip_codes",
             "radius_miles",
+            "radius_place",
             "work_mode",
+            "employment_type",
             "minimum_years",
             "maximum_years",
             "preferred_companies",

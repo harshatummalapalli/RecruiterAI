@@ -86,3 +86,31 @@ def test_explainer_reports_missing_matches() -> None:
     assert explanation.matched_location is None
     assert explanation.matched_experience == "Requires at least 5 years of experience"
     assert explanation.potential_risks == ["Experience is below the requested range"]
+
+
+def test_explainer_treats_missing_experience_data_as_insufficient_evidence_not_a_mismatch() -> None:
+    # Regression test: a candidate with no years_experience data at all must
+    # never be treated the same as one confirmed to fall outside the
+    # requested range. Missing evidence is not negative evidence.
+    candidate = Candidate(
+        name="Jordan",
+        title="Machine Learning Engineer",
+        company="OpenAI",
+        location="US",
+        raw_data={},  # no years_experience key at all
+    )
+    intent = SearchIntent(
+        titles=Titles(include_titles=["Machine Learning Engineer"]),
+        location=Location(countries=["US"]),
+        experience=Experience(minimum_years=5),
+    )
+
+    explanation = MatchExplainer().explain(candidate, intent)
+
+    assert explanation.experience_match is None
+    assert explanation.matched_experience is None
+    assert explanation.missing_experience is None
+    # No "risk" is raised purely from missing data.
+    assert explanation.potential_risks == []
+    assert "could not be verified from the available data" in explanation.summary
+    assert "does not satisfy" not in explanation.summary

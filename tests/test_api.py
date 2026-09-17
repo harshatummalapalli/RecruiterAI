@@ -293,7 +293,10 @@ def test_search_endpoint_passes_provider_options() -> None:
     )
 
     assert response.status_code == 200
-    assert provider.seen_options == [{"page_size": 7, "max_pages": 2, "autocomplete": True}]
+    # OptionAwareProvider returns a single candidate, which is below the
+    # discovery target pool size, so the title-expansion query also runs —
+    # both calls must receive the same provider options.
+    assert provider.seen_options == [{"page_size": 7, "max_pages": 2, "autocomplete": True}] * 2
 
 
 def test_parse_jd_endpoint_returns_recruiter_friendly_error_for_configuration_failures() -> None:
@@ -442,12 +445,17 @@ def test_search_endpoint_uses_provided_intent_without_reparsing_via_llm(tmp_path
     )
 
     assert response.status_code == 200
-    sent_plan = provider.seen_plans[0]
-    assert sent_plan.searches[0].include_titles == ["Principal Distributed Systems Engineer"]
-    assert sent_plan.searches[0].countries == ["United States"]
-    assert sent_plan.searches[0].cities == ["New York"]
-    assert sent_plan.searches[0].minimum_years == 5
-    assert sent_plan.searches[0].maximum_years is None
+    # seen_plans[0] is the primary natural-language sub-plan (no title
+    # filter by design); seen_plans[1] is the title-expansion sub-plan,
+    # which is where the recruiter-provided title actually lands.
+    primary_plan = provider.seen_plans[0]
+    assert primary_plan.searches[0].countries == ["United States"]
+    assert primary_plan.searches[0].cities == ["New York"]
+    assert primary_plan.searches[0].minimum_years == 5
+    assert primary_plan.searches[0].maximum_years is None
+
+    expansion_plan = provider.seen_plans[1]
+    assert expansion_plan.searches[0].include_titles == ["Principal Distributed Systems Engineer"]
 
 
 def test_search_endpoint_location_override_from_search_brief_is_authoritative(tmp_path) -> None:
@@ -498,9 +506,11 @@ def test_search_endpoint_location_override_from_search_brief_is_authoritative(tm
     # exactly as the recruiter resolved them.
     assert sent_plan.searches[0].cities == ["Gachibowli"]
     assert sent_plan.searches[0].countries == ["India"]
-    # Zip/radius/work_mode are NOT supported by this provider — they must be
-    # cleared before dispatch (never sent as a false promise), and a
-    # graceful-degradation warning must explain why.
+    # zip_codes has no CrustData filter field at all; radius_miles was given
+    # without a radius_place anchor, so it can't be enforced either; work_mode
+    # is Remote/Hybrid/Onsite, which only exists on job_search. All three must
+    # be cleared before dispatch (never sent as a false promise), with a
+    # graceful-degradation warning explaining why.
     assert sent_plan.searches[0].zip_codes == []
     assert sent_plan.searches[0].radius_miles is None
 
@@ -538,14 +548,17 @@ def test_search_endpoint_persists_and_reloads_without_rerunning_pipeline(tmp_pat
     search_id = response.json()["search_id"]
     assert search_id
 
-    assert len(provider.seen_plans) == 1
+    # PlanCapturingProvider returns a single candidate for the primary query,
+    # which is below the discovery target pool size, so the title-expansion
+    # query also runs — two calls for the initial search.
+    assert len(provider.seen_plans) == 2
 
     reload_response = client.get(f"/search/{search_id}")
     assert reload_response.status_code == 200
     assert reload_response.json()["search_id"] == search_id
     assert reload_response.json()["candidates"][0]["name"] == "Priya Rao"
     # Reloading must not call the provider again.
-    assert len(provider.seen_plans) == 1
+    assert len(provider.seen_plans) == 2
 
 
 def test_get_search_returns_404_for_unknown_search_id() -> None:

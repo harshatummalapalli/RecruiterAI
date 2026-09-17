@@ -12,6 +12,11 @@ EXCLUDE_TITLE_WEIGHT = 3.0
 PREFERRED_COMPANY_WEIGHT = 2.0
 EXCLUDED_COMPANY_WEIGHT = 2.0
 LOCATION_WEIGHT = 1.0
+# A candidate independently surfaced by more than one discovery query
+# (e.g. both the natural-language primary search and the title-expansion
+# search) is itself a positive signal — two different retrieval paths
+# agreeing is stronger evidence than either alone.
+CONVERGENCE_WEIGHT = 1.5
 
 
 class CandidateRanker:
@@ -37,6 +42,13 @@ class CandidateRanker:
         preferred_companies = {normalize_text(company) for company in intent.previous_background.preferred_companies or [] if company}
         excluded_companies = {normalize_text(company) for company in intent.company_preferences.exclude_current_companies or [] if company}
 
+        # CrustData's person_search response never includes a "skills" field
+        # on this account's plan (confirmed live — requesting it 403s the
+        # whole call), so candidate.raw_data has no "skills" key in practice.
+        # This intersection is therefore always empty today; it's left in
+        # place, rather than hardcoded to zero, so it activates automatically
+        # if the plan is ever upgraded — but it must never be treated as
+        # meaningful evidence in the meantime.
         candidate_skills = {normalize_text(skill) for skill in self._normalize_text_values(candidate.raw_data.get("skills", []))}
         candidate_title = normalize_text(candidate.title)
         candidate_company = normalize_text(candidate.company)
@@ -70,6 +82,10 @@ class CandidateRanker:
         if intent_locations and candidate_location:
             if any(location in candidate_location for location in intent_locations):
                 score += LOCATION_WEIGHT
+
+        matched_queries = candidate.raw_data.get("matched_queries")
+        if isinstance(matched_queries, list) and len(set(matched_queries)) > 1:
+            score += CONVERGENCE_WEIGHT
 
         return score
 

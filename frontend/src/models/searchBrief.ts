@@ -449,6 +449,7 @@ export function briefToSearchIntent(brief: SearchBrief): SearchIntent {
     },
     location: {
       countries,
+      states: Array.from(new Set(locations.map((entry) => entry.state).filter(Boolean))),
       cities,
       work_mode: brief.location.workModes[0] || undefined,
     },
@@ -482,10 +483,29 @@ export function briefToSearchIntent(brief: SearchBrief): SearchIntent {
 export type LocationDetail = {
   search_geography: SearchGeography
   countries: string[]
+  states: string[]
   cities: string[]
   zip_codes: string[]
   radius_miles: number | null
+  // Free-form place name (or ZIP text) CrustData's geo_distance geocodes
+  // server-side — the backend never sends a zip_code filter field, since
+  // CrustData's person_search has none.
+  radius_place: string | null
+  radius_unit: string
   work_mode: string | null
+  employment_type: string | null
+}
+
+/** Builds the geo_distance anchor text from the first location entry: a
+ * city/state pair when available, falling back to the ZIP the recruiter
+ * entered. Never a coordinate — CrustData geocodes free-form place text
+ * server-side. */
+function buildRadiusPlace(entry: LocationEntry | undefined): string | null {
+  if (!entry) return null
+  const cityState = [entry.city, entry.state].filter((part) => part.trim()).join(', ')
+  if (cityState) return cityState
+  if (entry.zip.trim()) return entry.zip.trim()
+  return null
 }
 
 /** The recruiter's exact, already-resolved location — sent to the backend
@@ -503,16 +523,22 @@ export function briefToLocationDetail(brief: SearchBrief): LocationDetail {
       ? [brief.location.country]
       : Array.from(new Set(locations.map((entry) => entry.country).filter((value) => value.trim())))
 
+  const states = Array.from(new Set(locations.map((entry) => entry.state).filter((value) => value.trim())))
   const cities = Array.from(new Set(locations.map((entry) => entry.city).filter((value) => value.trim())))
   const zipCodes = Array.from(new Set(locations.map((entry) => entry.zip).filter((value) => value.trim())))
   const parsedRadius = geography === 'radius' && brief.location.radius ? Number(brief.location.radius) : NaN
+  const radiusMiles = Number.isFinite(parsedRadius) ? parsedRadius : null
 
   return {
     search_geography: geography,
     countries,
+    states,
     cities,
     zip_codes: zipCodes,
-    radius_miles: Number.isFinite(parsedRadius) ? parsedRadius : null,
+    radius_miles: radiusMiles,
+    radius_place: geography === 'radius' && radiusMiles !== null ? buildRadiusPlace(locations[0]) : null,
+    radius_unit: 'mi',
     work_mode: brief.location.workModes[0] ?? null,
+    employment_type: brief.employmentTypes[0] ?? null,
   }
 }

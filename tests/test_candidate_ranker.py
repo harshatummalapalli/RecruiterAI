@@ -58,3 +58,33 @@ def test_rank_scores_candidates_using_intent_signals() -> None:
     assert ranked[1].final_score == 0.7
     assert ranked[2].name == "Bob"
     assert ranked[2].final_score == -4.2
+
+
+def test_rank_gives_a_convergence_bonus_to_candidates_found_by_multiple_queries() -> None:
+    # A candidate independently surfaced by both the natural-language and
+    # title-expansion queries is stronger evidence than either alone.
+    intent = SearchIntent()
+
+    single_source = Candidate(name="Single", provider_score=1.0, raw_data={"matched_queries": ["natural_language"]})
+    both_sources = Candidate(name="Both", provider_score=1.0, raw_data={"matched_queries": ["natural_language", "title_expansion"]})
+
+    ranked = CandidateRanker().rank([single_source, both_sources], intent)
+
+    both = next(c for c in ranked if c.name == "Both")
+    single = next(c for c in ranked if c.name == "Single")
+    assert both.final_score > single.final_score
+
+
+def test_rank_never_scores_skills_when_crustdata_did_not_return_them() -> None:
+    # This account's CrustData plan never returns a "skills" field on
+    # person_search — raw_data has no "skills" key in practice. Required
+    # skills must not silently score as matched or missing based on
+    # something that was never actually evidence.
+    intent = SearchIntent(skills=Skills(required_skills=["Python"], preferred_skills=["Go"]))
+    candidate = Candidate(name="NoSkillData", provider_score=1.0, raw_data={})
+
+    ranked = CandidateRanker().rank([candidate], intent)
+
+    # No skill weight was added or subtracted — the score is exactly the
+    # provider score plus/minus only the signals that actually had evidence.
+    assert ranked[0].final_score == 1.0
