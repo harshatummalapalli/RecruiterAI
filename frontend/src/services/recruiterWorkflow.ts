@@ -3,7 +3,10 @@ import type { LocationDetail } from '../models/searchBrief'
 
 export type RecruiterAction = 'shortlist' | 'reject' | 'note' | 'export' | 'view'
 
-export const API_BASE_URL = 'http://127.0.0.1:8000'
+// Empty string means "same origin as the page" — used in production where
+// nginx serves the frontend and proxies the API from one origin. Local dev
+// keeps talking to the backend directly on :8000 unless overridden.
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
 
 export type BusyState = 'parsing' | 'searching' | 'exporting' | null
 export type NoticeType = 'error' | 'success' | 'info'
@@ -115,9 +118,22 @@ export const getCandidateKey = (candidate: Candidate) => {
   return parts.filter(Boolean).join('|') || `${candidate.provider_score ?? ''}-${candidate.final_score ?? ''}`
 }
 
+export const checkSession = async (): Promise<boolean> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/me`, { credentials: 'include' })
+    return response.ok
+  } catch {
+    return false
+  }
+}
+
+export const logout = async (): Promise<void> => {
+  await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' })
+}
+
 export const getProviderAvailability = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/providers`)
+    const response = await fetch(`${API_BASE_URL}/providers`, { credentials: 'include' })
     if (!response.ok) {
       return { available: false, message: 'Sourcing has not yet been configured.' }
     }
@@ -169,6 +185,7 @@ export const buildSearchSummary = (payload: SearchResponse): SearchSummary => {
 export const parseJobDescription = async (jdText: string) => {
   const response = await fetch(`${API_BASE_URL}/parse-jd`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ jd_text: jdText }),
   })
@@ -188,6 +205,7 @@ export const runCandidateSearch = async (
 ) => {
   const response = await fetch(`${API_BASE_URL}/search`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       // jd_text is kept only as a human-readable record for display/storage.
@@ -214,7 +232,7 @@ export const runCandidateSearch = async (
 }
 
 export const loadPersistedSearch = async (searchId: string): Promise<SearchResponse | null> => {
-  const response = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(searchId)}`)
+  const response = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(searchId)}`, { credentials: 'include' })
   if (response.status === 404) {
     return null
   }
@@ -231,6 +249,7 @@ export const updateCandidateRecord = async (
 ): Promise<{ recruiter_decisions: Record<string, string>; notes: Record<string, Array<{ text: string; created_at: string }>> }> => {
   const response = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(searchId)}/candidate`, {
     method: 'PATCH',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ candidate_id: candidateId, ...update }),
   })
@@ -243,6 +262,7 @@ export const updateCandidateRecord = async (
 export const exportCandidateResults = async (jdText: string, intent: SearchIntent) => {
   const response = await fetch(`${API_BASE_URL}/export`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       jd_text: jdText.trim() ? jdText : serializeIntentForSearch(intent),

@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 import backend.api as api_module
 from backend.api import create_app
+from backend.auth import SESSION_COOKIE_NAME, create_session_cookie_value
 from backend.errors import ConfigurationError, ProviderError
 from backend.models.candidate import Candidate
 from backend.models.search_intent import Role, SearchIntent
@@ -20,6 +21,15 @@ from backend.services.search_planner import SearchPlanner
 from backend.exporters.excel import ExcelExporter
 from backend.models.provider_capabilities import ProviderCapabilities
 from backend.providers.registry import ProviderRegistry
+
+
+def _login(client: TestClient) -> None:
+    """Give a TestClient a valid session cookie directly, without going through
+    Google — most tests only care that the pipeline runs once past the
+    authentication gate, not that Google verification itself works (that's
+    covered by the dedicated auth tests below). Requires SESSION_SECRET_KEY
+    to be set, which the autouse fixture in conftest.py handles for every test."""
+    client.cookies.set(SESSION_COOKIE_NAME, create_session_cookie_value())
 
 
 class FakeParser(BaseLLMProvider):
@@ -148,6 +158,7 @@ def test_health_endpoint() -> None:
 
 def test_providers_endpoint_reports_configuration_status() -> None:
     client = build_test_app()
+    _login(client)
     response = client.get("/providers")
 
     assert response.status_code == 200
@@ -156,6 +167,7 @@ def test_providers_endpoint_reports_configuration_status() -> None:
 
 def test_parse_jd_endpoint_returns_search_intent() -> None:
     client = build_test_app()
+    _login(client)
     response = client.post("/parse-jd", json={"jd_text": "Need a Python engineer"})
 
     assert response.status_code == 200
@@ -173,6 +185,7 @@ def test_create_app_uses_openai_provider_by_default() -> None:
     try:
         app = create_app()
         client = TestClient(app)
+        _login(client)
         response = client.post(
             "/parse-jd",
             json={"jd_text": "We are looking for a Senior AI Engineer with Python, FastAPI, Azure, OpenAI, RAG and Kubernetes."},
@@ -186,6 +199,7 @@ def test_create_app_uses_openai_provider_by_default() -> None:
 
 def test_search_endpoint_returns_structured_result() -> None:
     client = build_test_app()
+    _login(client)
     response = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"})
 
     assert response.status_code == 200
@@ -216,6 +230,7 @@ def test_search_endpoint_returns_real_empty_state_when_provider_finds_no_candida
         excel_exporter=ExcelExporter(),
     )
     client = TestClient(app)
+    _login(client)
     response = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"})
 
     assert response.status_code == 200
@@ -240,6 +255,7 @@ def test_search_endpoint_returns_recruiter_friendly_error_without_provider_confi
         excel_exporter=ExcelExporter(),
     )
     client = TestClient(app)
+    _login(client)
     response = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"})
 
     assert response.status_code == 503
@@ -264,6 +280,7 @@ def test_search_endpoint_passes_provider_options() -> None:
         excel_exporter=ExcelExporter(),
     )
     client = TestClient(app)
+    _login(client)
     response = client.post(
         "/search",
         json={
@@ -294,6 +311,7 @@ def test_parse_jd_endpoint_returns_recruiter_friendly_error_for_configuration_fa
         excel_exporter=ExcelExporter(),
     )
     client = TestClient(app)
+    _login(client)
     response = client.post("/parse-jd", json={"jd_text": "Need a Python engineer"})
 
     assert response.status_code == 503
@@ -316,6 +334,7 @@ def test_search_endpoint_returns_recruiter_friendly_error_for_provider_failures(
         excel_exporter=ExcelExporter(),
     )
     client = TestClient(app)
+    _login(client)
     response = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"})
 
     assert response.status_code == 502
@@ -324,6 +343,7 @@ def test_search_endpoint_returns_recruiter_friendly_error_for_provider_failures(
 
 def test_export_endpoint_returns_excel_file() -> None:
     client = build_test_app()
+    _login(client)
     response = client.post("/export", json={"jd_text": "Need a Python engineer", "provider": "mock"})
 
     assert response.status_code == 200
@@ -360,6 +380,7 @@ def test_search_endpoint_preserves_city_and_experience_filters_through_to_provid
         search_store=SearchStore(storage_dir=tmp_path),
     )
     client = TestClient(app)
+    _login(client)
     response = client.post("/search", json={"jd_text": "Need a Python engineer in Hyderabad", "provider": "mock"})
 
     assert response.status_code == 200
@@ -397,6 +418,7 @@ def test_search_endpoint_uses_provided_intent_without_reparsing_via_llm(tmp_path
         search_store=SearchStore(storage_dir=tmp_path),
     )
     client = TestClient(app)
+    _login(client)
 
     structured_intent = {
         "role": {"title": "Principal Distributed Systems Engineer"},
@@ -453,6 +475,7 @@ def test_search_endpoint_location_override_from_search_brief_is_authoritative(tm
         search_store=SearchStore(storage_dir=tmp_path),
     )
     client = TestClient(app)
+    _login(client)
     response = client.post(
         "/search",
         json={
@@ -509,6 +532,7 @@ def test_search_endpoint_persists_and_reloads_without_rerunning_pipeline(tmp_pat
         search_store=SearchStore(storage_dir=tmp_path),
     )
     client = TestClient(app)
+    _login(client)
     response = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"})
     assert response.status_code == 200
     search_id = response.json()["search_id"]
@@ -526,6 +550,7 @@ def test_search_endpoint_persists_and_reloads_without_rerunning_pipeline(tmp_pat
 
 def test_get_search_returns_404_for_unknown_search_id() -> None:
     client = build_test_app()
+    _login(client)
     response = client.get("/search/does-not-exist")
     assert response.status_code == 404
 
@@ -550,6 +575,7 @@ def test_patch_candidate_persists_decision_and_note(tmp_path) -> None:
         search_store=SearchStore(storage_dir=tmp_path),
     )
     client = TestClient(app)
+    _login(client)
     response = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"})
     search_id = response.json()["search_id"]
     candidate_id = response.json()["candidates"][0]["candidate_id"] or "candidate-1"
@@ -561,3 +587,69 @@ def test_patch_candidate_persists_decision_and_note(tmp_path) -> None:
     assert patch_response.status_code == 200
     assert patch_response.json()["recruiter_decisions"][candidate_id] == "shortlist"
     assert patch_response.json()["notes"][candidate_id][0]["text"] == "Strong fit"
+
+
+def test_auth_google_endpoint_sets_session_cookie_for_allowed_domain(monkeypatch) -> None:
+    monkeypatch.setattr(
+        api_module,
+        "verify_google_id_token",
+        lambda credential: {"email": "recruiter@example.com", "email_verified": True},
+    )
+    client = build_test_app()
+
+    response = client.post("/auth/google", json={"credential": "fake-token"})
+
+    assert response.status_code == 200
+    assert response.json() == {"authenticated": True, "email": "recruiter@example.com"}
+    assert "recruiterai_session" in response.cookies
+
+
+def test_auth_google_endpoint_rejects_wrong_domain(monkeypatch) -> None:
+    monkeypatch.setattr(
+        api_module,
+        "verify_google_id_token",
+        lambda credential: {"email": "someone@gmail.com", "email_verified": True},
+    )
+    client = build_test_app()
+
+    response = client.post("/auth/google", json={"credential": "fake-token"})
+
+    assert response.status_code == 403
+    assert "recruiterai_session" not in response.cookies
+
+
+def test_protected_endpoint_rejects_without_session() -> None:
+    client = build_test_app()
+
+    response = client.post("/parse-jd", json={"jd_text": "Need a Python engineer"})
+
+    assert response.status_code == 401
+
+
+def test_protected_endpoint_accepts_with_valid_session() -> None:
+    client = build_test_app()
+    _login(client)
+
+    response = client.post("/parse-jd", json={"jd_text": "Need a Python engineer"})
+
+    assert response.status_code == 200
+
+
+def test_auth_logout_clears_session(monkeypatch) -> None:
+    # Goes through the real /auth/google flow (not the _login() shortcut) so the
+    # session cookie is set via an actual Set-Cookie response header — this is
+    # what makes httpx's cookie jar correctly apply the logout deletion.
+    monkeypatch.setattr(
+        api_module,
+        "verify_google_id_token",
+        lambda credential: {"email": "recruiter@example.com", "email_verified": True},
+    )
+    client = build_test_app()
+    assert client.post("/auth/google", json={"credential": "fake-token"}).status_code == 200
+    assert client.get("/auth/me").status_code == 200
+
+    logout_response = client.post("/auth/logout")
+    assert logout_response.status_code == 200
+
+    response = client.post("/parse-jd", json={"jd_text": "Need a Python engineer"})
+    assert response.status_code == 401

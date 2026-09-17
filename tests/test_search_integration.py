@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from backend.api import create_app
+from backend.auth import SESSION_COOKIE_NAME, create_session_cookie_value
 from backend.models.candidate import Candidate
 from backend.models.search_intent import SearchIntent
 from backend.providers.base import BaseProvider
@@ -74,6 +75,7 @@ def test_search_endpoint_runs_full_pipeline_with_mock_provider() -> None:
         excel_exporter=None,
     )
     client = TestClient(app)
+    client.cookies.set(SESSION_COOKIE_NAME, create_session_cookie_value())
     response = client.post(
         "/search",
         json={"jd_text": "We are looking for a Senior AI Engineer with Python, FastAPI, Azure, OpenAI, RAG and Kubernetes.", "provider": "mock"},

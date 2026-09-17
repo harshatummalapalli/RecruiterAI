@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Pencil } from 'lucide-react'
-import { parseJobDescription, runCandidateSearch, loadPersistedSearch } from '../services/recruiterWorkflow'
+import { parseJobDescription, runCandidateSearch, loadPersistedSearch, logout } from '../services/recruiterWorkflow'
 import {
   applyAiParse,
   applyClarificationAnswer,
@@ -291,11 +291,22 @@ export function RecruiterWorkspaceScreen() {
             <h1>{greeting}</h1>
             <p>What are you hiring for today?</p>
           </div>
-          {step !== 'jd' ? (
-            <button type="button" className="workspace__new-search" onClick={handleStartNewSearch}>
-              Start New Search
+          <div style={{ display: 'flex', gap: 8 }}>
+            {step !== 'jd' ? (
+              <button type="button" className="workspace__new-search" onClick={handleStartNewSearch}>
+                Start New Search
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="workspace__new-search"
+              onClick={() => {
+                logout().finally(() => window.location.reload())
+              }}
+            >
+              Sign out
             </button>
-          ) : null}
+          </div>
         </header>
 
         {step === 'jd' ? (
