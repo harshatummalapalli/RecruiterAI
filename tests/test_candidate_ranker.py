@@ -1,4 +1,5 @@
 from backend.models.candidate import Candidate
+from backend.models.candidate_evidence import HarvestEvidence
 from backend.models.search_intent import Role, SearchIntent, Titles
 from backend.services.candidate_ranker import CandidateRanker
 
@@ -116,3 +117,79 @@ def test_no_role_specific_hardcoding_same_logic_generalizes_across_role_families
         ranked = CandidateRanker().rank([unrelated, direct], intent)
 
         assert ranked[0].name == "Direct", f"failed for role family: {target_title}"
+
+
+# ---------------------------------------------------------------------------
+# Harvest second-stage reranking — baseline untouched, only top-N enriched
+# and reranked, candidates below the cutoff retain their exact positions.
+# ---------------------------------------------------------------------------
+
+
+def test_baseline_rank_is_unaffected_by_harvest_being_available_or_not() -> None:
+    # rank() never looks at Harvest at all — it must produce identical
+    # scores/order regardless of whether Harvest is configured anywhere.
+    intent = SearchIntent(role=Role(title="Data Engineer"))
+    candidates = [_candidate("A", "Data Engineer"), _candidate("B", "Software Engineer")]
+
+    ranked_once = CandidateRanker().rank([c.model_copy() for c in candidates], intent)
+    ranked_again = CandidateRanker().rank([c.model_copy() for c in candidates], intent)
+
+    assert [c.name for c in ranked_once] == [c.name for c in ranked_again]
+    assert [c.final_score for c in ranked_once] == [c.final_score for c in ranked_again]
+
+
+def test_rerank_top_n_only_reorders_within_the_enriched_slice_tail_untouched() -> None:
+    # The exact scenario from the Harvest integration plan: baseline A..G,
+    # enrich top 5 (A-E). Harvest evidence for B and E is strong enough to
+    # move them above A/C/D within the slice. F and G must keep their exact
+    # baseline positions (indices 5 and 6) — an enriched candidate must
+    # never be able to outrank a candidate that was never considered.
+    intent = SearchIntent(role=Role(title="Data Engineer"), core_signals=["Proficiency in Python."])
+    names = ["A", "B", "C", "D", "E", "F", "G"]
+    candidates = {
+        name: Candidate(candidate_id=name, name=name, title="Data Engineer", raw_data={}, provider_score=0.0)
+        for name in names
+    }
+
+    ranker = CandidateRanker()
+    baseline = ranker.rank(list(candidates.values()), intent)
+    assert [c.name for c in baseline] == names  # identical baseline score/title -> alphabetical tiebreak
+
+    baseline_tail_scores = {c.name: c.final_score for c in baseline[5:]}
+
+    harvest_by_id = {
+        candidates["B"].candidate_id: HarvestEvidence(raw={"element": {"skills": [{"name": "Python"}]}}, success=True),
+        candidates["E"].candidate_id: HarvestEvidence(raw={"element": {"skills": [{"name": "Python"}]}}, success=True),
+    }
+
+    reranked = ranker.rerank_top_n(baseline, intent, harvest_by_id, top_n=5)
+
+    # F and G (indices 5, 6) are exactly where they started, untouched.
+    assert [c.name for c in reranked[5:]] == ["F", "G"]
+    assert {c.name: c.final_score for c in reranked[5:]} == baseline_tail_scores
+    # B and E, the only two with real Harvest evidence, now lead the
+    # enriched slice — but never past index 4 into F/G's territory.
+    assert set(c.name for c in reranked[:2]) == {"B", "E"}
+    assert set(c.name for c in reranked[:5]) == {"A", "B", "C", "D", "E"}
+
+
+def test_rerank_top_n_of_zero_or_negative_is_a_no_op() -> None:
+    intent = SearchIntent(role=Role(title="Data Engineer"))
+    candidates = [_candidate("A", "Data Engineer"), _candidate("B", "Data Engineer")]
+    ranker = CandidateRanker()
+    baseline = ranker.rank(candidates, intent)
+
+    result = ranker.rerank_top_n(baseline, intent, {}, top_n=0)
+
+    assert result == baseline
+
+
+def test_rerank_top_n_with_no_harvest_evidence_leaves_order_unchanged() -> None:
+    intent = SearchIntent(role=Role(title="Data Engineer"))
+    candidates = [_candidate("A", "Data Engineer"), _candidate("B", "Software Engineer")]
+    ranker = CandidateRanker()
+    baseline = ranker.rank(candidates, intent)
+
+    reranked = ranker.rerank_top_n(baseline, intent, {}, top_n=5)
+
+    assert [c.name for c in reranked] == [c.name for c in baseline]

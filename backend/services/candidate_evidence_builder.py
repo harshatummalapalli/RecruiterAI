@@ -21,6 +21,7 @@ from backend.models.candidate_evidence import (
     CandidateEvidence,
     ContactEvidence,
     EducationEntry,
+    HarvestEvidence,
     MatchedSignal,
     PastRole,
     RoleAlignment,
@@ -28,6 +29,13 @@ from backend.models.candidate_evidence import (
     UncertaintyNote,
 )
 from backend.models.search_intent import SearchIntent
+
+# A conservative, generic (not role-specific) pattern for a self-reported
+# total-years claim in a candidate's own "about" text (e.g. "11+ years",
+# "8 years"). Used only to label such a claim explicitly as self-reported —
+# never to populate, compute, or stand in for a verified years-of-experience
+# field. See apply_harvest_evidence.
+_SELF_REPORTED_YEARS_RE = re.compile(r"\b(\d{1,2}\+?)\s*years?\b", re.IGNORECASE)
 
 # Pure grammatical connectors/seniority words stripped before comparing
 # titles or extracting signal terms — never a domain/technology term, and
@@ -165,16 +173,21 @@ def _build_role_alignment(evidence: CandidateEvidence, intent: SearchIntent) -> 
     for tier, sentences in tiered_signals:
         for sentence in sentences:
             terms = _extract_signal_terms(sentence)
-            found_source, found_term = None, None
-            for label, text in sources:
+            found_source, found_term, found_detail = None, None, ""
+            for label, text, detail in sources:
                 text_lower = (text or "").lower()
                 hit = next((term for term in terms if term in text_lower), None)
                 if hit:
-                    found_source, found_term = label, hit
+                    found_source, found_term, found_detail = label, hit, detail
                     break
             if found_term and (tier, found_term) not in seen_matches:
                 seen_matches.add((tier, found_term))
-                matched.append(MatchedSignal(tier=tier, signal_text=sentence, matched_term=found_term, source=found_source))
+                matched.append(
+                    MatchedSignal(
+                        tier=tier, signal_text=sentence, matched_term=found_term,
+                        source=found_source, evidence_detail=found_detail,
+                    )
+                )
             elif not found_term:
                 unmatched.append(MatchedSignal(tier=tier, signal_text=sentence, matched_term="", source=""))
 
@@ -268,7 +281,81 @@ def _parse_contact(raw: Dict[str, Any], candidate: Candidate) -> ContactEvidence
     )
 
 
-def build_candidate_evidence(candidate: Candidate, intent: SearchIntent) -> CandidateEvidence:
+def _clean_harvest_text(value: Any) -> Optional[str]:
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return None
+
+
+def _apply_harvest_normalization(evidence: CandidateEvidence, harvest: HarvestEvidence) -> None:
+    """Extracts employment descriptions/projects/certifications/skills from
+    a successful Harvest response into CandidateEvidence's harvest_* fields
+    — structured, never destructively merged with the CrustData fields.
+    Only ever called with harvest.success is True; a failed/absent
+    enrichment leaves these fields at their empty defaults, which is itself
+    correct (no evidence, not negative evidence)."""
+    element = harvest.raw.get("element") if isinstance(harvest.raw, dict) else None
+    if not isinstance(element, dict):
+        return
+
+    for entry in element.get("experience") or []:
+        if not isinstance(entry, dict):
+            continue
+        description = _clean_harvest_text(entry.get("description"))
+        if not description:
+            continue
+        position = _clean_harvest_text(entry.get("position")) or "role"
+        company = _clean_harvest_text(entry.get("companyName"))
+        role_label = f"{position} at {company}" if company else position
+        evidence.harvest_employment_descriptions.append((role_label, description))
+
+    for entry in element.get("projects") or []:
+        if not isinstance(entry, dict):
+            continue
+        title = _clean_harvest_text(entry.get("title"))
+        if not title:
+            continue
+        description = _clean_harvest_text(entry.get("description")) or ""
+        evidence.harvest_projects.append((title, description))
+
+    for entry in element.get("certifications") or []:
+        if not isinstance(entry, dict):
+            continue
+        title = _clean_harvest_text(entry.get("title"))
+        if title:
+            evidence.harvest_certifications.append(title)
+
+    skill_names: List[str] = []
+    for entry in element.get("skills") or []:
+        if isinstance(entry, dict):
+            name = _clean_harvest_text(entry.get("name"))
+            if name:
+                skill_names.append(name)
+    for name in element.get("topSkills") or []:
+        cleaned = _clean_harvest_text(name)
+        if cleaned:
+            skill_names.append(cleaned)
+    # Dedupe while preserving order (topSkills often repeats entries from skills[]).
+    seen_skills: set = set()
+    for name in skill_names:
+        key = name.lower()
+        if key not in seen_skills:
+            seen_skills.add(key)
+            evidence.harvest_skills.append(name)
+
+    about = _clean_harvest_text(element.get("about"))
+    evidence.harvest_about = about
+    if about:
+        match = _SELF_REPORTED_YEARS_RE.search(about)
+        if match:
+            evidence.harvest_self_reported_experience = (
+                f"Candidate's own profile summary states \"{match.group(0)}\" — self-reported, not verified."
+            )
+
+
+def build_candidate_evidence(
+    candidate: Candidate, intent: SearchIntent, harvest_evidence: Optional[HarvestEvidence] = None
+) -> CandidateEvidence:
     raw = candidate.raw_data or {}
     basic_profile = _coerce_mapping(raw.get("basic_profile"))
     experience = _coerce_mapping(raw.get("experience"))
@@ -306,7 +393,11 @@ def build_candidate_evidence(candidate: Candidate, intent: SearchIntent) -> Cand
             provider_fit=fit_value,
         ),
         updated_at=metadata.get("updated_at") if isinstance(metadata, dict) else None,
+        harvest=harvest_evidence,
     )
+
+    if harvest_evidence is not None and harvest_evidence.success:
+        _apply_harvest_normalization(evidence, harvest_evidence)
 
     evidence.role_alignment = _build_role_alignment(evidence, intent)
     evidence.uncertainty = _build_uncertainty(evidence)
@@ -317,12 +408,23 @@ def _build_uncertainty(evidence: CandidateEvidence) -> List[UncertaintyNote]:
     notes = [
         UncertaintyNote(
             field="years_of_experience",
-            note="Total years of professional experience is not returned by the data provider for any candidate.",
+            note="Total years of professional experience is not returned as a verified field by either provider. "
+            + (
+                "A self-reported figure appears in the candidate's own profile summary (see below) but is not verified."
+                if evidence.harvest_self_reported_experience
+                else "No self-reported figure was found either."
+            ),
         ),
         UncertaintyNote(
             field="skills",
-            note="Specific skills/technologies are not returned as a structured field; any technology mentioned "
-            "above is only what appears literally in the candidate's title, headline, or career history text.",
+            note=(
+                "Specific skills/technologies were found in this candidate's Harvest enrichment; anything not "
+                "listed there is only what appears literally in title/headline/career history text."
+                if evidence.harvest_skills
+                else "Specific skills/technologies are not returned as a structured field by CrustData; any "
+                "technology mentioned above is only what appears literally in the candidate's title, headline, "
+                "or career history text."
+            ),
         ),
     ]
     if not evidence.education:

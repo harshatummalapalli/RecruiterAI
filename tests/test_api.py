@@ -216,6 +216,116 @@ def test_search_endpoint_returns_structured_result() -> None:
     assert payload["evidence"][0]["role_alignment"]["title_relevance"] == "direct"
 
 
+class _HarvestableProvider(BaseProvider):
+    """Like FakeProvider, but with a profile_url/candidate_id so it's
+    actually eligible for Harvest enrichment (FakeProvider's candidate has
+    neither, which is fine for tests that don't care about Harvest)."""
+
+    def search(self, plan):
+        return [
+            Candidate(
+                candidate_id="alice-1",
+                name="Alice",
+                title="Software Engineer",
+                company="OpenAI",
+                location="US",
+                profile_url="https://www.linkedin.com/in/alice",
+                provider_score=0.95,
+                raw_data={},
+            )
+        ]
+
+
+def test_harvest_evidence_persists_and_a_reload_never_recalls_harvest(tmp_path) -> None:
+    # A GET reload must never trigger Harvest, the same way it must never
+    # re-run OpenAI/CrustData — the search RESULT already reflects whatever
+    # enrichment happened when it was actually searched.
+    from backend.providers.harvest import HarvestEnrichmentService
+    from backend.services.search_store import SearchStore
+
+    call_count = {"n": 0}
+
+    class CountingClient:
+        def is_configured(self):
+            return True
+
+        def fetch_profile(self, profile_url, **kwargs):
+            call_count["n"] += 1
+            return {"element": {"about": "Builds RAG systems."}, "cost": 0.0064}
+
+    harvest_service = HarvestEnrichmentService(client=CountingClient(), top_n=5)
+
+    ProviderRegistry._providers.clear()
+    ProviderRegistry.register("mock", _HarvestableProvider())
+    app = create_app(
+        jd_parser=JDParser(provider=FakeParser()),
+        search_planner=SearchPlanner(),
+        query_expander=QueryExpansionService(),
+        capability_mapper=CapabilityMapper(),
+        provider_registry=ProviderRegistry,
+        candidate_merger=CandidateMerger(),
+        candidate_ranker=CandidateRanker(),
+        match_explainer=MatchExplainer(),
+        search_diagnostics=SearchDiagnostics(),
+        excel_exporter=ExcelExporter(),
+        search_store=SearchStore(storage_dir=tmp_path),
+        harvest_enrichment_service=harvest_service,
+    )
+    client = TestClient(app)
+    _login(client)
+
+    created = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"}).json()
+    assert call_count["n"] == 1  # Alice has a profile_url and is within top_n
+
+    reloaded = client.get(f"/search/{created['search_id']}").json()
+
+    assert call_count["n"] == 1  # unchanged — the reload made zero Harvest calls
+    assert reloaded["candidate_count"] == created["candidate_count"]
+
+
+def test_rerunning_the_same_search_id_does_not_re_enrich_an_already_successful_candidate(tmp_path) -> None:
+    from backend.providers.harvest import HarvestEnrichmentService
+    from backend.services.search_store import SearchStore
+
+    call_count = {"n": 0}
+
+    class CountingClient:
+        def is_configured(self):
+            return True
+
+        def fetch_profile(self, profile_url, **kwargs):
+            call_count["n"] += 1
+            return {"element": {"about": "Builds RAG systems."}, "cost": 0.0064}
+
+    harvest_service = HarvestEnrichmentService(client=CountingClient(), top_n=5)
+
+    ProviderRegistry._providers.clear()
+    ProviderRegistry.register("mock", _HarvestableProvider())
+    app = create_app(
+        jd_parser=JDParser(provider=FakeParser()),
+        search_planner=SearchPlanner(),
+        query_expander=QueryExpansionService(),
+        capability_mapper=CapabilityMapper(),
+        provider_registry=ProviderRegistry,
+        candidate_merger=CandidateMerger(),
+        candidate_ranker=CandidateRanker(),
+        match_explainer=MatchExplainer(),
+        search_diagnostics=SearchDiagnostics(),
+        excel_exporter=ExcelExporter(),
+        search_store=SearchStore(storage_dir=tmp_path),
+        harvest_enrichment_service=harvest_service,
+    )
+    client = TestClient(app)
+    _login(client)
+
+    client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock", "search_id": "fixed-id"})
+    assert call_count["n"] == 1
+
+    client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock", "search_id": "fixed-id"})
+
+    assert call_count["n"] == 1  # not re-enriched on the second run
+
+
 def test_decision_and_note_survive_a_reload_of_the_same_search(tmp_path) -> None:
     # Regression test for the "decisions/notes lost on refresh" bug: PATCH
     # /search/{id}/candidate always persisted them (search_store.py never

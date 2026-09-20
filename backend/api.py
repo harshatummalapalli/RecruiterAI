@@ -23,6 +23,7 @@ from backend.auth import (
 from backend.bootstrap import bootstrap
 from backend.config import get_session_cookie_secure, get_session_max_age_seconds
 from backend.errors import ConfigurationError, ParsingError, ProviderError, RecruiterAIError, RankingError
+from backend.models.candidate_evidence import HarvestEvidence
 from backend.models.intake import IntakeResult
 from backend.models.match_explanation import MatchExplanation
 from backend.models.provider_capabilities import ProviderCapabilities
@@ -35,6 +36,7 @@ from backend.services.candidate_evidence_builder import build_candidate_evidence
 from backend.services.candidate_merger import CandidateMerger
 from backend.services.candidate_ranker import CandidateRanker
 from backend.services.capability_mapper import CapabilityMapper
+from backend.providers.harvest import HarvestEnrichmentService
 from backend.services.intake_session import IntakeSessionManager
 from backend.services.search_translator import build_confirmed_hiring_intent, to_search_intent
 from backend.services.jd_parser import JDParser
@@ -310,6 +312,7 @@ def create_app(
     excel_exporter: Optional[ExcelExporter] = None,
     search_store: Optional[SearchStore] = None,
     intake_session_manager: Optional[IntakeSessionManager] = None,
+    harvest_enrichment_service: Optional[HarvestEnrichmentService] = None,
 ) -> FastAPI:
     app = FastAPI(title="RecruiterAI API")
     app.add_middleware(
@@ -334,6 +337,7 @@ def create_app(
     excel_exporter = excel_exporter or ExcelExporter()
     search_store = search_store or SearchStore()
     intake_session_manager = intake_session_manager or IntakeSessionManager()
+    harvest_enrichment_service = harvest_enrichment_service or HarvestEnrichmentService()
 
     @app.get("/health")
     def health() -> Dict[str, str]:
@@ -603,12 +607,45 @@ def create_app(
             ranked_candidates = candidate_ranker.rank(merged_candidates, intent)
             logger.info("[SEARCH] Ranking Completed | count=%s", len(ranked_candidates))
 
+            # Loaded here (before enrichment) so a re-run of an existing
+            # search_id reuses any already-successful Harvest enrichment
+            # instead of re-spending credits on it — see
+            # HarvestEnrichmentService.enrich_top_n's idempotency check.
+            # Also carries forward recruiter_decisions/notes (see below).
+            existing_record = search_store.load(search_id) or {}
+            existing_harvest_raw = existing_record.get("harvest_evidence", {})
+            existing_harvest = {
+                candidate_id: HarvestEvidence(**payload) for candidate_id, payload in existing_harvest_raw.items()
+            }
+
+            # Second-stage enrichment (Harvest): only the top-N baseline-
+            # ranked candidates, never the whole pool. A Harvest failure
+            # here can only affect matched_signals/explanations for that one
+            # candidate — it can never raise and never breaks the search.
+            harvest_by_candidate_id = harvest_enrichment_service.enrich_top_n(ranked_candidates, existing=existing_harvest)
+            ranked_candidates = candidate_ranker.rerank_top_n(
+                ranked_candidates, intent, harvest_by_candidate_id, top_n=harvest_enrichment_service.top_n
+            )
+            logger.info(
+                "[SEARCH] Harvest enrichment complete | attempted=%s succeeded=%s",
+                len(harvest_by_candidate_id),
+                sum(1 for evidence in harvest_by_candidate_id.values() if evidence.success),
+            )
+
             logger.info("Generating explanations")
-            explanations = [match_explainer.explain(candidate, intent).model_dump() for candidate in ranked_candidates]
+            explanations = [
+                match_explainer.explain(candidate, intent, harvest_evidence=harvest_by_candidate_id.get(candidate.candidate_id or "")).model_dump()
+                for candidate in ranked_candidates
+            ]
             logger.info("Explanations generated")
 
             evidence_payload = [
-                dataclasses.asdict(build_candidate_evidence(candidate, intent)) for candidate in ranked_candidates
+                dataclasses.asdict(
+                    build_candidate_evidence(
+                        candidate, intent, harvest_evidence=harvest_by_candidate_id.get(candidate.candidate_id or "")
+                    )
+                )
+                for candidate in ranked_candidates
             ]
 
             logger.info("Generating diagnostics")
@@ -638,12 +675,6 @@ def create_app(
                     "candidates_after_merge": len(merged_candidates),
                     "candidates_ranked": len(ranked_candidates),
                 }
-
-            # Loaded before building `response` so a re-run of an existing
-            # search_id (e.g. "Run Search Again" after editing the brief)
-            # carries forward any decisions/notes already recorded against
-            # it, rather than the response looking like they were wiped.
-            existing_record = search_store.load(search_id) or {}
 
             response = SearchResponse(
                 provider="platform",
@@ -680,6 +711,14 @@ def create_app(
                     "response": response.model_dump(),
                     "recruiter_decisions": existing_record.get("recruiter_decisions", {}),
                     "notes": existing_record.get("notes", {}),
+                    # Union of whatever was already persisted (candidates
+                    # outside this run's top-N, or from an earlier run) with
+                    # this run's results — never dropped just because a
+                    # candidate fell outside top_n this time.
+                    "harvest_evidence": {
+                        **existing_harvest_raw,
+                        **{candidate_id: dataclasses.asdict(evidence) for candidate_id, evidence in harvest_by_candidate_id.items()},
+                    },
                 },
             )
 

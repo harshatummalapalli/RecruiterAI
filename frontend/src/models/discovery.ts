@@ -146,7 +146,12 @@ export function buildDiscoveryCandidates(response: SearchResponse): DiscoveryCan
       whyThisCandidate: explanation.why_this_candidate ?? '',
       strongEvidence: readStringArray(explanation.strong_evidence),
       potentialConcerns: readStringArray(explanation.potential_concerns),
-      whatWeDontKnow: readStringArray(explanation.what_we_dont_know),
+      // Self-reported claims (e.g. a candidate's own "11+ years" in their
+      // profile summary) are appended here, not into strongEvidence — this
+      // is the existing "What We Don't Know" section, which already reads
+      // as "unverified/uncertain" to a recruiter, so a self-reported note
+      // fits it without a new UI section.
+      whatWeDontKnow: [...readStringArray(explanation.what_we_dont_know), ...readStringArray(explanation.self_reported_notes)],
       matchedSignals: (explanation.matched_signals ?? []).map((s) => ({
         signalText: s.signal_text,
         matchedTerm: s.matched_term,

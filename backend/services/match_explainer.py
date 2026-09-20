@@ -1,10 +1,23 @@
-from typing import List
+from typing import List, Optional
 
 from backend.models.candidate import Candidate
-from backend.models.candidate_evidence import CandidateEvidence, MatchedSignal
+from backend.models.candidate_evidence import CandidateEvidence, HarvestEvidence, MatchedSignal
 from backend.models.match_explanation import MatchExplanation, MatchedSignalOut
 from backend.models.search_intent import SearchIntent
 from backend.services.candidate_evidence_builder import build_candidate_evidence
+
+# How a Harvest-sourced signal is phrased in strong_evidence — natural
+# sentences, never "Harvest: ..." — the recruiter should read "why this
+# matters," not which provider returned it (Phase 10 of the Harvest
+# integration plan). CrustData sources ("current title", "headline", "past
+# role: ...") already read naturally with the generic "{source} mentions"
+# phrasing below and aren't in this map.
+_HARVEST_SOURCE_PHRASING = {
+    "harvest: employment description": lambda detail, term: f"{detail} — work described there includes “{term}”.",
+    "harvest: project": lambda detail, term: f"Built a project ({detail}) demonstrating “{term}”.",
+    "harvest: certification": lambda detail, term: f"Holds a certification: {detail}.",
+    "harvest: skill": lambda detail, term: f"Lists {detail} as a skill.",
+}
 
 
 class MatchExplainer:
@@ -13,8 +26,10 @@ class MatchExplainer:
     two can never disagree the way the old skill-matching explainer and the
     metadata-substring ranker used to."""
 
-    def explain(self, candidate: Candidate, intent: SearchIntent) -> MatchExplanation:
-        evidence = build_candidate_evidence(candidate, intent)
+    def explain(
+        self, candidate: Candidate, intent: SearchIntent, harvest_evidence: Optional[HarvestEvidence] = None
+    ) -> MatchExplanation:
+        evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest_evidence)
         alignment = evidence.role_alignment
 
         return MatchExplanation(
@@ -29,6 +44,8 @@ class MatchExplainer:
             convergence=evidence.search_evidence.convergence,
             matched_queries=evidence.search_evidence.matched_queries,
             final_score=candidate.final_score,
+            self_reported_notes=[evidence.harvest_self_reported_experience] if evidence.harvest_self_reported_experience else [],
+            harvest_enriched=bool(harvest_evidence and harvest_evidence.success),
         )
 
     def _to_signal_out(self, signal: MatchedSignal) -> MatchedSignalOut:
@@ -69,8 +86,12 @@ class MatchExplainer:
         alignment = evidence.role_alignment
 
         for signal in alignment.matched_signals:
-            source = signal.source.capitalize() if signal.source else "Profile"
-            items.append(f"{source} mentions “{signal.matched_term}”.")
+            phrasing = _HARVEST_SOURCE_PHRASING.get(signal.source)
+            if phrasing:
+                items.append(phrasing(signal.evidence_detail, signal.matched_term))
+            else:
+                source = signal.source.capitalize() if signal.source else "Profile"
+                items.append(f"{source} mentions “{signal.matched_term}”.")
 
         if evidence.search_evidence.provider_fit == "strong":
             items.append("Flagged by the search provider as a strong relevance fit for this query.")

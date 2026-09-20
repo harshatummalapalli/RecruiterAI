@@ -1,6 +1,11 @@
 from backend.models.candidate import Candidate
+from backend.models.candidate_evidence import HarvestEvidence
 from backend.models.search_intent import Role, SearchIntent
 from backend.services.candidate_evidence_builder import build_candidate_evidence
+
+
+def _harvest(element: dict) -> HarvestEvidence:
+    return HarvestEvidence(raw={"element": element}, success=True, cost=0.0064)
 
 
 def test_education_survives_normalization_when_present() -> None:
@@ -247,3 +252,154 @@ def test_unmatched_signals_are_never_phrased_as_negative_evidence_in_the_model()
 
     assert len(evidence.role_alignment.unmatched_signals) == 1
     assert evidence.role_alignment.unmatched_signals[0].matched_term == ""
+
+
+# ---------------------------------------------------------------------------
+# Harvest second-stage enrichment — normalization, source-labeling,
+# generic-skill exclusion, self-reported years, evidence corroboration.
+# ---------------------------------------------------------------------------
+
+
+def test_harvest_employment_description_becomes_a_source_labeled_matched_signal() -> None:
+    candidate = Candidate(name="Enriched", title="Software Engineer", raw_data={})
+    harvest = _harvest(
+        {
+            "experience": [
+                {"position": "AI Engineer", "companyName": "Acme", "description": "Built a production RAG retrieval-routing system."}
+            ]
+        }
+    )
+    intent = SearchIntent(role=Role(title="Software Engineer"), core_signals=["Retrieval-Augmented Generation (RAG) experience."])
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    matches = evidence.role_alignment.matched_signals
+    assert len(matches) == 1
+    assert matches[0].source == "harvest: employment description"
+    assert matches[0].evidence_detail == "AI Engineer at Acme"
+    assert matches[0].matched_term == "rag"
+
+
+def test_harvest_project_becomes_a_matched_signal() -> None:
+    candidate = Candidate(name="Builder", title="Software Engineer", raw_data={})
+    harvest = _harvest({"projects": [{"title": "Agentic RAG System", "description": "Built with LangGraph."}]})
+    intent = SearchIntent(role=Role(title="Software Engineer"), core_signals=["Experience with LangGraph."])
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    matches = evidence.role_alignment.matched_signals
+    assert len(matches) == 1
+    assert matches[0].source == "harvest: project"
+    assert matches[0].evidence_detail == "Agentic RAG System"
+
+
+def test_harvest_certification_becomes_a_matched_signal() -> None:
+    candidate = Candidate(name="Certified", title="Software Engineer", raw_data={})
+    harvest = _harvest({"certifications": [{"title": "Microsoft Certified: Azure AI Engineer Associate"}]})
+    intent = SearchIntent(role=Role(title="Software Engineer"), supporting_signals=["Experience with Azure."])
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    matches = evidence.role_alignment.matched_signals
+    assert len(matches) == 1
+    assert matches[0].source == "harvest: certification"
+    assert matches[0].evidence_detail == "Microsoft Certified: Azure AI Engineer Associate"
+
+
+def test_harvest_skill_becomes_a_matched_signal() -> None:
+    candidate = Candidate(name="Skilled", title="Software Engineer", raw_data={})
+    harvest = _harvest({"skills": [{"name": "Model Context Protocol (MCP)"}]})
+    intent = SearchIntent(role=Role(title="Software Engineer"), supporting_signals=["Experience with MCP."])
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    matches = evidence.role_alignment.matched_signals
+    assert len(matches) == 1
+    assert matches[0].source == "harvest: skill"
+    assert matches[0].evidence_detail == "Model Context Protocol (MCP)"
+
+
+def test_generic_harvest_skill_never_becomes_strong_evidence() -> None:
+    # "Software Engineering" is exactly the kind of generic, near-universal
+    # term the CrustData stoplist already excludes — the same filter must
+    # apply to Harvest skills, not just CrustData text.
+    candidate = Candidate(name="Generic", title="Software Engineer", raw_data={})
+    harvest = _harvest({"skills": [{"name": "Software Engineering"}]})
+    intent = SearchIntent(role=Role(title="Software Engineer"), core_signals=["Software engineering experience."])
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    assert evidence.role_alignment.matched_signals == []
+
+
+def test_self_reported_years_are_labeled_unverified_not_converted_to_a_fact() -> None:
+    candidate = Candidate(name="Self Reported", title="Software Engineer", raw_data={})
+    harvest = _harvest({"about": "AI engineer with 11+ years of experience building production systems."})
+    intent = SearchIntent(role=Role(title="Software Engineer"))
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    assert evidence.harvest_self_reported_experience is not None
+    assert "11+ years" in evidence.harvest_self_reported_experience
+    assert "self-reported" in evidence.harvest_self_reported_experience.lower()
+    assert "not verified" in evidence.harvest_self_reported_experience.lower()
+    # Never promoted into a matched_signal/strong-evidence-shaped fact.
+    assert evidence.role_alignment.matched_signals == []
+
+
+def test_about_text_never_feeds_signal_matching_even_when_it_contains_a_core_term() -> None:
+    candidate = Candidate(name="About Only", title="Software Engineer", raw_data={})
+    harvest = _harvest({"about": "I love RAG and agentic systems."})
+    intent = SearchIntent(role=Role(title="Software Engineer"), core_signals=["Retrieval-Augmented Generation (RAG) experience."])
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    # "about" is deliberately excluded from labeled_text_sources() — a term
+    # appearing only there must never become ranking/explanation evidence.
+    assert evidence.role_alignment.matched_signals == []
+    assert evidence.harvest_about == "I love RAG and agentic systems."
+
+
+def test_a_term_found_in_both_crustdata_and_harvest_produces_only_one_matched_signal() -> None:
+    # Corroboration, not repetition: the CrustData headline already
+    # mentions "RAG" — Harvest's employment description mentioning it too
+    # must not create a second, duplicate matched_signal for the same term.
+    candidate = Candidate(
+        name="Dual Source",
+        title="Software Engineer",
+        raw_data={"basic_profile": {"headline": "Software Engineer building RAG systems"}},
+    )
+    harvest = _harvest({"experience": [{"position": "Engineer", "companyName": "Acme", "description": "Worked on RAG pipelines."}]})
+    intent = SearchIntent(role=Role(title="Software Engineer"), core_signals=["Retrieval-Augmented Generation (RAG) experience."])
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    matches = evidence.role_alignment.matched_signals
+    assert len(matches) == 1
+    # CrustData sources are checked before Harvest sources (priority order),
+    # so the stronger/first-found attribution wins.
+    assert matches[0].source == "headline"
+
+
+def test_harvest_reveals_a_term_crustdata_never_had_evidence_for() -> None:
+    candidate = Candidate(name="New Evidence", title="Software Engineer", raw_data={})
+    harvest = _harvest({"skills": [{"name": "LangGraph"}]})
+    intent = SearchIntent(role=Role(title="Software Engineer"), supporting_signals=["Experience with LangGraph."])
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    assert len(evidence.role_alignment.matched_signals) == 1
+    assert evidence.role_alignment.matched_signals[0].source == "harvest: skill"
+
+
+def test_failed_harvest_evidence_never_populates_harvest_fields() -> None:
+    candidate = Candidate(name="Failed", title="Software Engineer", raw_data={})
+    harvest = HarvestEvidence(success=False, error="timeout")
+    intent = SearchIntent(role=Role(title="Software Engineer"), core_signals=["Python."])
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    assert evidence.harvest_employment_descriptions == []
+    assert evidence.harvest_skills == []
+    assert evidence.harvest_about is None
+    assert evidence.harvest is harvest  # preserved for provenance/debugging even on failure

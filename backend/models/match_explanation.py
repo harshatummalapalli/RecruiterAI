@@ -27,3 +27,10 @@ class MatchExplanation(BaseModel):
     convergence: bool = False
     matched_queries: List[str] = []
     final_score: Optional[float] = None
+    # Self-authored by the candidate (Harvest "about" text), never verified,
+    # never fed into ranking or strong_evidence — kept structurally separate
+    # so the UI (and anyone reading this model) can't mistake it for a
+    # demonstrated fact. Empty unless a self-reported experience claim (e.g.
+    # "11+ years") was found.
+    self_reported_notes: List[str] = []
+    harvest_enriched: bool = False

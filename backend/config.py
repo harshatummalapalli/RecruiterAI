@@ -19,6 +19,8 @@ class Settings(BaseModel):
 
     openai_api_key: Optional[str] = Field(default=None, description="OpenAI API key")
     crustdata_api_key: Optional[str] = Field(default=None, description="CrustData API key")
+    harvest_api_key: Optional[str] = Field(default=None, description="HarvestAPI (harvestapi.io) API key")
+    harvest_enrichment_top_n: int = Field(default=5, description="How many top-ranked candidates to enrich via Harvest per search")
     google_client_id: Optional[str] = Field(default=None, description="Google OAuth Client ID")
     allowed_email_domain: Optional[str] = Field(default=None, description="Email domain allowed to log in")
     session_secret_key: Optional[str] = Field(default=None, description="Secret key used to sign session cookies")
@@ -31,6 +33,7 @@ class Settings(BaseModel):
         raw_values = {
             "openai_api_key": source.get("OPENAI_API_KEY"),
             "crustdata_api_key": source.get("CRUSTDATA_API_KEY"),
+            "harvest_api_key": source.get("HARVEST_API_KEY"),
             "google_client_id": source.get("GOOGLE_CLIENT_ID"),
             "allowed_email_domain": source.get("ALLOWED_EMAIL_DOMAIN"),
             "session_secret_key": source.get("SESSION_SECRET_KEY"),
@@ -39,11 +42,15 @@ class Settings(BaseModel):
         session_max_age = source.get("SESSION_MAX_AGE_SECONDS")
         if session_max_age is not None and str(session_max_age).strip():
             raw_values["session_max_age_seconds"] = session_max_age
+        harvest_top_n = source.get("HARVEST_ENRICHMENT_TOP_N")
+        if harvest_top_n is not None and str(harvest_top_n).strip():
+            raw_values["harvest_enrichment_top_n"] = harvest_top_n
         return cls(**raw_values)
 
     @field_validator(
         "openai_api_key",
         "crustdata_api_key",
+        "harvest_api_key",
         "google_client_id",
         "allowed_email_domain",
         "session_secret_key",
@@ -76,6 +83,8 @@ def get_settings() -> Settings:
     env_signature = (
         os.environ.get("OPENAI_API_KEY"),
         os.environ.get("CRUSTDATA_API_KEY"),
+        os.environ.get("HARVEST_API_KEY"),
+        os.environ.get("HARVEST_ENRICHMENT_TOP_N"),
         os.environ.get("GOOGLE_CLIENT_ID"),
         os.environ.get("ALLOWED_EMAIL_DOMAIN"),
         os.environ.get("SESSION_SECRET_KEY"),
@@ -96,6 +105,17 @@ def get_openai_api_key() -> str | None:
 def get_crustdata_api_key() -> str | None:
     """Return the configured CrustData API key from the environment or .env file."""
     return get_settings().crustdata_api_key
+
+
+def get_harvest_api_key() -> str | None:
+    """Return the configured HarvestAPI (harvestapi.io) API key from the environment or .env file."""
+    return get_settings().harvest_api_key
+
+
+def get_harvest_enrichment_top_n() -> int:
+    """How many top-baseline-ranked candidates to enrich via Harvest per search. Configurable via
+    HARVEST_ENRICHMENT_TOP_N; defaults to 5."""
+    return get_settings().harvest_enrichment_top_n
 
 
 def get_google_client_id() -> str | None:

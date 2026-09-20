@@ -103,6 +103,11 @@ export interface MatchExplanationRaw {
   convergence: boolean
   matched_queries: string[]
   final_score?: number | null
+  // Self-authored by the candidate (never verified, never fed into
+  // ranking) — e.g. a "11+ years" claim from a Harvest-enriched profile's
+  // own summary. Kept structurally separate from strong_evidence.
+  self_reported_notes?: string[]
+  harvest_enriched?: boolean
 }
 
 // Raw shape of a backend CandidateEvidence (dataclasses.asdict()) — career

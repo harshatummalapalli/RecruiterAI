@@ -1,6 +1,7 @@
-from typing import List
+from typing import Dict, List, Optional
 
 from backend.models.candidate import Candidate
+from backend.models.candidate_evidence import HarvestEvidence
 from backend.models.search_intent import SearchIntent
 from backend.services.candidate_evidence_builder import build_candidate_evidence
 
@@ -56,6 +57,36 @@ class CandidateRanker:
         # number of career roles on record, which rewards long resumes
         # rather than relevance.
         return sorted(ranked_candidates, key=lambda item: (-(item.final_score or 0.0), item.name or ""))
+
+    def rerank_top_n(
+        self,
+        baseline_ranked: List[Candidate],
+        intent: SearchIntent,
+        harvest_by_candidate_id: Dict[str, HarvestEvidence],
+        top_n: int,
+    ) -> List[Candidate]:
+        """Second-stage rerank using Harvest evidence — reuses the identical
+        scoring formula `rank()` uses (never a separate/parallel ranking
+        algorithm), rescoring ONLY the first `top_n` baseline-ranked
+        candidates and re-sorting them among themselves. Every candidate at
+        index >= top_n is returned completely untouched, at its original
+        baseline position: enrichment can reorder the enriched slice, but
+        can never let an enriched candidate jump above one that was never
+        considered for enrichment. `baseline_ranked` must already be the
+        output of `rank()` — this never re-derives a baseline itself."""
+        if top_n <= 0:
+            return baseline_ranked
+
+        head = baseline_ranked[:top_n]
+        tail = baseline_ranked[top_n:]
+
+        for candidate in head:
+            harvest = harvest_by_candidate_id.get(candidate.candidate_id or "")
+            evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+            candidate.final_score = self._calculate_score(evidence, candidate.provider_score)
+
+        reranked_head = sorted(head, key=lambda item: (-(item.final_score or 0.0), item.name or ""))
+        return reranked_head + tail
 
     def _calculate_score(self, evidence, provider_score) -> float:
         alignment = evidence.role_alignment
