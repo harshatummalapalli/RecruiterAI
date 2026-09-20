@@ -43,7 +43,16 @@ def test_search_returns_candidate_objects_from_search_plan(monkeypatch) -> None:
             request_names.append("title_expansion")
         assert payload["filters"]
         assert payload["limit"] == 25
-        assert payload["fields"] == ["crustdata_person_id", "basic_profile", "experience", "social_handles"]
+        assert payload["fields"] == [
+            "crustdata_person_id",
+            "basic_profile",
+            "experience",
+            "social_handles",
+            "education",
+            "metadata",
+            "contact",
+            "fit",
+        ]
         return httpx.Response(
             200,
             json={
@@ -352,3 +361,47 @@ def test_candidate_normalizes_missing_raw_data_to_empty_dict() -> None:
     candidate = Candidate(raw_data=None)
 
     assert candidate.raw_data == {}
+
+
+def test_search_extracts_contact_email_and_phone_when_returned(monkeypatch) -> None:
+    # contact is a zero-cost field on this plan once requested — the exact
+    # extraction is defensive about shape (scalar or list) since the precise
+    # response shape hasn't been confirmed against a real permitted response.
+    plan = SearchPlan(searches=[SearchQuery(query_name="Primary", include_titles=["Software Engineer"])])
+    monkeypatch.setenv("CRUSTDATA_API_KEY", "test-key")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "profiles": [
+                    {
+                        "crustdata_person_id": "crust-010",
+                        "basic_profile": {"name": "Dana Lee"},
+                        "contact": {"email": "dana.lee@example.com", "phone": ["+1-555-0100"]},
+                    }
+                ]
+            },
+        )
+
+    provider = CrustDataProvider(client=httpx.Client(transport=httpx.MockTransport(handler)))
+    candidates = provider.search(plan)
+
+    assert candidates[0].email == "dana.lee@example.com"
+    assert candidates[0].phone == "+1-555-0100"
+    # The full raw contact mapping is preserved regardless of extraction.
+    assert candidates[0].raw_data["contact"] == {"email": "dana.lee@example.com", "phone": ["+1-555-0100"]}
+
+
+def test_search_leaves_contact_fields_none_when_not_returned(monkeypatch) -> None:
+    plan = SearchPlan(searches=[SearchQuery(query_name="Primary", include_titles=["Software Engineer"])])
+    monkeypatch.setenv("CRUSTDATA_API_KEY", "test-key")
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"profiles": [{"crustdata_person_id": "crust-011", "basic_profile": {"name": "No Contact"}}]})
+
+    provider = CrustDataProvider(client=httpx.Client(transport=httpx.MockTransport(handler)))
+    candidates = provider.search(plan)
+
+    assert candidates[0].email is None
+    assert candidates[0].phone is None

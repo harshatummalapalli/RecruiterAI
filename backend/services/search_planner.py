@@ -80,9 +80,6 @@ class SearchPlanner:
             preferred_companies=intent.previous_background.preferred_companies,
             exclude_current_companies=intent.company_preferences.exclude_current_companies,
             preferred_company_types=intent.company_preferences.preferred_company_types,
-            must_have=intent.ranking.must_have,
-            nice_to_have=intent.ranking.nice_to_have,
-            bonus=intent.ranking.bonus,
         )
 
         queries: List[SearchQuery] = [

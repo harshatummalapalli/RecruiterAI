@@ -27,9 +27,6 @@ class SearchQuery(BaseModel):
     preferred_companies: List[str] = Field(default_factory=list)
     exclude_current_companies: List[str] = Field(default_factory=list)
     preferred_company_types: List[str] = Field(default_factory=list)
-    must_have: List[str] = Field(default_factory=list)
-    nice_to_have: List[str] = Field(default_factory=list)
-    bonus: List[str] = Field(default_factory=list)
     # Set only on the primary discovery query — when present, this is sent
     # to CrustData's `search: {query, mode: "hybrid"}` verbatim instead of
     # the title+skills keyword concatenation. See providers/crustdata.py.
@@ -47,9 +44,6 @@ class SearchQuery(BaseModel):
         "preferred_companies",
         "exclude_current_companies",
         "preferred_company_types",
-        "must_have",
-        "nice_to_have",
-        "bonus",
         mode="before",
     )
     @classmethod

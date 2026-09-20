@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ExternalLink, Pencil, Upload, X } from 'lucide-react'
+import { AlertTriangle, ExternalLink, Pencil, Upload, X } from 'lucide-react'
 import type { SearchBrief } from '../models/searchBrief'
 import type { SearchResponse } from '../types'
 import {
   buildDiscoveryCandidates,
-  formatExperienceYears,
-  matchVerdictFor,
+  emailStatusLine,
+  phoneStatusLine,
+  relevanceLabel,
   sortDiscoveryCandidates,
   type DiscoveryCandidate,
+  type RelevanceTier,
   type SortKey,
 } from '../models/discovery'
-import { buildAssessment, type Verdict } from '../models/candidateAssessment'
 import { updateCandidateRecord } from '../services/recruiterWorkflow'
 import { SearchBriefReview, summarizeCompanies, summarizeExperience, summarizeLocations, summarizeSkills } from './SearchBriefReview'
 
@@ -32,9 +33,8 @@ type Resume = { name: string; uploadedAt: string }
 type Decision = 'shortlist' | 'maybe' | 'reject'
 
 const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
-  { value: 'match', label: 'Match' },
-  { value: 'experience', label: 'Experience' },
-  { value: 'recent', label: 'Recently updated' },
+  { value: 'relevance', label: 'Relevance' },
+  { value: 'updated', label: 'Profile Updated' },
   { value: 'name', label: 'Name' },
 ]
 
@@ -53,13 +53,11 @@ function pipelineLabel(decision: Decision | undefined): string {
   return 'Not reviewed'
 }
 
-function verdictClassName(verdict: Verdict): string {
-  if (verdict === 'Excellent Match') return 'assessment-verdict--excellent'
-  if (verdict === 'Strong Match') return 'assessment-verdict--strong'
-  if (verdict === 'Good Match') return 'assessment-verdict--good'
-  if (verdict === 'Partial Match') return 'assessment-verdict--partial'
-  if (verdict === 'Weak Match') return 'assessment-verdict--weak'
-  return 'assessment-verdict--poor'
+function tierClassName(tier: RelevanceTier): string {
+  if (tier === 'direct') return 'assessment-verdict--excellent'
+  if (tier === 'adjacent') return 'assessment-verdict--good'
+  if (tier === 'tangential') return 'assessment-verdict--partial'
+  return 'assessment-verdict--weak'
 }
 
 function SkeletonRows() {
@@ -90,69 +88,58 @@ function ComparisonPanel({ candidates, onClose }: { candidates: DiscoveryCandida
       </div>
 
       <div className={`comparison-grid comparison-grid--${candidates.length}`}>
-        {candidates.map((candidate) => {
-          const assessment = buildAssessment(candidate)
-          const skills = Array.from(new Set([...candidate.explanation.matchedRequiredSkills, ...candidate.explanation.matchedPreferredSkills]))
+        {candidates.map((candidate) => (
+          <div key={candidate.id} className="comparison-column">
+            <div className="comparison-column__head">
+              <h3>{candidate.name}</h3>
+              <p>{candidate.title}</p>
+            </div>
 
-          return (
-            <div key={candidate.id} className="comparison-column">
-              <div className="comparison-column__head">
-                <h3>{candidate.name}</h3>
-                <p>{candidate.title}</p>
-              </div>
+            <div className="comparison-row">
+              <span className="comparison-row__label">Relevance</span>
+              <span className={`candidate-badge candidate-badge--verdict ${tierClassName(candidate.relevanceTier)}`}>
+                {relevanceLabel(candidate.relevanceTier)}
+              </span>
+            </div>
 
-              <div className="comparison-row">
-                <span className="comparison-row__label">Match</span>
-                <span className={`candidate-badge candidate-badge--verdict ${verdictClassName(matchVerdictFor(candidate))}`}>
-                  {matchVerdictFor(candidate)}
-                </span>
-              </div>
+            <div className="comparison-row">
+              <span className="comparison-row__label">Companies</span>
+              <span>{candidate.company}</span>
+            </div>
 
-              <div className="comparison-row">
-                <span className="comparison-row__label">Experience</span>
-                <span>{formatExperienceYears(candidate.experienceYears)}</span>
-              </div>
-
-              <div className="comparison-row">
-                <span className="comparison-row__label">Companies</span>
-                <span>{candidate.company}</span>
-              </div>
-
-              <div className="comparison-row comparison-row--block">
-                <span className="comparison-row__label">Skills</span>
-                <div className="discovery-chip-group">
-                  {skills.length ? (
-                    skills.map((skill) => (
-                      <span key={skill} className="discovery-chip discovery-chip--matched">
-                        {skill}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="discovery-chip-group__empty">None matched</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="comparison-row comparison-row--block">
-                <span className="comparison-row__label">AI Summary</span>
-                <p className="comparison-summary">{assessment.narrative}</p>
+            <div className="comparison-row comparison-row--block">
+              <span className="comparison-row__label">Strong Evidence</span>
+              <div className="discovery-chip-group">
+                {candidate.strongEvidence.length ? (
+                  candidate.strongEvidence.slice(0, 3).map((item) => (
+                    <span key={item} className="discovery-chip discovery-chip--matched">
+                      {item}
+                    </span>
+                  ))
+                ) : (
+                  <span className="discovery-chip-group__empty">No specific evidence found</span>
+                )}
               </div>
             </div>
-          )
-        })}
+
+            <div className="comparison-row comparison-row--block">
+              <span className="comparison-row__label">Why Surfaced</span>
+              <p className="comparison-summary">{candidate.whyThisCandidate || 'Not enough information to assess.'}</p>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )
 }
 
 export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, searchState, onRunSearch, searchId }: CandidateReviewScreenProps) {
-  const [sortKey, setSortKey] = useState<SortKey>('match')
+  const [sortKey, setSortKey] = useState<SortKey>('relevance')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isEditingBrief, setIsEditingBrief] = useState(false)
   const [decisions, setDecisions] = useState<Record<string, Decision>>({})
   const [resumes, setResumes] = useState<Record<string, Resume>>({})
   const [notes, setNotes] = useState<Record<string, Note[]>>({})
-  const [recencyById, setRecencyById] = useState<Record<string, number>>({})
   const [noteDraft, setNoteDraft] = useState('')
   const [compareIds, setCompareIds] = useState<string[]>([])
   const [isComparing, setIsComparing] = useState(false)
@@ -163,22 +150,36 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
     setIsEditingBrief(false)
     setCompareIds([])
     setIsComparing(false)
+
+    // Hydrate from whatever the backend already has persisted for this
+    // search, rather than starting empty — this is the actual fix for
+    // decisions/notes disappearing on refresh. Root cause was that neither
+    // POST /search nor GET /search/{id} returned recruiter_decisions/notes
+    // at all, so there was nothing here to read; the backend was already
+    // saving them correctly (see services/search_store.py) the whole time.
+    const decisionsRecord = searchResponse?.recruiter_decisions
+    setDecisions((decisionsRecord as Record<string, Decision>) ?? {})
+
+    const notesRecord = searchResponse?.notes ?? {}
+    const hydratedNotes: Record<string, Note[]> = {}
+    for (const [candidateId, entries] of Object.entries(notesRecord)) {
+      hydratedNotes[candidateId] = entries.map((entry, index) => ({
+        id: `${candidateId}-${index}`,
+        text: entry.text,
+        createdAt: entry.created_at,
+      }))
+    }
+    setNotes(hydratedNotes)
   }, [searchResponse])
 
   const candidates = useMemo(() => (searchResponse ? buildDiscoveryCandidates(searchResponse) : []), [searchResponse])
-  const sortedCandidates = useMemo(() => sortDiscoveryCandidates(candidates, sortKey, recencyById), [candidates, sortKey, recencyById])
+  const sortedCandidates = useMemo(() => sortDiscoveryCandidates(candidates, sortKey), [candidates, sortKey])
   const selectedCandidate = candidates.find((candidate) => candidate.id === selectedId) ?? null
   const compareCandidates = compareIds.map((id) => candidates.find((candidate) => candidate.id === id)).filter((c): c is DiscoveryCandidate => Boolean(c))
-  const assessment = selectedCandidate ? buildAssessment(selectedCandidate) : null
-
-  const touch = (id: string) => {
-    setRecencyById((current) => ({ ...current, [id]: Date.now() }))
-  }
 
   const setDecision = (id: string, decision: Decision) => {
     const next = decisions[id] === decision ? undefined : decision
     setDecisions((current) => ({ ...current, [id]: next } as Record<string, Decision>))
-    touch(id)
     if (searchId && next) {
       updateCandidateRecord(searchId, id, { decision: next }).catch(() => {})
     }
@@ -198,7 +199,6 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
 
   const uploadResume = (id: string, file: File) => {
     setResumes((current) => ({ ...current, [id]: { name: file.name, uploadedAt: new Date().toISOString() } }))
-    touch(id)
   }
 
   const addNote = (id: string) => {
@@ -212,7 +212,6 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
       updateCandidateRecord(searchId, id, { note: text }).catch(() => {})
     }
     setNoteDraft('')
-    touch(id)
   }
 
   const hasSearchedOnce = searchResponse !== null
@@ -281,7 +280,11 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
               </div>
               <div className="workspace__preview-row">
                 <dt>Skills</dt>
-                <dd>{summarizeSkills(brief.skills.required, brief.skills.preferred, brief.skills.excluded)}</dd>
+                <dd>
+                  {brief.skills.required.length || brief.skills.preferred.length || brief.skills.excluded.length
+                    ? summarizeSkills(brief.skills.required, brief.skills.preferred, brief.skills.excluded)
+                    : 'Matched via natural-language search, not itemized filters'}
+                </dd>
               </div>
               <div className="workspace__preview-row">
                 <dt>Companies</dt>
@@ -354,8 +357,8 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
                   <span>Candidate</span>
                   <span>Company</span>
                   <span>Location</span>
-                  <span>Experience</span>
-                  <span>Match</span>
+                  <span>Relevance</span>
+                  <span>Why Surfaced</span>
                   <span>Resume</span>
                   <span>Pipeline</span>
                 </div>
@@ -385,12 +388,15 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
                       {candidate.location}
                     </button>
                     <button type="button" className="candidate-row__open" onClick={() => setSelectedId(candidate.id)}>
-                      {formatExperienceYears(candidate.experienceYears)}
-                    </button>
-                    <button type="button" className="candidate-row__open" onClick={() => setSelectedId(candidate.id)}>
-                      <span className={`candidate-badge candidate-badge--verdict ${verdictClassName(matchVerdictFor(candidate))}`}>
-                        {matchVerdictFor(candidate)}
+                      <span className={`candidate-badge candidate-badge--verdict ${tierClassName(candidate.relevanceTier)}`}>
+                        {relevanceLabel(candidate.relevanceTier)}
                       </span>
+                      {candidate.potentialConcerns.length ? (
+                        <AlertTriangle size={13} className="candidate-row__concern-flag" aria-label="Potential concern — see profile" />
+                      ) : null}
+                    </button>
+                    <button type="button" className="candidate-row__open candidate-row__why" onClick={() => setSelectedId(candidate.id)}>
+                      {candidate.strongEvidence[0] || candidate.whyThisCandidate || 'No specific evidence found in the available profile data'}
                     </button>
                     <button type="button" className="candidate-row__open" onClick={() => setSelectedId(candidate.id)}>
                       <span className={`candidate-badge${resumes[candidate.id] ? ' candidate-badge--positive' : ''}`}>
@@ -408,7 +414,7 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
             ) : null}
           </div>
 
-          {selectedCandidate && assessment ? (
+          {selectedCandidate ? (
             <aside className="discovery-profile" aria-label="Candidate review">
               <div className="discovery-profile__head">
                 <div>
@@ -434,80 +440,47 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
               </div>
 
               <div className="brief-section">
-                <div className={`assessment-verdict ${verdictClassName(assessment.verdict)}`}>{assessment.verdict}</div>
-                <p className="assessment-narrative">{assessment.narrative}</p>
+                <div className="discovery-profile__tier-row">
+                  <div className={`assessment-verdict ${tierClassName(selectedCandidate.relevanceTier)}`}>
+                    {relevanceLabel(selectedCandidate.relevanceTier)}
+                  </div>
+                  {selectedCandidate.potentialConcerns.length ? (
+                    <span className="discovery-profile__concern-pill">
+                      <AlertTriangle size={12} aria-hidden="true" /> {selectedCandidate.potentialConcerns.length} concern
+                      {selectedCandidate.potentialConcerns.length === 1 ? '' : 's'}
+                    </span>
+                  ) : null}
+                </div>
+                <p className="assessment-narrative">{selectedCandidate.whyThisCandidate || 'Not enough information was returned to assess this candidate.'}</p>
               </div>
 
               <div className="brief-section">
-                <h3 className="brief-section__title">Strengths</h3>
+                <h3 className="brief-section__title">Strong Evidence</h3>
                 <ul className="assessment-list assessment-list--strengths">
-                  {assessment.strengths.length ? (
-                    assessment.strengths.map((item) => <li key={item}>{item}</li>)
+                  {selectedCandidate.strongEvidence.length ? (
+                    selectedCandidate.strongEvidence.map((item) => <li key={item}>{item}</li>)
                   ) : (
-                    <li className="assessment-list__empty">No notable strengths detected.</li>
+                    <li className="assessment-list__empty">No specific evidence found in the available profile data.</li>
                   )}
                 </ul>
               </div>
 
+              {selectedCandidate.potentialConcerns.length ? (
+                <div className="brief-section">
+                  <h3 className="brief-section__title">Potential Concerns</h3>
+                  <ul className="assessment-list assessment-list--concerns">
+                    {selectedCandidate.potentialConcerns.map((item) => <li key={item}>{item}</li>)}
+                  </ul>
+                </div>
+              ) : null}
+
               <div className="brief-section">
-                <h3 className="brief-section__title">Concerns</h3>
-                <ul className="assessment-list assessment-list--concerns">
-                  {assessment.concerns.length ? (
-                    assessment.concerns.map((item) => <li key={item}>{item}</li>)
-                  ) : (
-                    <li className="assessment-list__empty">No significant concerns detected.</li>
-                  )}
+                <h3 className="brief-section__title">What We Don't Know</h3>
+                <ul className="assessment-list">
+                  {selectedCandidate.whatWeDontKnow.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
                 </ul>
-              </div>
-
-              <div className="brief-section">
-                <h3 className="brief-section__title">Match Breakdown</h3>
-
-                <div className="discovery-chip-group">
-                  <span className="discovery-chip-group__label">Required</span>
-                  {selectedCandidate.explanation.matchedRequiredSkills.length ? (
-                    selectedCandidate.explanation.matchedRequiredSkills.map((skill) => (
-                      <span key={skill} className="discovery-chip discovery-chip--matched">
-                        {skill}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="discovery-chip-group__empty">None</span>
-                  )}
-                </div>
-
-                <div className="discovery-chip-group">
-                  <span className="discovery-chip-group__label">Preferred</span>
-                  {selectedCandidate.explanation.matchedPreferredSkills.length ? (
-                    selectedCandidate.explanation.matchedPreferredSkills.map((skill) => (
-                      <span key={skill} className="discovery-chip discovery-chip--matched">
-                        {skill}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="discovery-chip-group__empty">None</span>
-                  )}
-                </div>
-
-                <div className="discovery-chip-group">
-                  <span className="discovery-chip-group__label">Missing</span>
-                  {selectedCandidate.explanation.missingRequiredSkills.length || selectedCandidate.explanation.missingPreferredSkills.length ? (
-                    <>
-                      {selectedCandidate.explanation.missingRequiredSkills.map((skill) => (
-                        <span key={`req-${skill}`} className="discovery-chip discovery-chip--missing">
-                          {skill} · required
-                        </span>
-                      ))}
-                      {selectedCandidate.explanation.missingPreferredSkills.map((skill) => (
-                        <span key={`pref-${skill}`} className="discovery-chip discovery-chip--missing">
-                          {skill} · preferred
-                        </span>
-                      ))}
-                    </>
-                  ) : (
-                    <span className="discovery-chip-group__empty">None</span>
-                  )}
-                </div>
               </div>
 
               <div className="brief-section">
@@ -524,6 +497,55 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
                     </button>
                   ))}
                 </div>
+              </div>
+
+              <div className="brief-section">
+                <h3 className="brief-section__title">Career</h3>
+                {selectedCandidate.pastRoles.length ? (
+                  <ul className="assessment-list">
+                    {selectedCandidate.pastRoles.slice(0, 3).map((role, index) => (
+                      <li key={`${role.title}-${index}`}>
+                        {role.title || 'Role'}
+                        {role.company ? ` · ${role.company}` : ''}
+                      </li>
+                    ))}
+                    {selectedCandidate.pastRoles.length > 3 ? (
+                      <li className="assessment-list__empty">+ {selectedCandidate.pastRoles.length - 3} earlier role(s) on record</li>
+                    ) : null}
+                  </ul>
+                ) : (
+                  <p className="discovery-resume-status discovery-resume-status--empty">No prior career history returned for this candidate.</p>
+                )}
+              </div>
+
+              <div className="brief-section">
+                <h3 className="brief-section__title">Education</h3>
+                {selectedCandidate.education.length ? (
+                  <ul className="assessment-list">
+                    {selectedCandidate.education.map((entry, index) => (
+                      <li key={index}>
+                        {[entry.degree, entry.fieldOfStudy].filter(Boolean).join(', ') || 'Degree not specified'}
+                        {entry.institution ? ` · ${entry.institution}` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="discovery-resume-status discovery-resume-status--empty">Education was not returned for this candidate.</p>
+                )}
+              </div>
+
+              <div className="brief-section">
+                <h3 className="brief-section__title">Contact</h3>
+                <dl className="workspace__preview-list">
+                  <div className="workspace__preview-row">
+                    <dt>Email</dt>
+                    <dd className={selectedCandidate.contactEmail ? '' : 'discovery-resume-status--empty'}>{emailStatusLine(selectedCandidate)}</dd>
+                  </div>
+                  <div className="workspace__preview-row">
+                    <dt>Phone</dt>
+                    <dd className={selectedCandidate.contactPhone ? '' : 'discovery-resume-status--empty'}>{phoneStatusLine(selectedCandidate)}</dd>
+                  </div>
+                </dl>
               </div>
 
               <div className="brief-section">

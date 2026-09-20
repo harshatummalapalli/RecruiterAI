@@ -11,6 +11,13 @@ export interface SearchIntent {
     cities: string[]
     work_mode?: string
     confidence_score?: number | null
+    // A "City, State" anchor for the existing Radius Search option (Edit
+    // brief) — populated by the backend Search Translator whenever there's
+    // a single, unambiguous confirmed city. radius_miles stays unset by
+    // default so exact city/state/country match remains the default search;
+    // radius is an opt-in the recruiter chooses explicitly.
+    radius_place?: string | null
+    radius_miles?: number | null
   }
   experience: {
     minimum_years?: number | null
@@ -81,14 +88,72 @@ export interface Candidate {
   [key: string]: unknown
 }
 
+// Raw shape of a backend MatchExplanation.model_dump() — evidence-based,
+// never a percentage or a generic "Good Match" label. See
+// backend/models/match_explanation.py.
+export interface MatchExplanationRaw {
+  relevance_tier: 'direct' | 'adjacent' | 'tangential' | 'unclear'
+  why_this_candidate: string
+  strong_evidence: string[]
+  potential_concerns: string[]
+  what_we_dont_know: string[]
+  matched_signals: Array<{ tier: 'core' | 'supporting' | 'differentiator'; signal_text: string; matched_term: string; source?: string }>
+  seniority_alignment: boolean | null
+  provider_fit: string | null
+  convergence: boolean
+  matched_queries: string[]
+  final_score?: number | null
+}
+
+// Raw shape of a backend CandidateEvidence (dataclasses.asdict()) — career
+// history, education, contact, and company context, index-aligned with
+// `candidates`/`explanations`. See backend/models/candidate_evidence.py.
+export interface CandidateEvidenceRaw {
+  current_company: string
+  current_industries: string[]
+  current_function: string | null
+  current_seniority: string | null
+  current_headcount: string | null
+  current_company_type: string | null
+  past_roles: Array<{
+    title: string
+    company: string
+    industries: string[]
+    function: string | null
+    seniority: string | null
+    start_date: string | null
+    end_date: string | null
+    description: string | null
+  }>
+  education: Array<{
+    institution: string | null
+    degree: string | null
+    field_of_study: string | null
+    start_date: string | null
+    end_date: string | null
+    description: string | null
+  }>
+  contact: { email: string | null; phone: string | null; has_business_email: boolean | null }
+  updated_at: string | null
+  uncertainty: Array<{ field: string; note: string }>
+}
+
 export interface SearchResponse {
   provider: string
   demo?: boolean
   search_id: string
   candidate_count: number
   candidates: Candidate[]
-  explanations: Array<Record<string, unknown>>
+  explanations: MatchExplanationRaw[]
+  evidence?: CandidateEvidenceRaw[]
   diagnostics: Record<string, unknown>
   warnings?: string[]
   debug?: Record<string, unknown> | null
+  // Recruiter-authored state for this search, keyed by the same candidate
+  // id sent to PATCH /search/{id}/candidate. Present on both the fresh
+  // POST /search response and GET /search/{id} reload — see
+  // CandidateReviewScreen.tsx, which hydrates its local decisions/notes
+  // state from these instead of starting empty on every mount.
+  recruiter_decisions?: Record<string, string>
+  notes?: Record<string, Array<{ text: string; created_at: string }>>
 }

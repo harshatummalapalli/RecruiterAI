@@ -11,9 +11,6 @@ def test_expand_query_uses_knowledge_files_and_deduplicates_values() -> None:
                 exclude_titles=["Software Engineer"],
                 required_skills=["Python", "PyTorch"],
                 preferred_skills=["LLM"],
-                must_have=["AWS"],
-                nice_to_have=["MLOps"],
-                bonus=["Python"],
                 work_mode="senior",
             )
         ],
@@ -31,9 +28,6 @@ def test_expand_query_uses_knowledge_files_and_deduplicates_values() -> None:
     # "Python" -> "PySpark"). Skills pass through unchanged.
     assert query.required_skills == ["Python", "PyTorch"]
     assert query.preferred_skills == ["LLM"]
-    assert query.must_have == ["AWS"]
-    assert query.nice_to_have == ["MLOps"]
-    assert query.bonus == ["Python"]
     assert query.work_mode == "lead"
 
 

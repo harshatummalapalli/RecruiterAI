@@ -26,6 +26,11 @@ class SearchStore:
         return self.storage_dir / f"{safe_id}.json"
 
     def save(self, search_id: str, record: Dict[str, Any]) -> None:
+        # Re-ensured on every write, not just at construction — if the
+        # directory is ever removed while the process is running (manual
+        # cleanup, a deploy step, disk housekeeping), every subsequent save
+        # would otherwise 500 until the process restarts.
+        self.storage_dir.mkdir(parents=True, exist_ok=True)
         path = self._path(search_id)
         path.write_text(json.dumps(record, indent=2, default=str), encoding="utf-8")
         logger.info("Persisted search record | search_id=%s path=%s", search_id, path)

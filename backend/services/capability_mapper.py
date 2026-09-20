@@ -80,12 +80,6 @@ class CapabilityMapper:
             query.exclude_current_companies = []
         elif field_name == "preferred_company_types":
             query.preferred_company_types = []
-        elif field_name == "must_have":
-            query.must_have = []
-        elif field_name == "nice_to_have":
-            query.nice_to_have = []
-        elif field_name == "bonus":
-            query.bonus = []
 
     def _has_value(self, query: SearchQuery, field_name: str) -> bool:
         value = getattr(query, field_name, None)
@@ -112,7 +106,4 @@ class CapabilityMapper:
             "preferred_companies",
             "exclude_current_companies",
             "preferred_company_types",
-            "must_have",
-            "nice_to_have",
-            "bonus",
         ]

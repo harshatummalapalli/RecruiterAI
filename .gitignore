@@ -20,3 +20,4 @@ Thumbs.db
 
 # Persisted search records (may contain real candidate data from live searches)
 output/searches/
+output/intake_sessions/

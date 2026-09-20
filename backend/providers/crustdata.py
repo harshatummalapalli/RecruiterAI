@@ -14,7 +14,23 @@ logger = logging.getLogger(__name__)
 
 API_VERSION = "2025-11-01"
 DEFAULT_LIMIT = 25
-DEFAULT_FIELDS = ["crustdata_person_id", "basic_profile", "experience", "social_handles"]
+# Zero-cost fields on this account's /person/search plan. "skills" and
+# "certifications" are confirmed DENIED (403 with denied_fields metadata) on
+# this plan and must never be requested — a single denied field 403s the
+# whole call. "education", "metadata" (carries updated_at), "contact", and
+# "fit" (a real, query-dependent relevance signal) are confirmed PERMITTED
+# but were never requested before this change, so the response silently
+# never carried them even though they cost nothing extra to ask for.
+DEFAULT_FIELDS = [
+    "crustdata_person_id",
+    "basic_profile",
+    "experience",
+    "social_handles",
+    "education",
+    "metadata",
+    "contact",
+    "fit",
+]
 DEFAULT_MAX_RETRIES = 3
 DEFAULT_RETRY_BACKOFF_BASE = 0.5
 
@@ -373,6 +389,8 @@ class CrustDataProvider(BaseProvider):
 
             social_handles = self._coerce_mapping(item.get("social_handles"))
             professional_network = self._coerce_mapping(social_handles.get("professional_network_identifier"))
+            contact = self._coerce_mapping(item.get("contact"))
+            email, phone = self._extract_contact(contact)
 
             raw_data = self._normalize_item(item, response)
             # Tags which discovery query found this candidate (e.g.
@@ -391,6 +409,8 @@ class CrustDataProvider(BaseProvider):
                     title=current_role.get("title") or basic_profile.get("current_title") or basic_profile.get("headline"),
                     company=current_role.get("name"),
                     location=self._extract_location(basic_profile),
+                    email=email,
+                    phone=phone,
                     provider_score=self._extract_provider_score(item),
                     profile_url=professional_network.get("profile_url"),
                     source="crustdata",
@@ -441,6 +461,37 @@ class CrustDataProvider(BaseProvider):
             if key in response:
                 metadata[key] = response[key]
         return metadata
+
+    def _extract_contact(self, contact: Dict[str, Any]) -> tuple[Optional[str], Optional[str]]:
+        """Best-effort extraction of a contact email/phone from whichever
+        shape CrustData actually returns under the "contact" field. Confirmed
+        live against real candidates: this account's plan currently returns
+        only {"has_business_email": bool} — no actual email/phone value came
+        back for any candidate sampled so far (all had has_business_email:
+        false). The scalar/list-shape checks below are a defensive guess for
+        candidates that DO have a verified business email, still unconfirmed
+        either way; they only ever fire if CrustData actually includes such a
+        key. The full raw "contact" mapping is always preserved in raw_data
+        regardless of what this extracts."""
+        if not contact:
+            return None, None
+
+        def _first(value: Any) -> Optional[str]:
+            if isinstance(value, str) and value.strip():
+                return value.strip()
+            if isinstance(value, list) and value:
+                first = value[0]
+                if isinstance(first, str) and first.strip():
+                    return first.strip()
+                if isinstance(first, dict):
+                    for key in ("email", "address", "value", "phone", "number"):
+                        if isinstance(first.get(key), str) and first[key].strip():
+                            return first[key].strip()
+            return None
+
+        email = _first(contact.get("email")) or _first(contact.get("emails")) or _first(contact.get("work_email"))
+        phone = _first(contact.get("phone")) or _first(contact.get("phone_numbers")) or _first(contact.get("mobile_number"))
+        return email, phone
 
     def _extract_location(self, basic_profile: Dict[str, Any]) -> Optional[str]:
         location_data = basic_profile.get("location")

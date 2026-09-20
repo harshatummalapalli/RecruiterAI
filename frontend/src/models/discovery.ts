@@ -1,25 +1,30 @@
 // Candidate Discovery — pure, local-only view model. Zips the backend's
-// parallel `candidates` / `explanations` arrays into one shape the UI binds
-// to directly, and formats the handful of fields recruiters actually need
-// for a first decision. No provider metadata, no diagnostics.
+// index-aligned `candidates` / `explanations` / `evidence` arrays into one
+// shape the UI binds to directly. Every field here traces back to something
+// the backend actually returned; nothing is scored, classified, or labeled
+// again on the client — that used to produce a second, disagreeing
+// evidence system (computeMatchScore/classifyMatchScore) alongside the
+// backend's own ranking. There is now exactly one evidence model, and the
+// frontend only formats it.
 
-import type { SearchResponse } from '../types'
+import type { CandidateEvidenceRaw, MatchExplanationRaw, SearchResponse } from '../types'
 
-export type MatchExplanation = {
-  finalScore: number | null
-  matchedRequiredSkills: string[]
-  missingRequiredSkills: string[]
-  matchedPreferredSkills: string[]
-  missingPreferredSkills: string[]
-  matchedLocation: string | null
-  matchedExperience: string | null
-  missingExperience: string | null
-  potentialRisks: string[]
-  summary: string | null
-  titleMatch: boolean | null
-  locationMatch: boolean | null
-  companyMatch: boolean | null
-  experienceMatch: boolean | null
+export type MatchedSignal = { signalText: string; matchedTerm: string; source: string }
+
+export type RelevanceTier = 'direct' | 'adjacent' | 'tangential' | 'unclear'
+
+export type PastRole = {
+  title: string
+  company: string
+  industries: string[]
+  function: string | null
+  seniority: string | null
+}
+
+export type EducationEntry = {
+  institution: string | null
+  degree: string | null
+  fieldOfStudy: string | null
 }
 
 export type DiscoveryCandidate = {
@@ -28,56 +33,106 @@ export type DiscoveryCandidate = {
   title: string
   company: string
   location: string
-  experienceYears: number | null
-  matchScore: number | null
-  /** The candidate's professional network (LinkedIn) profile URL, when the
-   * provider returned one. Recruiter-facing action only — never surfaced
-   * alongside any provider name. */
   profileUrl: string | null
-  bio: string | null
-  explanation: MatchExplanation
+
+  relevanceTier: RelevanceTier
+  whyThisCandidate: string
+  strongEvidence: string[]
+  potentialConcerns: string[]
+  whatWeDontKnow: string[]
+  matchedSignals: MatchedSignal[]
+  seniorityAlignment: boolean | null
+  providerFit: string | null
+  convergence: boolean
+
+  currentIndustries: string[]
+  currentFunction: string | null
+  currentSeniority: string | null
+  pastRoles: PastRole[]
+  education: EducationEntry[]
+  contactEmail: string | null
+  contactPhone: string | null
+  hasBusinessEmail: boolean | null
+  updatedAt: string | null
+
+  /** Internal sort key only — never rendered as a score/percentage. */
+  sortScore: number
+}
+
+const RELEVANCE_LABEL: Record<RelevanceTier, string> = {
+  direct: 'Direct title match',
+  adjacent: 'Adjacent title match',
+  tangential: 'Tangential title match',
+  unclear: 'Unclear title relevance',
+}
+
+export function relevanceLabel(tier: RelevanceTier): string {
+  return RELEVANCE_LABEL[tier] ?? 'Unclear title relevance'
+}
+
+/** Precise contact wording — distinguishes a verified negative fact (the
+ * provider explicitly returned has_business_email: false) from genuinely
+ * unknown (the field wasn't returned at all), rather than the previous
+ * one-size-fits-all "No contact information returned." */
+export function emailStatusLine(candidate: DiscoveryCandidate): string {
+  if (candidate.contactEmail) return candidate.contactEmail
+  if (candidate.hasBusinessEmail === false) return 'No verified business email on file'
+  return 'Not returned for this candidate'
+}
+
+export function phoneStatusLine(candidate: DiscoveryCandidate): string {
+  if (candidate.contactPhone) return candidate.contactPhone
+  return 'Not returned for this candidate'
 }
 
 function readString(value: unknown): string | null {
   return typeof value === 'string' && value.trim() ? value : null
 }
 
-function readNumber(value: unknown): number | null {
-  return typeof value === 'number' && Number.isFinite(value) ? value : null
-}
-
 function readStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
 }
 
-function readBoolean(value: unknown): boolean | null {
-  return typeof value === 'boolean' ? value : null
+function emptyExplanation(): MatchExplanationRaw {
+  return {
+    relevance_tier: 'unclear',
+    why_this_candidate: '',
+    strong_evidence: [],
+    potential_concerns: [],
+    what_we_dont_know: [],
+    matched_signals: [],
+    seniority_alignment: null,
+    provider_fit: null,
+    convergence: false,
+    matched_queries: [],
+    final_score: null,
+  }
+}
+
+function emptyEvidence(): CandidateEvidenceRaw {
+  return {
+    current_company: '',
+    current_industries: [],
+    current_function: null,
+    current_seniority: null,
+    current_headcount: null,
+    current_company_type: null,
+    past_roles: [],
+    education: [],
+    contact: { email: null, phone: null, has_business_email: null },
+    updated_at: null,
+    uncertainty: [],
+  }
 }
 
 export function buildDiscoveryCandidates(response: SearchResponse): DiscoveryCandidate[] {
   const candidates = response.candidates ?? []
   const explanations = response.explanations ?? []
+  const evidenceList = response.evidence ?? []
 
   return candidates.map((candidate, index) => {
-    const raw = (candidate.raw_data ?? {}) as Record<string, unknown>
-    const explanationRaw = (explanations[index] ?? {}) as Record<string, unknown>
-
-    const explanation: MatchExplanation = {
-      finalScore: readNumber(explanationRaw.final_score),
-      matchedRequiredSkills: readStringArray(explanationRaw.matched_required_skills),
-      missingRequiredSkills: readStringArray(explanationRaw.missing_required_skills),
-      matchedPreferredSkills: readStringArray(explanationRaw.matched_preferred_skills),
-      missingPreferredSkills: readStringArray(explanationRaw.missing_preferred_skills),
-      matchedLocation: readString(explanationRaw.matched_location),
-      matchedExperience: readString(explanationRaw.matched_experience),
-      missingExperience: readString(explanationRaw.missing_experience),
-      potentialRisks: readStringArray(explanationRaw.potential_risks),
-      summary: readString(explanationRaw.summary),
-      titleMatch: readBoolean(explanationRaw.title_match),
-      locationMatch: readBoolean(explanationRaw.location_match),
-      companyMatch: readBoolean(explanationRaw.company_match),
-      experienceMatch: readBoolean(explanationRaw.experience_match),
-    }
+    const explanation = explanations[index] ?? emptyExplanation()
+    const evidence = evidenceList[index] ?? emptyEvidence()
 
     return {
       id: readString(candidate.profile_url) ?? `${candidate.name ?? 'candidate'}-${index}`,
@@ -85,96 +140,71 @@ export function buildDiscoveryCandidates(response: SearchResponse): DiscoveryCan
       title: candidate.title?.trim() || 'Title not available',
       company: candidate.company?.trim() || 'Not specified',
       location: candidate.location?.trim() || 'Not specified',
-      experienceYears: readNumber(raw.years_experience),
-      matchScore: readNumber(candidate.final_score) ?? readNumber(candidate.provider_score),
       profileUrl: readString(candidate.profile_url),
-      bio: readString(raw.summary),
-      explanation,
+
+      relevanceTier: explanation.relevance_tier ?? 'unclear',
+      whyThisCandidate: explanation.why_this_candidate ?? '',
+      strongEvidence: readStringArray(explanation.strong_evidence),
+      potentialConcerns: readStringArray(explanation.potential_concerns),
+      whatWeDontKnow: readStringArray(explanation.what_we_dont_know),
+      matchedSignals: (explanation.matched_signals ?? []).map((s) => ({
+        signalText: s.signal_text,
+        matchedTerm: s.matched_term,
+        source: s.source ?? '',
+      })),
+      seniorityAlignment: explanation.seniority_alignment ?? null,
+      providerFit: readString(explanation.provider_fit),
+      convergence: Boolean(explanation.convergence),
+
+      currentIndustries: readStringArray(evidence.current_industries),
+      currentFunction: readString(evidence.current_function),
+      currentSeniority: readString(evidence.current_seniority),
+      pastRoles: (evidence.past_roles ?? []).map((r) => ({
+        title: r.title ?? '',
+        company: r.company ?? '',
+        industries: readStringArray(r.industries),
+        function: readString(r.function),
+        seniority: readString(r.seniority),
+      })),
+      education: (evidence.education ?? []).map((e) => ({
+        institution: readString(e.institution),
+        degree: readString(e.degree),
+        fieldOfStudy: readString(e.field_of_study),
+      })),
+      contactEmail: readString(evidence.contact?.email),
+      contactPhone: readString(evidence.contact?.phone),
+      hasBusinessEmail: typeof evidence.contact?.has_business_email === 'boolean' ? evidence.contact.has_business_email : null,
+      updatedAt: readString(evidence.updated_at),
+
+      sortScore: typeof explanation.final_score === 'number' ? explanation.final_score : 0,
     }
   })
 }
 
-export type SortKey = 'match' | 'experience' | 'recent' | 'name'
+export type SortKey = 'relevance' | 'updated' | 'name'
 
-// Match classification — the single source of truth for how "good" a match
-// is, used for BOTH sorting and the recruiter-facing badge everywhere it
-// appears (list row, profile header, comparison). Deterministic, from real
-// evidence only: required/preferred skill coverage, title match, experience
-// match, location match. Never a raw provider score — that's what produced
-// the old "Match = 4.0" next to "Weak Match" contradiction, since the list
-// and the profile used to compute two different, disagreeing signals.
-export type MatchVerdict = 'Excellent Match' | 'Strong Match' | 'Good Match' | 'Partial Match' | 'Weak Match' | 'Poor Match'
-
-const REQUIRED_SKILLS_WEIGHT = 0.4
-const PREFERRED_SKILLS_WEIGHT = 0.15
-const TITLE_WEIGHT = 0.15
-const EXPERIENCE_WEIGHT = 0.15
-const LOCATION_WEIGHT = 0.15
-
-/** 0–1 composite. A boolean signal that's genuinely unknown (null) is
- * excluded and the remaining weights renormalized, rather than guessed at —
- * an unknown location match should never silently count as a failure. */
-export function computeMatchScore(candidate: DiscoveryCandidate): number {
-  const e = candidate.explanation
-  const requiredTotal = e.matchedRequiredSkills.length + e.missingRequiredSkills.length
-  const preferredTotal = e.matchedPreferredSkills.length + e.missingPreferredSkills.length
-
-  const components: Array<{ weight: number; score: number }> = [
-    { weight: REQUIRED_SKILLS_WEIGHT, score: requiredTotal > 0 ? e.matchedRequiredSkills.length / requiredTotal : 1 },
-    { weight: PREFERRED_SKILLS_WEIGHT, score: preferredTotal > 0 ? e.matchedPreferredSkills.length / preferredTotal : 1 },
-  ]
-  if (e.titleMatch !== null) components.push({ weight: TITLE_WEIGHT, score: e.titleMatch ? 1 : 0 })
-  if (e.experienceMatch !== null) components.push({ weight: EXPERIENCE_WEIGHT, score: e.experienceMatch ? 1 : 0 })
-  if (e.locationMatch !== null) components.push({ weight: LOCATION_WEIGHT, score: e.locationMatch ? 1 : 0 })
-
-  const totalWeight = components.reduce((sum, component) => sum + component.weight, 0)
-  if (totalWeight === 0) {
-    return 0
-  }
-  return components.reduce((sum, component) => sum + component.weight * component.score, 0) / totalWeight
-}
-
-export function classifyMatchScore(score: number): MatchVerdict {
-  if (score >= 0.92) return 'Excellent Match'
-  if (score >= 0.78) return 'Strong Match'
-  if (score >= 0.6) return 'Good Match'
-  if (score >= 0.4) return 'Partial Match'
-  if (score >= 0.2) return 'Weak Match'
-  return 'Poor Match'
-}
-
-export function matchVerdictFor(candidate: DiscoveryCandidate): MatchVerdict {
-  return classifyMatchScore(computeMatchScore(candidate))
-}
-
-export function sortDiscoveryCandidates(
-  candidates: DiscoveryCandidate[],
-  sortKey: SortKey,
-  recencyById: Record<string, number>,
-): DiscoveryCandidate[] {
-  const withRecency = candidates.map((candidate, index) => ({
-    candidate,
-    recency: recencyById[candidate.id] ?? candidates.length - index,
-  }))
-
-  const sorted = [...withRecency]
+export function sortDiscoveryCandidates(candidates: DiscoveryCandidate[], sortKey: SortKey): DiscoveryCandidate[] {
+  const sorted = [...candidates]
   switch (sortKey) {
-    case 'match':
-      sorted.sort((a, b) => computeMatchScore(b.candidate) - computeMatchScore(a.candidate))
+    case 'relevance':
+      // The backend already returns candidates in relevance order; sorting
+      // here re-applies the same score so re-sorting after a client-side
+      // filter stays consistent, without recomputing anything.
+      sorted.sort((a, b) => b.sortScore - a.sortScore)
       break
-    case 'experience':
-      sorted.sort((a, b) => (b.candidate.experienceYears ?? -Infinity) - (a.candidate.experienceYears ?? -Infinity))
-      break
-    case 'recent':
-      sorted.sort((a, b) => b.recency - a.recency)
+    case 'updated':
+      // Candidates with no updated_at (the common case today — see the
+      // report) sort to the end rather than being treated as "oldest."
+      sorted.sort((a, b) => {
+        if (a.updatedAt && b.updatedAt) return b.updatedAt.localeCompare(a.updatedAt)
+        if (a.updatedAt) return -1
+        if (b.updatedAt) return 1
+        return 0
+      })
       break
     case 'name':
-      sorted.sort((a, b) => a.candidate.name.localeCompare(b.candidate.name))
+      sorted.sort((a, b) => a.name.localeCompare(b.name))
       break
   }
-  return sorted.map((entry) => entry.candidate)
-}
-
-export function formatExperienceYears(years: number | null): string {
-  return years === null ? 'Not specified' : `${years} yr${years === 1 ? '' : 's'}`
+  return sorted
 }

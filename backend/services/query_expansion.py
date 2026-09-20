@@ -23,6 +23,16 @@ class QueryExpansionService:
             confidence_score=plan.confidence_score,
         )
 
+    def expand_titles(self, titles: List[str]) -> List[str]:
+        """The one authoritative title-expansion lookup, backed by
+        backend/knowledge/titles.json. Used both here (expanding a query's
+        include_titles/exclude_titles at search-execution time) and by the
+        Search Translator (backend/services/search_translator.py) to compute
+        the title family shown to the recruiter at confirmation time — the
+        same mechanism, called from two places, not two competing ones."""
+        knowledge = self._load_knowledge()
+        return self._expand_values(titles, knowledge.get("titles", {}))
+
     def _expand_query(self, query: SearchQuery) -> SearchQuery:
         # Skill expansion was deliberately removed: backend/knowledge/skills.json
         # mapped e.g. "Python" -> ["Python 3", "PySpark"], silently turning a

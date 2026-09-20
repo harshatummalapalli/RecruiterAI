@@ -1,3 +1,4 @@
+import dataclasses
 import json
 import logging
 import tempfile
@@ -22,6 +23,7 @@ from backend.auth import (
 from backend.bootstrap import bootstrap
 from backend.config import get_session_cookie_secure, get_session_max_age_seconds
 from backend.errors import ConfigurationError, ParsingError, ProviderError, RecruiterAIError, RankingError
+from backend.models.intake import IntakeResult
 from backend.models.match_explanation import MatchExplanation
 from backend.models.provider_capabilities import ProviderCapabilities
 from backend.models.search_intent import SearchIntent
@@ -29,9 +31,12 @@ from backend.models.search_plan import SearchPlan
 from backend.providers.base import BaseLLMProvider, BaseProvider
 from backend.providers.openai import OpenAIProvider
 from backend.providers.registry import ProviderRegistry
+from backend.services.candidate_evidence_builder import build_candidate_evidence
 from backend.services.candidate_merger import CandidateMerger
 from backend.services.candidate_ranker import CandidateRanker
 from backend.services.capability_mapper import CapabilityMapper
+from backend.services.intake_session import IntakeSessionManager
+from backend.services.search_translator import build_confirmed_hiring_intent, to_search_intent
 from backend.services.jd_parser import JDParser
 from backend.services.match_explainer import MatchExplainer
 from backend.services.query_expansion import QueryExpansionService
@@ -101,9 +106,6 @@ CRUSTDATA_SUPPORTED_FILTERS = [
 FRIENDLY_UNSUPPORTED_FILTER_LABELS = {
     "zip_codes": "postal/zip code",
     "work_mode": "work mode (remote/hybrid/onsite)",
-    "must_have": "ranking hint (must-have)",
-    "nice_to_have": "ranking hint (nice-to-have)",
-    "bonus": "ranking hint (bonus)",
 }
 
 
@@ -252,9 +254,23 @@ class SearchResponse(BaseModel):
     candidate_count: int
     candidates: List[Dict[str, Any]]
     explanations: List[Dict[str, Any]]
+    # Structured CandidateEvidence per candidate (career history, education,
+    # contact, company context) — index-aligned with `candidates`/
+    # `explanations`. Lets the frontend render a rich candidate record
+    # without reimplementing raw-provider-response parsing in JS.
+    evidence: List[Dict[str, Any]] = Field(default_factory=list)
     diagnostics: Dict[str, Any]
     warnings: List[str] = Field(default_factory=list)
     debug: Optional[Dict[str, Any]] = None
+    # Recruiter-authored state for this search, keyed by the same candidate
+    # id the frontend already sends to PATCH /search/{id}/candidate. Root
+    # cause of the "decisions/notes lost on refresh" bug: this data was
+    # persisted (see update_candidate below) but never returned by either
+    # POST /search or GET /search/{id}, so the frontend had nothing to
+    # rehydrate its local state from. Always populated from the persisted
+    # record at response-build time, never fabricated.
+    recruiter_decisions: Dict[str, str] = Field(default_factory=dict)
+    notes: Dict[str, List[Dict[str, str]]] = Field(default_factory=dict)
 
 
 class CandidateUpdateRequest(BaseModel):
@@ -272,6 +288,16 @@ class GoogleLoginRequest(BaseModel):
     credential: str
 
 
+class IntakeStartRequest(BaseModel):
+    raw_input: str
+
+
+class IntakeAnswerRequest(BaseModel):
+    issue_id: str
+    value: str
+    label: str
+
+
 def create_app(
     jd_parser: Optional[JDParser] = None,
     search_planner: Optional[SearchPlanner] = None,
@@ -284,6 +310,7 @@ def create_app(
     search_diagnostics: Optional[SearchDiagnostics] = None,
     excel_exporter: Optional[ExcelExporter] = None,
     search_store: Optional[SearchStore] = None,
+    intake_session_manager: Optional[IntakeSessionManager] = None,
 ) -> FastAPI:
     app = FastAPI(title="RecruiterAI API")
     app.add_middleware(
@@ -307,6 +334,7 @@ def create_app(
     search_diagnostics = search_diagnostics or SearchDiagnostics()
     excel_exporter = excel_exporter or ExcelExporter()
     search_store = search_store or SearchStore()
+    intake_session_manager = intake_session_manager or IntakeSessionManager()
 
     @app.get("/health")
     def health() -> Dict[str, str]:
@@ -358,13 +386,95 @@ def create_app(
             _raise_recruiter_friendly_error("Please contact your administrator.")
         return intent
 
+    @app.post("/intake/start", dependencies=[Depends(require_session)])
+    def intake_start(request: IntakeStartRequest) -> Dict[str, Any]:
+        try:
+            record = intake_session_manager.start(request.raw_input)
+        except ConfigurationError as exc:
+            logger.warning("Intake reasoning is unavailable", exc_info=exc)
+            _raise_recruiter_friendly_error("Unable to understand this role right now.")
+        except RecruiterAIError as exc:
+            logger.exception("Intake reasoning failed")
+            _raise_recruiter_friendly_error("Please contact your administrator.")
+        return {"session_id": record.session_id, "result": record.result}
+
+    @app.post("/intake/{session_id}/answer", dependencies=[Depends(require_session)])
+    def intake_answer(session_id: str, request: IntakeAnswerRequest) -> Dict[str, Any]:
+        try:
+            record = intake_session_manager.answer(session_id, request.issue_id, request.value, request.label)
+        except KeyError:
+            raise HTTPException(status_code=404, detail="Intake session not found.")
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        except ConfigurationError as exc:
+            logger.warning("Intake reasoning is unavailable", exc_info=exc)
+            _raise_recruiter_friendly_error("Unable to update this role's understanding right now.")
+        except RecruiterAIError as exc:
+            logger.exception("Intake reasoning failed")
+            _raise_recruiter_friendly_error("Please contact your administrator.")
+        return {"session_id": record.session_id, "result": record.result}
+
+    @app.post("/intake/{session_id}/confirm", dependencies=[Depends(require_session)])
+    def intake_confirm(session_id: str) -> SearchIntent:
+        record = intake_session_manager.get(session_id)
+        if record is None or record.result is None:
+            raise HTTPException(status_code=404, detail="Intake session not found.")
+        try:
+            return to_search_intent(build_confirmed_hiring_intent(record.result), query_expander=query_expander)
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc))
+
+    @app.post("/intake/{session_id}/preview", dependencies=[Depends(require_session)])
+    def intake_preview(session_id: str, provider: str = "crustdata") -> Dict[str, Any]:
+        """Zero-cost debug contract (no CrustData credits spent): Confirmed
+        Hiring Intent -> SearchPlan -> the exact provider payload(s) that
+        would be sent, all built without calling the provider's search API.
+        Lets every role type in the regression matrix be inspected end to
+        end without paying for a live search."""
+        record = intake_session_manager.get(session_id)
+        if record is None or record.result is None:
+            raise HTTPException(status_code=404, detail="Intake session not found.")
+        try:
+            confirmed = build_confirmed_hiring_intent(record.result)
+        except ValueError as exc:
+            raise HTTPException(status_code=409, detail=str(exc))
+
+        search_intent = to_search_intent(confirmed, query_expander=query_expander)
+        plan = search_planner.build(search_intent)
+        expanded_plan = query_expander.expand(plan)
+        capabilities = ProviderCapabilities(supported_filters=CRUSTDATA_SUPPORTED_FILTERS)
+        mapped_plan, capability_warnings = capability_mapper.map(expanded_plan, capabilities)
+
+        try:
+            provider_instance = provider_registry.get(provider)
+        except KeyError:
+            raise HTTPException(status_code=503, detail="No sourcing provider is currently configured.")
+        if not hasattr(provider_instance, "debug_payloads"):
+            raise HTTPException(status_code=503, detail="This provider does not support a zero-cost preview.")
+
+        return {
+            "confirmed_hiring_intent": confirmed,
+            "search_intent": search_intent,
+            "search_plan": [query.model_dump() for query in mapped_plan.searches],
+            "provider_payloads": provider_instance.debug_payloads(mapped_plan, options={"page_size": 25}),
+            "capability_warnings": capability_warnings,
+        }
+
     @app.get("/search/{search_id}", response_model=SearchResponse, dependencies=[Depends(require_session)])
     def get_search(search_id: str) -> SearchResponse:
         record = search_store.load(search_id)
         if record is None:
             raise HTTPException(status_code=404, detail="Search not found.")
         logger.info("[SEARCH] Reloaded persisted search | search_id=%s — no OpenAI or CrustData calls made", search_id)
-        return SearchResponse(**record["response"])
+        # record["response"] is the snapshot from whenever the search last
+        # ran — recruiter_decisions/notes are updated separately (PATCH,
+        # below) and live at the top level of the record, not inside that
+        # snapshot, so they must be merged in here rather than trusted to
+        # already be present on it.
+        response_data = dict(record["response"])
+        response_data["recruiter_decisions"] = record.get("recruiter_decisions", {})
+        response_data["notes"] = record.get("notes", {})
+        return SearchResponse(**response_data)
 
     @app.patch("/search/{search_id}/candidate", dependencies=[Depends(require_session)])
     def update_candidate(search_id: str, update: CandidateUpdateRequest) -> Dict[str, Any]:
@@ -498,6 +608,10 @@ def create_app(
             explanations = [match_explainer.explain(candidate, intent).model_dump() for candidate in ranked_candidates]
             logger.info("Explanations generated")
 
+            evidence_payload = [
+                dataclasses.asdict(build_candidate_evidence(candidate, intent)) for candidate in ranked_candidates
+            ]
+
             logger.info("Generating diagnostics")
             diagnostics = search_diagnostics.analyze(executed_plan, ranked_candidates)
             logger.info("Diagnostics generated")
@@ -526,12 +640,21 @@ def create_app(
                     "candidates_ranked": len(ranked_candidates),
                 }
 
+            # Loaded before building `response` so a re-run of an existing
+            # search_id (e.g. "Run Search Again" after editing the brief)
+            # carries forward any decisions/notes already recorded against
+            # it, rather than the response looking like they were wiped.
+            existing_record = search_store.load(search_id) or {}
+
             response = SearchResponse(
                 provider="platform",
                 search_id=search_id,
                 candidate_count=len(ranked_candidates),
                 candidates=[candidate.model_dump() for candidate in ranked_candidates],
                 explanations=explanations,
+                evidence=evidence_payload,
+                recruiter_decisions=existing_record.get("recruiter_decisions", {}),
+                notes=existing_record.get("notes", {}),
                 diagnostics={
                     "total_queries": diagnostics.total_queries,
                     "total_candidates": diagnostics.total_candidates,
@@ -547,7 +670,6 @@ def create_app(
                 debug=debug_payload,
             )
 
-            existing_record = search_store.load(search_id) or {}
             search_store.save(
                 search_id,
                 {

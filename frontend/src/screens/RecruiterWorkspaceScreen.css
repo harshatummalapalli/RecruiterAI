@@ -753,6 +753,281 @@
   color: var(--color-muted);
 }
 
+/* Living Brief */
+
+.living-brief-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 720px;
+}
+
+.living-brief__title {
+  margin: 4px 0 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--color-primary-text);
+}
+
+.living-brief__archetype {
+  margin: 6px 0 0;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--color-secondary-text);
+}
+
+.living-brief__posted-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.living-brief__posted-title-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-muted);
+}
+
+.living-brief__posted-title {
+  font-size: 14.5px;
+  font-style: italic;
+  color: var(--color-secondary-text);
+}
+
+.living-brief__interp-eyebrow {
+  margin: 10px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.living-brief__interp-eyebrow-note {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--color-faint);
+}
+
+.living-brief__section-title {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.living-brief__read-block {
+  padding: 16px 18px;
+  background: var(--color-preview-bg);
+  border-radius: 12px;
+}
+
+.living-brief__read-block .living-brief__section-title {
+  color: var(--color-accent);
+}
+
+.living-brief__interpretation {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.68;
+  color: var(--color-primary-text);
+  max-width: 64ch;
+}
+
+.living-brief__tiers {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Technology snapshot — factual inventory, distinct treatment from tiers */
+
+.tech-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px 20px;
+}
+
+.tech-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.tech-group h5 {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.tech-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tech-chip {
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-secondary-text);
+  border: 1px solid var(--color-border);
+}
+
+.brief-provenance {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  background: var(--color-bg);
+  color: var(--color-muted);
+}
+
+.brief-provenance--explicit {
+  color: var(--color-accent);
+}
+
+.brief-provenance--inferred {
+  color: #7c3aed;
+}
+
+.brief-provenance--tier {
+  color: var(--color-faint);
+}
+
+.living-brief__capability-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.living-brief__capability-list li {
+  display: flex;
+  align-items: center;
+  font-size: 14.5px;
+  color: var(--color-primary-text);
+}
+
+.living-brief__insight {
+  background: var(--color-preview-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.living-brief__insight-label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin-bottom: 4px;
+}
+
+.living-brief__insight p {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--color-primary-text);
+}
+
+.living-brief__warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: #fef3ea;
+  border: 1px solid #f5d5b0;
+  border-radius: 12px;
+  padding: 12px 16px;
+}
+
+.living-brief__warning p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #92400e;
+}
+
+.living-brief__decision {
+  border-color: var(--color-accent);
+}
+
+.living-brief__decision--contradiction {
+  border-color: var(--color-error);
+  background: #fef2f2;
+}
+
+.living-brief__decision-label {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+.living-brief__decision--contradiction .living-brief__decision-label {
+  color: var(--color-error);
+}
+
+.living-brief__free-text {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.living-brief__free-text .brief-input {
+  flex: 1;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 9px 14px;
+}
+
+.living-brief__decision-question {
+  margin: 10px 0 16px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--color-primary-text);
+}
+
+.living-brief__ready {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.living-brief__ready-text {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-primary-text);
+}
+
+.living-brief__ready .brief-actions {
+  margin: 0;
+}
+
 /* Candidate Discovery (State 3) */
 
 .discovery {
@@ -845,7 +1120,7 @@
 
 .candidate-row {
   display: grid;
-  grid-template-columns: 22px minmax(110px, 1.6fr) minmax(70px, 1fr) minmax(70px, 1fr) minmax(56px, 0.6fr) minmax(52px, 0.6fr) minmax(60px, 0.7fr) minmax(72px, 0.8fr);
+  grid-template-columns: 22px minmax(110px, 1.4fr) minmax(64px, 0.8fr) minmax(64px, 0.8fr) minmax(76px, 0.7fr) minmax(120px, 1.8fr) minmax(60px, 0.7fr) minmax(72px, 0.8fr);
   align-items: center;
   gap: 10px;
   width: 100%;
@@ -1263,6 +1538,32 @@
   font-size: 13px;
   font-weight: 700;
   margin-bottom: 12px;
+}
+
+.discovery-profile__tier-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.discovery-profile__concern-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(180, 83, 9, 0.14);
+  color: #b45309;
+  margin-bottom: 12px;
+}
+
+.candidate-row__concern-flag {
+  color: #b45309;
+  flex-shrink: 0;
+  margin-left: 4px;
 }
 
 .assessment-verdict--excellent {

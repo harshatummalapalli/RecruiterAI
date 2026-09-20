@@ -542,3 +542,73 @@ export function briefToLocationDetail(brief: SearchBrief): LocationDetail {
     employment_type: brief.employmentTypes[0] ?? null,
   }
 }
+
+/** The ONLY function that should ever turn a backend-confirmed SearchIntent
+ * (from POST /intake/{id}/confirm) into a SearchBrief. A direct, lossless
+ * field copy — no expandTitle()/title-expansion heuristic, no re-parsing of
+ * anything. Title expansion for the confirmed-intake path happens exactly
+ * once, in the backend Search Translator (backend/services/
+ * search_translator.py); this function must never independently guess
+ * equivalent titles the way applyAiParse's fallback does for the legacy
+ * /parse-jd flow. See the forensic investigation into why a second,
+ * disconnected title-expansion step was the actual cause of "Equivalent
+ * Titles" not matching what the Living Brief and the executed search agreed
+ * on. */
+export function searchIntentToBrief(intent: SearchIntent): SearchBrief {
+  const cities = intent.location.cities ?? []
+  const states = intent.location.states ?? []
+  const country = intent.location.countries?.[0] ?? ''
+
+  const locations: LocationEntry[] =
+    cities.length > 0
+      ? cities.map((city, index) => ({ city, state: states[index] ?? '', country, zip: '' }))
+      : states.map((state) => ({ city: '', state, country, zip: '' }))
+
+  return {
+    role: {
+      primaryTitle: intent.role.title ?? '',
+      // Verbatim from the backend Search Translator — the resulting
+      // SearchIntent/SearchPlan-derived title family, not an independently
+      // invented one.
+      equivalentTitles: intent.titles.include_titles ?? [],
+      pastTitles: [],
+      excludedTitles: intent.titles.exclude_titles ?? [],
+      seniority: intent.role.seniority ?? '',
+    },
+    aiFocus: createEmptyAiConceptFlags(),
+    location: {
+      // Exact city/state/country match stays the default search — radius is
+      // an opt-in the recruiter chooses explicitly via "Edit brief" ->
+      // Radius Search, pre-filled below so it's immediately usable rather
+      // than blank when they do.
+      searchGeography: locations.length > 1 ? 'multiple' : locations.length === 1 ? 'multiple' : 'global',
+      country,
+      locations,
+      radius: intent.location.radius_place ? '25' : '',
+      workModes: [],
+    },
+    experience: {
+      minimumYears: intent.experience.minimum_years != null ? String(intent.experience.minimum_years) : '',
+      maximumYears: intent.experience.maximum_years != null ? String(intent.experience.maximum_years) : '',
+    },
+    skills: {
+      // Deliberately empty: the Search Translator does not populate a
+      // fabricated skill filter (CrustData does not reliably support one on
+      // this integration) — Core/Supporting/Differentiator signals reach
+      // the search only through the natural-language query. See
+      // CandidateReviewScreen.tsx for how this is surfaced honestly rather
+      // than as "Skills: Not specified".
+      required: intent.skills.required_skills ?? [],
+      preferred: intent.skills.preferred_skills ?? [],
+      excluded: [],
+      primaryTechnology: { candidates: [], mode: null, selected: null },
+    },
+    companies: {
+      include: intent.previous_background.preferred_companies ?? [],
+      exclude: intent.company_preferences.exclude_current_companies ?? [],
+    },
+    industries: [],
+    education: [],
+    employmentTypes: intent.role.employment_type ? [intent.role.employment_type as EmploymentType] : [],
+  }
+}

@@ -129,7 +129,7 @@ class FailingParser(BaseLLMProvider):
         raise ConfigurationError("OPENAI_API_KEY is missing")
 
 
-def build_test_app() -> TestClient:
+def build_test_app(search_store=None) -> TestClient:
     ProviderRegistry._providers.clear()
     ProviderRegistry.register("mock", FakeProvider())
 
@@ -144,6 +144,7 @@ def build_test_app() -> TestClient:
         match_explainer=MatchExplainer(),
         search_diagnostics=SearchDiagnostics(),
         excel_exporter=ExcelExporter(),
+        search_store=search_store,
     )
     return TestClient(app)
 
@@ -207,7 +208,64 @@ def test_search_endpoint_returns_structured_result() -> None:
     assert payload["provider"] == "platform"
     assert payload["candidate_count"] == 1
     assert payload["candidates"][0]["name"] == "Alice"
-    assert payload["explanations"][0]["title_match"] is True
+    assert payload["explanations"][0]["relevance_tier"] == "direct"
+    # Structured evidence (career history, education, contact, company
+    # context) is index-aligned with candidates/explanations, not left for
+    # the frontend to re-derive from raw_data.
+    assert payload["evidence"][0]["current_company"] == "OpenAI"
+    assert payload["evidence"][0]["role_alignment"]["title_relevance"] == "direct"
+
+
+def test_decision_and_note_survive_a_reload_of_the_same_search(tmp_path) -> None:
+    # Regression test for the "decisions/notes lost on refresh" bug: PATCH
+    # /search/{id}/candidate always persisted them (search_store.py never
+    # had a bug), but neither POST /search nor GET /search/{id} ever
+    # returned recruiter_decisions/notes in the response body, so the
+    # frontend had nothing to rehydrate its local state from on reload.
+    from backend.services.search_store import SearchStore
+
+    client = build_test_app(search_store=SearchStore(storage_dir=tmp_path))
+    _login(client)
+
+    created = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"}).json()
+    search_id = created["search_id"]
+    candidate_id = created["candidates"][0].get("profile_url") or created["candidates"][0]["name"]
+    # Not yet decided/noted anywhere.
+    assert created["recruiter_decisions"] == {}
+    assert created["notes"] == {}
+
+    patch_response = client.patch(
+        f"/search/{search_id}/candidate",
+        json={"candidate_id": candidate_id, "decision": "shortlist", "note": "Strong RAG background."},
+    )
+    assert patch_response.status_code == 200
+
+    # Simulates a browser refresh: a fresh GET, no new search/LLM/provider call.
+    reloaded = client.get(f"/search/{search_id}")
+    assert reloaded.status_code == 200
+    payload = reloaded.json()
+
+    assert payload["recruiter_decisions"] == {candidate_id: "shortlist"}
+    assert len(payload["notes"][candidate_id]) == 1
+    assert payload["notes"][candidate_id][0]["text"] == "Strong RAG background."
+
+
+def test_rerunning_the_same_search_id_carries_forward_existing_decisions(tmp_path) -> None:
+    # "Run Search Again" (edit brief, re-search with the same search_id)
+    # must not look like it wiped out decisions already made.
+    from backend.services.search_store import SearchStore
+
+    client = build_test_app(search_store=SearchStore(storage_dir=tmp_path))
+    _login(client)
+
+    first = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock", "search_id": "fixed-id"}).json()
+    candidate_id = first["candidates"][0].get("profile_url") or first["candidates"][0]["name"]
+    client.patch(f"/search/{first['search_id']}/candidate", json={"candidate_id": candidate_id, "decision": "maybe"})
+
+    rerun = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock", "search_id": "fixed-id"}).json()
+
+    assert rerun["search_id"] == "fixed-id"
+    assert rerun["recruiter_decisions"] == {candidate_id: "maybe"}
 
 
 def test_search_endpoint_returns_real_empty_state_when_provider_finds_no_candidates() -> None:

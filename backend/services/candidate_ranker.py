@@ -2,92 +2,85 @@ from typing import List
 
 from backend.models.candidate import Candidate
 from backend.models.search_intent import SearchIntent
-from backend.utils.text import normalize_text, normalize_text_values
+from backend.services.candidate_evidence_builder import build_candidate_evidence
 
-
-REQUIRED_SKILL_WEIGHT = 2.0
-PREFERRED_SKILL_WEIGHT = 0.5
-INCLUDE_TITLE_WEIGHT = 3.0
-EXCLUDE_TITLE_WEIGHT = 3.0
-PREFERRED_COMPANY_WEIGHT = 2.0
-EXCLUDED_COMPANY_WEIGHT = 2.0
-LOCATION_WEIGHT = 1.0
-# A candidate independently surfaced by more than one discovery query
-# (e.g. both the natural-language primary search and the title-expansion
-# search) is itself a positive signal — two different retrieval paths
-# agreeing is stronger evidence than either alone.
-CONVERGENCE_WEIGHT = 1.5
+# Role identity/relevance is the primary signal: a candidate whose current
+# title doesn't textually relate to the target role at all is never worth
+# ranking above one who directly matches, no matter what else lines up.
+TITLE_RELEVANCE_POINTS = {"direct": 3.0, "adjacent": 1.5, "tangential": 0.5, "unclear": 0.0}
+# Seniority is real, known evidence when we have it (True/False) and
+# contributes a modest amount either way — it never swamps title relevance,
+# and an unknown seniority (None) contributes nothing (not a penalty).
+SENIORITY_ALIGNED_BONUS = 1.0
+SENIORITY_MISALIGNED_PENALTY = -0.5
+# Literal textual evidence against the Confirmed Hiring Intent's own
+# Core/Supporting/Differentiator sentences — weighted in that same priority
+# order, mirroring the intent's own tiering rather than an invented one.
+CORE_SIGNAL_WEIGHT = 1.0
+SUPPORTING_SIGNAL_WEIGHT = 0.6
+DIFFERENTIATOR_SIGNAL_WEIGHT = 0.3
+# The provider's own relevance signal, when it was actually returned. Never
+# assumed to mean "good candidate" on its own — modest weight, and "weak"
+# contributes nothing (it is not treated as negative evidence).
+PROVIDER_FIT_STRONG_BONUS = 0.75
+# A candidate independently surfaced by more than one discovery query is
+# itself a positive signal — two different retrieval paths agreeing is
+# stronger evidence than either alone.
+CONVERGENCE_BONUS = 0.5
+# A small, non-dominant nudge from the provider's own relevance score for
+# the query, kept far below every evidence-based signal above.
+PROVIDER_SCORE_WEIGHT = 0.01
 
 
 class CandidateRanker:
-    """Rank candidates against a SearchIntent using provider-agnostic scoring rules."""
+    """Rank candidates by evidence against the Confirmed Hiring Intent that
+    produced this search — role relevance, seniority alignment, literal
+    textual evidence for Core/Supporting/Differentiator signals, provider
+    fit, and retrieval convergence. No signal dominates the others, missing
+    data is never penalized, and nothing here is specific to any one role —
+    see backend/services/candidate_evidence_builder.py for how alignment is
+    derived generically from the intent itself."""
 
     def rank(self, candidates: List[Candidate], intent: SearchIntent) -> List[Candidate]:
         ranked_candidates: List[Candidate] = []
 
         for candidate in candidates:
-            score = self._calculate_score(candidate, intent)
-            candidate.final_score = score
+            evidence = build_candidate_evidence(candidate, intent)
+            candidate.final_score = self._calculate_score(evidence, candidate.provider_score)
             ranked_candidates.append(candidate)
 
-        return sorted(ranked_candidates, key=lambda item: (item.final_score or 0.0, item.name or ""), reverse=True)
+        # final_score is an internal sort key only — never shown to the
+        # recruiter as a percentage or raw number (see MatchExplanation,
+        # which surfaces a relevance tier + rationale instead). Name is a
+        # stable, non-evidentiary final tiebreaker; deliberately NOT the
+        # number of career roles on record, which rewards long resumes
+        # rather than relevance.
+        return sorted(ranked_candidates, key=lambda item: (-(item.final_score or 0.0), item.name or ""))
 
-    def _calculate_score(self, candidate: Candidate, intent: SearchIntent) -> float:
-        score = float(candidate.provider_score or 0.0)
+    def _calculate_score(self, evidence, provider_score) -> float:
+        alignment = evidence.role_alignment
+        score = TITLE_RELEVANCE_POINTS.get(alignment.title_relevance, 0.0)
+        score += PROVIDER_SCORE_WEIGHT * float(provider_score or 0.0)
 
-        required_skills = set(intent.skills.required_skills or [])
-        preferred_skills = set(intent.skills.preferred_skills or [])
-        include_titles = {normalize_text(title) for title in intent.titles.include_titles or [] if title}
-        exclude_titles = {normalize_text(title) for title in intent.titles.exclude_titles or [] if title}
-        preferred_companies = {normalize_text(company) for company in intent.previous_background.preferred_companies or [] if company}
-        excluded_companies = {normalize_text(company) for company in intent.company_preferences.exclude_current_companies or [] if company}
+        if alignment.seniority_alignment is True:
+            score += SENIORITY_ALIGNED_BONUS
+        elif alignment.seniority_alignment is False:
+            score += SENIORITY_MISALIGNED_PENALTY
+        # None (unknown) contributes nothing — missing data is never a penalty.
 
-        # CrustData's person_search response never includes a "skills" field
-        # on this account's plan (confirmed live — requesting it 403s the
-        # whole call), so candidate.raw_data has no "skills" key in practice.
-        # This intersection is therefore always empty today; it's left in
-        # place, rather than hardcoded to zero, so it activates automatically
-        # if the plan is ever upgraded — but it must never be treated as
-        # meaningful evidence in the meantime.
-        candidate_skills = {normalize_text(skill) for skill in self._normalize_text_values(candidate.raw_data.get("skills", []))}
-        candidate_title = normalize_text(candidate.title)
-        candidate_company = normalize_text(candidate.company)
-        candidate_location = normalize_text(candidate.location)
-        intent_locations = {normalize_text(location) for location in [*intent.location.countries, *intent.location.cities] if location}
+        for signal in alignment.matched_signals:
+            if signal.tier == "core":
+                score += CORE_SIGNAL_WEIGHT
+            elif signal.tier == "supporting":
+                score += SUPPORTING_SIGNAL_WEIGHT
+            elif signal.tier == "differentiator":
+                score += DIFFERENTIATOR_SIGNAL_WEIGHT
 
-        if required_skills:
-            matching_required_skills = required_skills.intersection(candidate_skills)
-            score += len(matching_required_skills) * REQUIRED_SKILL_WEIGHT
+        if evidence.search_evidence.provider_fit == "strong":
+            score += PROVIDER_FIT_STRONG_BONUS
+        # "weak" or None contribute nothing — never treated as a negative.
 
-        if preferred_skills:
-            matching_preferred_skills = preferred_skills.intersection(candidate_skills)
-            score += len(matching_preferred_skills) * PREFERRED_SKILL_WEIGHT
-
-        if include_titles and candidate_title:
-            if candidate_title in include_titles:
-                score += INCLUDE_TITLE_WEIGHT
-
-        if exclude_titles and candidate_title:
-            if candidate_title in exclude_titles:
-                score -= EXCLUDE_TITLE_WEIGHT
-
-        if preferred_companies and candidate_company:
-            if candidate_company in preferred_companies:
-                score += PREFERRED_COMPANY_WEIGHT
-
-        if excluded_companies and candidate_company:
-            if candidate_company in excluded_companies:
-                score -= EXCLUDED_COMPANY_WEIGHT
-
-        if intent_locations and candidate_location:
-            if any(location in candidate_location for location in intent_locations):
-                score += LOCATION_WEIGHT
-
-        matched_queries = candidate.raw_data.get("matched_queries")
-        if isinstance(matched_queries, list) and len(set(matched_queries)) > 1:
-            score += CONVERGENCE_WEIGHT
+        if evidence.search_evidence.convergence:
+            score += CONVERGENCE_BONUS
 
         return score
-
-    def _normalize_text_values(self, values: List[str]) -> List[str]:
-        return normalize_text_values([value for value in values if isinstance(value, str)])

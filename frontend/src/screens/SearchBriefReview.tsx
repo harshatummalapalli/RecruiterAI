@@ -157,7 +157,14 @@ export function SearchBriefReview({
   }
 
   const radiusLocation = brief.location.locations[0]
-  const showRadiusInput = brief.location.searchGeography === 'radius' && Boolean(radiusLocation?.zip)
+  // A radius search needs an anchor CrustData can geocode — either a ZIP or
+  // a city/state pair both work (see buildRadiusPlace in models/searchBrief.
+  // ts), so require whichever the recruiter has actually filled in rather
+  // than ZIP specifically. The confirmed-intake path never has a ZIP (Task A
+  // doesn't extract one) but always has city/state once a location exists.
+  const showRadiusInput =
+    brief.location.searchGeography === 'radius' &&
+    Boolean(radiusLocation?.zip || (radiusLocation?.city && radiusLocation?.state))
 
   const fields = (
     <>

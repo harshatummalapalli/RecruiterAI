@@ -101,3 +101,14 @@ class SearchIntent:
     # match the role. Falls back to a deterministic template (see
     # SearchPlanner) when not provided, e.g. by non-LLM callers/tests.
     natural_language_search_query: Optional[str] = None
+    # The same Core/Supporting/Differentiator capability sentences that feed
+    # natural_language_search_query above, kept here as structured lists too.
+    # These are NEVER sent to a provider as an exact-match filter (see
+    # SearchTranslator) — they exist so ranking/evidence can look for literal
+    # textual evidence of them in a candidate's own title/headline/career
+    # history without hardcoding a per-role keyword list anywhere in code.
+    # The role-specific content lives entirely in the confirmed hiring intent
+    # for THIS search, not in the ranking logic.
+    core_signals: List[str] = field(default_factory=list)
+    supporting_signals: List[str] = field(default_factory=list)
+    differentiator_signals: List[str] = field(default_factory=list)

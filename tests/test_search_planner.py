@@ -4,7 +4,6 @@ from backend.models.search_intent import (
     Experience,
     Location,
     PreviousBackground,
-    Ranking,
     Role,
     SearchIntent,
     Skills,
@@ -23,7 +22,6 @@ def test_build_creates_primary_natural_language_and_title_expansion_queries():
         previous_background=PreviousBackground(preferred_technologies=["LangChain"], preferred_companies=["OpenAI"]),
         ai_focus=AIFocus(llm=True, rag=True, agentic_ai=False, mcp=True, semantic_kernel=False),
         company_preferences=CompanyPreferences(exclude_current_companies=["Big Tech"], preferred_company_types=["startup"]),
-        ranking=Ranking(must_have=["Python"], nice_to_have=["LLM"], bonus=["MLOps"]),
         confidence_score=88,
         natural_language_search_query="Senior ML engineer with strong Python and PyTorch experience.",
     )
@@ -56,9 +54,6 @@ def test_build_creates_primary_natural_language_and_title_expansion_queries():
         assert query.preferred_companies == ["OpenAI"]
         assert query.exclude_current_companies == ["Big Tech"]
         assert query.preferred_company_types == ["startup"]
-        assert query.must_have == ["Python"]
-        assert query.nice_to_have == ["LLM"]
-        assert query.bonus == ["MLOps"]
         # Recruiter-specified exclusion plus the standing executive policy.
         assert "Manager" in query.exclude_titles
         for excluded in EXECUTIVE_TITLE_EXCLUSIONS:

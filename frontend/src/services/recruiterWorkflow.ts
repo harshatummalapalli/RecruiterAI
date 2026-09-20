@@ -1,5 +1,6 @@
 import type { Candidate, SearchIntent, SearchResponse } from '../types'
 import type { LocationDetail } from '../models/searchBrief'
+import type { IntakeStartResponse } from '../models/intake'
 
 export type RecruiterAction = 'shortlist' | 'reject' | 'note' | 'export' | 'view'
 
@@ -229,6 +230,48 @@ export const runCandidateSearch = async (
   }
 
   return response.json() as Promise<SearchResponse>
+}
+
+export const startIntake = async (rawInput: string): Promise<IntakeStartResponse> => {
+  const response = await fetch(`${API_BASE_URL}/intake/start`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ raw_input: rawInput }),
+  })
+  if (!response.ok) {
+    throw new Error('Failed to understand this role')
+  }
+  return response.json() as Promise<IntakeStartResponse>
+}
+
+export const answerIntake = async (
+  sessionId: string,
+  issueId: string,
+  value: string,
+  label: string,
+): Promise<IntakeStartResponse> => {
+  const response = await fetch(`${API_BASE_URL}/intake/${encodeURIComponent(sessionId)}/answer`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ issue_id: issueId, value, label }),
+  })
+  if (!response.ok) {
+    throw new Error('Failed to update the brief')
+  }
+  return response.json() as Promise<IntakeStartResponse>
+}
+
+export const confirmIntake = async (sessionId: string): Promise<SearchIntent> => {
+  const response = await fetch(`${API_BASE_URL}/intake/${encodeURIComponent(sessionId)}/confirm`, {
+    method: 'POST',
+    credentials: 'include',
+  })
+  if (!response.ok) {
+    throw new Error('This role still has an unresolved decision.')
+  }
+  return response.json() as Promise<SearchIntent>
 }
 
 export const loadPersistedSearch = async (searchId: string): Promise<SearchResponse | null> => {

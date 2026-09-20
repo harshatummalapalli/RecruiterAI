@@ -20,9 +20,6 @@ def test_mapper_drops_unsupported_filters_and_returns_warnings() -> None:
                 preferred_companies=["OpenAI"],
                 exclude_current_companies=["Big Tech"],
                 preferred_company_types=["startup"],
-                must_have=["AWS"],
-                nice_to_have=["LLM"],
-                bonus=["MLOps"],
             )
         ],
         strategy="multi_query",
@@ -53,9 +50,6 @@ def test_mapper_drops_unsupported_filters_and_returns_warnings() -> None:
     assert mapped_plan.searches[0].maximum_years is None
     assert mapped_plan.searches[0].exclude_current_companies == []
     assert mapped_plan.searches[0].preferred_company_types == []
-    assert mapped_plan.searches[0].must_have == []
-    assert mapped_plan.searches[0].nice_to_have == []
-    assert mapped_plan.searches[0].bonus == []
 
     assert any("exclude_titles" in warning for warning in warnings)
     assert any("preferred_skills" in warning for warning in warnings)

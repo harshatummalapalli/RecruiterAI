@@ -1,27 +1,33 @@
 import { useEffect, useRef, useState } from 'react'
 import { Pencil } from 'lucide-react'
-import { parseJobDescription, runCandidateSearch, loadPersistedSearch, logout } from '../services/recruiterWorkflow'
 import {
-  applyAiParse,
-  applyClarificationAnswer,
+  runCandidateSearch,
+  loadPersistedSearch,
+  logout,
+  startIntake,
+  answerIntake,
+  confirmIntake,
+} from '../services/recruiterWorkflow'
+import {
   applyLocalExtraction,
   briefToSearchIntent,
   briefToLocationDetail,
   createEmptySearchBrief,
-  CLARIFICATION_LOCK_PATHS,
+  searchIntentToBrief,
   type SearchBrief,
 } from '../models/searchBrief'
-import { buildClarificationQuestions, type ClarificationQuestion } from '../models/clarification'
+import type { IntakeIssue, IntakeResult } from '../models/intake'
 import { SearchBriefReview } from './SearchBriefReview'
-import { ClarificationReview } from './ClarificationReview'
+import { LivingBrief } from './LivingBrief'
 import { CandidateReviewScreen } from './CandidateReviewScreen'
 import { DebugPanel } from './DebugPanel'
 import type { SearchResponse } from '../types'
 import './RecruiterWorkspaceScreen.css'
 
 type ParseState = 'idle' | 'parsing' | 'success' | 'error'
-type Step = 'jd' | 'clarify' | 'brief' | 'review'
+type Step = 'jd' | 'intake' | 'brief' | 'review'
 type SearchState = 'idle' | 'searching' | 'done' | 'error'
+type IntakeState = 'idle' | 'loading' | 'answering' | 'confirming' | 'ready' | 'error'
 
 const RECRUITER_NAME = 'Harsha'
 
@@ -105,8 +111,9 @@ export function RecruiterWorkspaceScreen() {
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [parseState, setParseState] = useState<ParseState>('idle')
   const [step, setStep] = useState<Step>('jd')
-  const [clarificationQuestions, setClarificationQuestions] = useState<ClarificationQuestion[]>([])
-  const [clarificationAnswers, setClarificationAnswers] = useState<Record<string, string>>({})
+  const [intakeSessionId, setIntakeSessionId] = useState<string | null>(null)
+  const [intakeResult, setIntakeResult] = useState<IntakeResult | null>(null)
+  const [intakeState, setIntakeState] = useState<IntakeState>('idle')
   const [searchState, setSearchState] = useState<SearchState>('idle')
   const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null)
   const [searchId, setSearchId] = useState<string | null>(null)
@@ -182,69 +189,95 @@ export function RecruiterWorkspaceScreen() {
     setIsEditingTitle(false)
   }
 
-  // Confidence assessment. If the JD is unambiguous, skip straight to the AI
-  // parse and the Search Brief. Otherwise, ask only the minimum structured
-  // clarifying questions first — never more than five, never free text.
+  // RecruiterAI understands the role before searching: submit the raw input
+  // to the backend intake reasoning layer (Task A / Task B / contradiction
+  // backstop — see backend/services/intake_reasoning.py) and show the
+  // Living Brief. No local heuristic decides what to ask any more; the
+  // backend is the sole authority on ambiguity/questions.
   const handleParse = async () => {
     if (!hasJdText) {
       return
     }
 
-    const questions = buildClarificationQuestions(jdText)
-    if (questions.length > 0) {
-      setClarificationQuestions(questions)
-      setClarificationAnswers({})
-      setStep('clarify')
-      return
-    }
-
-    await generateSearchBrief()
-  }
-
-  const handleAnswerClarification = (questionId: string, value: string) => {
-    setClarificationAnswers((current) => ({ ...current, [questionId]: value }))
-  }
-
-  // Stage 2 — AI parse. Enriches the existing SearchBrief in place rather
-  // than replacing it; locked (recruiter-edited) fields are left alone.
-  // Clarification answers, if any, are applied last so nothing overwrites them.
-  const generateSearchBrief = async () => {
     setParseState('parsing')
-
+    setIntakeState('loading')
     try {
-      const intent = await parseJobDescription(jdText)
-      let nextBrief = applyAiParse(brief, intent, lockedFields)
-      const newlyLocked = new Set(lockedFields)
-
-      for (const question of clarificationQuestions) {
-        const answer = clarificationAnswers[question.id]
-        if (!answer) {
-          continue
-        }
-        nextBrief = applyClarificationAnswer(nextBrief, question.id, answer)
-        for (const path of CLARIFICATION_LOCK_PATHS[question.id] ?? []) {
-          newlyLocked.add(path)
-        }
-      }
-
-      setBrief(nextBrief)
-      setLockedFields(newlyLocked)
+      const { session_id, result } = await startIntake(jdText)
+      setIntakeSessionId(session_id)
+      setIntakeResult(result)
+      setIntakeState(result.status === 'ready' ? 'ready' : 'idle')
       setParseState('success')
-      setSearchState('idle')
-      setStep('brief')
+      setStep('intake')
     } catch {
       setParseState('error')
+      setIntakeState('error')
     }
   }
 
-  const handleFindCandidates = async () => {
+  const handleAnswerIntake = async (issue: IntakeIssue, value: string, label: string) => {
+    if (!intakeSessionId || !issue.id) {
+      return
+    }
+    setIntakeState('answering')
+    try {
+      const { result } = await answerIntake(intakeSessionId, issue.id, value, label)
+      setIntakeResult(result)
+      setIntakeState(result.status === 'ready' ? 'ready' : 'idle')
+    } catch {
+      setIntakeState('error')
+    }
+  }
+
+  // Confirms the intake into the existing SearchIntent shape, applies it onto
+  // the existing SearchBrief model (reusing the untouched Search Brief ->
+  // search pipeline), then searches directly — the recruiter is not routed
+  // through a form unless they explicitly choose "Edit brief".
+  const handleSearchFromIntake = async () => {
+    if (!intakeSessionId) {
+      return
+    }
+    setIntakeState('confirming')
+    try {
+      const confirmedIntent = await confirmIntake(intakeSessionId)
+      const nextBrief = searchIntentToBrief(confirmedIntent)
+      setBrief(nextBrief)
+      setParseState('success')
+      await handleFindCandidates(nextBrief)
+    } catch {
+      setIntakeState('error')
+    }
+  }
+
+  const handleEditBriefFromIntake = async () => {
+    if (!intakeSessionId) {
+      return
+    }
+    setIntakeState('confirming')
+    try {
+      const confirmedIntent = await confirmIntake(intakeSessionId)
+      const nextBrief = searchIntentToBrief(confirmedIntent)
+      setBrief(nextBrief)
+      setIntakeState('ready')
+      setStep('brief')
+    } catch {
+      setIntakeState('error')
+    }
+  }
+
+  const handleFindCandidates = async (briefOverride?: SearchBrief) => {
+    const activeBrief = briefOverride ?? brief
     setSearchState('searching')
 
     try {
-      const response = await runCandidateSearch(jdText, briefToSearchIntent(brief), briefToLocationDetail(brief), {
-        searchId: searchId ?? undefined,
-        debug: import.meta.env.DEV,
-      })
+      const response = await runCandidateSearch(
+        jdText,
+        briefToSearchIntent(activeBrief),
+        briefToLocationDetail(activeBrief),
+        {
+          searchId: searchId ?? undefined,
+          debug: import.meta.env.DEV,
+        },
+      )
       setSearchResponse(response)
       setSearchState('done')
       setStep('review')
@@ -252,7 +285,7 @@ export function RecruiterWorkspaceScreen() {
       savePersistedSearchPointer({
         searchId: response.search_id,
         jdText,
-        brief,
+        brief: activeBrief,
         lockedFields: Array.from(lockedFields),
       })
     } catch {
@@ -271,8 +304,9 @@ export function RecruiterWorkspaceScreen() {
     setLockedFields(new Set())
     setParseState('idle')
     setStep('jd')
-    setClarificationQuestions([])
-    setClarificationAnswers({})
+    setIntakeSessionId(null)
+    setIntakeResult(null)
+    setIntakeState('idle')
     setSearchState('idle')
     setSearchResponse(null)
     setSearchId(null)
@@ -423,18 +457,14 @@ export function RecruiterWorkspaceScreen() {
           </div>
         ) : null}
 
-        {step === 'clarify' ? (
-          <ClarificationReview
-            questions={clarificationQuestions}
-            answers={clarificationAnswers}
-            onAnswer={handleAnswerClarification}
-            onGenerate={generateSearchBrief}
-            onBackToJd={() => {
-              setClarificationQuestions([])
-              setClarificationAnswers({})
-              setStep('jd')
-            }}
-            isGenerating={parseState === 'parsing'}
+        {step === 'intake' && intakeResult ? (
+          <LivingBrief
+            result={intakeResult}
+            onAnswer={handleAnswerIntake}
+            onSearch={handleSearchFromIntake}
+            onEdit={handleEditBriefFromIntake}
+            isAnswering={intakeState === 'answering'}
+            isConfirming={intakeState === 'confirming'}
           />
         ) : null}
 

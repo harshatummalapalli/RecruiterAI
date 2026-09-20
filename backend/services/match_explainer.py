@@ -1,212 +1,95 @@
-from typing import List, Optional
+from typing import List
 
 from backend.models.candidate import Candidate
-from backend.models.match_explanation import MatchExplanation
+from backend.models.candidate_evidence import CandidateEvidence, MatchedSignal
+from backend.models.match_explanation import MatchExplanation, MatchedSignalOut
 from backend.models.search_intent import SearchIntent
-from backend.utils.text import deduplicate_preserve_order, equals_normalized_text, normalize_text
+from backend.services.candidate_evidence_builder import build_candidate_evidence
 
 
 class MatchExplainer:
-    """Generate a provider-agnostic explanation for how a candidate matches a search intent."""
+    """Builds a recruiter-facing explanation from the same CandidateEvidence
+    CandidateRanker scores against — one source of truth for both, so the
+    two can never disagree the way the old skill-matching explainer and the
+    metadata-substring ranker used to."""
 
     def explain(self, candidate: Candidate, intent: SearchIntent) -> MatchExplanation:
-        required_skills = [skill for skill in (intent.skills.required_skills or []) if skill]
-        preferred_skills = [skill for skill in (intent.skills.preferred_skills or []) if skill]
-
-        candidate_skills = self._candidate_skills(candidate)
-        matched_required_skills = [skill for skill in required_skills if self._skill_matches(skill, candidate_skills)]
-        missing_required_skills = [skill for skill in required_skills if skill not in matched_required_skills]
-        matched_preferred_skills = [skill for skill in preferred_skills if self._skill_matches(skill, candidate_skills)]
-        missing_preferred_skills = [skill for skill in preferred_skills if skill not in matched_preferred_skills]
-
-        title_match = self._matches_title(candidate.title, intent.titles.include_titles)
-        location_match = self._matches_location(candidate.location, intent.location.countries, intent.location.cities)
-        company_match = self._matches_company(candidate.company, intent.previous_background.preferred_companies)
-        experience_match = self._matches_experience(candidate.raw_data, intent.experience.minimum_years, intent.experience.maximum_years)
-
-        matched_titles = [candidate.title] if title_match and candidate.title else []
-        matched_skills = deduplicate_preserve_order(matched_required_skills + matched_preferred_skills)
-        missing_skills = deduplicate_preserve_order(missing_required_skills)
-        matched_location = candidate.location if location_match else None
-        matched_ai_technologies = self._candidate_ai_technologies(candidate)
-        matched_experience, missing_experience = self._experience_summary(candidate.raw_data, intent.experience.minimum_years, intent.experience.maximum_years)
-        potential_risks = self._build_potential_risks(
-            title_match=title_match,
-            location_match=location_match,
-            company_match=company_match,
-            experience_match=experience_match,
-            missing_skills=missing_skills,
-            missing_experience=missing_experience,
-        )
-
-        summary = self._build_summary(
-            title_match=title_match,
-            location_match=location_match,
-            company_match=company_match,
-            experience_match=experience_match,
-            matched_required_skills=matched_required_skills,
-            missing_required_skills=missing_required_skills,
-            matched_preferred_skills=matched_preferred_skills,
-        )
+        evidence = build_candidate_evidence(candidate, intent)
+        alignment = evidence.role_alignment
 
         return MatchExplanation(
+            relevance_tier=alignment.title_relevance,
+            why_this_candidate=self._why_this_candidate(evidence, intent),
+            strong_evidence=self._strong_evidence(evidence),
+            potential_concerns=self._potential_concerns(evidence),
+            what_we_dont_know=[note.note for note in evidence.uncertainty],
+            matched_signals=[self._to_signal_out(s) for s in alignment.matched_signals],
+            seniority_alignment=alignment.seniority_alignment,
+            provider_fit=evidence.search_evidence.provider_fit,
+            convergence=evidence.search_evidence.convergence,
+            matched_queries=evidence.search_evidence.matched_queries,
             final_score=candidate.final_score,
-            matched_required_skills=matched_required_skills,
-            missing_required_skills=missing_required_skills,
-            matched_preferred_skills=matched_preferred_skills,
-            missing_preferred_skills=missing_preferred_skills,
-            matched_titles=matched_titles,
-            matched_skills=matched_skills,
-            missing_skills=missing_skills,
-            matched_location=matched_location,
-            matched_experience=matched_experience,
-            matched_ai_technologies=matched_ai_technologies,
-            missing_experience=missing_experience,
-            potential_risks=potential_risks,
-            title_match=title_match,
-            location_match=location_match,
-            company_match=company_match,
-            experience_match=experience_match,
-            summary=summary,
         )
 
-    def _candidate_skills(self, candidate: Candidate) -> List[str]:
-        raw_data = candidate.raw_data or {}
-        skills: List[str] = []
-        if isinstance(raw_data.get("skills"), list):
-            skills.extend([skill for skill in raw_data["skills"] if isinstance(skill, str)])
-        if isinstance(raw_data.get("raw_skills"), list):
-            skills.extend([skill for skill in raw_data["raw_skills"] if isinstance(skill, str)])
-        if candidate.title:
-            skills.append(candidate.title)
-        return deduplicate_preserve_order(skills)
+    def _to_signal_out(self, signal: MatchedSignal) -> MatchedSignalOut:
+        return MatchedSignalOut(tier=signal.tier, signal_text=signal.signal_text, matched_term=signal.matched_term, source=signal.source)
 
-    def _skill_matches(self, required_skill: str, candidate_skills: List[str]) -> bool:
-        normalized_required = normalize_text(required_skill)
-        return any(normalized_required == normalize_text(skill) for skill in candidate_skills)
+    def _why_this_candidate(self, evidence: CandidateEvidence, intent: SearchIntent) -> str:
+        """One or two sentences, headline-aware by construction: this reuses
+        `title_relevance_basis` directly (the single place that already
+        knows whether the overlap came from the formal title or the
+        candidate's own headline) rather than re-deriving a second, possibly
+        inconsistent sentence. Never names an internal discovery-query
+        strategy (e.g. "natural_language") — that is retrieval plumbing, not
+        something a recruiter can act on."""
+        alignment = evidence.role_alignment
+        parts = [alignment.title_relevance_basis]
 
-    def _matches_title(self, candidate_title: Optional[str], expected_titles: List[str]) -> bool:
-        if not candidate_title or not expected_titles:
-            return False
-        return equals_normalized_text(candidate_title, next((title for title in expected_titles if title), None))
+        if alignment.seniority_alignment is True:
+            parts.append(f"Seniority ({evidence.current_seniority}) aligns with the target level.")
+        elif alignment.seniority_alignment is False:
+            parts.append(f"Seniority ({evidence.current_seniority}) does not align with the target level ({intent.role.seniority}).")
 
-    def _candidate_ai_technologies(self, candidate: Candidate) -> List[str]:
-        raw_data = candidate.raw_data or {}
-        ai_technologies: List[str] = []
-        if isinstance(raw_data.get("ai_skills"), list):
-            ai_technologies.extend([skill for skill in raw_data["ai_skills"] if isinstance(skill, str)])
-        if isinstance(raw_data.get("skills"), list):
-            ai_technologies.extend([skill for skill in raw_data["skills"] if isinstance(skill, str)])
-        return deduplicate_preserve_order(ai_technologies)
+        if evidence.search_evidence.convergence:
+            parts.append("Surfaced independently by more than one search.")
 
-    def _experience_summary(self, raw_data: Optional[dict], minimum_years: Optional[int], maximum_years: Optional[int]) -> tuple[Optional[str], Optional[str]]:
-        years = None
-        if isinstance(raw_data, dict):
-            years = raw_data.get("years_experience")
-        if years is None:
-            return None, None
-        text = f"{years} years"
-        if minimum_years is not None and years < minimum_years:
-            return f"Requires at least {minimum_years} years of experience", f"Requires at least {minimum_years} years of experience"
-        if maximum_years is not None and years > maximum_years:
-            return f"Requires at most {maximum_years} years of experience", f"Requires at most {maximum_years} years of experience"
-        return text, None
+        return " ".join(parts)
 
-    def _matches_location(
-        self,
-        candidate_location: Optional[str],
-        countries: List[str],
-        cities: List[str],
-    ) -> bool:
-        if not candidate_location:
-            return False
-        candidate_norm = normalize_text(candidate_location)
-        if any(candidate_norm == normalize_text(country) for country in countries):
-            return True
-        return any(candidate_norm == normalize_text(city) for city in cities)
+    def _strong_evidence(self, evidence: CandidateEvidence) -> List[str]:
+        """Every bullet names WHERE the evidence came from (source) rather
+        than a vague "title/headline/career history" — a recruiter should be
+        able to verify each claim in about the same time it takes to read
+        it. Never mentions the internal core/supporting/differentiator
+        ranking-weight tiers."""
+        # title_relevance_basis is deliberately NOT repeated here — it is
+        # already the lead sentence of why_this_candidate, and restating it
+        # verbatim as the first bullet added noise rather than a second
+        # fact.
+        items: List[str] = []
+        alignment = evidence.role_alignment
 
-    def _matches_company(self, candidate_company: Optional[str], preferred_companies: List[str]) -> bool:
-        if not candidate_company or not preferred_companies:
-            return False
-        candidate_norm = normalize_text(candidate_company)
-        return any(candidate_norm == normalize_text(company) for company in preferred_companies)
+        for signal in alignment.matched_signals:
+            source = signal.source.capitalize() if signal.source else "Profile"
+            items.append(f"{source} mentions “{signal.matched_term}”.")
 
-    def _matches_experience(self, raw_data: Optional[dict], minimum_years: Optional[int], maximum_years: Optional[int]) -> Optional[bool]:
-        """Tri-state: True/False when we have evidence either way, None when
-        the candidate's years of experience simply weren't returned. Missing
-        evidence is not the same as evidence of a mismatch — returning False
-        here previously caused candidates with "Not specified" experience to
-        be labeled a poor match even though nothing about them was actually
-        known to be wrong."""
-        if minimum_years is None and maximum_years is None:
-            return True
-        years = None
-        if isinstance(raw_data, dict):
-            years = raw_data.get("years_experience")
-        if years is None:
-            return None
-        if minimum_years is not None and years < minimum_years:
-            return False
-        if maximum_years is not None and years > maximum_years:
-            return False
-        return True
+        if evidence.search_evidence.provider_fit == "strong":
+            items.append("Flagged by the search provider as a strong relevance fit for this query.")
 
-    def _build_potential_risks(
-        self,
-        title_match: bool,
-        location_match: bool,
-        company_match: bool,
-        experience_match: Optional[bool],
-        missing_skills: List[str],
-        missing_experience: Optional[str],
-    ) -> List[str]:
-        # experience_match is False (a confirmed mismatch) only when
-        # missing_experience is also set; None (no evidence either way)
-        # never reaches here as a "risk" — insufficient evidence is not a
-        # negative finding.
-        if experience_match is False and missing_experience:
-            return ["Experience is below the requested range"]
-        return []
+        return items
 
-    def _build_summary(
-        self,
-        title_match: bool,
-        location_match: bool,
-        company_match: bool,
-        experience_match: Optional[bool],
-        matched_required_skills: List[str],
-        missing_required_skills: List[str],
-        matched_preferred_skills: List[str],
-    ) -> str:
-        parts: List[str] = []
-        if title_match:
-            parts.append("title matches the requested role")
-        else:
-            parts.append("title does not clearly match the requested role")
+    def _potential_concerns(self, evidence: CandidateEvidence) -> List[str]:
+        concerns: List[str] = []
+        alignment = evidence.role_alignment
 
-        if location_match:
-            parts.append("location aligns with the target geography")
-        else:
-            parts.append("location does not align with the target geography")
+        if alignment.seniority_alignment is False:
+            concerns.append(alignment.seniority_alignment_basis)
 
-        if company_match:
-            parts.append("company matches a preferred employer")
-        else:
-            parts.append("company is not in the preferred employer list")
+        if alignment.title_relevance in ("tangential", "unclear"):
+            concerns.append(
+                f"{alignment.title_relevance_basis} Worth verifying manually before treating this as a close match."
+            )
 
-        if experience_match is True:
-            parts.append("experience satisfies the requested range")
-        elif experience_match is False:
-            parts.append("experience does not satisfy the requested range")
-        else:
-            parts.append("experience could not be verified from the available data")
+        if evidence.search_evidence.provider_fit == "weak":
+            concerns.append("The search provider flagged this candidate as a weak relevance fit for the query.")
 
-        if matched_required_skills:
-            parts.append(f"matched required skills: {', '.join(matched_required_skills)}")
-        if missing_required_skills:
-            parts.append(f"missing required skills: {', '.join(missing_required_skills)}")
-        if matched_preferred_skills:
-            parts.append(f"matched preferred skills: {', '.join(matched_preferred_skills)}")
-
-        return "; ".join(parts)
-
+        return concerns
