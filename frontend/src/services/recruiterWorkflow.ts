@@ -1,73 +1,11 @@
-import type { Candidate, SearchIntent, SearchResponse } from '../types'
+import type { SearchIntent, SearchResponse } from '../types'
 import type { LocationDetail } from '../models/searchBrief'
 import type { IntakeStartResponse } from '../models/intake'
-
-export type RecruiterAction = 'shortlist' | 'reject' | 'note' | 'export' | 'view'
 
 // Empty string means "same origin as the page" — used in production where
 // nginx serves the frontend and proxies the API from one origin. Local dev
 // keeps talking to the backend directly on :8000 unless overridden.
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://127.0.0.1:8000'
-
-export type BusyState = 'parsing' | 'searching' | 'exporting' | null
-export type NoticeType = 'error' | 'success' | 'info'
-
-export type Notice = {
-  type: NoticeType
-  message: string
-}
-
-export type SearchSummary = {
-  candidateCount: number
-  averageMatch: string
-  highestMatch: string
-  topLocations: string[]
-  topCompanies: string[]
-  searchDuration: string
-  searchConfidence: string
-  lastUpdated: string
-  demo: boolean
-}
-
-export const defaultIntent: SearchIntent = {
-  role: { title: 'Software Engineer', seniority: 'Senior', employment_type: 'Full-time' },
-  location: { countries: ['US'], cities: ['New York'], work_mode: 'hybrid' },
-  experience: { minimum_years: 5, maximum_years: 10 },
-  titles: { include_titles: ['Backend Engineer'], exclude_titles: ['Manager'] },
-  skills: { required_skills: ['Python', 'FastAPI'], preferred_skills: ['AWS', 'Postgres'] },
-  previous_background: { preferred_technologies: ['Python'], preferred_companies: ['OpenAI'] },
-  ai_focus: { llm: true, rag: true },
-  company_preferences: { exclude_current_companies: ['Google'], preferred_company_types: ['startup'] },
-  ranking: { must_have: ['Python'], nice_to_have: ['FastAPI'], bonus: ['Cloud'] },
-}
-
-export const arrayField = (value: string) => value.split(',').map((item) => item.trim()).filter(Boolean)
-
-export const buildParsedIntentSummary = (intent: SearchIntent) => {
-  return [
-    intent.role.title ? `Role: ${intent.role.title}` : 'Role: —',
-    intent.skills.required_skills.length ? `Skills: ${intent.skills.required_skills.join(', ')}` : 'Skills: —',
-    intent.location.countries.length ? `Countries: ${intent.location.countries.join(', ')}` : 'Countries: —',
-  ].join(' • ')
-}
-
-export const validateIntent = (currentIntent: SearchIntent) => {
-  const issues: string[] = []
-
-  if (!currentIntent.role.title?.trim()) {
-    issues.push('Add a role title before searching.')
-  }
-
-  if (!currentIntent.skills.required_skills.length && !currentIntent.skills.preferred_skills.length) {
-    issues.push('Add at least one skill.')
-  }
-
-  if (!currentIntent.location.countries.length && !currentIntent.location.cities.length) {
-    issues.push('Add at least one location or city.')
-  }
-
-  return issues
-}
 
 export const serializeIntentForSearch = (currentIntent: SearchIntent) => {
   const sections = [] as string[]
@@ -114,11 +52,6 @@ export const serializeIntentForSearch = (currentIntent: SearchIntent) => {
   return sections.join('\n')
 }
 
-export const getCandidateKey = (candidate: Candidate) => {
-  const parts = [candidate.name, candidate.title, candidate.company, candidate.location]
-  return parts.filter(Boolean).join('|') || `${candidate.provider_score ?? ''}-${candidate.final_score ?? ''}`
-}
-
 export const checkSession = async (): Promise<boolean> => {
   try {
     const response = await fetch(`${API_BASE_URL}/auth/me`, { credentials: 'include' })
@@ -130,57 +63,6 @@ export const checkSession = async (): Promise<boolean> => {
 
 export const logout = async (): Promise<void> => {
   await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' })
-}
-
-export const getProviderAvailability = async () => {
-  try {
-    const response = await fetch(`${API_BASE_URL}/providers`, { credentials: 'include' })
-    if (!response.ok) {
-      return { available: false, message: 'Sourcing has not yet been configured.' }
-    }
-
-    const payload = await response.json() as { providers?: string[] }
-    return { available: (payload.providers?.length ?? 0) > 0, message: (payload.providers?.length ?? 0) > 0 ? 'Sourcing is ready.' : 'Sourcing has not yet been configured.' }
-  } catch {
-    return { available: false, message: 'Sourcing has not yet been configured.' }
-  }
-}
-
-const toPercent = (value: number) => {
-  const normalized = value > 1 ? value : value * 100
-  return `${Math.round(normalized)}%`
-}
-
-export const buildSearchSummary = (payload: SearchResponse): SearchSummary => {
-  const candidates = payload.candidates ?? []
-  const scores = candidates
-    .map((candidate) => Number(candidate.final_score ?? candidate.provider_score ?? 0))
-    .filter((score) => Number.isFinite(score))
-
-  const averageMatch = scores.length ? toPercent(scores.reduce((sum, value) => sum + value, 0) / scores.length) : '0%'
-  const highestMatch = scores.length ? toPercent(Math.max(...scores)) : '0%'
-  const locationCounts = candidates.reduce<Record<string, number>>((accumulator, candidate) => {
-    const location = candidate.location?.trim() || 'Unspecified'
-    accumulator[location] = (accumulator[location] ?? 0) + 1
-    return accumulator
-  }, {})
-  const companyCounts = candidates.reduce<Record<string, number>>((accumulator, candidate) => {
-    const company = candidate.company?.trim() || 'Unspecified'
-    accumulator[company] = (accumulator[company] ?? 0) + 1
-    return accumulator
-  }, {})
-
-  return {
-    candidateCount: payload.candidate_count ?? candidates.length,
-    averageMatch,
-    highestMatch,
-    topLocations: Object.entries(locationCounts).sort((left, right) => right[1] - left[1]).slice(0, 3).map(([location]) => location),
-    topCompanies: Object.entries(companyCounts).sort((left, right) => right[1] - left[1]).slice(0, 3).map(([company]) => company),
-    searchDuration: '0.8s',
-    searchConfidence: payload.demo ? 'Demo' : 'High',
-    lastUpdated: new Date().toLocaleString(),
-    demo: Boolean(payload.demo),
-  }
 }
 
 export const parseJobDescription = async (jdText: string) => {
@@ -302,48 +184,3 @@ export const updateCandidateRecord = async (
   return response.json()
 }
 
-export const exportCandidateResults = async (jdText: string, intent: SearchIntent) => {
-  const response = await fetch(`${API_BASE_URL}/export`, {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      jd_text: jdText.trim() ? jdText : serializeIntentForSearch(intent),
-      intent,
-      provider: 'crustdata',
-    }),
-  })
-
-  if (!response.ok) {
-    throw new Error('Export failed')
-  }
-
-  const blob = await response.blob()
-  const url = window.URL.createObjectURL(blob)
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = 'recruiterai-results.xlsx'
-  anchor.click()
-  window.URL.revokeObjectURL(url)
-}
-
-export const downloadCandidateExport = (candidate: Candidate) => {
-  const payload = {
-    candidate: {
-      name: candidate.name,
-      title: candidate.title,
-      company: candidate.company,
-      location: candidate.location,
-      match: candidate.final_score ?? candidate.provider_score,
-      summary: candidate.summary,
-      uploadedAt: new Date().toISOString(),
-    },
-  }
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
-  const url = window.URL.createObjectURL(blob)
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = `${(candidate.name ?? 'candidate').toLowerCase().replace(/\s+/g, '-')}-export.json`
-  anchor.click()
-  window.URL.revokeObjectURL(url)
-}

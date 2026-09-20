@@ -140,7 +140,6 @@ export interface CandidateEvidenceRaw {
 
 export interface SearchResponse {
   provider: string
-  demo?: boolean
   search_id: string
   candidate_count: number
   candidates: Candidate[]

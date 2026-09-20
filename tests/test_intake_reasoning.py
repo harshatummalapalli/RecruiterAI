@@ -7,9 +7,9 @@ from backend.models.intake import IntakeDecision, IntakeIssue
 from backend.services.intake_reasoning import (
     IntakeReasoner,
     apply_contradiction_backstop,
-    build_confirmed_search_intent,
     detect_intake_contradictions,
 )
+from backend.services.search_translator import translate
 
 
 # ---------------------------------------------------------------------------
@@ -278,22 +278,19 @@ def test_contradiction_blocks_building_an_executable_search_intent() -> None:
     )
     assert result.status == "needs_clarification"
     with pytest.raises(ValueError):
-        build_confirmed_search_intent(result)
+        translate(result)
 
 
-def test_build_confirmed_search_intent_maps_ready_result_onto_existing_search_intent() -> None:
+def test_translate_maps_a_ready_result_from_the_full_intake_reasoner_pipeline() -> None:
+    # Confirms the state-abbreviation backstop and translator behavior hold
+    # end to end through the real IntakeReasoner pipeline, not just in
+    # isolated search_translator unit tests (see test_search_translator.py
+    # for the exhaustive field-level coverage of translate() itself).
     client = FakeOpenAIClient(CLEAR_ROLE_TASK_A, CLEAR_ROLE_TASK_B)
     result = IntakeReasoner(client=client).run("Senior Backend Engineer, 5+ years Python, New York, hybrid.")
-    intent = build_confirmed_search_intent(result)
+    intent = translate(result)
     assert intent.role.title == "Senior Backend Engineer"
     assert intent.experience.minimum_years == 5
     assert intent.location.cities == ["New York"]
-    # Confirms the state-abbreviation backstop fires even through the full
-    # IntakeReasoner pipeline, not just in isolated search_translator tests.
     assert intent.location.states == ["New York"]
-    # Core/Supporting/Differentiator tiers no longer land in the dead
-    # `ranking` namespace (see search_translator.py) — they only ever
-    # influence the natural-language query, never a fabricated skill filter.
-    assert intent.ranking.must_have == []
-    assert intent.skills.required_skills == []
     assert intent.natural_language_search_query == "Senior backend engineer with strong Python experience."

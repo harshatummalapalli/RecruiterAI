@@ -295,7 +295,6 @@ def test_search_endpoint_returns_real_empty_state_when_provider_finds_no_candida
     payload = response.json()
     assert payload["candidate_count"] == 0
     assert payload["candidates"] == []
-    assert payload["demo"] is False
 
 
 def test_search_endpoint_returns_recruiter_friendly_error_without_provider_configuration() -> None:

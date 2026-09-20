@@ -21,7 +21,6 @@ from backend.models.intake import (
     TechnologyGroup,
     role_understanding_to_dict,
 )
-from backend.models.search_intent import SearchIntent
 
 PROMPTS_DIR = Path(__file__).resolve().parents[2] / "prompts"
 
@@ -445,15 +444,3 @@ class IntakeReasoner:
             return json.loads(content)
         except json.JSONDecodeError as exc:
             raise ParsingError("The intake reasoning response was not valid JSON.") from exc
-
-
-def build_confirmed_search_intent(result: IntakeResult) -> SearchIntent:
-    """Backward-compatible shim — delegates to search_translator.translate(),
-    which is now the single, canonical IntakeResult -> SearchIntent path (see
-    backend/models/hiring_intent.py and backend/services/search_translator.py
-    for the Confirmed Hiring Intent contract this replaced the old ad hoc
-    mapping with). Kept only so existing imports of this name keep working;
-    new code should call search_translator.translate() directly."""
-    from backend.services.search_translator import translate
-
-    return translate(result)

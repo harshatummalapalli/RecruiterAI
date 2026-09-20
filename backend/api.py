@@ -249,7 +249,6 @@ class SearchRequest(ParseRequest):
 
 class SearchResponse(BaseModel):
     provider: str
-    demo: bool = False
     search_id: str
     candidate_count: int
     candidates: List[Dict[str, Any]]
