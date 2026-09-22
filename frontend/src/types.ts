@@ -97,7 +97,17 @@ export interface MatchExplanationRaw {
   strong_evidence: string[]
   potential_concerns: string[]
   what_we_dont_know: string[]
-  matched_signals: Array<{ tier: 'core' | 'supporting' | 'differentiator'; signal_text: string; matched_term: string; source?: string }>
+  matched_signals: Array<{
+    tier: 'core' | 'supporting' | 'differentiator'
+    signal_text: string
+    matched_term: string
+    source?: string
+    // PASS 4 (evidence quality) — internal/tooling fields, not rendered
+    // directly; the UI uses strong_evidence's already-phrased sentences.
+    evidence_type?: string
+    evidence_text?: string
+    strength?: string
+  }>
   seniority_alignment: boolean | null
   provider_fit: string | null
   convergence: boolean

@@ -13,6 +13,14 @@
   --color-focus-ring: rgba(15, 118, 110, 0.18);
   --color-success: #15803d;
   --color-error: #b91c1c;
+  /* Requirement concerns (e.g. a seniority mismatch) are a flag for the
+     recruiter to investigate, not a rejection — deliberately amber, not
+     the same red used for --color-error, so the Candidate Decision Card
+     never visually implies "concern = reject". Matches the amber already
+     used ad hoc for the concern pill/row flag below. */
+  --color-warning: #b45309;
+  --color-warning-bg: rgba(180, 83, 9, 0.08);
+  --color-warning-border: rgba(180, 83, 9, 0.28);
 
   min-height: 100vh;
   width: 100%;
@@ -1556,14 +1564,39 @@
   font-size: 12px;
   font-weight: 600;
   background: rgba(180, 83, 9, 0.14);
-  color: #b45309;
+  color: var(--color-warning);
   margin-bottom: 12px;
 }
 
 .candidate-row__concern-flag {
-  color: #b45309;
+  color: var(--color-warning);
   flex-shrink: 0;
   margin-left: 4px;
+}
+
+/* Potential Concerns section — visually distinct enough to scan in ~5
+   seconds alongside Strong Evidence, but deliberately amber/bordered
+   rather than a solid red "reject" banner: a concern is something to
+   investigate, not a verdict. Never collapsed/accordioned — this section
+   only exists in the DOM when there's at least one concern to show
+   (see CandidateReviewScreen.tsx), so there is no empty-state to hide. */
+.brief-section--concerns {
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  /* This section already has its own full border — the ordinary
+     section-divider line (.brief-section + .brief-section) would sit
+     redundantly right above it. */
+  border-top: 1px solid var(--color-warning-border) !important;
+  padding-top: 14px !important;
+}
+
+.brief-section__title--concerns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-warning);
 }
 
 .assessment-verdict--excellent {
@@ -1640,7 +1673,11 @@
 }
 
 .assessment-list--concerns li::before {
-  background: var(--color-error);
+  background: var(--color-warning);
+}
+
+.assessment-list--concerns li {
+  color: var(--color-primary-text);
 }
 
 .assessment-list__empty {

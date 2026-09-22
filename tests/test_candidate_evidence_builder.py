@@ -376,9 +376,14 @@ def test_a_term_found_in_both_crustdata_and_harvest_produces_only_one_matched_si
 
     matches = evidence.role_alignment.matched_signals
     assert len(matches) == 1
-    # CrustData sources are checked before Harvest sources (priority order),
-    # so the stronger/first-found attribution wins.
-    assert matches[0].source == "headline"
+    # PASS 4 (PART 7): sources are now searched STRENGTH-first, not
+    # discovery-order-first — demonstrated work in an employment description
+    # is stronger, more checkable evidence than a headline mention, so it
+    # wins the attribution even though the headline is a "CrustData" source
+    # and would have been checked first under the old discovery-order rule.
+    assert matches[0].source == "harvest: employment description"
+    assert matches[0].strength == "strong"
+    assert "RAG pipelines" in matches[0].evidence_text
 
 
 def test_harvest_reveals_a_term_crustdata_never_had_evidence_for() -> None:
@@ -403,3 +408,242 @@ def test_failed_harvest_evidence_never_populates_harvest_fields() -> None:
     assert evidence.harvest_skills == []
     assert evidence.harvest_about is None
     assert evidence.harvest is harvest  # preserved for provenance/debugging even on failure
+
+
+# ---------------------------------------------------------------------------
+# PASS 4 — evidence quality: a matched word is not evidence; evidence
+# requires meaningful contextual support. Regression tests for the exact
+# PASS 3 Product Manager noise (work/technical/prior/testing/using/
+# decisions) and proof the fix generalizes rather than being a
+# Product-Manager-specific rule.
+# ---------------------------------------------------------------------------
+
+
+def _pm_employment(description: str) -> HarvestEvidence:
+    return _harvest({"experience": [{"position": "Senior Product Manager", "companyName": "Acme", "description": description}]})
+
+
+def test_generic_work_alone_never_becomes_evidence() -> None:
+    candidate = Candidate(name="PM1", title="Senior Product Manager", raw_data={})
+    intent = SearchIntent(
+        role=Role(title="Senior Product Manager"),
+        core_signals=["Demonstrated ownership of production reliability: instrumentation, on-call, incident response, and data-driven performance work."],
+    )
+    harvest = _pm_employment("Prior work involved testing technical decisions using legacy systems.")
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    assert evidence.role_alignment.matched_signals == []
+
+
+def test_generic_technical_alone_never_becomes_evidence() -> None:
+    candidate = Candidate(name="PM2", title="Senior Product Manager", raw_data={})
+    intent = SearchIntent(role=Role(title="Senior Product Manager"), supporting_signals=["Strong technical background."])
+    harvest = _pm_employment("Prior work involved testing technical decisions using legacy systems.")
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    assert evidence.role_alignment.matched_signals == []
+
+
+def test_generic_prior_alone_never_becomes_evidence() -> None:
+    candidate = Candidate(name="PM3", title="Senior Product Manager", raw_data={})
+    intent = SearchIntent(role=Role(title="Senior Product Manager"), supporting_signals=["Bonus: prior experience at a high-growth company."])
+    harvest = _pm_employment("Prior work involved testing technical decisions using legacy systems.")
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    assert evidence.role_alignment.matched_signals == []
+
+
+def test_generic_testing_alone_never_becomes_evidence() -> None:
+    candidate = Candidate(name="PM4", title="Senior Product Manager", raw_data={})
+    intent = SearchIntent(role=Role(title="Senior Product Manager"), supporting_signals=["Testing skills required."])
+    harvest = _pm_employment("Prior work involved testing technical decisions using legacy systems.")
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    assert evidence.role_alignment.matched_signals == []
+
+
+def test_generic_using_alone_never_becomes_evidence() -> None:
+    candidate = Candidate(name="PM5", title="Senior Product Manager", raw_data={})
+    intent = SearchIntent(role=Role(title="Senior Product Manager"), supporting_signals=["Experience using modern tools."])
+    harvest = _pm_employment("Prior work involved testing technical decisions using legacy systems.")
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    assert evidence.role_alignment.matched_signals == []
+
+
+def test_generic_decisions_alone_never_becomes_evidence() -> None:
+    candidate = Candidate(name="PM6", title="Senior Product Manager", raw_data={})
+    intent = SearchIntent(role=Role(title="Senior Product Manager"), supporting_signals=["Makes data-informed decisions."])
+    harvest = _pm_employment("Prior work involved testing technical decisions using legacy systems.")
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    assert evidence.role_alignment.matched_signals == []
+
+
+def test_meaningful_contextual_sentence_becomes_evidence_for_a_confirmed_role_signal() -> None:
+    # The positive counterpart to the six tests above — proves the fix
+    # rejects noise without becoming unable to recognize real evidence.
+    candidate = Candidate(name="Backend", title="Senior Backend Engineer", raw_data={})
+    intent = SearchIntent(role=Role(title="Senior Backend Engineer"), core_signals=["Experience with Kafka and distributed systems."])
+    harvest = _harvest(
+        {"experience": [{"position": "Senior Backend Engineer", "companyName": "Acme", "description": "Designed and operated Kafka-based event processing pipelines."}]}
+    )
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    matches = evidence.role_alignment.matched_signals
+    assert len(matches) == 1
+    assert matches[0].matched_term == "kafka"
+    assert "Kafka-based event processing pipelines" in matches[0].evidence_text
+    assert matches[0].evidence_type == "demonstrated_work"
+    assert matches[0].strength == "strong"
+
+
+def test_employment_description_evidence_outranks_a_generic_skill_occurrence() -> None:
+    # PART 7: the strongest evidence source determines the evidence, even
+    # when a weaker source (a named skill) also technically contains it.
+    candidate = Candidate(name="Corroborated", title="Software Engineer", raw_data={})
+    intent = SearchIntent(role=Role(title="Software Engineer"), core_signals=["Experience with Kafka."])
+    harvest = _harvest(
+        {
+            "skills": [{"name": "Kafka"}],
+            "experience": [{"position": "Engineer", "companyName": "Acme", "description": "Built and operated Kafka-based event pipelines."}],
+        }
+    )
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    matches = evidence.role_alignment.matched_signals
+    assert len(matches) == 1
+    assert matches[0].source == "harvest: employment description"
+    assert matches[0].strength == "strong"
+    assert "Kafka-based event pipelines" in matches[0].evidence_text
+
+
+def test_skill_and_employment_description_corroboration_produces_one_evidence_item_not_two() -> None:
+    candidate = Candidate(name="OneItem", title="Software Engineer", raw_data={})
+    intent = SearchIntent(role=Role(title="Software Engineer"), core_signals=["Experience with Kafka."])
+    harvest = _harvest(
+        {
+            "skills": [{"name": "Kafka"}],
+            "experience": [{"position": "Engineer", "companyName": "Acme", "description": "Operated Kafka clusters in production."}],
+        }
+    )
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    assert len(evidence.role_alignment.matched_signals) == 1
+
+
+def test_certification_can_produce_strong_evidence() -> None:
+    candidate = Candidate(name="CertStrong", title="Software Engineer", raw_data={})
+    intent = SearchIntent(role=Role(title="Software Engineer"), supporting_signals=["Experience with Azure."])
+    harvest = _harvest({"certifications": [{"title": "Microsoft Certified: Azure AI Engineer Associate"}]})
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    matches = evidence.role_alignment.matched_signals
+    assert len(matches) == 1
+    assert matches[0].evidence_type == "certification"
+    assert matches[0].strength == "strong"
+
+
+def test_about_text_never_becomes_ranking_evidence_pass4() -> None:
+    candidate = Candidate(name="AboutOnly2", title="Senior Product Manager", raw_data={})
+    intent = SearchIntent(role=Role(title="Senior Product Manager"), core_signals=["Strong analytics skills."])
+    harvest = _harvest({"about": "I'm an analytics-driven product leader with a passion for data."})
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    assert evidence.role_alignment.matched_signals == []
+
+
+def test_self_reported_years_in_about_are_not_treated_as_verified_experience_pass4() -> None:
+    candidate = Candidate(name="SelfReport2", title="Senior Product Manager", raw_data={})
+    intent = SearchIntent(role=Role(title="Senior Product Manager"))
+    harvest = _harvest({"about": "Product leader with 9+ years of experience."})
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    assert evidence.harvest_self_reported_experience is not None
+    assert "9+ years" in evidence.harvest_self_reported_experience
+    assert "not verified" in evidence.harvest_self_reported_experience.lower()
+    assert evidence.role_alignment.matched_signals == []
+
+
+def test_active_seniority_concern_remains_visible_alongside_strong_harvest_evidence() -> None:
+    # PART 8: role alignment / evidence strength / requirement concerns are
+    # independent axes — strong Harvest-sourced evidence must never erase or
+    # outweigh an active concern in the candidate representation. This is
+    # the regression PASS 3 surfaced (candidates with a seniority mismatch
+    # were still pushed up by Harvest evidence); this test proves the
+    # concern itself is still present and unaltered regardless.
+    candidate = Candidate(name="Concerned", title="Software Engineer", raw_data={"experience": {"employment_details": {"current": [{"seniority_level": "Entry Level"}]}}})
+    intent = SearchIntent(role=Role(title="Software Engineer", seniority="Senior"), core_signals=["Experience with Kafka."])
+    harvest = _harvest({"experience": [{"position": "Engineer", "companyName": "Acme", "description": "Designed and operated Kafka-based event pipelines."}]})
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    assert evidence.role_alignment.seniority_alignment is False
+    assert "Entry Level" in evidence.role_alignment.seniority_alignment_basis
+    assert "Senior" in evidence.role_alignment.seniority_alignment_basis
+    # And the strong evidence is still there too — visible side by side.
+    assert len(evidence.role_alignment.matched_signals) == 1
+    assert evidence.role_alignment.matched_signals[0].strength == "strong"
+
+
+def test_slash_joined_ab_testing_produces_meaningful_evidence_when_a_confirmed_role_signal() -> None:
+    # PASS 5 (PHASE 5): "A/B" used to tokenize into the two near-useless
+    # single-character tokens "A"/"B", leaving "testing" (a phrase-only
+    # term) with no significant neighbor to be rescued by — a real "A/B
+    # testing" requirement produced zero evidence. _merge_slash_tokens
+    # fixes this narrowly, without touching the tokenizer's character class.
+    candidate = Candidate(name="PM AB", title="Senior Product Manager", raw_data={})
+    intent = SearchIntent(
+        role=Role(title="Senior Product Manager"),
+        supporting_signals=["Running experiments (A/B testing) to validate product decisions."],
+    )
+    harvest = _pm_employment("Led A/B testing framework for product experimentation across multiple SaaS products.")
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    matches = evidence.role_alignment.matched_signals
+    assert len(matches) == 1
+    assert matches[0].matched_term == "a/b"
+    assert "A/B testing framework" in matches[0].evidence_text
+
+
+def test_generic_testing_still_rejected_after_the_slash_tokenizer_fix() -> None:
+    # The A/B fix must not loosen the PART 4/PASS 4 "testing" gate — a
+    # standalone "testing" requirement with no phrase context, matched
+    # against unrelated text, must still produce nothing.
+    candidate = Candidate(name="PM AB2", title="Senior Product Manager", raw_data={})
+    intent = SearchIntent(role=Role(title="Senior Product Manager"), supporting_signals=["Testing skills required."])
+    harvest = _pm_employment("Prior work involved testing technical decisions using legacy systems.")
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    assert evidence.role_alignment.matched_signals == []
+
+
+def test_harvest_failure_still_leaves_crustdata_evidence_intact_pass4() -> None:
+    candidate = Candidate(
+        name="StillHasCrustData",
+        title="Senior Backend Engineer",
+        raw_data={"basic_profile": {"headline": "Senior Backend Engineer building Kafka pipelines"}},
+    )
+    intent = SearchIntent(role=Role(title="Senior Backend Engineer"), core_signals=["Experience with Kafka."])
+    harvest = HarvestEvidence(success=False, error="timeout")
+
+    evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
+
+    matches = evidence.role_alignment.matched_signals
+    assert len(matches) == 1
+    assert matches[0].source == "headline"
+    assert matches[0].strength == "supporting"

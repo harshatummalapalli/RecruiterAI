@@ -12,11 +12,17 @@ from backend.services.candidate_evidence_builder import build_candidate_evidence
 # integration plan). CrustData sources ("current title", "headline", "past
 # role: ...") already read naturally with the generic "{source} mentions"
 # phrasing below and aren't in this map.
+#
+# PASS 4 (evidence quality, PART 2/6/12): demonstrated-work bullets now quote
+# the actual contextual sentence (`evidence_text`) the term was found in —
+# "Led A/B testing framework for product experimentation..." — instead of
+# the bare matched word ("work described there includes 'work'"). A matched
+# word is not evidence; a sentence a recruiter can verify is.
 _HARVEST_SOURCE_PHRASING = {
-    "harvest: employment description": lambda detail, term: f"{detail} — work described there includes “{term}”.",
-    "harvest: project": lambda detail, term: f"Built a project ({detail}) demonstrating “{term}”.",
-    "harvest: certification": lambda detail, term: f"Holds a certification: {detail}.",
-    "harvest: skill": lambda detail, term: f"Lists {detail} as a skill.",
+    "harvest: employment description": lambda detail, term, text: f"{detail} — “{text}”",
+    "harvest: project": lambda detail, term, text: f"Built a project ({detail}): “{text}”",
+    "harvest: certification": lambda detail, term, text: f"Holds a certification: {detail}.",
+    "harvest: skill": lambda detail, term, text: f"Lists {detail} as a skill.",
 }
 
 
@@ -49,7 +55,15 @@ class MatchExplainer:
         )
 
     def _to_signal_out(self, signal: MatchedSignal) -> MatchedSignalOut:
-        return MatchedSignalOut(tier=signal.tier, signal_text=signal.signal_text, matched_term=signal.matched_term, source=signal.source)
+        return MatchedSignalOut(
+            tier=signal.tier,
+            signal_text=signal.signal_text,
+            matched_term=signal.matched_term,
+            source=signal.source,
+            evidence_type=signal.evidence_type,
+            evidence_text=signal.evidence_text,
+            strength=signal.strength,
+        )
 
     def _why_this_candidate(self, evidence: CandidateEvidence, intent: SearchIntent) -> str:
         """One or two sentences, headline-aware by construction: this reuses
@@ -88,7 +102,7 @@ class MatchExplainer:
         for signal in alignment.matched_signals:
             phrasing = _HARVEST_SOURCE_PHRASING.get(signal.source)
             if phrasing:
-                items.append(phrasing(signal.evidence_detail, signal.matched_term))
+                items.append(phrasing(signal.evidence_detail, signal.matched_term, signal.evidence_text))
             else:
                 source = signal.source.capitalize() if signal.source else "Profile"
                 items.append(f"{source} mentions “{signal.matched_term}”.")

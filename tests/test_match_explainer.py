@@ -108,3 +108,100 @@ def test_explainer_reports_fit_as_unavailable_rather_than_omitting_it_silently()
 
     assert explanation.provider_fit is None
     assert any("fit" in note.lower() and "not returned" in note.lower() for note in explanation.what_we_dont_know)
+
+
+# ---------------------------------------------------------------------------
+# PASS 5 — Candidate Decision Card: strong_evidence and potential_concerns
+# are the two fields CandidateReviewScreen.tsx renders as independent
+# sections (a concern section only exists in the DOM when populated — see
+# `{selectedCandidate.potentialConcerns.length ? (...) : null}`). These
+# tests pin the data contract the UI relies on: evidence strength and
+# requirement concerns are computed independently and neither one hides,
+# empties, or overrides the other, regardless of which is strong/weak.
+# ---------------------------------------------------------------------------
+
+
+def test_strong_evidence_and_concern_are_both_populated_together() -> None:
+    candidate = Candidate(
+        name="StrongPlusConcern",
+        title="Senior Backend Engineer",
+        raw_data={
+            "basic_profile": {"headline": "Senior Backend Engineer building Kafka pipelines"},
+            "experience": {"employment_details": {"current": [{"seniority_level": "Entry Level"}]}},
+        },
+    )
+    intent = SearchIntent(role=Role(title="Senior Backend Engineer", seniority="Senior"), core_signals=["Experience with Kafka."])
+
+    explanation = MatchExplainer().explain(candidate, intent)
+
+    assert len(explanation.strong_evidence) >= 1
+    assert len(explanation.potential_concerns) == 1
+    assert "Entry Level" in explanation.potential_concerns[0]
+
+
+def test_strong_evidence_with_no_concern_produces_an_empty_concerns_list() -> None:
+    # The UI's empty-container guard (`potentialConcerns.length ? ... :
+    # null`) depends on this being an empty list, not a list with an empty
+    # placeholder string.
+    candidate = Candidate(
+        name="StrongNoConcern",
+        title="Senior Backend Engineer",
+        raw_data={
+            "basic_profile": {"headline": "Senior Backend Engineer building Kafka pipelines"},
+            "experience": {"employment_details": {"current": [{"seniority_level": "Senior"}]}},
+        },
+    )
+    intent = SearchIntent(role=Role(title="Senior Backend Engineer", seniority="Senior"), core_signals=["Experience with Kafka."])
+
+    explanation = MatchExplainer().explain(candidate, intent)
+
+    assert len(explanation.strong_evidence) >= 1
+    assert explanation.potential_concerns == []
+
+
+def test_concern_remains_visible_even_with_weak_or_no_strong_evidence() -> None:
+    candidate = Candidate(
+        name="WeakEvidenceConcern",
+        title="Data Engineer",
+        raw_data={"experience": {"employment_details": {"current": [{"seniority_level": "Entry Level"}]}}},
+    )
+    intent = SearchIntent(role=Role(title="Data Engineer", seniority="Senior"), core_signals=["Proficiency in Rust."])
+
+    explanation = MatchExplainer().explain(candidate, intent)
+
+    # No matched signal for "Rust" — evidence is effectively empty (only the
+    # generic provider-fit line could appear, and it doesn't here since fit
+    # wasn't returned) — but the concern must still be there regardless.
+    assert not any("rust" in item.lower() for item in explanation.strong_evidence)
+    assert len(explanation.potential_concerns) == 1
+
+
+def test_multiple_concerns_all_remain_visible() -> None:
+    # Seniority mismatch + tangential title relevance both fire as separate
+    # concerns for the same candidate — both must survive into the list,
+    # not just the first one found.
+    candidate = Candidate(
+        name="MultiConcern",
+        title="Junior Marketing Coordinator",
+        raw_data={"experience": {"employment_details": {"current": [{"seniority_level": "Entry Level"}]}}},
+    )
+    intent = SearchIntent(role=Role(title="Senior Backend Engineer", seniority="Senior"))
+
+    explanation = MatchExplainer().explain(candidate, intent)
+
+    assert len(explanation.potential_concerns) == 2
+    assert any("seniority" in item.lower() or "does not match" in item.lower() for item in explanation.potential_concerns)
+    assert any("verifying manually" in item.lower() for item in explanation.potential_concerns)
+
+
+def test_no_concern_leaves_potential_concerns_cleanly_empty() -> None:
+    candidate = Candidate(
+        name="CleanCandidate",
+        title="Senior Data Engineer",
+        raw_data={"experience": {"employment_details": {"current": [{"seniority_level": "Senior"}]}}},
+    )
+    intent = SearchIntent(role=Role(title="Senior Data Engineer", seniority="Senior"))
+
+    explanation = MatchExplainer().explain(candidate, intent)
+
+    assert explanation.potential_concerns == []

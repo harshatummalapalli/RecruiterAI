@@ -7,7 +7,7 @@ never as a guessed value or a false negative.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple
 
 
 @dataclass
@@ -61,6 +61,24 @@ class MatchedSignal:
     # employment description) — "" for CrustData sources, where the source
     # label itself is already descriptive enough.
     evidence_detail: str = ""
+    # PASS 4 (evidence quality): what KIND of evidence this is, independent
+    # of the JD-priority `tier` above — see backend/services/
+    # candidate_evidence_builder.py's TextSource metadata. One of
+    # "demonstrated_work" | "certification" | "named_skill" | "title_history"
+    # | "headline". Drives the STRONG/SUPPORTING hierarchy in `strength`.
+    evidence_type: str = ""
+    # The actual contextual quote the match was found in — a real sentence
+    # from an employment/project description, or the short source text
+    # itself for title/headline/cert/skill sources. Never just the bare
+    # matched word — "a matched word is not evidence" (PASS 4). This is what
+    # MatchExplainer renders to the recruiter instead of `matched_term`.
+    evidence_text: str = ""
+    # "strong" (demonstrated work in an employment description/project, or a
+    # third-party certification) | "supporting" (a named skill, a headline,
+    # or career/title history) — see PART 3 of the PASS 4 evidence-quality
+    # spec. Never influences ranking weight (CandidateRanker still keys off
+    # `tier`, unchanged) — this is presentation/trust metadata only.
+    strength: str = ""
 
 
 @dataclass
@@ -154,23 +172,25 @@ class CandidateEvidence:
     harvest_about: Optional[str] = None
     harvest_self_reported_experience: Optional[str] = None
 
-    def labeled_text_sources(self) -> List[Tuple[str, str, str]]:
+    def labeled_text_sources(self) -> List["TextSource"]:
         """Where signal-matching is allowed to look for literal evidence.
-        Each entry is (source_label, searchable_text, display_detail) —
-        source_label is the internal provenance tag (never shown to a
-        recruiter verbatim; MatchExplainer turns it into a natural sentence
-        using display_detail instead), searchable_text is what the literal
-        term-matching runs against, and display_detail is the human-
+        Each entry's `label` is the internal provenance tag (never shown to
+        a recruiter verbatim; MatchExplainer turns it into a natural
+        sentence using `detail`/`evidence_text` instead), `text` is what
+        contextual term-matching runs against, and `detail` is the human-
         readable item name (a certification title, project title, or
         "<title> at <company>") used to phrase that sentence — empty for
         CrustData sources, where the source label is already descriptive
         enough on its own.
 
-        Order is priority order (most-demonstrated evidence checked first,
-        so a term found in multiple places is attributed to the strongest
-        one — see Phase 5 of the Harvest integration plan): CrustData
-        title/headline/past-titles, then Harvest employment descriptions,
-        projects, certifications, skills.
+        Order is STRENGTH-first, not discovery order (PASS 4 / PART 7 —
+        "the strongest evidence source should determine the evidence
+        strength"): demonstrated-work sources (Harvest employment
+        descriptions, projects, certifications) are checked before
+        supporting sources (current title, headline, past-role titles,
+        Harvest named skills), so when the same concept is corroborated in
+        both a strong and a supporting source, the resulting single
+        MatchedSignal is attributed — and worded — from the strong one.
 
         Company/function industry tags are corporate classification
         strings (e.g. "Technology, Information and Internet"), not a
@@ -180,22 +200,38 @@ class CandidateEvidence:
         retrieval" expertise) — excluded for that reason, not merely for
         stoplist coverage. `about` is deliberately never included here —
         self-authored/unverified text must never feed signal-matching or
-        ranking."""
-        sources: List[Tuple[str, str, str]] = []
+        ranking. Follower/connection counts, `openToWork`/`hiring` flags,
+        and other profile metadata are never part of this list at all —
+        they were never extracted into any evidence field to begin with."""
+        sources: List[TextSource] = []
+        for role_label, text in self.harvest_employment_descriptions:
+            sources.append(TextSource("harvest: employment description", text, role_label, "demonstrated_work", "strong"))
+        for title, description in self.harvest_projects:
+            sources.append(TextSource("harvest: project", f"{title} {description}", title, "demonstrated_work", "strong"))
+        for cert in self.harvest_certifications:
+            sources.append(TextSource("harvest: certification", cert, cert, "certification", "strong"))
         if self.current_title:
-            sources.append(("current title", self.current_title, ""))
+            sources.append(TextSource("current title", self.current_title, "", "title_history", "supporting"))
         if self.headline:
-            sources.append(("headline", self.headline, ""))
+            sources.append(TextSource("headline", self.headline, "", "headline", "supporting"))
         for role in self.past_roles:
             if role.title:
                 label = f"past role: {role.title} at {role.company}" if role.company else f"past role: {role.title}"
-                sources.append((label, role.title, ""))
-        for role_label, text in self.harvest_employment_descriptions:
-            sources.append(("harvest: employment description", text, role_label))
-        for title, description in self.harvest_projects:
-            sources.append(("harvest: project", f"{title} {description}", title))
-        for cert in self.harvest_certifications:
-            sources.append(("harvest: certification", cert, cert))
+                sources.append(TextSource(label, role.title, "", "title_history", "supporting"))
         for skill in self.harvest_skills:
-            sources.append(("harvest: skill", skill, skill))
+            sources.append(TextSource("harvest: skill", skill, skill, "named_skill", "supporting"))
         return sources
+
+
+class TextSource(NamedTuple):
+    """One place signal-matching is allowed to search, plus the evidence
+    metadata that place implies. `evidence_type` is one of
+    "demonstrated_work" | "certification" | "named_skill" | "title_history"
+    | "headline"; `strength` is "strong" | "supporting" — see PART 3 of the
+    PASS 4 evidence-quality spec and MatchedSignal above."""
+
+    label: str
+    text: str
+    detail: str
+    evidence_type: str
+    strength: str

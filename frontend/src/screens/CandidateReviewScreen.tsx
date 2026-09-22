@@ -466,8 +466,11 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
               </div>
 
               {selectedCandidate.potentialConcerns.length ? (
-                <div className="brief-section">
-                  <h3 className="brief-section__title">Potential Concerns</h3>
+                <div className="brief-section brief-section--concerns">
+                  <h3 className="brief-section__title brief-section__title--concerns">
+                    <AlertTriangle size={15} aria-hidden="true" />
+                    Potential Concerns
+                  </h3>
                   <ul className="assessment-list assessment-list--concerns">
                     {selectedCandidate.potentialConcerns.map((item) => <li key={item}>{item}</li>)}
                   </ul>

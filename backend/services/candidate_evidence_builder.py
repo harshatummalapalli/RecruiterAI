@@ -14,6 +14,7 @@ evaluates a Backend Engineer search and a Lead Data Analyst search identically.
 """
 
 import re
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 from backend.models.candidate import Candidate
@@ -26,6 +27,7 @@ from backend.models.candidate_evidence import (
     PastRole,
     RoleAlignment,
     SearchEvidence,
+    TextSource,
     UncertaintyNote,
 )
 from backend.models.search_intent import SearchIntent
@@ -55,6 +57,14 @@ _WORD_RE = re.compile(r"[a-z0-9][a-z0-9+#.\-]*")
 # differentiating evidence. This list is broad-domain-agnostic (not tied to
 # any one role family) and only suppresses weak, near-universal terms from
 # being counted as a signal hit; it never blocks a specific technology name.
+#
+# PASS 4 (evidence quality): this stoplist is a SECONDARY aid, not the
+# primary fix for weak evidence — see _extract_signal_terms below, which
+# requires multi-word phrase context for most words. These entries are
+# words with essentially no standalone domain meaning in ANY phrase (a
+# temporal/business-generic connector, not a concept a candidate could
+# "demonstrate") — real PASS 3 regressions ("prior", "using", "decisions")
+# plus the same already-stopworded "engineer"/"engineering" family.
 _GENERIC_TERMS = {
     "data", "cloud", "production", "system", "systems", "service", "services",
     "platform", "platforms", "technology", "technologies", "experience",
@@ -69,7 +79,27 @@ _GENERIC_TERMS = {
     # "information retrieval" expertise, which it was not.
     "information", "internet", "consulting", "network", "networking",
     "digital", "computing", "enterprise", "product", "products", "business",
+    # PASS 4 regression fixes (PART 10 tests 3, 5, 6): pure connectors, never
+    # a checkable concept on their own or as part of a phrase.
+    "prior", "using", "use", "used", "decisions", "decision",
+    # Plural sibling of the "engineer"/"engineering" stopwords above, which
+    # were already excluded from title comparison but not from signal-term
+    # extraction — closing that gap.
+    "engineers",
 }
+
+# PASS 4 (evidence quality, PART 4/9): words that ARE real, checkable
+# concepts when they anchor a multi-word phrase a candidate could plausibly
+# demonstrate ("A/B testing", "technical leadership", "distributed systems
+# work") but carry no standalone meaning at all ("work described there
+# includes 'work'") — the exact PASS 3 regression. Unlike _GENERIC_TERMS,
+# these are never dropped from the candidate token stream entirely; they
+# just can never be the LONE word in a matched phrase — see
+# _extract_signal_terms's run-grouping below, which is what makes this rule
+# generalize (any word here becomes usable evidence again the moment the JD
+# sentence gives it a neighboring content word), rather than a role-specific
+# rule or a wholesale ban.
+_PHRASE_ONLY_TERMS = {"work", "working", "worked", "technical", "testing", "tested", "consumer", "consumers"}
 
 
 def _words(text: Optional[str]) -> List[str]:
@@ -80,19 +110,213 @@ def _significant_words(text: Optional[str], min_len: int = 3) -> List[str]:
     return [w for w in _words(text) if len(w) >= min_len and w not in _STOPWORDS]
 
 
-def _extract_signal_terms(sentence: str) -> List[str]:
+def _is_technical_token(original_token: str, *, sentence_initial: bool = False) -> bool:
+    """A capitalized proper-noun/acronym ("RAG", "Kafka", "Solr", "SaaS") or
+    a token carrying digits/symbols ("k8s", "c++", "c#") — the same class of
+    token the old capitalized-phrase regex looked for, but evaluated
+    per-token so it can participate in phrase-run grouping below. These are
+    specific and checkable enough to stand alone even at 1-2 characters, and
+    are exempt from the phrase-only restriction: a real technology name is
+    never "noise" merely for appearing without a neighbor.
+
+    `sentence_initial` must be set for the sentence's first token — ordinary
+    English capitalizes the first word of a sentence regardless of what it
+    is ("Testing skills required."), so capitalization alone is not a
+    proper-noun signal there; only a digit/symbol still counts."""
+    if not sentence_initial and len(original_token) >= 2 and original_token[0].isupper():
+        return True
+    return any(ch.isdigit() or ch in "+#" for ch in original_token)
+
+
+@dataclass
+class _SignalTerm:
+    """One candidate term extracted from a Core/Supporting/Differentiator
+    sentence — either a single distinctive word or a multi-word phrase run
+    (see _extract_signal_terms). `is_phrase` controls how matching is
+    performed: a phrase requires its words to co-occur in order within a
+    small window of the candidate's own text (real context), never a bare
+    substring check."""
+
+    words: List[str]
+    is_phrase: bool
+
+    @property
+    def key(self) -> str:
+        return " ".join(self.words)
+
+
+_TOKEN_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9+#.\-]*")
+
+
+def _merge_slash_tokens(tokens: List[str], spans: List[Tuple[int, int]], sentence: str) -> Tuple[List[str], List[Tuple[int, int]]]:
+    """PASS 5 (PART 5): '/' isn't in `_TOKEN_RE`'s character class, so
+    "A/B testing" tokenizes as the two near-useless single-character tokens
+    "A"/"B" plus "testing" — leaving "testing" (a phrase-only term) with no
+    significant neighbor to be rescued by, so a real "A/B testing"
+    requirement silently produced zero evidence. This merges any run of
+    tokens joined by a bare '/' (no surrounding space) back into one token
+    — "A/B", "C/C++" — right after tokenization, before significance is
+    ever evaluated. Smallest targeted fix: it touches only slash-joined
+    runs, not the tokenizer's character class itself. "C#" and ".NET"
+    already tokenize safely today ("C#" is one token since '#' is a
+    continuation character; ".NET" becomes "NET", which still matches
+    "...\\.NET..." via the existing word-boundary check since '.' isn't a
+    word character) and need no change here."""
+    merged_tokens: List[str] = []
+    merged_spans: List[Tuple[int, int]] = []
+    i = 0
+    while i < len(tokens):
+        j = i
+        while j + 1 < len(tokens) and sentence[spans[j][1] : spans[j + 1][0]] == "/":
+            j += 1
+        merged_tokens.append(sentence[spans[i][0] : spans[j][1]])
+        merged_spans.append((spans[i][0], spans[j][1]))
+        i = j + 1
+    return merged_tokens, merged_spans
+
+
+def _extract_signal_terms(sentence: str) -> List[_SignalTerm]:
     """Literal candidate terms to look for from one Core/Supporting/
-    Differentiator sentence — significant words (>=4 chars, not a stopword,
-    not a generic domain-restating noun) plus any capitalized multi-word
-    phrase in the ORIGINAL sentence (e.g. "Terraform", "Solr",
-    "OpenTelemetry"), lowercased for matching. This is generic text
-    extraction, not a role-specific dictionary."""
-    terms = set(w for w in _significant_words(sentence, min_len=4) if w not in _GENERIC_TERMS)
-    for match in re.finditer(r"\b[A-Z][A-Za-z0-9+#.]{2,}\b", sentence):
-        term = match.group(0).lower()
-        if term not in _GENERIC_TERMS:
-            terms.add(term)
-    return sorted(terms)
+    Differentiator sentence.
+
+    PASS 4 (evidence quality): the unit of extraction is no longer "every
+    individual significant word" — it's a PHRASE: a contiguous run of
+    significant words in the ORIGINAL sentence, tolerating at most one
+    intervening filler word (a stopword, a generic term, or a short word) so
+    that "data-driven performance work" is extracted and matched as ONE
+    three-word phrase, not three independent single-word terms. This is
+    what turns "work described there includes 'work'" into a rejected
+    match: nothing in a candidate's text says "data-driven performance
+    work" together, only the bare word "work" — which the phrase mechanism
+    never tests in isolation once it has a phrase-mate in the JD sentence.
+
+    A run of length 1 (no neighboring significant word in the JD sentence at
+    all) is still accepted as a standalone term UNLESS the word is in
+    `_PHRASE_ONLY_TERMS` and isn't a distinctive technical token — this is
+    what keeps genuinely single-concept evidence like "distributed",
+    "orchestration", "analytics", or "Kafka" working exactly as before,
+    while "testing"/"technical"/"work"/"consumer" only count when the JD
+    sentence itself gives them real phrase context.
+
+    Generic text extraction throughout — nothing here is a role-specific
+    dictionary."""
+    sentence = sentence or ""
+    raw_matches = list(_TOKEN_RE.finditer(sentence))
+    raw_tokens = [m.group(0) for m in raw_matches]
+    raw_spans = [m.span() for m in raw_matches]
+    tokens, spans = _merge_slash_tokens(raw_tokens, raw_spans, sentence)
+    # Trailing '.' stripped per token (sentence-ending punctuation, not part
+    # of the term — "Kafka." at the end of a sentence must match "Kafka");
+    # an internal '.' ("Node.js") is preserved since rstrip only trims the end.
+    tokens = [t.rstrip(".") for t in tokens]
+    keep = [bool(t) for t in tokens]
+    tokens = [t for t, k in zip(tokens, keep) if k]
+    spans = [s for s, k in zip(spans, keep) if k]
+
+    significant: List[bool] = []
+    proper: List[bool] = []
+    phrase_only: List[bool] = []
+    for i, tok in enumerate(tokens):
+        lower = tok.lower()
+        is_proper = _is_technical_token(tok, sentence_initial=(i == 0))
+        is_sig = lower not in _STOPWORDS and lower not in _GENERIC_TERMS and (len(lower) >= 4 or is_proper)
+        significant.append(is_sig)
+        proper.append(is_proper)
+        phrase_only.append(is_sig and lower in _PHRASE_ONLY_TERMS and not is_proper)
+
+    terms: List[_SignalTerm] = []
+    seen_keys: set = set()
+
+    def _add(term: _SignalTerm) -> None:
+        if term.key not in seen_keys:
+            seen_keys.add(term.key)
+            terms.append(term)
+
+    # Every ORDINARY significant word (not phrase-only) stands on its own,
+    # exactly as before PASS 4 — this is what keeps single-concept evidence
+    # like "distributed", "orchestration", "analytics", "stakeholder", or
+    # "Kafka" working unchanged: nothing about being grammatically near an
+    # unrelated JD word (e.g. "SQL" near "analytics" in "data to inform
+    # decisions (SQL or analytics tooling)") should ever suppress a term
+    # that is perfectly fine standing alone.
+    for i, tok in enumerate(tokens):
+        if significant[i] and not phrase_only[i]:
+            _add(_SignalTerm(words=[tok.lower()], is_phrase=False))
+
+    # Phrase-only words ("work", "testing", "technical", "consumer" — see
+    # _PHRASE_ONLY_TERMS) are the narrow exception: they never stand alone,
+    # only as part of a real contiguous run alongside another significant
+    # word in the SAME JD sentence — this is the actual fix for "work
+    # described there includes 'work'". A comma/semicolon/colon between two
+    # words is a hard break even within the gap tolerance below, since a JD
+    # sentence is frequently a comma-separated LIST of distinct concepts
+    # ("instrumentation, on-call, incident response, and data-driven
+    # performance work") — each list item gets its own run, not one
+    # unrealistic whole-list phrase.
+    runs: List[List[int]] = []
+    current: List[int] = []
+    gap = 0
+    prev_end: Optional[int] = None
+    for i, is_sig in enumerate(significant):
+        hard_break = False
+        if prev_end is not None:
+            between = sentence[prev_end : spans[i][0]]
+            hard_break = any(ch in between for ch in ",;:")
+        if is_sig:
+            if current and (gap > 1 or hard_break):
+                runs.append(current)
+                current = []
+            current.append(i)
+            gap = 0
+            prev_end = spans[i][1]
+        else:
+            gap += 1
+    if current:
+        runs.append(current)
+
+    for run in runs:
+        if len(run) < 2 or not any(phrase_only[i] for i in run):
+            continue  # no phrase-only member to rescue — already handled above (or correctly discarded if len==1 and phrase-only)
+        words = [tokens[i].lower() for i in run]
+        _add(_SignalTerm(words=words, is_phrase=True))
+    # Phrases first: when a source contains both a richer phrase match and a
+    # looser single-word match for the same sentence, prefer the phrase.
+    terms.sort(key=lambda t: (not t.is_phrase, t.key))
+    return terms
+
+
+_BOUNDARY_BEFORE = r"(?<![A-Za-z0-9])"
+_BOUNDARY_AFTER = r"(?![A-Za-z0-9])"
+# Up to 3 filler words tolerated between consecutive words of a matched
+# phrase — real context ("Led A/B testing framework for product
+# experimentation") without demanding the JD's exact wording verbatim.
+_PHRASE_GAP = r"(?:[A-Za-z0-9+#.\-]+\W+){0,3}"
+
+
+def _compile_term_pattern(term: _SignalTerm) -> "re.Pattern[str]":
+    if not term.is_phrase:
+        return re.compile(_BOUNDARY_BEFORE + re.escape(term.words[0]) + _BOUNDARY_AFTER, re.IGNORECASE)
+    pattern = _BOUNDARY_BEFORE + re.escape(term.words[0]) + _BOUNDARY_AFTER
+    for word in term.words[1:]:
+        pattern += r"\W+" + _PHRASE_GAP + _BOUNDARY_BEFORE + re.escape(word) + _BOUNDARY_AFTER
+    return re.compile(pattern, re.IGNORECASE)
+
+
+def _extract_context_sentence(text: str, match: "re.Match[str]") -> str:
+    """The sentence the match was actually found in, not the whole
+    (possibly paragraph-length) source text — "Led A/B testing framework
+    for product experimentation across multiple SaaS products.", not a full
+    employment description dumped verbatim. For short sources (a title, a
+    headline, a certification title) this naturally returns the whole
+    string, since there's no sentence punctuation to split on."""
+    start, end = match.span()
+    boundary_starts = [text.rfind(ch, 0, start) for ch in ".!?\n"]
+    sentence_start = max(boundary_starts) + 1 if max(boundary_starts) != -1 else 0
+    boundary_ends = [text.find(ch, end) for ch in ".!?\n"]
+    boundary_ends = [b for b in boundary_ends if b != -1]
+    sentence_end = min(boundary_ends) + 1 if boundary_ends else len(text)
+    snippet = text[sentence_start:sentence_end].strip()
+    return snippet or text.strip()
 
 
 def _classify_title_relevance(
@@ -156,14 +380,15 @@ def _build_role_alignment(evidence: CandidateEvidence, intent: SearchIntent) -> 
     )
     seniority_alignment, seniority_basis = _classify_seniority(evidence.current_seniority, intent.role.seniority)
 
-    # Sources are searched in order (current title, then headline, then past
-    # roles from most to least recent) so that when a term appears in more
-    # than one place, the explanation cites the most authoritative one —
-    # this is what lets an explanation say "Headline mentions X" instead of
-    # burying where the evidence actually came from in one flat text blob.
+    # Sources are searched in STRENGTH order (demonstrated work/certification
+    # before headline/title-history/named-skill — see TextSource docs on
+    # labeled_text_sources), so that when a term is corroborated in more
+    # than one place, the resulting single MatchedSignal is attributed to —
+    # and worded from — the strongest one (PASS 4 / PART 7), not merely
+    # whichever source happened to be checked first.
     sources = evidence.labeled_text_sources()
     matched: List[MatchedSignal] = []
-    seen_matches: set = set()  # (tier, matched_term) — avoid duplicate bullets for the same literal term
+    seen_matches: set = set()  # (tier, term.key) — avoid duplicate bullets for the same corroborated concept
     unmatched: List[MatchedSignal] = []
     tiered_signals = [
         ("core", intent.core_signals),
@@ -173,19 +398,31 @@ def _build_role_alignment(evidence: CandidateEvidence, intent: SearchIntent) -> 
     for tier, sentences in tiered_signals:
         for sentence in sentences:
             terms = _extract_signal_terms(sentence)
-            found_source, found_term, found_detail = None, None, ""
-            for label, text, detail in sources:
-                text_lower = (text or "").lower()
-                hit = next((term for term in terms if term in text_lower), None)
-                if hit:
-                    found_source, found_term, found_detail = label, hit, detail
+            patterns = [(term, _compile_term_pattern(term)) for term in terms]
+            found_source: Optional[TextSource] = None
+            found_term: Optional[_SignalTerm] = None
+            found_match: Optional["re.Match[str]"] = None
+            for source in sources:
+                for term, pattern in patterns:
+                    match = pattern.search(source.text or "")
+                    if match:
+                        found_source, found_term, found_match = source, term, match
+                        break
+                if found_term:
                     break
-            if found_term and (tier, found_term) not in seen_matches:
-                seen_matches.add((tier, found_term))
+            if found_term and (tier, found_term.key) not in seen_matches:
+                seen_matches.add((tier, found_term.key))
+                context = _extract_context_sentence(found_source.text or "", found_match) if found_match else ""
                 matched.append(
                     MatchedSignal(
-                        tier=tier, signal_text=sentence, matched_term=found_term,
-                        source=found_source, evidence_detail=found_detail,
+                        tier=tier,
+                        signal_text=sentence,
+                        matched_term=found_term.key,
+                        source=found_source.label,
+                        evidence_detail=found_source.detail,
+                        evidence_type=found_source.evidence_type,
+                        evidence_text=context,
+                        strength=found_source.strength,
                     )
                 )
             elif not found_term:
