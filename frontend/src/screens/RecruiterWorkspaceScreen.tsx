@@ -395,7 +395,7 @@ export function RecruiterWorkspaceScreen() {
           <SearchBriefReview
             brief={brief}
             onChange={updateBriefField}
-            onFindCandidates={handleFindCandidates}
+            onFindCandidates={() => handleFindCandidates()}
             onBackToJd={() => setStep('jd')}
             isSearching={searchState === 'searching'}
             searchState={searchState}
@@ -415,7 +415,7 @@ export function RecruiterWorkspaceScreen() {
             onChangeBrief={updateBriefField}
             searchResponse={searchResponse}
             searchState={searchState}
-            onRunSearch={handleFindCandidates}
+            onRunSearch={() => handleFindCandidates()}
             searchId={searchId}
           />
         ) : null}

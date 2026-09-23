@@ -494,6 +494,25 @@ export function searchIntentToBrief(intent: SearchIntent): SearchBrief {
       ? cities.map((city, index) => ({ city, state: states[index] ?? '', country, zip: '' }))
       : states.map((state) => ({ city: '', state, country, zip: '' }))
 
+  // A country-only confirmed intent (e.g. a Remote/"Anywhere in country"
+  // search boundary — see backend/services/search_translator.py's
+  // _structured_locations_from_boundary) has no city/state entries at all,
+  // so `locations` above comes back empty. Without the 'country' branch
+  // here, this fell through to 'global', silently dropping the country and
+  // searching with no location constraint at all instead of the country the
+  // recruiter actually chose. A single anchored city WITH a radius (e.g. an
+  // Onsite/Hybrid search boundary) must map to 'radius' specifically —
+  // briefToLocationDetail only reads brief.location.radius when geography is
+  // exactly 'radius', not 'multiple'.
+  const searchGeography: SearchGeography =
+    locations.length === 1 && intent.location.radius_miles != null
+      ? 'radius'
+      : locations.length > 0
+        ? 'multiple'
+        : country
+          ? 'country'
+          : 'global'
+
   return {
     role: {
       primaryTitle: intent.role.title ?? '',
@@ -511,11 +530,14 @@ export function searchIntentToBrief(intent: SearchIntent): SearchBrief {
       // an opt-in the recruiter chooses explicitly via "Edit brief" ->
       // Radius Search, pre-filled below so it's immediately usable rather
       // than blank when they do.
-      searchGeography: locations.length > 1 ? 'multiple' : locations.length === 1 ? 'multiple' : 'global',
+      searchGeography,
       country,
       locations,
-      radius: intent.location.radius_place ? '25' : '',
-      workModes: [],
+      // The recruiter's actual chosen radius (e.g. from an Onsite/Hybrid
+      // search boundary) — previously hardcoded to '25' regardless of what
+      // was actually confirmed, which was only ever right by coincidence.
+      radius: intent.location.radius_miles != null ? String(intent.location.radius_miles) : '',
+      workModes: normalizeWorkMode(intent.location.work_mode) ? [normalizeWorkMode(intent.location.work_mode) as WorkMode] : [],
     },
     experience: {
       minimumYears: intent.experience.minimum_years != null ? String(intent.experience.minimum_years) : '',
