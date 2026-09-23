@@ -317,7 +317,12 @@ def create_app(
     app = FastAPI(title="RecruiterAI API")
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://140.245.235.18"],
+        allow_origins=[
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://140.245.235.18",
+            "https://hire.dayzero.partners",
+        ],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

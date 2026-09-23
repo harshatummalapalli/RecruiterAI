@@ -97,17 +97,17 @@ def get_settings() -> Settings:
     return _settings
 
 
-def get_openai_api_key() -> str | None:
+def get_openai_api_key() -> Optional[str]:
     """Return the configured OpenAI API key from the environment or .env file."""
     return get_settings().openai_api_key
 
 
-def get_crustdata_api_key() -> str | None:
+def get_crustdata_api_key() -> Optional[str]:
     """Return the configured CrustData API key from the environment or .env file."""
     return get_settings().crustdata_api_key
 
 
-def get_harvest_api_key() -> str | None:
+def get_harvest_api_key() -> Optional[str]:
     """Return the configured HarvestAPI (harvestapi.io) API key from the environment or .env file."""
     return get_settings().harvest_api_key
 
@@ -118,17 +118,17 @@ def get_harvest_enrichment_top_n() -> int:
     return get_settings().harvest_enrichment_top_n
 
 
-def get_google_client_id() -> str | None:
+def get_google_client_id() -> Optional[str]:
     """Return the configured Google OAuth Client ID from the environment or .env file."""
     return get_settings().google_client_id
 
 
-def get_allowed_email_domain() -> str | None:
+def get_allowed_email_domain() -> Optional[str]:
     """Return the email domain allowed to log in from the environment or .env file."""
     return get_settings().allowed_email_domain
 
 
-def get_session_secret_key() -> str | None:
+def get_session_secret_key() -> Optional[str]:
     """Return the secret key used to sign session cookies."""
     return get_settings().session_secret_key
 

@@ -16,7 +16,7 @@ class Candidate(BaseModel):
     email: Optional[str] = None
     phone: Optional[str] = None
     provider_score: Optional[float] = None
-    final_score: float | None = None
+    final_score: Optional[float] = None
     profile_url: Optional[str] = None
     source: Optional[str] = None
     raw_data: Dict[str, Any] = Field(default_factory=dict)
