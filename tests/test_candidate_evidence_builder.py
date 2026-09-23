@@ -647,3 +647,95 @@ def test_harvest_failure_still_leaves_crustdata_evidence_intact_pass4() -> None:
     assert len(matches) == 1
     assert matches[0].source == "headline"
     assert matches[0].strength == "supporting"
+
+
+# ---------------------------------------------------------------------------
+# PASS 6 (product pass, section 7) — seniority must be evidence-based, not
+# taken from the provider-normalized field as ground truth. Regression for a
+# real live bug: a candidate whose current title was "Team Lead | Cyber
+# Incident Response" was flagged with a false seniority concern against a
+# "Lead" target purely because CrustData's own seniority_level field said
+# "Senior" — the title itself already directly confirmed the target.
+# ---------------------------------------------------------------------------
+
+
+def _candidate_with_seniority(title: str, provider_seniority: str | None, past_roles: list | None = None) -> Candidate:
+    current = [{"seniority_level": provider_seniority}] if provider_seniority else []
+    return Candidate(
+        name="Seniority",
+        title=title,
+        raw_data={
+            "experience": {
+                "employment_details": {
+                    "current": current,
+                    "past": past_roles or [],
+                }
+            }
+        },
+    )
+
+
+def test_provider_senior_but_current_title_says_team_lead_yields_no_concern_against_lead_target() -> None:
+    candidate = _candidate_with_seniority("Team Lead | Cyber Incident Response", "Senior")
+    intent = SearchIntent(role=Role(title="Data Analyst Lead", seniority="Lead"))
+
+    evidence = build_candidate_evidence(candidate, intent)
+
+    assert evidence.role_alignment.seniority_alignment is True
+    assert "current title" in evidence.role_alignment.seniority_alignment_basis.lower()
+
+
+def test_provider_senior_and_current_title_says_senior_engineer_yields_no_concern_against_senior_target() -> None:
+    candidate = _candidate_with_seniority("Senior Software Engineer", "Senior")
+    intent = SearchIntent(role=Role(title="Software Engineer", seniority="Senior"))
+
+    evidence = build_candidate_evidence(candidate, intent)
+
+    assert evidence.role_alignment.seniority_alignment is True
+
+
+def test_provider_senior_but_current_title_has_no_seniority_word_yields_concern_against_lead_target() -> None:
+    # No title evidence either confirms or contradicts "Lead" -- falls back
+    # to the provider field, which legitimately does not match "Lead".
+    candidate = _candidate_with_seniority("Software Engineer", "Senior")
+    intent = SearchIntent(role=Role(title="Software Engineer", seniority="Lead"))
+
+    evidence = build_candidate_evidence(candidate, intent)
+
+    assert evidence.role_alignment.seniority_alignment is False
+    assert "Senior" in evidence.role_alignment.seniority_alignment_basis
+    assert "Lead" in evidence.role_alignment.seniority_alignment_basis
+
+
+def test_provider_seniority_absent_and_no_title_evidence_yields_unknown_not_a_concern() -> None:
+    candidate = _candidate_with_seniority("Software Engineer", None)
+    intent = SearchIntent(role=Role(title="Software Engineer", seniority="Lead"))
+
+    evidence = build_candidate_evidence(candidate, intent)
+
+    assert evidence.role_alignment.seniority_alignment is None
+
+
+def test_current_title_absent_but_recent_past_role_names_the_target_seniority() -> None:
+    candidate = _candidate_with_seniority(
+        "", None, past_roles=[{"title": "Engineering Lead", "name": "Acme"}]
+    )
+    intent = SearchIntent(role=Role(title="Engineering Lead", seniority="Lead"))
+
+    evidence = build_candidate_evidence(candidate, intent)
+
+    assert evidence.role_alignment.seniority_alignment is True
+    assert "past role" in evidence.role_alignment.seniority_alignment_basis.lower()
+
+
+def test_contradictory_provider_and_title_evidence_lets_title_win() -> None:
+    # Provider says "Senior", title literally says "Junior" -- direct title
+    # evidence outranks the provider-normalized field either direction, not
+    # just when it happens to favor a "no concern" outcome.
+    candidate = _candidate_with_seniority("Junior Software Engineer", "Senior")
+    intent = SearchIntent(role=Role(title="Software Engineer", seniority="Junior"))
+
+    evidence = build_candidate_evidence(candidate, intent)
+
+    assert evidence.role_alignment.seniority_alignment is True
+    assert "current title" in evidence.role_alignment.seniority_alignment_basis.lower()

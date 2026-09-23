@@ -362,23 +362,58 @@ def _classify_title_relevance(
     return "unclear", "Current title/headline has no clear textual overlap with the target role; not verified either way."
 
 
-def _classify_seniority(candidate_seniority: Optional[str], target_seniority: Optional[str]) -> Tuple[Optional[bool], str]:
+def _classify_seniority(evidence: CandidateEvidence, target_seniority: Optional[str]) -> Tuple[Optional[bool], str]:
+    """Evidence-based, not provider-normalized-field-based. A real live
+    candidate exposed the bug this fixes: CrustData's own `seniority_level`
+    said "Senior" while the candidate's actual current title was "Team Lead
+    | Cyber Incident Response" against a "Lead" target — a false concern,
+    because the provider-normalized field was trusted as ground truth
+    instead of as one signal among several. `candidate.seniority_level` is a
+    SIGNAL, not TRUTH.
+
+    Evidence hierarchy, checked in order — the first one that actually says
+    something about the target seniority wins:
+    1. Current title (does it literally name the target seniority?)
+    2. The two most recent past-role titles (career trajectory)
+    3. Provider-normalized seniority field (last resort — no title evidence
+       either confirmed or contradicted the target)."""
     if not target_seniority:
         return None, "No target seniority was specified for this search."
-    if not candidate_seniority:
-        return None, "Candidate's seniority level was not returned by the provider."
-    candidate_norm = candidate_seniority.strip().lower()
     target_norm = target_seniority.strip().lower()
+    if not target_norm:
+        return None, "No target seniority was specified for this search."
+
+    title_sources: List[Tuple[str, Optional[str]]] = [("current title", evidence.current_title)]
+    for role in evidence.past_roles[:2]:
+        title_sources.append((f"recent past role (\"{role.title}\")" if role.title else "recent past role", role.title))
+
+    for label, text in title_sources:
+        if not text:
+            continue
+        if target_norm in text.strip().lower():
+            return True, f"Candidate's {label} directly names the target seniority (\"{target_seniority}\")."
+
+    candidate_seniority = evidence.current_seniority
+    if not candidate_seniority:
+        return (
+            None,
+            "Candidate's seniority level was not returned by the provider, and no title evidence "
+            "(current or recent past roles) confirms or contradicts the target seniority.",
+        )
+    candidate_norm = candidate_seniority.strip().lower()
     if candidate_norm == target_norm or candidate_norm in target_norm or target_norm in candidate_norm:
         return True, f"Candidate's seniority level (\"{candidate_seniority}\") aligns with the target (\"{target_seniority}\")."
-    return False, f"Candidate's seniority level (\"{candidate_seniority}\") does not match the target (\"{target_seniority}\")."
+    return False, (
+        f"Candidate's seniority level (\"{candidate_seniority}\") does not match the target (\"{target_seniority}\"), "
+        "and no title evidence (current or recent past roles) directly names the target seniority either."
+    )
 
 
 def _build_role_alignment(evidence: CandidateEvidence, intent: SearchIntent) -> RoleAlignment:
     title_relevance, title_basis = _classify_title_relevance(
         evidence.current_title, evidence.headline, intent.role.title, intent.titles.include_titles
     )
-    seniority_alignment, seniority_basis = _classify_seniority(evidence.current_seniority, intent.role.seniority)
+    seniority_alignment, seniority_basis = _classify_seniority(evidence, intent.role.seniority)
 
     # Sources are searched in STRENGTH order (demonstrated work/certification
     # before headline/title-history/named-skill — see TextSource docs on

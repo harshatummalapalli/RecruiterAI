@@ -301,7 +301,7 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
             <div className="brief-find-slot">
               {showError ? (
                 <div className="workspace__status workspace__status--error" role="alert">
-                  <p>We couldn't reach the search provider. You can try again.</p>
+                  <p>We couldn't complete this search. You can try again.</p>
                 </div>
               ) : null}
 
@@ -314,7 +314,7 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
                 {searchState === 'searching' ? (
                   <>
                     <span className="workspace__spinner" aria-hidden="true" />
-                    <span>Searching Crustdata…</span>
+                    <span>Searching the market…</span>
                   </>
                 ) : (
                   <span>Run Search Again</span>

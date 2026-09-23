@@ -107,9 +107,6 @@ class MatchExplainer:
                 source = signal.source.capitalize() if signal.source else "Profile"
                 items.append(f"{source} mentions “{signal.matched_term}”.")
 
-        if evidence.search_evidence.provider_fit == "strong":
-            items.append("Flagged by the search provider as a strong relevance fit for this query.")
-
         return items
 
     def _potential_concerns(self, evidence: CandidateEvidence) -> List[str]:
@@ -123,8 +120,5 @@ class MatchExplainer:
             concerns.append(
                 f"{alignment.title_relevance_basis} Worth verifying manually before treating this as a close match."
             )
-
-        if evidence.search_evidence.provider_fit == "weak":
-            concerns.append("The search provider flagged this candidate as a weak relevance fit for the query.")
 
         return concerns

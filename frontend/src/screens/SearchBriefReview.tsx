@@ -318,7 +318,7 @@ export function SearchBriefReview({
   searchState = 'idle',
   variant = 'standalone',
   submitLabel = 'Find Candidates',
-  submitBusyLabel = 'Searching Crustdata…',
+  submitBusyLabel = 'Searching the market…',
   backLabel = 'Back to JD',
   intakeContext,
 }: SearchBriefReviewProps) {
@@ -712,7 +712,7 @@ export function SearchBriefReview({
         <div className="brief-find-slot">
           {searchState === 'error' ? (
             <div className="workspace__status workspace__status--error" role="alert">
-              <p>Unable to reach the search provider.</p>
+              <p>Unable to complete this search.</p>
               <button type="button" className="workspace__retry" onClick={onFindCandidates}>
                 Retry
               </button>

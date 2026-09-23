@@ -64,14 +64,20 @@ def test_explainer_treats_unknown_seniority_as_neither_strength_nor_concern() ->
     assert not any("seniority" in item.lower() for item in explanation.potential_concerns)
 
 
-def test_explainer_surfaces_provider_fit_when_present() -> None:
+def test_explainer_keeps_provider_fit_internal_never_in_recruiter_facing_text() -> None:
+    # PASS 6 (product pass, section 8/11): provider_fit is preserved as
+    # internal/debug data (the field itself), but must never phrase into a
+    # recruiter-facing bullet — the recruiter should never see language that
+    # implies a search provider made the call ("flagged by the provider").
     candidate = Candidate(name="Fit Fiona", title="Data Engineer", raw_data={"fit": "strong"})
     intent = SearchIntent(role=Role(title="Data Engineer"))
 
     explanation = MatchExplainer().explain(candidate, intent)
 
     assert explanation.provider_fit == "strong"
-    assert any("strong relevance fit" in item.lower() for item in explanation.strong_evidence)
+    recruiter_facing_text = " ".join([explanation.why_this_candidate, *explanation.strong_evidence, *explanation.potential_concerns]).lower()
+    for banned_term in ("provider", "flagged", "relevance fit"):
+        assert banned_term not in recruiter_facing_text
 
 
 def test_explainer_never_leaks_internal_ranking_vocabulary_into_recruiter_text() -> None:
@@ -95,8 +101,13 @@ def test_explainer_never_leaks_internal_ranking_vocabulary_into_recruiter_text()
     ).lower()
     # Internal ranking-weight bucket names must never appear as words in
     # recruiter-facing text, and neither should our internal discovery-query
-    # strategy names.
-    for internal_term in ("core signal", "supporting signal", "differentiator signal", "natural_language", "title_expansion"):
+    # strategy names or provider/enrichment plumbing (PASS 6, section 11 —
+    # the recruiter experiences "RecruiterAI researched these candidates,"
+    # never which provider or enrichment stage supplied what).
+    for internal_term in (
+        "core signal", "supporting signal", "differentiator signal", "natural_language", "title_expansion",
+        "crustdata", "harvest", "apify", "provider", "enrichment", "enriched",
+    ):
         assert internal_term not in recruiter_facing_text
 
 
@@ -122,6 +133,11 @@ def test_explainer_reports_fit_as_unavailable_rather_than_omitting_it_silently()
 
 
 def test_strong_evidence_and_concern_are_both_populated_together() -> None:
+    # Target seniority is "Lead" (not "Senior") so the candidate's own title
+    # text doesn't happen to name it — this is what lets the provider's
+    # "Entry Level" field legitimately produce a concern under the PASS 6
+    # evidence-based seniority rule (see test_classify_seniority_* below for
+    # the direct coverage of that rule itself).
     candidate = Candidate(
         name="StrongPlusConcern",
         title="Senior Backend Engineer",
@@ -130,7 +146,7 @@ def test_strong_evidence_and_concern_are_both_populated_together() -> None:
             "experience": {"employment_details": {"current": [{"seniority_level": "Entry Level"}]}},
         },
     )
-    intent = SearchIntent(role=Role(title="Senior Backend Engineer", seniority="Senior"), core_signals=["Experience with Kafka."])
+    intent = SearchIntent(role=Role(title="Senior Backend Engineer", seniority="Lead"), core_signals=["Experience with Kafka."])
 
     explanation = MatchExplainer().explain(candidate, intent)
 
