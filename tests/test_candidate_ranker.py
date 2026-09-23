@@ -193,3 +193,36 @@ def test_rerank_top_n_with_no_harvest_evidence_leaves_order_unchanged() -> None:
     reranked = ranker.rerank_top_n(baseline, intent, {}, top_n=5)
 
     assert [c.name for c in reranked] == [c.name for c in baseline]
+
+
+def test_rerank_top_n_at_phase_3_scale_15_of_25_tail_still_exactly_preserved() -> None:
+    # Same invariant as the A-G test above, at Phase 3's actual scale: a
+    # 25-candidate baseline pool, enrich/rerank the top 15, positions 16-25
+    # (index 15 onward) must be byte-identical to baseline, in both order
+    # and score. No CandidateRanker code change was needed for this to work
+    # — rerank_top_n already took top_n as a plain parameter.
+    intent = SearchIntent(role=Role(title="Data Engineer"), core_signals=["Proficiency in Python."])
+    names = [chr(ord("A") + i) for i in range(25)]  # A..Y
+    candidates = {
+        name: Candidate(candidate_id=name, name=name, title="Data Engineer", raw_data={}, provider_score=0.0)
+        for name in names
+    }
+
+    ranker = CandidateRanker()
+    baseline = ranker.rank(list(candidates.values()), intent)
+    assert [c.name for c in baseline] == names  # identical score/title -> alphabetical tiebreak
+
+    baseline_tail = [(c.name, c.final_score) for c in baseline[15:]]
+
+    # Strong Harvest evidence for two candidates deep in the enriched slice.
+    harvest_by_id = {
+        candidates["N"].candidate_id: HarvestEvidence(raw={"element": {"skills": [{"name": "Python"}]}}, success=True),
+        candidates["O"].candidate_id: HarvestEvidence(raw={"element": {"skills": [{"name": "Python"}]}}, success=True),
+    }
+
+    reranked = ranker.rerank_top_n(baseline, intent, harvest_by_id, top_n=15)
+
+    assert [(c.name, c.final_score) for c in reranked[15:]] == baseline_tail
+    assert set(c.name for c in reranked[:15]) == set(names[:15])
+    # The two enriched-with-evidence candidates now lead the investigated slice.
+    assert set(c.name for c in reranked[:2]) == {"N", "O"}

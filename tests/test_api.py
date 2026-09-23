@@ -833,3 +833,184 @@ def test_auth_logout_clears_session(monkeypatch) -> None:
 
     response = client.post("/parse-jd", json={"jd_text": "Need a Python engineer"})
     assert response.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 — retrieval sizing is backend-owned, not the frontend's
+# ---------------------------------------------------------------------------
+
+
+def test_search_endpoint_uses_backend_discovery_defaults_when_caller_omits_page_size(monkeypatch) -> None:
+    monkeypatch.setenv("DISCOVERY_PAGE_SIZE", "50")
+    monkeypatch.setenv("DISCOVERY_MAX_PAGES", "1")
+    import backend.config as config_module
+
+    config_module._settings = None
+    config_module._settings_env_signature = None
+
+    ProviderRegistry._providers.clear()
+    provider = OptionAwareProvider()
+    ProviderRegistry.register("options", provider)
+
+    app = create_app(
+        jd_parser=JDParser(provider=FakeParser()),
+        search_planner=SearchPlanner(),
+        query_expander=QueryExpansionService(),
+        capability_mapper=CapabilityMapper(),
+        provider_registry=ProviderRegistry,
+        candidate_merger=CandidateMerger(),
+        candidate_ranker=CandidateRanker(),
+        match_explainer=MatchExplainer(),
+        search_diagnostics=SearchDiagnostics(),
+        excel_exporter=ExcelExporter(),
+    )
+    client = TestClient(app)
+    _login(client)
+    # No page_size/max_pages in the request body at all — exactly what the
+    # real frontend now sends (Phase 3 removed those fields client-side).
+    response = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "options"})
+
+    assert response.status_code == 200
+    assert provider.seen_options[0]["page_size"] == 50
+    assert provider.seen_options[0]["max_pages"] == 1
+
+
+def test_search_endpoint_still_honors_an_explicit_page_size_override() -> None:
+    # Already covered by test_search_endpoint_passes_provider_options above
+    # (page_size=7 passed explicitly survives untouched) — this just names
+    # that contract explicitly for Phase 3's "backend decides, but a caller
+    # CAN still override" requirement.
+    ProviderRegistry._providers.clear()
+    provider = OptionAwareProvider()
+    ProviderRegistry.register("options", provider)
+    app = create_app(
+        jd_parser=JDParser(provider=FakeParser()),
+        search_planner=SearchPlanner(),
+        query_expander=QueryExpansionService(),
+        capability_mapper=CapabilityMapper(),
+        provider_registry=ProviderRegistry,
+        candidate_merger=CandidateMerger(),
+        candidate_ranker=CandidateRanker(),
+        match_explainer=MatchExplainer(),
+        search_diagnostics=SearchDiagnostics(),
+        excel_exporter=ExcelExporter(),
+    )
+    client = TestClient(app)
+    _login(client)
+    response = client.post(
+        "/search",
+        json={"jd_text": "Need a Python engineer", "provider": "options", "page_size": 12},
+    )
+    assert response.status_code == 200
+    assert provider.seen_options[0]["page_size"] == 12
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 — adaptive discovery threshold (title expansion skip/run)
+# ---------------------------------------------------------------------------
+
+
+def _candidate(idx: int, query_name: str) -> Candidate:
+    return Candidate(
+        candidate_id=f"{query_name}-{idx}",
+        name=f"Candidate {query_name}-{idx}",
+        title="Software Engineer",
+        raw_data={"matched_queries": [query_name]},
+    )
+
+
+class _TwoQueryProvider(BaseProvider):
+    """Returns a configurable number of unique candidates for the primary
+    natural_language query and the supplementary title_expansion query, and
+    records which sub-plans it was actually called with — lets a test assert
+    exactly how many provider calls happened and with which query names."""
+
+    def __init__(self, primary_count: int, expansion_count: int = 5) -> None:
+        self.primary_count = primary_count
+        self.expansion_count = expansion_count
+        self.calls: list = []
+
+    def search(self, plan):
+        return self.search_with_options(plan)
+
+    def search_with_options(self, plan, options=None):
+        query_names = [q.query_name for q in plan.searches]
+        self.calls.append(query_names)
+        candidates = []
+        if "natural_language" in query_names:
+            candidates += [_candidate(i, "natural_language") for i in range(self.primary_count)]
+        if "title_expansion" in query_names:
+            candidates += [_candidate(i, "title_expansion") for i in range(self.expansion_count)]
+        return candidates
+
+
+def _two_query_plan():
+    from backend.models.search_plan import SearchPlan, SearchQuery
+
+    return SearchPlan(
+        searches=[
+            SearchQuery(query_name="natural_language", natural_language_query="Senior Backend Engineer"),
+            SearchQuery(query_name="title_expansion", include_titles=["Backend Engineer", "Software Engineer"]),
+        ]
+    )
+
+
+def test_title_expansion_is_skipped_when_primary_pool_already_meets_the_target() -> None:
+    provider = _TwoQueryProvider(primary_count=30)  # >= DISCOVERY_TARGET_POOL_SIZE (25)
+    candidates, executed_plan = api_module._run_adaptive_discovery(
+        provider=provider,
+        mapped_plan=_two_query_plan(),
+        options={},
+        candidate_merger=CandidateMerger(),
+        target_pool_size=api_module.DISCOVERY_TARGET_POOL_SIZE,
+    )
+    assert provider.calls == [["natural_language"]]  # title_expansion never ran
+    assert len(executed_plan.searches) == 1
+    assert len(candidates) == 30
+
+
+def test_title_expansion_still_runs_when_primary_unique_pool_is_thin() -> None:
+    provider = _TwoQueryProvider(primary_count=3)  # well below the target
+    candidates, executed_plan = api_module._run_adaptive_discovery(
+        provider=provider,
+        mapped_plan=_two_query_plan(),
+        options={},
+        candidate_merger=CandidateMerger(),
+        target_pool_size=api_module.DISCOVERY_TARGET_POOL_SIZE,
+    )
+    assert provider.calls == [["natural_language"], ["title_expansion"]]
+    assert len(executed_plan.searches) == 2
+    assert len(candidates) == 3 + 5
+
+
+def test_adaptive_discovery_decision_uses_merged_unique_count_not_raw_count() -> None:
+    # 30 raw candidates from the primary query, but they're all the SAME
+    # underlying person (duplicate candidate_id) -- the decision to skip
+    # title expansion must be based on the deduplicated count (1), not the
+    # raw count (30), so title expansion must still run here.
+    class DuplicateHeavyProvider(BaseProvider):
+        def __init__(self):
+            self.calls = []
+
+        def search(self, plan):
+            return self.search_with_options(plan)
+
+        def search_with_options(self, plan, options=None):
+            query_names = [q.query_name for q in plan.searches]
+            self.calls.append(query_names)
+            if "natural_language" in query_names:
+                return [
+                    Candidate(candidate_id="same-person", name="Same Person", raw_data={"matched_queries": ["natural_language"]})
+                    for _ in range(30)
+                ]
+            return [_candidate(i, "title_expansion") for i in range(5)]
+
+    provider = DuplicateHeavyProvider()
+    candidates, executed_plan = api_module._run_adaptive_discovery(
+        provider=provider,
+        mapped_plan=_two_query_plan(),
+        options={},
+        candidate_merger=CandidateMerger(),
+        target_pool_size=api_module.DISCOVERY_TARGET_POOL_SIZE,
+    )
+    assert provider.calls == [["natural_language"], ["title_expansion"]]

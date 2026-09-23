@@ -1,3 +1,6 @@
+import threading
+import time
+
 import httpx
 import pytest
 
@@ -219,3 +222,129 @@ def test_service_retries_a_previously_failed_enrichment() -> None:
 
     assert attempted == ["https://www.linkedin.com/in/a"]  # retried
     assert results["1"].success is True
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 — bounded concurrency, actually verified (not just configured)
+# ---------------------------------------------------------------------------
+
+
+def test_default_top_n_and_concurrency_match_phase_3_config(monkeypatch) -> None:
+    monkeypatch.delenv("HARVEST_ENRICHMENT_TOP_N", raising=False)
+    monkeypatch.delenv("HARVEST_ENRICHMENT_CONCURRENCY", raising=False)
+    import backend.config as config_module
+
+    config_module._settings = None
+    config_module._settings_env_signature = None
+
+    class StubClient:
+        def is_configured(self):
+            return False
+
+    service = HarvestEnrichmentService(client=StubClient())
+    assert service.top_n == 15
+    assert service.concurrency == 3
+
+
+def test_concurrency_is_bounded_and_genuinely_parallel_not_silently_sequential() -> None:
+    # "Actually verify that concurrency is real" -- a lock-protected counter
+    # around the real fetch calls, independent of the service's own tracking,
+    # so this test doesn't just trust the implementation's self-report.
+    lock = threading.Lock()
+    active = 0
+    peak = 0
+
+    class SlowClient:
+        def is_configured(self):
+            return True
+
+        def fetch_profile(self, profile_url, **kwargs):
+            nonlocal active, peak
+            with lock:
+                active += 1
+                peak = max(peak, active)
+            time.sleep(0.15)
+            with lock:
+                active -= 1
+            return {"element": {}}
+
+    service = HarvestEnrichmentService(client=SlowClient(), top_n=9, concurrency=3)
+    candidates = [_candidate(str(i), f"https://www.linkedin.com/in/{i}") for i in range(9)]
+
+    started = time.perf_counter()
+    results = service.enrich_top_n(candidates)
+    elapsed = time.perf_counter() - started
+
+    assert len(results) == 9
+    assert all(r.success for r in results.values())
+    # Never exceeded the configured bound...
+    assert peak <= 3
+    # ...but genuinely concurrent, not accidentally sequential (9 sequential
+    # calls at 0.15s each would take ~1.35s; bounded-at-3 should take ~0.45s).
+    assert peak >= 2
+    assert elapsed < 1.0
+
+    diag = service.last_enrichment_diagnostics
+    assert diag is not None
+    assert diag.selected_count == 9
+    assert diag.attempted_count == 9
+    assert diag.successful_count == 9
+    assert diag.failed_count == 0
+    assert diag.concurrency_limit == 3
+    assert diag.max_observed_concurrency == peak
+    assert diag.max_observed_concurrency <= 3
+    assert len(diag.latencies_ms) == 9
+
+
+def test_one_failure_among_concurrent_calls_does_not_affect_the_others() -> None:
+    class MixedClient:
+        def is_configured(self):
+            return True
+
+        def fetch_profile(self, profile_url, **kwargs):
+            if "fail" in profile_url:
+                raise httpx.TimeoutException("timed out")
+            return {"element": {"about": "ok"}}
+
+    candidates = [
+        _candidate("1", "https://www.linkedin.com/in/fail"),
+        _candidate("2", "https://www.linkedin.com/in/ok-a"),
+        _candidate("3", "https://www.linkedin.com/in/ok-b"),
+    ]
+    service = HarvestEnrichmentService(client=MixedClient(), top_n=3, concurrency=3)
+    results = service.enrich_top_n(candidates)
+
+    assert results["1"].success is False
+    assert results["1"].error == "timeout"
+    assert results["2"].success is True
+    assert results["3"].success is True
+
+    diag = service.last_enrichment_diagnostics
+    assert diag.successful_count == 2
+    assert diag.failed_count == 1
+
+
+def test_diagnostics_total_cost_ignores_missing_cost_metadata() -> None:
+    class NoCostClient:
+        def is_configured(self):
+            return True
+
+        def fetch_profile(self, profile_url, **kwargs):
+            return {"element": {}}  # no "cost" key at all
+
+    service = HarvestEnrichmentService(client=NoCostClient(), top_n=2, concurrency=2)
+    candidates = [_candidate(str(i), f"https://www.linkedin.com/in/{i}") for i in range(2)]
+
+    results = service.enrich_top_n(candidates)
+
+    assert all(r.success for r in results.values())
+    diag = service.last_enrichment_diagnostics
+    assert diag.total_cost == 0.0  # never raises, never becomes None/NaN
+
+
+def test_selection_policy_is_isolated_and_overridable() -> None:
+    # The V1 policy is a plain top-N slice, exposed as its own method so a
+    # future strategy can replace it without touching fetch/concurrency.
+    service = HarvestEnrichmentService(client=None, top_n=2)
+    candidates = [_candidate(str(i), f"https://www.linkedin.com/in/{i}") for i in range(5)]
+    assert [c.candidate_id for c in service._select_for_enrichment(candidates)] == ["0", "1"]
