@@ -14,6 +14,11 @@ A JD mentioning something is not the same as the JD requiring it. For every requ
 Title is a label, not evidence of primary identity by itself. When the JD gives an explicit responsibility breakdown, percentage split, or clearly dominant framing, that breakdown IS the primary-identity evidence — weigh it over the title.
 
 ============================================================
+HIRING COMPANY — the employer, never the candidate's own current employer
+============================================================
+`hiring_company` is the company actually doing the hiring for this role — not any company mentioned as an example of the candidate's background, and never a staffing/recruiting agency's own name if the text also names the actual client/employer separately. Set `value` only when the employer is genuinely identifiable: a named company in the opening line ("At Epiq, your work..."), "Join <Company>", a letterhead/signature, or an unambiguous "who is hiring" statement. If the text never names the employer, or only vaguely gestures at "a fast-growing company" with no name, leave `value` null — do not guess a company name from partial context (a client name mentioned in passing, a tool/platform name, a competitor mentioned for comparison). Getting this wrong has a real cost: it is used to exclude that company's current employees from the candidate search, so prefer leaving it null over a weak guess.
+
+============================================================
 LOCATION MUST BE STRUCTURED, NEVER A SENTENCE
 ============================================================
 `explicit_constraints.locations` is a list of clean, structured entries — city/state/country only. For a US state, always use the FULL STATE NAME ("New York", "Texas"), never the two-letter postal abbreviation ("NY", "TX") — the candidate database matches on the full name, and an abbreviation will silently match nothing. It must NEVER contain work-mode words (remote, hybrid, onsite), commute-frequency phrases ("3-4 days a week", "in office"), or any other prose — those belong exclusively in `work_mode`, never in a location field. For "New York, NY, hybrid 3-4 days a week": `locations: [{"city": "New York", "state": "NY", "country": "United States"}]` and `work_mode: "hybrid, 3-4 days a week"` — never let the location entry become the whole phrase. If the input names more than one acceptable location (e.g. "New York or Austin"), return one entry per location. If a country isn't stated but is confidently inferable from context (e.g. a US state code), infer it conservatively; otherwise leave it null rather than guessing.
@@ -46,6 +51,7 @@ Return ONLY valid JSON:
 {
   "posted_title": "<the literal title as written in the input, verbatim — not your interpretation of it. Null only if the input genuinely has no title line.>",
   "primary_candidate_identity": {"value": "<short label>", "evidence": "<quote or close paraphrase from the text>", "source": "explicit|inferred"},
+  "hiring_company": {"value": "<the employer's name, or null if not genuinely identifiable — see HIRING COMPANY above>", "evidence": "<quote/paraphrase, or null>", "source": "explicit|inferred"},
   "candidate_archetype": {"value": "<one sentence — what kind of person, in plain language>", "evidence": "<quote/paraphrase>", "source": "explicit|inferred"},
   "role_interpretation": {"value": "<2-3 sentences per the ROLE INTERPRETATION instructions above>", "evidence": "<the single strongest supporting quote/paraphrase>", "source": "explicit|inferred"},
   "seniority_scope": {"value": "<label>", "evidence": "<quote/paraphrase>", "source": "explicit|inferred"},

@@ -96,6 +96,12 @@
   align-items: start;
 }
 
+/* The JD composer step has no sidebar (the instant live preview was
+   removed) — a single, full-width column instead of an empty 300px gap. */
+.workspace__grid--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 /* Title row */
 
 .workspace__title-row {

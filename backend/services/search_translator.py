@@ -16,7 +16,7 @@ from typing import List, Optional
 
 from backend.models.hiring_intent import ConfirmedHiringIntent, StructuredLocation
 from backend.models.intake import IntakeResult, LocationEntry
-from backend.models.search_intent import Experience, Location, Role, SearchIntent, Titles
+from backend.models.search_intent import CompanyPreferences, Experience, Location, Role, SearchIntent, Titles
 from backend.providers.crustdata import SUPPORTED_EMPLOYMENT_TYPES
 from backend.services.query_expansion import QueryExpansionService
 
@@ -162,9 +162,11 @@ def build_confirmed_hiring_intent(result: IntakeResult) -> ConfirmedHiringIntent
     role = result.role_understanding
     decision = result.decision
     constraints = role.explicit_constraints
+    hiring_company = (role.hiring_company.value or "").strip() or None
 
     return ConfirmedHiringIntent(
         posted_title=role.posted_title,
+        hiring_company=hiring_company,
         candidate_identity=role.primary_candidate_identity.value or "",
         seniority=role.seniority_scope.value,
         experience_minimum_years=constraints.experience_minimum_years,
@@ -176,10 +178,15 @@ def build_confirmed_hiring_intent(result: IntakeResult) -> ConfirmedHiringIntent
         work_mode=constraints.work_mode,
         employment_type=constraints.employment_type,
         exclude_titles=list(constraints.exclusions),
-        # Company preferences aren't extracted by Task A/B today — left empty
-        # rather than fabricated; a real future addition, not guessed here.
         preferred_companies=[],
-        exclude_current_companies=[],
+        # Default: exclude current employees of the company actually doing
+        # the hiring — "hiring for Epiq" must never mean "find people who
+        # already work at Epiq." Only ever the hiring company itself (never
+        # invented from weak evidence, per RoleUnderstanding.hiring_company);
+        # the recruiter can remove it on the Search Brief like any other
+        # company-exclude entry, and nothing downstream re-derives or
+        # re-applies it once set.
+        exclude_current_companies=[hiring_company] if hiring_company else [],
         preferred_company_types=[],
         core_search_signals=list(decision.final_search_intent.hard_requirements),
         supporting_search_signals=list(decision.final_search_intent.strong_signals),
@@ -217,6 +224,14 @@ def to_search_intent(intent: ConfirmedHiringIntent, query_expander: Optional[Que
         titles=Titles(
             include_titles=[title for title in expanded_titles if title != normalized_identity],
             exclude_titles=list(intent.exclude_titles),
+        ),
+        # Previously omitted entirely here, so exclude_current_companies/
+        # preferred_company_types silently reset to empty regardless of what
+        # ConfirmedHiringIntent carried — the actual root cause of current
+        # employees of the hiring company reaching search results.
+        company_preferences=CompanyPreferences(
+            exclude_current_companies=list(intent.exclude_current_companies),
+            preferred_company_types=list(intent.preferred_company_types),
         ),
         natural_language_search_query=natural_language_search_query,
         # Preserved as structured lists too (not just flattened into the NL

@@ -191,6 +191,9 @@ def _record_from_dict(data: Dict[str, Any]) -> IntakeSessionRecord:
             role_understanding=RoleUnderstanding(
                 posted_title=ru.get("posted_title"),
                 primary_candidate_identity=FieldValue(**ru["primary_candidate_identity"]),
+                # .get(...) or {} (not bracket access): sessions persisted
+                # before this field existed won't have this key at all.
+                hiring_company=FieldValue(**(ru.get("hiring_company") or {})),
                 candidate_archetype=FieldValue(**ru["candidate_archetype"]),
                 role_interpretation=FieldValue(**(ru.get("role_interpretation") or {})),
                 seniority_scope=FieldValue(**ru["seniority_scope"]),

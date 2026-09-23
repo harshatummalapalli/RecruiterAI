@@ -62,6 +62,13 @@ class RoleUnderstanding:
     # legitimately differ from it (see role_interpretation).
     posted_title: Optional[str] = None
     primary_candidate_identity: FieldValue = field(default_factory=FieldValue)
+    # The company actually doing the hiring (the employer), not the
+    # candidate's own current employer — set only when genuinely
+    # identifiable from the text (a named employer, "Join <Company>",
+    # letterhead/signature), never guessed. Drives a default
+    # exclude-current-employees-of-this-company filter — see
+    # backend/services/search_translator.py's build_confirmed_hiring_intent.
+    hiring_company: FieldValue = field(default_factory=FieldValue)
     candidate_archetype: FieldValue = field(default_factory=FieldValue)
     # A 2-3 sentence, evidence-grounded explanation of what the role actually
     # is, why (citing specific JD evidence), what obvious confusion a
@@ -180,6 +187,7 @@ def role_understanding_to_dict(understanding: RoleUnderstanding) -> Dict[str, An
     return {
         "posted_title": understanding.posted_title,
         "primary_candidate_identity": vars(understanding.primary_candidate_identity),
+        "hiring_company": vars(understanding.hiring_company),
         "candidate_archetype": vars(understanding.candidate_archetype),
         "role_interpretation": vars(understanding.role_interpretation),
         "seniority_scope": vars(understanding.seniority_scope),

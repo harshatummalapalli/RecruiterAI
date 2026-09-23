@@ -1,15 +1,13 @@
 // The single canonical model for a recruiter's search brief.
 //
 // Every screen reads from and writes to this same shape. It is populated in
-// three non-destructive stages — local extraction, AI parse, recruiter edit —
-// each of which enriches the object rather than replacing it. A field, once
-// manually edited by the recruiter, is "locked" and future local/AI merges
-// leave it alone.
+// two non-destructive stages — AI parse, recruiter edit — each of which
+// enriches the object rather than replacing it. A field, once manually
+// edited by the recruiter, is "locked" and future AI merges leave it alone.
 
 import type { SearchIntent } from '../types'
 import type { LocationEntry } from '../screens/localJdExtraction'
 import { normalizeSkillList, rootTechLabelForSkill } from '../screens/localJdExtraction'
-import { buildRecruiterIntent } from '../intelligence/recruiterIntent'
 import { expandTitle } from '../intelligence/titleIntelligence'
 import { createEmptyAiConceptFlags, type AiConceptFlags } from '../intelligence/technologyGraph'
 import { DEFAULT_EXCLUDED_TITLES } from '../intelligence/types'
@@ -127,74 +125,6 @@ function withholdAmbiguousTech(skills: string[], ambiguousCandidates: string[]):
     return skills
   }
   return skills.filter((skill) => !ambiguousCandidates.includes(rootTechLabelForSkill(skill) ?? ''))
-}
-
-/** Stage 1 — live, local, heuristic. Runs on every keystroke while the
- * recruiter types the JD. The Search Brief is no longer an independent
- * interpretation of the JD — it's a structured implementation of Recruiter
- * Intent. This function's only job is mapping the canonical intent into the
- * legacy SearchBrief shape the UI already binds to, respecting whichever
- * fields the recruiter has locked by editing them directly. */
-export function applyLocalExtraction(brief: SearchBrief, jdText: string, locked: ReadonlySet<string>): SearchBrief {
-  const intent = buildRecruiterIntent(jdText)
-
-  let next: SearchBrief = {
-    ...brief,
-    role: {
-      ...brief.role,
-      primaryTitle: locked.has('role.primaryTitle') ? brief.role.primaryTitle : intent.titleProfile.primaryTitle,
-      seniority: locked.has('role.seniority') ? brief.role.seniority : intent.seniority ?? '',
-    },
-    aiFocus: intent.technologyProfile.aiConcepts,
-    location: {
-      ...brief.location,
-      locations: locked.has('location.locations') ? brief.location.locations : intent.locationStrategy.locations,
-      country: locked.has('location.country') ? brief.location.country : (intent.locationStrategy.country ?? ''),
-      workModes: locked.has('location.workModes') ? brief.location.workModes : intent.locationStrategy.workModes,
-    },
-    experience: {
-      minimumYears: locked.has('experience.minimumYears')
-        ? brief.experience.minimumYears
-        : intent.experienceStrategy.minimumYears != null ? String(intent.experienceStrategy.minimumYears) : '',
-      maximumYears: locked.has('experience.maximumYears')
-        ? brief.experience.maximumYears
-        : intent.experienceStrategy.maximumYears != null ? String(intent.experienceStrategy.maximumYears) : '',
-    },
-    skills: {
-      ...brief.skills,
-      required: locked.has('skills.required') ? brief.skills.required : intent.requiredSkills,
-      preferred: locked.has('skills.preferred') ? brief.skills.preferred : intent.preferredSkills,
-      primaryTechnology: locked.has('skills.primaryTechnology')
-        ? brief.skills.primaryTechnology
-        : { candidates: intent.primaryTechnologies, mode: null, selected: null },
-    },
-    employmentTypes: locked.has('employmentTypes') ? brief.employmentTypes : intent.employmentModel,
-  }
-
-  // Multi-language reasoning already happened inside the Technology
-  // Understanding stage of the pipeline (intelligence/technologyAnalysis.ts)
-  // — only leave this unresolved (mode: null) when that stage was genuinely
-  // unsure. In every other case, apply the same resolution a recruiter
-  // would have picked, so a clarifying question is never asked for
-  // something the pipeline could already answer from the text.
-  if (!locked.has('skills.primaryTechnology') && intent.primaryTechnologies.length > 1) {
-    switch (intent.technologyProfile.languageSignal) {
-      case 'polyglot':
-        next = resolveMultiplePrimaryTechnologies(next)
-        break
-      case 'primary-with-support':
-        if (intent.technologyProfile.languageDominant) {
-          next = resolveSinglePrimaryTechnology(next, intent.technologyProfile.languageDominant)
-        }
-        break
-      case 'acceptable-backgrounds':
-        next = resolveAcceptableBackgrounds(next)
-        break
-      // 'ambiguous' or null — leave mode null; the clarification engine will ask.
-    }
-  }
-
-  return next
 }
 
 /** Stage 2 — AI parse. Enriches empty/unlocked fields with the backend's understanding; never blanks a field the recruiter already has. */

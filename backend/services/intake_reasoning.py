@@ -321,6 +321,7 @@ def parse_role_understanding(data: Dict[str, Any]) -> RoleUnderstanding:
     return RoleUnderstanding(
         posted_title=data.get("posted_title"),
         primary_candidate_identity=_parse_field_value(data.get("primary_candidate_identity")),
+        hiring_company=_parse_field_value(data.get("hiring_company")),
         candidate_archetype=_parse_field_value(data.get("candidate_archetype")),
         role_interpretation=_parse_field_value(data.get("role_interpretation")),
         seniority_scope=_parse_field_value(data.get("seniority_scope")),

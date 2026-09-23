@@ -33,12 +33,14 @@ def _result(
     nl_query: str = "A role description.",
     seniority: str | None = "Senior",
     exclusions=None,
+    hiring_company: str | None = None,
 ) -> IntakeResult:
     return IntakeResult(
         raw_input="irrelevant for these tests",
         role_understanding=RoleUnderstanding(
             posted_title=posted_title or identity,
             primary_candidate_identity=FieldValue(value=identity, source="explicit"),
+            hiring_company=FieldValue(value=hiring_company, source="explicit" if hiring_company else None),
             seniority_scope=FieldValue(value=seniority),
             core_capabilities=[CapabilityItem(value=v, tier_signal="required") for v in (core or [])],
             explicit_constraints=ExplicitConstraints(
@@ -349,3 +351,64 @@ def test_role_type_sweep_never_produces_free_text_location_or_sentence_titles() 
         assert len((intent.role.title or "").split()) <= 6
         assert intent.skills.required_skills == []
         assert intent.ranking.must_have == []
+
+
+# ---------------------------------------------------------------------------
+# L — hiring company exclusion (section 3): "hiring for Epiq" must never
+# mean "find people who already work at Epiq." Covers both stages of the
+# translator, since to_search_intent previously dropped this field entirely
+# even when build_confirmed_hiring_intent correctly populated it.
+# ---------------------------------------------------------------------------
+
+
+def test_hiring_company_known_excludes_current_company() -> None:
+    result = _result("Data Analyst Lead", hiring_company="Epiq")
+
+    confirmed = build_confirmed_hiring_intent(result)
+    assert confirmed.hiring_company == "Epiq"
+    assert confirmed.exclude_current_companies == ["Epiq"]
+
+    intent = to_search_intent(confirmed)
+    assert intent.company_preferences.exclude_current_companies == ["Epiq"]
+
+
+def test_no_hiring_company_yields_no_invented_exclusion() -> None:
+    result = _result("Data Analyst Lead", hiring_company=None)
+
+    confirmed = build_confirmed_hiring_intent(result)
+    assert confirmed.hiring_company is None
+    assert confirmed.exclude_current_companies == []
+
+    intent = to_search_intent(confirmed)
+    assert intent.company_preferences.exclude_current_companies == []
+
+
+def test_former_employees_are_never_excluded_by_construction() -> None:
+    # The exclusion only ever reaches company_preferences.exclude_current_companies
+    # (CrustData's filter is explicitly scoped to CURRENT employment — see
+    # backend/providers/crustdata.py) -- it must never leak into a title
+    # exclusion or any other field that could affect a candidate's past roles.
+    result = _result("Data Analyst Lead", hiring_company="Epiq", exclusions=["Director"])
+
+    intent = translate(result)
+    assert intent.company_preferences.exclude_current_companies == ["Epiq"]
+    assert "Epiq" not in intent.titles.exclude_titles
+    assert intent.titles.exclude_titles == ["Director"]
+
+
+def test_recruiter_override_is_not_overwritten_by_translation() -> None:
+    # Simulates a recruiter editing the Search Brief's company-exclude list
+    # after confirmation (as frontend/src/models/searchBrief.ts's
+    # briefToSearchIntent would) — the translator must never re-derive or
+    # re-apply the original hiring-company exclusion once the recruiter has
+    # changed it; nothing downstream reads hiring_company again.
+    result = _result("Data Analyst Lead", hiring_company="Epiq")
+    confirmed = build_confirmed_hiring_intent(result)
+    intent = to_search_intent(confirmed)
+    assert intent.company_preferences.exclude_current_companies == ["Epiq"]
+
+    intent.company_preferences.exclude_current_companies = []
+    assert intent.company_preferences.exclude_current_companies == []
+
+    intent.company_preferences.exclude_current_companies = ["Some Other Co"]
+    assert intent.company_preferences.exclude_current_companies == ["Some Other Co"]

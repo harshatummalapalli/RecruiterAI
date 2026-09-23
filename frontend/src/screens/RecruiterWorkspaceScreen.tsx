@@ -9,7 +9,6 @@ import {
   confirmIntake,
 } from '../services/recruiterWorkflow'
 import {
-  applyLocalExtraction,
   briefToSearchIntent,
   briefToLocationDetail,
   createEmptySearchBrief,
@@ -18,14 +17,13 @@ import {
 } from '../models/searchBrief'
 import type { IntakeIssue, IntakeResult } from '../models/intake'
 import { SearchBriefReview } from './SearchBriefReview'
-import { LivingBrief } from './LivingBrief'
 import { CandidateReviewScreen } from './CandidateReviewScreen'
 import { DebugPanel } from './DebugPanel'
 import type { SearchResponse } from '../types'
 import './RecruiterWorkspaceScreen.css'
 
 type ParseState = 'idle' | 'parsing' | 'success' | 'error'
-type Step = 'jd' | 'intake' | 'brief' | 'review'
+type Step = 'jd' | 'brief' | 'review'
 type SearchState = 'idle' | 'searching' | 'done' | 'error'
 type IntakeState = 'idle' | 'loading' | 'answering' | 'confirming' | 'ready' | 'error'
 
@@ -76,34 +74,6 @@ function getGreeting(hour: number): string {
   return 'Good evening'
 }
 
-function formatExperience(minimumYears: string, maximumYears: string): string | null {
-  if (!minimumYears && !maximumYears) return null
-  if (minimumYears && maximumYears) return `${minimumYears}–${maximumYears} years`
-  if (minimumYears) return `${minimumYears}+ years`
-  return `Up to ${maximumYears} years`
-}
-
-function formatLocations(brief: SearchBrief): string | null {
-  if (!brief.location.locations.length) return null
-  const labels = brief.location.locations
-    .map((entry) => [entry.city, entry.state, entry.country].filter((part) => part.trim()).join(', '))
-    .filter(Boolean)
-  return labels.length ? labels.join(' · ') : null
-}
-
-function capitalize(value: string): string {
-  return value.charAt(0).toUpperCase() + value.slice(1)
-}
-
-function PreviewRow({ label, value }: { label: string; value: string | null }) {
-  return (
-    <div className="workspace__preview-row">
-      <dt>{label}</dt>
-      <dd className={value ? '' : 'workspace__preview-value--empty'}>{value ?? 'Not detected yet'}</dd>
-    </div>
-  )
-}
-
 export function RecruiterWorkspaceScreen() {
   const [jdText, setJdText] = useState('')
   const [brief, setBrief] = useState<SearchBrief>(createEmptySearchBrief)
@@ -114,6 +84,7 @@ export function RecruiterWorkspaceScreen() {
   const [intakeSessionId, setIntakeSessionId] = useState<string | null>(null)
   const [intakeResult, setIntakeResult] = useState<IntakeResult | null>(null)
   const [intakeState, setIntakeState] = useState<IntakeState>('idle')
+  const [hiringCompanyPrefilled, setHiringCompanyPrefilled] = useState(false)
   const [searchState, setSearchState] = useState<SearchState>('idle')
   const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null)
   const [searchId, setSearchId] = useState<string | null>(null)
@@ -154,17 +125,6 @@ export function RecruiterWorkspaceScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Stage 1 — local extraction. Recomputes on every keystroke and writes
-  // straight into the canonical SearchBrief; fields the recruiter has
-  // manually edited are locked and left untouched.
-  useEffect(() => {
-    if (step !== 'jd') {
-      return
-    }
-    setBrief((current) => applyLocalExtraction(current, jdText, lockedFields))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [jdText, step])
-
   useEffect(() => {
     if (isEditingTitle) {
       titleInputRef.current?.focus()
@@ -189,10 +149,28 @@ export function RecruiterWorkspaceScreen() {
     setIsEditingTitle(false)
   }
 
+  // Once intake reaches "ready" (no pending questions/contradictions), turn
+  // it into the executable SearchIntent server-side (build_confirmed_hiring_
+  // intent + to_search_intent — see backend/services/search_translator.py)
+  // and populate the editable Search Brief immediately, so the recruiter
+  // sees interpretation and the executable brief together on one screen
+  // rather than confirming only at the moment they click Search.
+  const confirmAndPopulateBrief = async (sessionId: string) => {
+    setIntakeState('confirming')
+    try {
+      const confirmedIntent = await confirmIntake(sessionId)
+      setBrief(searchIntentToBrief(confirmedIntent))
+      setHiringCompanyPrefilled(Boolean(confirmedIntent.company_preferences?.exclude_current_companies?.length))
+      setIntakeState('ready')
+    } catch {
+      setIntakeState('error')
+    }
+  }
+
   // RecruiterAI understands the role before searching: submit the raw input
   // to the backend intake reasoning layer (Task A / Task B / contradiction
   // backstop — see backend/services/intake_reasoning.py) and show the
-  // Living Brief. No local heuristic decides what to ask any more; the
+  // Search Brief. No local heuristic decides what to ask any more; the
   // backend is the sole authority on ambiguity/questions.
   const handleParse = async () => {
     if (!hasJdText) {
@@ -201,13 +179,18 @@ export function RecruiterWorkspaceScreen() {
 
     setParseState('parsing')
     setIntakeState('loading')
+    setHiringCompanyPrefilled(false)
     try {
       const { session_id, result } = await startIntake(jdText)
       setIntakeSessionId(session_id)
       setIntakeResult(result)
-      setIntakeState(result.status === 'ready' ? 'ready' : 'idle')
       setParseState('success')
-      setStep('intake')
+      setStep('brief')
+      if (result.status === 'ready') {
+        await confirmAndPopulateBrief(session_id)
+      } else {
+        setIntakeState('idle')
+      }
     } catch {
       setParseState('error')
       setIntakeState('error')
@@ -222,43 +205,11 @@ export function RecruiterWorkspaceScreen() {
     try {
       const { result } = await answerIntake(intakeSessionId, issue.id, value, label)
       setIntakeResult(result)
-      setIntakeState(result.status === 'ready' ? 'ready' : 'idle')
-    } catch {
-      setIntakeState('error')
-    }
-  }
-
-  // Confirms the intake into the existing SearchIntent shape, applies it onto
-  // the existing SearchBrief model (reusing the untouched Search Brief ->
-  // search pipeline), then searches directly — the recruiter is not routed
-  // through a form unless they explicitly choose "Edit brief".
-  const handleSearchFromIntake = async () => {
-    if (!intakeSessionId) {
-      return
-    }
-    setIntakeState('confirming')
-    try {
-      const confirmedIntent = await confirmIntake(intakeSessionId)
-      const nextBrief = searchIntentToBrief(confirmedIntent)
-      setBrief(nextBrief)
-      setParseState('success')
-      await handleFindCandidates(nextBrief)
-    } catch {
-      setIntakeState('error')
-    }
-  }
-
-  const handleEditBriefFromIntake = async () => {
-    if (!intakeSessionId) {
-      return
-    }
-    setIntakeState('confirming')
-    try {
-      const confirmedIntent = await confirmIntake(intakeSessionId)
-      const nextBrief = searchIntentToBrief(confirmedIntent)
-      setBrief(nextBrief)
-      setIntakeState('ready')
-      setStep('brief')
+      if (result.status === 'ready') {
+        await confirmAndPopulateBrief(intakeSessionId)
+      } else {
+        setIntakeState('idle')
+      }
     } catch {
       setIntakeState('error')
     }
@@ -307,15 +258,11 @@ export function RecruiterWorkspaceScreen() {
     setIntakeSessionId(null)
     setIntakeResult(null)
     setIntakeState('idle')
+    setHiringCompanyPrefilled(false)
     setSearchState('idle')
     setSearchResponse(null)
     setSearchId(null)
   }
-
-  const locationText = formatLocations(brief)
-  const experienceText = formatExperience(brief.experience.minimumYears, brief.experience.maximumYears)
-  const requiredSkillsText = brief.skills.required.length ? brief.skills.required.join(', ') : null
-  const preferredSkillsText = brief.skills.preferred.length ? brief.skills.preferred.join(', ') : null
 
   return (
     <main className="workspace">
@@ -344,7 +291,7 @@ export function RecruiterWorkspaceScreen() {
         </header>
 
         {step === 'jd' ? (
-          <div className="workspace__grid">
+          <div className="workspace__grid workspace__grid--single">
             <section className="workspace__composer" aria-label="Job description composer">
               <div className="workspace__title-row">
                 {isEditingTitle ? (
@@ -430,45 +377,10 @@ export function RecruiterWorkspaceScreen() {
                 </div>
               </div>
             </section>
-
-            <aside className="workspace__preview" aria-label="Live preview">
-              <p className="workspace__preview-label">Live preview</p>
-
-              {hasJdText ? (
-                <dl className="workspace__preview-list">
-                  <PreviewRow label="Role title" value={brief.role.primaryTitle || null} />
-                  <PreviewRow label="Location" value={locationText} />
-                  <PreviewRow
-                    label="Work mode"
-                    value={brief.location.workModes.length ? brief.location.workModes.map(capitalize).join(', ') : null}
-                  />
-                  <PreviewRow label="Experience" value={experienceText} />
-                  <PreviewRow label="Required skills" value={requiredSkillsText} />
-                  <PreviewRow label="Preferred skills" value={preferredSkillsText} />
-                  <PreviewRow
-                    label="Employment type"
-                    value={brief.employmentTypes.length ? brief.employmentTypes.join(', ') : null}
-                  />
-                </dl>
-              ) : (
-                <p className="workspace__preview-empty">Start typing to see a live preview.</p>
-              )}
-            </aside>
           </div>
         ) : null}
 
-        {step === 'intake' && intakeResult ? (
-          <LivingBrief
-            result={intakeResult}
-            onAnswer={handleAnswerIntake}
-            onSearch={handleSearchFromIntake}
-            onEdit={handleEditBriefFromIntake}
-            isAnswering={intakeState === 'answering'}
-            isConfirming={intakeState === 'confirming'}
-          />
-        ) : null}
-
-        {step === 'brief' ? (
+        {step === 'brief' && intakeResult ? (
           <SearchBriefReview
             brief={brief}
             onChange={updateBriefField}
@@ -476,6 +388,12 @@ export function RecruiterWorkspaceScreen() {
             onBackToJd={() => setStep('jd')}
             isSearching={searchState === 'searching'}
             searchState={searchState}
+            intakeContext={{
+              result: intakeResult,
+              onAnswer: handleAnswerIntake,
+              isAnswering: intakeState === 'answering',
+              hiringCompanyPrefilled,
+            }}
           />
         ) : null}
 

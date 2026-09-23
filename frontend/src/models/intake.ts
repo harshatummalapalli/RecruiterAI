@@ -38,6 +38,11 @@ export type RoleUnderstanding = {
   // interpretation. May legitimately differ from primary_candidate_identity.
   posted_title: string | null
   primary_candidate_identity: FieldValue
+  // The employer actually doing the hiring, when genuinely identifiable —
+  // never the candidate's own current employer. Drives a default
+  // exclude-current-employees-of-this-company filter (see
+  // backend/services/search_translator.py).
+  hiring_company: FieldValue
   candidate_archetype: FieldValue
   // The 2-3 sentence, evidence-grounded, teaching-grade explanation of what
   // the role actually is — the main educational content of the brief.

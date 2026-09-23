@@ -19,6 +19,10 @@ class StructuredLocation:
 @dataclass
 class ConfirmedHiringIntent:
     posted_title: Optional[str] = None
+    # The employer doing the hiring, when genuinely identifiable — see
+    # RoleUnderstanding.hiring_company. Drives the default
+    # exclude_current_companies below; never invented from weak evidence.
+    hiring_company: Optional[str] = None
     # Task A's understanding of who is being hired. NOT guaranteed to be
     # title-shaped (it can be a descriptive phrase) — the Search Translator,
     # not this object, is responsible for normalizing it before it is ever
