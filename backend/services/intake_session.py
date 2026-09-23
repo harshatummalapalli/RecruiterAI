@@ -19,8 +19,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from backend.models.intake import IntakeIssue, IntakeResult
-from backend.services.intake_reasoning import IntakeReasoner, infer_backstop_category
+from backend.models.intake import IntakeIssue, IntakeResult, SearchBoundary
+from backend.services.intake_reasoning import IntakeReasoner, apply_search_boundary, infer_backstop_category
 from backend.services.search_store import SearchStore
 
 DEFAULT_INTAKE_STORAGE_DIR = Path(__file__).resolve().parents[2] / "output" / "intake_sessions"
@@ -41,6 +41,12 @@ class IntakeSessionRecord:
     raw_input: str
     answers: List[RecordedAnswer] = field(default_factory=list)
     result: Optional[IntakeResult] = None
+    # The recruiter-confirmed search boundary from intake start, if any —
+    # authoritative for hiring company/location/work mode at confirm time
+    # (see backend/services/search_translator.py's build_confirmed_hiring_
+    # intent). None for any caller that doesn't submit one (backward
+    # compatible with the pre-boundary intake flow).
+    boundary: Optional[SearchBoundary] = None
 
 
 def _augment_raw_input(raw_input: str, answers: List[RecordedAnswer]) -> str:
@@ -96,11 +102,15 @@ class IntakeSessionManager:
         self._reasoner = reasoner or IntakeReasoner()
         self._store = store or SearchStore(storage_dir=DEFAULT_INTAKE_STORAGE_DIR)
 
-    def start(self, raw_input: str) -> IntakeSessionRecord:
+    def start(self, raw_input: str, boundary: Optional[SearchBoundary] = None) -> IntakeSessionRecord:
         session_id = str(uuid.uuid4())
+        # Task A/B run on raw_input alone, unmodified by the boundary — see
+        # apply_search_boundary's docstring for why that independence matters.
         result = self._reasoner.run(raw_input)
+        if boundary is not None:
+            apply_search_boundary(result, boundary)
         _assign_issue_ids(result)
-        record = IntakeSessionRecord(session_id=session_id, raw_input=raw_input, answers=[], result=result)
+        record = IntakeSessionRecord(session_id=session_id, raw_input=raw_input, answers=[], result=result, boundary=boundary)
         self._save(record)
         return record
 
@@ -134,6 +144,8 @@ class IntakeSessionManager:
 
         augmented_input = _augment_raw_input(record.raw_input, record.answers)
         result = self._reasoner.run(augmented_input)
+        if record.boundary is not None:
+            apply_search_boundary(result, record.boundary)
         _assign_issue_ids(result)
         _suppress_resolved_issues(result, record.answers)
 
@@ -162,6 +174,7 @@ def _record_to_dict(record: IntakeSessionRecord) -> Dict[str, Any]:
         "raw_input": record.raw_input,
         "answers": [dataclasses.asdict(answer) for answer in record.answers],
         "result": dataclasses.asdict(record.result) if record.result else None,
+        "boundary": dataclasses.asdict(record.boundary) if record.boundary else None,
     }
 
 
@@ -218,9 +231,13 @@ def _record_from_dict(data: Dict[str, Any]) -> IntakeSessionRecord:
             status=result_data.get("status", "ready"),
         )
 
+    boundary_data = data.get("boundary")
+    boundary = SearchBoundary(**boundary_data) if boundary_data else None
+
     return IntakeSessionRecord(
         session_id=data["session_id"],
         raw_input=data["raw_input"],
         answers=[RecordedAnswer(**answer) for answer in data.get("answers", [])],
         result=result,
+        boundary=boundary,
     )

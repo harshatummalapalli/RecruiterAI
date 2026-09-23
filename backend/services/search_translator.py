@@ -15,7 +15,7 @@ import re
 from typing import List, Optional
 
 from backend.models.hiring_intent import ConfirmedHiringIntent, StructuredLocation
-from backend.models.intake import IntakeResult, LocationEntry
+from backend.models.intake import IntakeResult, LocationEntry, SearchBoundary
 from backend.models.search_intent import CompanyPreferences, Experience, Location, Role, SearchIntent, Titles
 from backend.providers.crustdata import SUPPORTED_EMPLOYMENT_TYPES
 from backend.services.query_expansion import QueryExpansionService
@@ -150,10 +150,43 @@ def _fallback_natural_language_query(
     return ". ".join(parts)
 
 
-def build_confirmed_hiring_intent(result: IntakeResult) -> ConfirmedHiringIntent:
+def _structured_locations_from_boundary(boundary: SearchBoundary) -> List[StructuredLocation]:
+    """The recruiter's explicit geographic scope, translated into the same
+    StructuredLocation list shape Task A's own extraction already produces
+    — _flatten_locations (unchanged) handles all of these identically
+    regardless of source."""
+    if boundary.work_mode in ("onsite", "hybrid"):
+        return [StructuredLocation(city=boundary.city, state=boundary.state, country=boundary.country)]
+    # Remote.
+    if boundary.remote_scope == "cities" and boundary.remote_cities:
+        return [StructuredLocation(city=city, country=boundary.country) for city in boundary.remote_cities]
+    if boundary.remote_scope == "states" and boundary.remote_states:
+        return [StructuredLocation(state=state, country=boundary.country) for state in boundary.remote_states]
+    # "anywhere" (or an unrecognized/empty scope, conservatively treated the
+    # same way) — country-level only, no city/state anchor.
+    return [StructuredLocation(country=boundary.country)]
+
+
+def _radius_place_from_boundary(boundary: SearchBoundary) -> Optional[str]:
+    if boundary.work_mode not in ("onsite", "hybrid") or not boundary.city:
+        return None
+    return ", ".join(part for part in [boundary.city, normalize_state(boundary.state)] if part)
+
+
+def build_confirmed_hiring_intent(result: IntakeResult, boundary: Optional[SearchBoundary] = None) -> ConfirmedHiringIntent:
     """Stage 1: IntakeResult -> Confirmed Hiring Intent. Refuses while any
     ask issue is pending — a contradictory or otherwise unresolved intake
-    must never silently become an executable search."""
+    must never silently become an executable search.
+
+    `boundary`, when present, is authoritative for hiring company, location,
+    work mode, and radius — the recruiter's own explicit choices from the
+    intake form, never re-derived from or overwritten by Task A's JD
+    reading (see backend/services/intake_reasoning.py's apply_search_
+    boundary, which already reconciled any conflict between the two before
+    this point — by the time we get here, the boundary is what the
+    recruiter confirmed should be used). Falls back to Task A's own
+    best-effort extraction only when no boundary was submitted at all
+    (backward compatible with intake sessions that predate this field)."""
     if result.status != "ready" or result.pending_ask_issues:
         raise ValueError(
             "Cannot build a Confirmed Hiring Intent while the intake still has unresolved questions or contradictions."
@@ -162,7 +195,22 @@ def build_confirmed_hiring_intent(result: IntakeResult) -> ConfirmedHiringIntent
     role = result.role_understanding
     decision = result.decision
     constraints = role.explicit_constraints
-    hiring_company = (role.hiring_company.value or "").strip() or None
+
+    if boundary is not None:
+        hiring_company = (boundary.hiring_company or "").strip() or None
+        locations = _structured_locations_from_boundary(boundary)
+        work_mode = boundary.work_mode
+        radius_miles = boundary.radius_miles if boundary.work_mode in ("onsite", "hybrid") else None
+        radius_place = _radius_place_from_boundary(boundary)
+    else:
+        hiring_company = (role.hiring_company.value or "").strip() or None
+        locations = [
+            StructuredLocation(city=entry.city, state=entry.state, country=entry.country)
+            for entry in constraints.locations
+        ]
+        work_mode = constraints.work_mode
+        radius_miles = None
+        radius_place = None
 
     return ConfirmedHiringIntent(
         posted_title=role.posted_title,
@@ -171,21 +219,19 @@ def build_confirmed_hiring_intent(result: IntakeResult) -> ConfirmedHiringIntent
         seniority=role.seniority_scope.value,
         experience_minimum_years=constraints.experience_minimum_years,
         experience_maximum_years=constraints.experience_maximum_years,
-        locations=[
-            StructuredLocation(city=entry.city, state=entry.state, country=entry.country)
-            for entry in constraints.locations
-        ],
-        work_mode=constraints.work_mode,
+        locations=locations,
+        radius_miles=radius_miles,
+        radius_place=radius_place,
+        work_mode=work_mode,
         employment_type=constraints.employment_type,
         exclude_titles=list(constraints.exclusions),
         preferred_companies=[],
         # Default: exclude current employees of the company actually doing
         # the hiring — "hiring for Epiq" must never mean "find people who
         # already work at Epiq." Only ever the hiring company itself (never
-        # invented from weak evidence, per RoleUnderstanding.hiring_company);
-        # the recruiter can remove it on the Search Brief like any other
-        # company-exclude entry, and nothing downstream re-derives or
-        # re-applies it once set.
+        # invented from weak evidence); the recruiter can remove it on the
+        # Search Brief like any other company-exclude entry, and nothing
+        # downstream re-derives or re-applies it once set.
         exclude_current_companies=[hiring_company] if hiring_company else [],
         preferred_company_types=[],
         core_search_signals=list(decision.final_search_intent.hard_requirements),
@@ -214,9 +260,24 @@ def to_search_intent(intent: ConfirmedHiringIntent, query_expander: Optional[Que
         intent.differentiator_search_signals,
     )
 
+    # _flatten_locations already derives its own radius_place when there's
+    # exactly one city-bearing location (the JD-only path relied on that
+    # auto-derivation and never set intent.radius_miles at all). When the
+    # recruiter explicitly set a radius (onsite/hybrid boundary), that value
+    # was previously silently dropped here — ConfirmedHiringIntent carried
+    # radius_miles/radius_place but this function never read them. Fixed:
+    # an explicit radius always wins; an explicit radius_place overrides the
+    # auto-derived one (same value in practice, kept in sync deliberately).
+    location = _flatten_locations(intent.locations)
+    if intent.radius_miles:
+        location.radius_miles = intent.radius_miles
+        if intent.radius_place:
+            location.radius_place = intent.radius_place
+    location.work_mode = intent.work_mode
+
     return SearchIntent(
         role=Role(title=normalized_identity, seniority=intent.seniority),
-        location=_flatten_locations(intent.locations),
+        location=location,
         experience=Experience(
             minimum_years=intent.experience_minimum_years,
             maximum_years=intent.experience_maximum_years,

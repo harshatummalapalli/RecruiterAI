@@ -19,6 +19,8 @@ import type { IntakeIssue, IntakeResult } from '../models/intake'
 import { SearchBriefReview } from './SearchBriefReview'
 import { CandidateReviewScreen } from './CandidateReviewScreen'
 import { DebugPanel } from './DebugPanel'
+import { SearchBoundaryForm } from './SearchBoundaryForm'
+import { createEmptySearchBoundary, isSearchBoundaryComplete, type SearchBoundary } from '../models/searchBoundary'
 import type { SearchResponse } from '../types'
 import './RecruiterWorkspaceScreen.css'
 
@@ -76,6 +78,7 @@ function getGreeting(hour: number): string {
 
 export function RecruiterWorkspaceScreen() {
   const [jdText, setJdText] = useState('')
+  const [boundary, setBoundary] = useState<SearchBoundary>(createEmptySearchBoundary)
   const [brief, setBrief] = useState<SearchBrief>(createEmptySearchBrief)
   const [lockedFields, setLockedFields] = useState<ReadonlySet<string>>(new Set())
   const [isEditingTitle, setIsEditingTitle] = useState(false)
@@ -92,7 +95,8 @@ export function RecruiterWorkspaceScreen() {
 
   const greeting = `${getGreeting(new Date().getHours())}, ${RECRUITER_NAME}.`
   const hasJdText = jdText.trim().length > 0
-  const canParse = hasJdText && parseState !== 'parsing'
+  const isBoundaryComplete = isSearchBoundaryComplete(boundary)
+  const canParse = hasJdText && isBoundaryComplete && parseState !== 'parsing'
   const isBusy = parseState === 'parsing'
 
   // On mount: if a previous search was persisted, reload it from the
@@ -173,7 +177,7 @@ export function RecruiterWorkspaceScreen() {
   // Search Brief. No local heuristic decides what to ask any more; the
   // backend is the sole authority on ambiguity/questions.
   const handleParse = async () => {
-    if (!hasJdText) {
+    if (!hasJdText || !isBoundaryComplete) {
       return
     }
 
@@ -181,7 +185,7 @@ export function RecruiterWorkspaceScreen() {
     setIntakeState('loading')
     setHiringCompanyPrefilled(false)
     try {
-      const { session_id, result } = await startIntake(jdText)
+      const { session_id, result } = await startIntake(jdText, boundary)
       setIntakeSessionId(session_id)
       setIntakeResult(result)
       setParseState('success')
@@ -251,6 +255,7 @@ export function RecruiterWorkspaceScreen() {
   const handleStartNewSearch = () => {
     clearPersistedSearchPointer()
     setJdText('')
+    setBoundary(createEmptySearchBoundary())
     setBrief(createEmptySearchBrief())
     setLockedFields(new Set())
     setParseState('idle')
@@ -326,11 +331,17 @@ export function RecruiterWorkspaceScreen() {
                 )}
               </div>
 
+              <SearchBoundaryForm
+                boundary={boundary}
+                onChange={(updater) => setBoundary(updater)}
+                disabled={isBusy}
+              />
+
               <textarea
                 className="workspace__editor"
                 value={jdText}
                 onChange={(event) => setJdText(event.target.value)}
-                placeholder="Paste a job description or simply describe the role in your own words…"
+                placeholder="What are you hiring for? Paste the full job description, rough hiring-manager notes, or just describe the role in your own words."
                 disabled={isBusy}
                 aria-label="Job description"
                 rows={16}
@@ -393,6 +404,7 @@ export function RecruiterWorkspaceScreen() {
               onAnswer: handleAnswerIntake,
               isAnswering: intakeState === 'answering',
               hiringCompanyPrefilled,
+              boundary,
             }}
           />
         ) : null}

@@ -3,10 +3,21 @@ from typing import Any, Dict, List
 
 import pytest
 
-from backend.models.intake import IntakeDecision, IntakeIssue
+from backend.models.intake import (
+    ExplicitConstraints,
+    FieldValue,
+    FinalSearchIntentDraft,
+    IntakeDecision,
+    IntakeIssue,
+    IntakeResult,
+    LocationEntry,
+    RoleUnderstanding,
+    SearchBoundary,
+)
 from backend.services.intake_reasoning import (
     IntakeReasoner,
     apply_contradiction_backstop,
+    apply_search_boundary,
     detect_intake_contradictions,
 )
 from backend.services.search_translator import translate
@@ -294,3 +305,114 @@ def test_translate_maps_a_ready_result_from_the_full_intake_reasoner_pipeline() 
     assert intent.location.cities == ["New York"]
     assert intent.location.states == ["New York"]
     assert intent.natural_language_search_query == "Senior backend engineer with strong Python experience."
+
+
+# ---------------------------------------------------------------------------
+# apply_search_boundary — final intake-form pass. Pure function against
+# directly-constructed IntakeResult objects, mirroring this file's existing
+# pattern for the contradiction backstop above.
+# ---------------------------------------------------------------------------
+
+
+def _result_with_locations(locations: List[Dict[str, Any]], has_missing_location_ask: bool = True) -> IntakeResult:
+    issues = []
+    if has_missing_location_ask:
+        issues.append(
+            IntakeIssue(
+                issue="Missing location",
+                decision="ask",
+                question="No location was mentioned for this role. Should the search target a specific location?",
+                options=[{"value": "specify_location", "label": "Let me specify a location"}],
+                injected_by_backstop=True,
+                backstop_category="missing_location",
+                id="backstop-missing_location",
+            )
+        )
+    return IntakeResult(
+        raw_input="irrelevant for these tests",
+        role_understanding=RoleUnderstanding(
+            primary_candidate_identity=FieldValue(value="Backend Engineer"),
+            explicit_constraints=ExplicitConstraints(locations=[LocationEntry(**loc) for loc in locations]),
+        ),
+        decision=IntakeDecision(issues=issues, final_search_intent=FinalSearchIntentDraft()),
+        status="needs_clarification" if has_missing_location_ask else "ready",
+    )
+
+
+def _boundary(**overrides: Any) -> SearchBoundary:
+    defaults: Dict[str, Any] = {"hiring_company": "Epiq", "country": "India", "work_mode": "onsite", "state": "Telangana", "city": "Hyderabad"}
+    defaults.update(overrides)
+    return SearchBoundary(**defaults)
+
+
+def test_boundary_suppresses_the_missing_location_ask() -> None:
+    # Task A found nothing in the JD text itself (a common case — the
+    # recruiter now provides location on the intake form, not the JD).
+    result = _result_with_locations([], has_missing_location_ask=True)
+    apply_search_boundary(result, _boundary())
+
+    assert result.status == "ready"
+    assert not any(i.backstop_category == "missing_location" for i in result.decision.issues)
+
+
+def test_boundary_flags_a_genuine_country_level_conflict() -> None:
+    # Task A independently read "Toronto, Canada" from the JD text; the
+    # recruiter selected India on the intake form.
+    result = _result_with_locations([{"city": "Toronto", "country": "Canada"}], has_missing_location_ask=False)
+    apply_search_boundary(result, _boundary(country="India", city="Hyderabad", state="Telangana"))
+
+    assert result.status == "needs_clarification"
+    conflict_issues = [i for i in result.decision.issues if i.backstop_category == "location_boundary_conflict"]
+    assert len(conflict_issues) == 1
+    assert "Toronto" in conflict_issues[0].reasoning
+    assert "India" in conflict_issues[0].reasoning
+
+
+def test_boundary_flags_a_city_level_conflict_within_the_same_country() -> None:
+    result = _result_with_locations([{"city": "Mumbai", "country": "India"}], has_missing_location_ask=False)
+    apply_search_boundary(result, _boundary(country="India", city="Hyderabad", state="Telangana"))
+
+    assert result.status == "needs_clarification"
+    conflict_issues = [i for i in result.decision.issues if i.backstop_category == "location_boundary_conflict"]
+    assert len(conflict_issues) == 1
+    assert "Mumbai" in conflict_issues[0].reasoning
+
+
+def test_boundary_does_not_flag_a_conflict_when_locations_agree() -> None:
+    result = _result_with_locations([{"city": "Hyderabad", "state": "Telangana", "country": "India"}], has_missing_location_ask=False)
+    apply_search_boundary(result, _boundary(country="India", city="Hyderabad", state="Telangana"))
+
+    assert result.status == "ready"
+    assert not any(i.backstop_category == "location_boundary_conflict" for i in result.decision.issues)
+
+
+def test_boundary_does_not_flag_a_conflict_when_the_jd_names_no_location_at_all() -> None:
+    result = _result_with_locations([], has_missing_location_ask=False)
+    apply_search_boundary(result, _boundary())
+
+    assert result.status == "ready"
+    assert result.decision.issues == []
+
+
+def test_existing_experience_seniority_contradiction_is_unaffected_by_a_boundary() -> None:
+    # apply_search_boundary must never touch contradiction categories other
+    # than location -- the existing experience/seniority and location/
+    # work-mode backstops remain fully independent.
+    result = _result_with_locations([{"city": "Hyderabad", "country": "India"}], has_missing_location_ask=False)
+    result.decision.issues.append(
+        IntakeIssue(
+            issue="Contradiction: experience seniority",
+            decision="ask",
+            question="Entry-level or senior?",
+            injected_by_backstop=True,
+            backstop_category="experience_seniority",
+            id="backstop-experience_seniority",
+        )
+    )
+    result.status = "needs_clarification"
+
+    apply_search_boundary(result, _boundary(country="India", city="Hyderabad", state="Telangana"))
+
+    assert result.status == "needs_clarification"  # still blocked, but by the OTHER contradiction
+    assert any(i.backstop_category == "experience_seniority" for i in result.decision.issues)
+    assert not any(i.backstop_category == "location_boundary_conflict" for i in result.decision.issues)

@@ -1,6 +1,7 @@
 import type { SearchIntent, SearchResponse } from '../types'
 import type { LocationDetail } from '../models/searchBrief'
 import type { IntakeStartResponse } from '../models/intake'
+import type { SearchBoundary } from '../models/searchBoundary'
 
 // Empty string means "same origin as the page" — used in production where
 // nginx serves the frontend and proxies the API from one origin. Local dev
@@ -98,8 +99,10 @@ export const runCandidateSearch = async (
       jd_text: jdText.trim() ? jdText : serializeIntentForSearch(intent),
       intent,
       provider: 'crustdata',
-      page_size: 10,
-      max_pages: 1,
+      // Retrieval sizing (page_size/max_pages) is backend-owned (Phase 3,
+      // DISCOVERY_PAGE_SIZE/DISCOVERY_MAX_PAGES in backend/config.py) — the
+      // recruiter just requests a search; the frontend deliberately never
+      // sends these.
       autocomplete: true,
       location,
       search_id: options?.searchId,
@@ -114,12 +117,12 @@ export const runCandidateSearch = async (
   return response.json() as Promise<SearchResponse>
 }
 
-export const startIntake = async (rawInput: string): Promise<IntakeStartResponse> => {
+export const startIntake = async (rawInput: string, boundary?: SearchBoundary): Promise<IntakeStartResponse> => {
   const response = await fetch(`${API_BASE_URL}/intake/start`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ raw_input: rawInput }),
+    body: JSON.stringify({ raw_input: rawInput, boundary: boundary ?? null }),
   })
   if (!response.ok) {
     throw new Error('Failed to understand this role')

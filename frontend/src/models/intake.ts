@@ -24,8 +24,19 @@ export type TechnologyGroup = {
   items: string[]
 }
 
+export type LocationEntry = {
+  city: string | null
+  state: string | null
+  country: string | null
+}
+
 export type ExplicitConstraints = {
-  location: string | null
+  // Structured, possibly multiple — mirrors backend/models/intake.py's
+  // LocationEntry list exactly. This is Task A's OWN best-effort JD
+  // extraction; it is never authoritative once a recruiter-submitted
+  // SearchBoundary exists (see models/searchBoundary.ts) — see
+  // apply_search_boundary server-side for how the two are reconciled.
+  locations: LocationEntry[]
   work_mode: string | null
   experience_minimum_years: number | null
   experience_maximum_years: number | null

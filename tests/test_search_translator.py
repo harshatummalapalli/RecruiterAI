@@ -14,7 +14,9 @@ from backend.models.intake import (
     IntakeResult,
     LocationEntry,
     RoleUnderstanding,
+    SearchBoundary,
 )
+from backend.models.hiring_intent import StructuredLocation
 from backend.services.search_translator import (
     build_confirmed_hiring_intent,
     normalize_candidate_identity,
@@ -412,3 +414,119 @@ def test_recruiter_override_is_not_overwritten_by_translation() -> None:
 
     intent.company_preferences.exclude_current_companies = ["Some Other Co"]
     assert intent.company_preferences.exclude_current_companies == ["Some Other Co"]
+
+
+# ---------------------------------------------------------------------------
+# M — search boundary (final intake-form pass): RECRUITER DEFINES hiring
+# company / country / work mode / geographic scope -- authoritative, never
+# re-derived from or overwritten by Task A's own JD reading.
+# ---------------------------------------------------------------------------
+
+
+def _boundary(**overrides) -> SearchBoundary:
+    defaults = {"hiring_company": "Epiq", "country": "India", "work_mode": "onsite", "state": "Telangana", "city": "Hyderabad", "radius_miles": 25.0}
+    defaults.update(overrides)
+    return SearchBoundary(**defaults)
+
+
+def test_boundary_onsite_produces_a_single_anchored_location_with_radius() -> None:
+    result = _result("Backend Engineer")  # JD-derived locations are irrelevant once a boundary is present
+    confirmed = build_confirmed_hiring_intent(result, boundary=_boundary())
+
+    assert len(confirmed.locations) == 1
+    assert confirmed.locations[0].city == "Hyderabad"
+    assert confirmed.locations[0].state == "Telangana"
+    assert confirmed.locations[0].country == "India"
+    assert confirmed.radius_miles == 25.0
+    assert confirmed.radius_place == "Hyderabad, Telangana"
+
+    intent = to_search_intent(confirmed)
+    assert intent.location.cities == ["Hyderabad"]
+    assert intent.location.states == ["Telangana"]
+    assert intent.location.countries == ["India"]
+    assert intent.location.radius_miles == 25.0
+    assert intent.location.radius_place == "Hyderabad, Telangana"
+    assert intent.location.work_mode == "onsite"
+
+
+def test_boundary_hybrid_also_carries_radius() -> None:
+    result = _result("Backend Engineer")
+    confirmed = build_confirmed_hiring_intent(result, boundary=_boundary(work_mode="hybrid"))
+    intent = to_search_intent(confirmed)
+    assert intent.location.radius_miles == 25.0
+    assert intent.location.work_mode == "hybrid"
+
+
+def test_boundary_remote_anywhere_is_country_only_with_no_radius() -> None:
+    result = _result("Backend Engineer")
+    confirmed = build_confirmed_hiring_intent(
+        result, boundary=_boundary(work_mode="remote", state=None, city=None, radius_miles=None, remote_scope="anywhere")
+    )
+
+    assert len(confirmed.locations) == 1
+    assert confirmed.locations[0].country == "India"
+    assert confirmed.locations[0].city is None
+    assert confirmed.radius_miles is None
+    assert confirmed.radius_place is None
+
+    intent = to_search_intent(confirmed)
+    assert intent.location.countries == ["India"]
+    assert intent.location.cities == []
+    assert intent.location.radius_miles is None
+
+
+def test_boundary_remote_specific_states_preserves_each_state_structurally() -> None:
+    result = _result("Backend Engineer")
+    confirmed = build_confirmed_hiring_intent(
+        result,
+        boundary=_boundary(work_mode="remote", state=None, city=None, radius_miles=None, remote_scope="states", remote_states=["Telangana", "Karnataka", "Maharashtra"]),
+    )
+    intent = to_search_intent(confirmed)
+    assert intent.location.states == ["Telangana", "Karnataka", "Maharashtra"]
+    assert intent.location.countries == ["India"]
+    assert intent.location.radius_miles is None  # multiple locations -> no single radius anchor
+
+
+def test_boundary_remote_specific_cities_preserves_each_city_structurally() -> None:
+    result = _result("Backend Engineer")
+    confirmed = build_confirmed_hiring_intent(
+        result,
+        boundary=_boundary(work_mode="remote", state=None, city=None, radius_miles=None, remote_scope="cities", remote_cities=["Hyderabad", "Bengaluru", "Mumbai"]),
+    )
+    intent = to_search_intent(confirmed)
+    assert intent.location.cities == ["Hyderabad", "Bengaluru", "Mumbai"]
+    assert intent.location.radius_miles is None
+
+
+def test_boundary_hiring_company_excludes_current_employees_former_employees_remain_eligible() -> None:
+    result = _result("Backend Engineer")
+    confirmed = build_confirmed_hiring_intent(result, boundary=_boundary(hiring_company="Epiq"))
+    intent = to_search_intent(confirmed)
+
+    assert intent.company_preferences.exclude_current_companies == ["Epiq"]
+    # Nothing in the translated intent touches past-employment eligibility —
+    # only CURRENT employment is ever filtered (see crustdata.py's filter,
+    # scoped to experience.employment_details.current.company_name).
+    assert "Epiq" not in intent.titles.exclude_titles
+
+
+def test_boundary_overrides_task_as_own_location_extraction_even_when_present() -> None:
+    # Task A independently extracted a location from the JD text itself --
+    # the boundary must win regardless, per "AI must treat [boundary values]
+    # as recruiter-confirmed facts... do not silently overwrite."
+    result = _result("Backend Engineer", locations=[LocationEntry(city="Toronto", country="Canada")])
+    confirmed = build_confirmed_hiring_intent(result, boundary=_boundary(country="India", city="Hyderabad", state="Telangana"))
+
+    assert confirmed.locations == [StructuredLocation(city="Hyderabad", state="Telangana", country="India")]
+
+
+def test_no_boundary_falls_back_to_task_a_extraction_unchanged() -> None:
+    # Backward compatibility: an intake session with no boundary at all
+    # behaves exactly as before this pass.
+    result = _result("Backend Engineer", locations=[LocationEntry(city="New York", state="NY", country="United States")])
+    confirmed = build_confirmed_hiring_intent(result, boundary=None)
+
+    assert confirmed.locations[0].city == "New York"
+    assert confirmed.radius_miles is None
+    assert confirmed.hiring_company is None
+    assert confirmed.exclude_current_companies == []

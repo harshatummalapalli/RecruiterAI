@@ -21,10 +21,15 @@ from backend.auth import (
     verify_google_id_token,
 )
 from backend.bootstrap import bootstrap
-from backend.config import get_session_cookie_secure, get_session_max_age_seconds
+from backend.config import (
+    get_discovery_max_pages,
+    get_discovery_page_size,
+    get_session_cookie_secure,
+    get_session_max_age_seconds,
+)
 from backend.errors import ConfigurationError, ParsingError, ProviderError, RecruiterAIError, RankingError
 from backend.models.candidate_evidence import HarvestEvidence
-from backend.models.intake import IntakeResult
+from backend.models.intake import IntakeResult, SearchBoundary
 from backend.models.match_explanation import MatchExplanation
 from backend.models.provider_capabilities import ProviderCapabilities
 from backend.models.search_intent import SearchIntent
@@ -111,9 +116,15 @@ FRIENDLY_UNSUPPORTED_FILTER_LABELS = {
 }
 
 
-# Target size of the candidate pool shown to the recruiter (Part 14: "target
-# approximately 20-30 candidates... do not retrieve 100+ unnecessarily").
-DISCOVERY_TARGET_POOL_SIZE = 20
+# Minimum merged/deduplicated candidate count before the supplementary
+# title-expansion query is skipped (Phase 3): re-derived, not left at its
+# pre-Phase-3 value of 20, once HARVEST_ENRICHMENT_TOP_N moved to 15 —
+# comfortably above the enrichment depth (a real tail beyond the enriched
+# slice, not just enough to fill it) while still easily cleared by a single
+# primary query at the new DISCOVERY_PAGE_SIZE=50, so title expansion now
+# runs only when the primary query's own unique yield is genuinely thin, not
+# reflexively on every search the way it did at page_size=10.
+DISCOVERY_TARGET_POOL_SIZE = 25
 
 
 def _run_adaptive_discovery(
@@ -289,8 +300,28 @@ class GoogleLoginRequest(BaseModel):
     credential: str
 
 
+class SearchBoundaryRequest(BaseModel):
+    """The recruiter-confirmed search boundary from the intake form — see
+    backend/models/intake.py's SearchBoundary for the authoritative
+    contract (this is just its pydantic request-body mirror)."""
+
+    hiring_company: str
+    country: str
+    work_mode: str
+    state: Optional[str] = None
+    city: Optional[str] = None
+    radius_miles: Optional[float] = None
+    remote_scope: Optional[str] = None
+    remote_states: List[str] = Field(default_factory=list)
+    remote_cities: List[str] = Field(default_factory=list)
+
+
 class IntakeStartRequest(BaseModel):
     raw_input: str
+    # Optional for backward compatibility with any caller that doesn't send
+    # one (e.g. existing tests) — the intake flow behaves exactly as before
+    # when omitted.
+    boundary: Optional[SearchBoundaryRequest] = None
 
 
 class IntakeAnswerRequest(BaseModel):
@@ -396,8 +427,23 @@ def create_app(
 
     @app.post("/intake/start", dependencies=[Depends(require_session)])
     def intake_start(request: IntakeStartRequest) -> Dict[str, Any]:
+        boundary = (
+            SearchBoundary(
+                hiring_company=request.boundary.hiring_company,
+                country=request.boundary.country,
+                work_mode=request.boundary.work_mode,
+                state=request.boundary.state,
+                city=request.boundary.city,
+                radius_miles=request.boundary.radius_miles,
+                remote_scope=request.boundary.remote_scope,
+                remote_states=list(request.boundary.remote_states),
+                remote_cities=list(request.boundary.remote_cities),
+            )
+            if request.boundary is not None
+            else None
+        )
         try:
-            record = intake_session_manager.start(request.raw_input)
+            record = intake_session_manager.start(request.raw_input, boundary=boundary)
         except ConfigurationError as exc:
             logger.warning("Intake reasoning is unavailable", exc_info=exc)
             _raise_recruiter_friendly_error("Unable to understand this role right now.")
@@ -428,7 +474,7 @@ def create_app(
         if record is None or record.result is None:
             raise HTTPException(status_code=404, detail="Intake session not found.")
         try:
-            return to_search_intent(build_confirmed_hiring_intent(record.result), query_expander=query_expander)
+            return to_search_intent(build_confirmed_hiring_intent(record.result, boundary=record.boundary), query_expander=query_expander)
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc))
 
@@ -443,7 +489,7 @@ def create_app(
         if record is None or record.result is None:
             raise HTTPException(status_code=404, detail="Intake session not found.")
         try:
-            confirmed = build_confirmed_hiring_intent(record.result)
+            confirmed = build_confirmed_hiring_intent(record.result, boundary=record.boundary)
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc))
 
@@ -577,9 +623,13 @@ def create_app(
                 logger.warning("[SEARCH] Constraint dropped for this provider | %s", raw_warning)
             logger.info("Capability mapping complete (%s constraint(s) dropped)", len(capability_warnings))
 
+            # Retrieval sizing is backend-owned (Phase 3) — the frontend no
+            # longer sends page_size/max_pages at all; a caller MAY still
+            # override them explicitly (e.g. a future debug tool), but the
+            # recruiter-facing product always gets the configured default.
             options = {
-                "page_size": request.page_size,
-                "max_pages": request.max_pages,
+                "page_size": request.page_size if request.page_size is not None else get_discovery_page_size(),
+                "max_pages": request.max_pages if request.max_pages is not None else get_discovery_max_pages(),
                 "max_retries": request.max_retries,
                 "retry_backoff_base": request.retry_backoff_base,
                 "autocomplete": request.autocomplete,
@@ -592,6 +642,7 @@ def create_app(
             # runs if the primary alone didn't produce enough candidates to
             # review — this is what keeps a well-covered role to one cheap
             # query instead of always spending credits on both.
+            crustdata_started = time.perf_counter()
             candidates, executed_plan = _run_adaptive_discovery(
                 provider=provider,
                 mapped_plan=mapped_plan,
@@ -599,6 +650,7 @@ def create_app(
                 candidate_merger=candidate_merger,
                 target_pool_size=DISCOVERY_TARGET_POOL_SIZE,
             )
+            crustdata_elapsed_ms = round((time.perf_counter() - crustdata_started) * 1000, 1)
             if not isinstance(candidates, list):
                 raise ProviderError("Provider returned an invalid candidate list")
             logger.info("[SEARCH] Candidates Returned | provider=%s count=%s queries_run=%s", request.provider, len(candidates), len(executed_plan.searches))
@@ -609,8 +661,47 @@ def create_app(
             merged_candidates = candidate_merger.merge(candidates)
             logger.info("Candidate merge complete (%s unique)", len(merged_candidates))
 
+            # CrustData retrieval diagnostics (Phase 3, section 9) — internal
+            # only, never part of SearchResponse. Built entirely from data
+            # already on each raw candidate (matched_queries, the
+            # __response_metadata CrustDataProvider already stamps on every
+            # item) — no change to CrustDataProvider's contract. Per-call
+            # request duration is already captured in CrustDataProvider's own
+            # structured logs (unchanged); this records the aggregate
+            # discovery-stage elapsed time, not a per-call breakdown.
+            results_per_query: Dict[str, int] = {}
+            total_count_per_query: Dict[str, Any] = {}
+            for raw_candidate in candidates:
+                matched = (raw_candidate.raw_data or {}).get("matched_queries") or []
+                query_name = matched[0] if matched else "unknown"
+                results_per_query[query_name] = results_per_query.get(query_name, 0) + 1
+                if query_name not in total_count_per_query:
+                    meta = (raw_candidate.raw_data or {}).get("__response_metadata") or {}
+                    if "total_count" in meta:
+                        total_count_per_query[query_name] = meta["total_count"]
+            crustdata_diagnostics = {
+                "provider_calls": len(executed_plan.searches),
+                "page_size": options.get("page_size"),
+                "max_pages": options.get("max_pages"),
+                "results_per_query": results_per_query,
+                "raw_candidate_count": len(candidates),
+                "merged_unique_count": len(merged_candidates),
+                "duplicate_count": len(candidates) - len(merged_candidates),
+                "total_count_per_query": total_count_per_query,
+                "elapsed_ms": crustdata_elapsed_ms,
+            }
+
             ranked_candidates = candidate_ranker.rank(merged_candidates, intent)
             logger.info("[SEARCH] Ranking Completed | count=%s", len(ranked_candidates))
+
+            # Baseline snapshot (Phase 3, section 7) — captured before Harvest
+            # enrichment/rerank ever touches final_score/order, so
+            # self-reinforcement diagnostics can compare "who would have been
+            # shown with zero enrichment" against what reranking produced.
+            baseline_snapshot = [
+                {"candidate_id": c.candidate_id or "", "name": c.name, "score": c.final_score}
+                for c in ranked_candidates
+            ]
 
             # Loaded here (before enrichment) so a re-run of an existing
             # search_id reuses any already-successful Harvest enrichment
@@ -628,14 +719,62 @@ def create_app(
             # here can only affect matched_signals/explanations for that one
             # candidate — it can never raise and never breaks the search.
             harvest_by_candidate_id = harvest_enrichment_service.enrich_top_n(ranked_candidates, existing=existing_harvest)
+            harvest_diag = harvest_enrichment_service.last_enrichment_diagnostics
+            top_n = harvest_enrichment_service.top_n
             ranked_candidates = candidate_ranker.rerank_top_n(
-                ranked_candidates, intent, harvest_by_candidate_id, top_n=harvest_enrichment_service.top_n
+                ranked_candidates, intent, harvest_by_candidate_id, top_n=top_n
             )
             logger.info(
-                "[SEARCH] Harvest enrichment complete | attempted=%s succeeded=%s",
+                "[SEARCH] Harvest enrichment complete | attempted=%s succeeded=%s max_concurrency=%s elapsed_ms=%s",
                 len(harvest_by_candidate_id),
                 sum(1 for evidence in harvest_by_candidate_id.values() if evidence.success),
+                harvest_diag.max_observed_concurrency if harvest_diag else None,
+                harvest_diag.total_elapsed_ms if harvest_diag else None,
             )
+
+            # Self-reinforcement diagnostics (Phase 3, section 7) — internal
+            # only. Compares each investigated candidate's baseline position
+            # to its post-rerank position, and separately flags candidates
+            # just outside the investigated slice (ranks top_n+1..+10) whose
+            # baseline score was close enough to the cutoff that they might
+            # plausibly have deserved investigation too — a diagnostic
+            # observation using only existing scores, not a new scoring rule.
+            baseline_rank_by_id = {c["candidate_id"]: i + 1 for i, c in enumerate(baseline_snapshot)}
+            baseline_score_by_id = {c["candidate_id"]: (c["score"] or 0.0) for c in baseline_snapshot}
+            investigated_movement = []
+            for final_rank, candidate in enumerate(ranked_candidates[:top_n], start=1):
+                cid = candidate.candidate_id or ""
+                baseline_rank = baseline_rank_by_id.get(cid)
+                score_delta = (candidate.final_score or 0.0) - baseline_score_by_id.get(cid, 0.0)
+                moved = baseline_rank is not None and baseline_rank != final_rank
+                investigated_movement.append(
+                    {
+                        "candidate_id": cid,
+                        "baseline_rank": baseline_rank,
+                        "final_rank": final_rank,
+                        "moved": moved,
+                        "score_delta": round(score_delta, 3),
+                        "moved_substantially": bool(
+                            moved and (abs((baseline_rank or final_rank) - final_rank) >= 3 or score_delta >= 1.0)
+                        ),
+                    }
+                )
+            near_miss_ids: List[str] = []
+            if len(baseline_snapshot) >= top_n:
+                cutoff_score = baseline_score_by_id.get(baseline_snapshot[top_n - 1]["candidate_id"], 0.0)
+                near_miss_ids = [
+                    c["candidate_id"]
+                    for c in baseline_snapshot[top_n : top_n + 10]
+                    if (c["score"] or 0.0) >= cutoff_score - 1.0
+                ]
+            self_reinforcement_diagnostics = {
+                "investigated_count": len(investigated_movement),
+                "moved_count": sum(1 for m in investigated_movement if m["moved"]),
+                "moved_substantially_count": sum(1 for m in investigated_movement if m["moved_substantially"]),
+                "investigated_movement": investigated_movement,
+                "near_miss_count_ranks_beyond_top_n": len(near_miss_ids),
+                "near_miss_candidate_ids": near_miss_ids,
+            }
 
             logger.info("Generating explanations")
             explanations = [
@@ -724,6 +863,36 @@ def create_app(
                         **existing_harvest_raw,
                         **{candidate_id: dataclasses.asdict(evidence) for candidate_id, evidence in harvest_by_candidate_id.items()},
                     },
+                    # Phase 3 internal diagnostics — never part of `response`
+                    # (the only key GET /search/{id} ever returns), so this
+                    # never reaches the recruiter-facing API surface.
+                    "internal_diagnostics": {
+                        "crustdata": crustdata_diagnostics,
+                        "harvest": dataclasses.asdict(harvest_diag) if harvest_diag else None,
+                        "self_reinforcement": self_reinforcement_diagnostics,
+                        "total_search_elapsed_ms": round((time.perf_counter() - started_at) * 1000, 1),
+                        "baseline_candidate_count": len(baseline_snapshot),
+                        "investigated_candidate_count": min(top_n, len(ranked_candidates)),
+                        "reranked_candidate_count": min(top_n, len(ranked_candidates)),
+                    },
+                },
+            )
+
+            logger.info(
+                "[SEARCH] Phase 3 diagnostics summary",
+                extra={
+                    "search_id": search_id,
+                    "crustdata_provider_calls": crustdata_diagnostics["provider_calls"],
+                    "crustdata_page_size": crustdata_diagnostics["page_size"],
+                    "crustdata_merged_unique_count": crustdata_diagnostics["merged_unique_count"],
+                    "crustdata_elapsed_ms": crustdata_diagnostics["elapsed_ms"],
+                    "harvest_max_observed_concurrency": harvest_diag.max_observed_concurrency if harvest_diag else None,
+                    "harvest_attempted": harvest_diag.attempted_count if harvest_diag else None,
+                    "harvest_successful": harvest_diag.successful_count if harvest_diag else None,
+                    "harvest_failed": harvest_diag.failed_count if harvest_diag else None,
+                    "harvest_elapsed_ms": harvest_diag.total_elapsed_ms if harvest_diag else None,
+                    "self_reinforcement_moved_substantially": self_reinforcement_diagnostics["moved_substantially_count"],
+                    "self_reinforcement_near_miss_count": self_reinforcement_diagnostics["near_miss_count_ranks_beyond_top_n"],
                 },
             )
 

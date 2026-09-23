@@ -6,6 +6,7 @@ import type { EmploymentType, SearchBrief, SearchGeography, WorkMode } from '../
 import type { LocationEntry } from '../screens/localJdExtraction'
 import type { IntakeIssue, IntakeResult } from '../models/intake'
 import { pendingAskIssues, tellInsights } from '../models/intake'
+import type { SearchBoundary } from '../models/searchBoundary'
 
 type FieldChange = (path: string, updater: (current: SearchBrief) => SearchBrief) => void
 
@@ -21,6 +22,31 @@ type SearchBriefIntakeContext = {
   // from the hiring company (see backend/services/search_translator.py) —
   // drives a short caption near the Companies section, nothing else.
   hiringCompanyPrefilled: boolean
+  // The recruiter's own explicit, authoritative search boundary submitted at
+  // intake start — takes priority over Task A's own JD-derived hiring
+  // company/location/work mode wherever both exist. Undefined only for a
+  // session that predates this pass (backward compatible: falls back to
+  // Task A's own extraction).
+  boundary?: SearchBoundary
+}
+
+// The recruiter's authoritative geographic scope, formatted for display —
+// never Task A's own (possibly different) JD reading once a boundary
+// exists. Mirrors backend/services/search_translator.py's
+// _structured_locations_from_boundary, display-only.
+function formatBoundaryLocation(boundary: SearchBoundary): string {
+  if (boundary.work_mode === 'onsite' || boundary.work_mode === 'hybrid') {
+    const place = [boundary.city, boundary.state, boundary.country].filter(Boolean).join(', ')
+    return boundary.radius_miles ? `${place} · ${boundary.radius_miles} mi radius` : place
+  }
+  // Remote.
+  if (boundary.remote_scope === 'states' && boundary.remote_states.length) {
+    return `${boundary.remote_states.join(', ')}, ${boundary.country} (remote)`
+  }
+  if (boundary.remote_scope === 'cities' && boundary.remote_cities.length) {
+    return `${boundary.remote_cities.join(', ')}, ${boundary.country} (remote)`
+  }
+  return `Anywhere in ${boundary.country} (remote)`
 }
 
 type SearchBriefReviewProps = {
@@ -80,8 +106,10 @@ function CapabilityList({ title, items }: { title: string; items: { value: strin
 const FREE_TEXT_OPTION_VALUE = 'specify_location'
 
 function IntakeContextPanel({ intakeContext }: { intakeContext: SearchBriefIntakeContext }) {
-  const { result, onAnswer, isAnswering } = intakeContext
+  const { result, onAnswer, isAnswering, boundary } = intakeContext
   const { role_understanding: role, decision } = result
+  const displayHiringCompany = boundary?.hiring_company || role.hiring_company.value
+  const displayLocation = boundary ? formatBoundaryLocation(boundary) : null
   const insights = useMemo(() => tellInsights(result), [result])
   const pending = useMemo(() => pendingAskIssues(result), [result])
   const nextIssue = pending[0] ?? null
@@ -114,9 +142,9 @@ function IntakeContextPanel({ intakeContext }: { intakeContext: SearchBriefIntak
           ) : null}
           <p className="living-brief__interp-eyebrow">AI-derived candidate identity <span className="living-brief__interp-eyebrow-note">— not the posted title</span></p>
           <h2 className="living-brief__title">{role.primary_candidate_identity.value ?? 'Understanding this role…'}</h2>
-          {role.hiring_company.value ? (
+          {displayHiringCompany ? (
             <p className="living-brief__hiring-company">
-              Hiring company <strong>{role.hiring_company.value}</strong>
+              Hiring company <strong>{displayHiringCompany}</strong>
             </p>
           ) : null}
         </div>
@@ -143,10 +171,16 @@ function IntakeContextPanel({ intakeContext }: { intakeContext: SearchBriefIntak
               <span>{experience} <span className="brief-provenance brief-provenance--explicit">From JD</span></span>
             </div>
           ) : null}
-          {role.explicit_constraints.location ? (
+          {displayLocation ? (
             <div className="brief-field">
               <span className="brief-field__label">Location</span>
-              <span>{role.explicit_constraints.location}</span>
+              <span>{displayLocation}</span>
+            </div>
+          ) : null}
+          {boundary?.work_mode ? (
+            <div className="brief-field">
+              <span className="brief-field__label">Work Mode</span>
+              <span>{boundary.work_mode.charAt(0).toUpperCase() + boundary.work_mode.slice(1)}</span>
             </div>
           ) : null}
           {role.leadership_type.value && role.leadership_type.value !== 'none' ? (

@@ -166,6 +166,33 @@ class ContradictionFinding:
 
 
 @dataclass
+class SearchBoundary:
+    """The recruiter-confirmed search boundary, submitted alongside the raw
+    JD/notes at intake start — authoritative, never re-derived from the JD
+    text or silently overwritten by AI interpretation. Structurally distinct
+    from ExplicitConstraints (Task A's own best-effort JD extraction, which
+    keeps running independently so a genuine conflict between the two can be
+    surfaced — see intake_reasoning.apply_search_boundary).
+
+    RECRUITER DEFINES: hiring_company, country, work_mode, geographic scope.
+    AI INTERPRETS everything else (role, seniority, requirements, ...).
+    Employment type is deliberately NOT part of this boundary — it stays an
+    optional, AI-derived field (ExplicitConstraints.employment_type), not a
+    mandatory recruiter choice."""
+
+    hiring_company: str
+    country: str
+    work_mode: str  # "onsite" | "hybrid" | "remote"
+    state: Optional[str] = None
+    city: Optional[str] = None
+    radius_miles: Optional[float] = None
+    # Only meaningful when work_mode == "remote": "anywhere" | "states" | "cities".
+    remote_scope: Optional[str] = None
+    remote_states: List[str] = field(default_factory=list)
+    remote_cities: List[str] = field(default_factory=list)
+
+
+@dataclass
 class IntakeResult:
     raw_input: str = ""
     role_understanding: RoleUnderstanding = field(default_factory=RoleUnderstanding)

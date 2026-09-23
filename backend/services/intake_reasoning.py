@@ -18,6 +18,7 @@ from backend.models.intake import (
     IntakeResult,
     LocationEntry,
     RoleUnderstanding,
+    SearchBoundary,
     TechnologyGroup,
     role_understanding_to_dict,
 )
@@ -124,8 +125,15 @@ def detect_intake_contradictions(raw_input: str) -> List[ContradictionFinding]:
 
 _CATEGORY_KEYWORDS = {
     "experience_seniority": ["year", "senior", "junior", "entry", "seniority", "experience"],
-    "location_work_mode": ["remote", "onsite", "on-site", "location", "work mode", "office"],
-    "missing_location": ["location", "where", "city", "remote", "onsite"],
+    # Deliberately does NOT include the bare word "location" — that overlaps
+    # with missing_location's own keywords below, and a genuine location/
+    # work-mode contradiction ask will always mention "remote"/"onsite"
+    # explicitly (see detect_intake_contradictions, which only fires when
+    # both are present in the raw text), so those keywords alone are already
+    # a reliable, non-colliding signal for this category.
+    "location_work_mode": ["remote", "onsite", "on-site", "work mode", "office"],
+    "missing_location": ["location", "where", "city"],
+    "location_boundary_conflict": ["job description", "selected", "conflict"],
 }
 
 # If none of these appear, an absent location is treated as a genuine gap
@@ -272,6 +280,85 @@ def _merge_findings(
         final_search_intent=decision.final_search_intent,
     )
     return updated, findings
+
+
+# ---------------------------------------------------------------------------
+# Search boundary (final intake-form pass) — the recruiter's explicit,
+# authoritative hiring company / country / work mode / geographic scope,
+# submitted at intake start. Applied AFTER Task A/B run on the raw JD text
+# completely unmodified/boundary-blind, so Task A's own location extraction
+# stays a genuinely independent reading — that independence is what makes
+# the conflict check below meaningful rather than circular.
+# ---------------------------------------------------------------------------
+
+
+def _strip_issues_in_category(decision: IntakeDecision, category: str) -> None:
+    decision.issues = [
+        issue
+        for issue in decision.issues
+        if not (
+            issue.backstop_category == category
+            or infer_backstop_category(issue.issue, issue.question) == category
+        )
+    ]
+
+
+def _location_conflicts_with_boundary(role_understanding: RoleUnderstanding, boundary: SearchBoundary) -> Optional[str]:
+    """Deterministic cross-check only — Task A never sees the boundary, so
+    this compares two independently-derived readings. Returns a human-
+    readable description of the conflict, or None. Never resolves the
+    conflict itself and never overrides the recruiter's own selection —
+    the caller turns this into an "ask" the recruiter must answer."""
+    boundary_country = (boundary.country or "").strip().lower()
+    boundary_city = (boundary.city or "").strip().lower()
+
+    for entry in role_understanding.explicit_constraints.locations:
+        jd_country = (entry.country or "").strip().lower()
+        if jd_country and boundary_country and jd_country != boundary_country:
+            jd_place = ", ".join(part for part in [entry.city, entry.state, entry.country] if part)
+            return (
+                f"The job description appears to reference \"{jd_place}\", which does not match "
+                f"the location you selected ({boundary.country})."
+            )
+        jd_city = (entry.city or "").strip().lower()
+        if jd_city and boundary_city and jd_city != boundary_city:
+            return (
+                f"The job description appears to reference \"{entry.city}\", which does not match "
+                f"the city you selected ({boundary.city})."
+            )
+    return None
+
+
+def apply_search_boundary(result: IntakeResult, boundary: SearchBoundary) -> IntakeResult:
+    """Applies the recruiter's explicit search boundary as an already-
+    resolved fact: strips any "missing location" ask (the recruiter already
+    answered it), and surfaces — never silently drops — a conflict if Task
+    A's own, boundary-blind JD reading points somewhere different. Mutates
+    and returns `result`; never touches the boundary itself."""
+    _strip_issues_in_category(result.decision, "missing_location")
+
+    conflict = _location_conflicts_with_boundary(result.role_understanding, boundary)
+    if conflict:
+        result.decision.issues.append(
+            IntakeIssue(
+                issue="Location conflict between selection and job description",
+                decision="ask",
+                reasoning=conflict,
+                question=f"{conflict} Which should this search use?",
+                options=[
+                    {"value": "keep_selected_location", "label": "Keep my selected location"},
+                    {"value": "recruiter_will_clarify", "label": "Let me reconsider"},
+                ],
+                consequence_if_answer_a="Searches using the location you selected on the intake form.",
+                consequence_if_answer_b="Pause here so you can adjust your selection or the job description before searching.",
+                injected_by_backstop=True,
+                backstop_category="location_boundary_conflict",
+            )
+        )
+
+    result.decision.recommended_ask_count = sum(1 for issue in result.decision.issues if issue.decision == "ask")
+    result.status = "needs_clarification" if any(issue.decision == "ask" for issue in result.decision.issues) else "ready"
+    return result
 
 
 # ---------------------------------------------------------------------------

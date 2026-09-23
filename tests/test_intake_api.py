@@ -145,3 +145,156 @@ def test_intake_requires_session(tmp_path: Path) -> None:
     client = TestClient(app)
     response = client.post("/intake/start", json={"raw_input": "Some role."})
     assert response.status_code == 401
+
+
+# ---------------------------------------------------------------------------
+# Search boundary (Final Intake Form Pass) — full HTTP round trip, exercising
+# api.py's request parsing + intake_session.py's start()/confirm() wiring
+# together (see tests/test_intake_reasoning.py and tests/test_search_
+# translator.py for the reasoning/translation unit coverage this builds on).
+# ---------------------------------------------------------------------------
+
+
+def test_intake_start_with_boundary_suppresses_missing_location_ask(tmp_path: Path) -> None:
+    task_a = dict(CLEAR_ROLE_TASK_A, explicit_constraints={**CLEAR_ROLE_TASK_A["explicit_constraints"], "locations": []})
+    task_b_asks_for_location = {
+        "issues": [
+            {
+                "issue": "Missing location",
+                "decision": "ask",
+                "question": "Where should we search for candidates?",
+                "options": [{"value": "specify_location", "label": "Specify a location"}],
+                "consequence_if_answer_a": "Searches without a location filter.",
+                "consequence_if_answer_b": "Pauses until a location is provided.",
+            }
+        ],
+        "recommended_ask_count": 1,
+        "stop_reasoning": "Location is unresolved.",
+        "warnings": [],
+        "final_search_intent": CLEAR_ROLE_TASK_B["final_search_intent"],
+    }
+    app = _app_with_intake(tmp_path, [(task_a, task_b_asks_for_location)])
+    client = TestClient(app)
+    _login(client)
+
+    response = client.post(
+        "/intake/start",
+        json={
+            "raw_input": "Senior Backend Engineer, 5+ years Python.",
+            "boundary": {
+                "hiring_company": "Epiq",
+                "country": "India",
+                "work_mode": "onsite",
+                "state": "Telangana",
+                "city": "Hyderabad",
+                "radius_miles": 25,
+            },
+        },
+    )
+    assert response.status_code == 200
+    body = response.json()
+    # The backstop-detected "missing location" ask must not survive — the
+    # recruiter already answered it on the intake form itself.
+    assert body["result"]["status"] == "ready"
+    assert body["result"]["decision"]["issues"] == []
+
+
+def test_intake_confirm_uses_boundary_location_and_radius_not_task_as_own_extraction(tmp_path: Path) -> None:
+    # Task A's own JD reading names a DIFFERENT location than the boundary —
+    # the boundary must still win at confirm time (never silently overridden,
+    # per the product spec's "AI must treat recruiter selections as
+    # confirmed facts").
+    task_a = dict(
+        CLEAR_ROLE_TASK_A,
+        explicit_constraints={
+            **CLEAR_ROLE_TASK_A["explicit_constraints"],
+            "locations": [{"city": "Toronto", "state": None, "country": "Canada"}],
+        },
+    )
+    # Answering re-runs the reasoning pipeline once more (see intake_session.
+    # py's answer()), so a second Task A/B pair must be queued even though
+    # this stub always returns the same (still-Toronto) JD reading.
+    app = _app_with_intake(tmp_path, [(task_a, CLEAR_ROLE_TASK_B), (task_a, CLEAR_ROLE_TASK_B)])
+    client = TestClient(app)
+    _login(client)
+
+    start = client.post(
+        "/intake/start",
+        json={
+            "raw_input": "Senior Backend Engineer, 5+ years Python.",
+            "boundary": {
+                "hiring_company": "Epiq",
+                "country": "India",
+                "work_mode": "onsite",
+                "state": "Telangana",
+                "city": "Hyderabad",
+                "radius_miles": 25,
+            },
+        },
+    ).json()
+    session_id = start["session_id"]
+    # The mismatch must surface as a clarification, not be silently resolved.
+    assert start["result"]["status"] == "needs_clarification"
+    pending = [issue for issue in start["result"]["decision"]["issues"] if issue["decision"] == "ask"]
+    assert any(issue["backstop_category"] == "location_boundary_conflict" for issue in pending)
+
+    conflict_issue_id = next(issue["id"] for issue in pending if issue["backstop_category"] == "location_boundary_conflict")
+    answered = client.post(
+        f"/intake/{session_id}/answer",
+        json={"issue_id": conflict_issue_id, "value": "keep_selected_location", "label": "Keep my selected location"},
+    ).json()
+    assert answered["result"]["status"] == "ready"
+
+    confirm = client.post(f"/intake/{session_id}/confirm")
+    assert confirm.status_code == 200
+    intent = confirm.json()
+
+    assert intent["location"]["cities"] == ["Hyderabad"]
+    assert intent["location"]["states"] == ["Telangana"]
+    assert intent["location"]["countries"] == ["India"]
+    assert intent["location"]["radius_miles"] == 25
+    assert intent["location"]["work_mode"] == "onsite"
+    assert intent["company_preferences"]["exclude_current_companies"] == ["Epiq"]
+
+
+def test_intake_confirm_remote_anywhere_boundary(tmp_path: Path) -> None:
+    # No JD-extracted location at all (unlike CLEAR_ROLE_TASK_A's "New York")
+    # so the boundary-vs-JD conflict check has nothing to disagree with —
+    # this test is about the remote/anywhere translation itself.
+    task_a = dict(CLEAR_ROLE_TASK_A, explicit_constraints={**CLEAR_ROLE_TASK_A["explicit_constraints"], "locations": []})
+    app = _app_with_intake(tmp_path, [(task_a, CLEAR_ROLE_TASK_B)])
+    client = TestClient(app)
+    _login(client)
+
+    start = client.post(
+        "/intake/start",
+        json={
+            "raw_input": "Senior Backend Engineer, 5+ years Python.",
+            "boundary": {
+                "hiring_company": "Epiq",
+                "country": "India",
+                "work_mode": "remote",
+                "remote_scope": "anywhere",
+            },
+        },
+    ).json()
+    session_id = start["session_id"]
+    assert start["result"]["status"] == "ready"
+
+    confirm = client.post(f"/intake/{session_id}/confirm")
+    assert confirm.status_code == 200
+    intent = confirm.json()
+    assert intent["location"]["countries"] == ["India"]
+    assert intent["location"]["cities"] == []
+    assert intent["location"]["radius_miles"] is None
+    assert intent["location"]["work_mode"] == "remote"
+
+
+def test_intake_start_without_boundary_is_backward_compatible(tmp_path: Path) -> None:
+    app = _app_with_intake(tmp_path, [(CLEAR_ROLE_TASK_A, CLEAR_ROLE_TASK_B)])
+    client = TestClient(app)
+    _login(client)
+
+    response = client.post("/intake/start", json={"raw_input": "Senior Backend Engineer, 5+ years Python, NYC."})
+    assert response.status_code == 200
+    assert response.json()["result"]["status"] == "ready"
