@@ -264,7 +264,15 @@ function condCard(cond, parent) {
   return card;
 }
 function groupCard(group, parent, depth) {
-  const card = el("div", { class: `group d${depth % 3}` + (group.id === selectedId ? " selected" : ""), onclick: (e) => { e.stopPropagation(); selectedId = group.id; renderTree(); } });
+  const card = el("div", { class: `group d${depth % 3}` + (group.id === selectedId ? " selected" : ""), onclick: (e) => {
+    e.stopPropagation();
+    // Clicks on the controls INSIDE a condition (dropdowns, text areas, buttons) must never re-render the tree:
+    // that destroyed the open dropdown before an option could be chosen.
+    if (e.target.closest(".cond, select, input, textarea, button")) return;
+    selectedId = group.id;
+    document.querySelectorAll(".group.selected").forEach((g) => g.classList.remove("selected"));
+    card.classList.add("selected");
+  } });
   const opSel = el("select", { "aria-label": "Group operator", onchange: (e) => { group.op = e.target.value; renderTree(); persist(); }, onclick: (e) => e.stopPropagation() },
     [["and", "AND — all of these"], ["or", "OR — any of these"], ["all_of", "ALL OF — each matched by some entry"]].map(([v, t]) => el("option", { value: v, selected: v === group.op ? true : null, text: t })));
   const head = el("div", { class: "ghead" }, opSel, el("span", { class: "grow" }),
