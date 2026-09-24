@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="playground-token" content="__PLAYGROUND_TOKEN__">
+<title>CrustData Structured Search Playground</title>
+<style>
+:root {
+  --bg: #f6f7f9; --panel: #ffffff; --ink: #1b2430; --muted: #66707f; --line: #dfe3ea; --accent: #2b4c8c;
+  --green: #1a7f37; --green-bg: #e6f4ea; --yellow: #9a6a00; --yellow-bg: #fff4d6; --red: #b3261e; --red-bg: #fde7e6;
+  --grey-bg: #eceff3; --code: #f0f2f6; --group-a: #f2f5fb; --group-b: #f8f4ee; --group-c: #f1f6f2;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161c; --panel: #1b212a; --ink: #e6eaf0; --muted: #98a2b3; --line: #2f3845; --accent: #8fb0ff;
+    --green: #5bd28b; --green-bg: #17331f; --yellow: #f0c25b; --yellow-bg: #3a2f10; --red: #ff8a80; --red-bg: #3b1a18;
+    --grey-bg: #262d38; --code: #232a35; --group-a: #1f2733; --group-b: #262420; --group-c: #1e2924;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel); display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap; }
+header h1 { margin: 0; font-size: 16px; }
+header span { color: var(--muted); font-size: 12px; }
+main { display: grid; grid-template-columns: minmax(260px, 340px) minmax(360px, 1fr) minmax(320px, 460px); gap: 12px; padding: 12px 16px; align-items: start; }
+@media (max-width: 1100px) { main { grid-template-columns: 1fr; } }
+section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; min-width: 0; }
+h2 { margin: 0 0 8px; font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+input, select, textarea, button { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 7px; }
+textarea { width: 100%; min-height: 58px; resize: vertical; font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; }
+button { cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); color: var(--panel); border-color: var(--accent); font-weight: 600; }
+button:disabled { opacity: .45; cursor: not-allowed; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; flex: none; }
+.dot.verified { background: var(--green); } .dot.documented_unverified { background: #e0a800; } .dot.unavailable { background: var(--red); } .dot.na { background: var(--muted); }
+.legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; margin-bottom: 6px; }
+.legend label { display: flex; align-items: center; cursor: pointer; }
+.legend input { margin-right: 4px; }
+#catalog-list { max-height: 72vh; overflow: auto; }
+details { border-top: 1px solid var(--line); padding: 3px 0; }
+summary { cursor: pointer; font-weight: 600; font-size: 12.5px; padding: 3px 0; }
+.field { display: flex; align-items: center; gap: 4px; padding: 3px 2px; border-radius: 4px; }
+.field:hover { background: var(--grey-bg); }
+.field .txt { flex: 1; min-width: 0; }
+.field .nm { font-size: 13px; }
+.field .path { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+.field button { padding: 0 7px; line-height: 20px; }
+.tag { font-size: 10.5px; padding: 0 5px; border-radius: 8px; background: var(--grey-bg); color: var(--muted); margin-left: 4px; white-space: nowrap; }
+.tag.gated { background: var(--yellow-bg); color: var(--yellow); }
+.group { border: 1px solid var(--line); border-left-width: 4px; border-radius: 8px; padding: 8px; margin: 6px 0; background: var(--group-a); }
+.group.d1 { background: var(--group-b); } .group.d2 { background: var(--group-c); }
+.group.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.ghead { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 6px; }
+.ghead .grow { flex: 1; }
+.cond { border: 1px solid var(--line); border-radius: 6px; padding: 6px; margin: 5px 0; background: var(--panel); display: grid; grid-template-columns: minmax(0, 1fr); gap: 5px; min-width: 0; }
+.group { min-width: 0; }
+textarea, .cond select { max-width: 100%; }
+.cond .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.cond select.field-select { flex: 1; min-width: 180px; max-width: 100%; }
+.status-pill { font-size: 11px; padding: 1px 6px; border-radius: 8px; }
+.status-pill.verified { background: var(--green-bg); color: var(--green); } .status-pill.documented_unverified { background: var(--yellow-bg); color: var(--yellow); } .status-pill.unavailable { background: var(--red-bg); color: var(--red); }
+.hint { color: var(--muted); font-size: 12px; }
+pre { background: var(--code); border-radius: 6px; padding: 8px; overflow: auto; max-height: 300px; font-size: 12px; margin: 4px 0; }
+.msg { font-size: 12.5px; padding: 4px 6px; border-radius: 5px; margin: 3px 0; overflow-wrap: anywhere; }
+.msg.error { background: var(--red-bg); color: var(--red); } .msg.warn { background: var(--yellow-bg); color: var(--yellow); } .msg.note { background: var(--grey-bg); color: var(--muted); }
+table { border-collapse: collapse; width: 100%; font-size: 12px; }
+th, td { text-align: left; padding: 3px 5px; border-bottom: 1px solid var(--line); vertical-align: top; overflow-wrap: anywhere; }
+.scroll-x { overflow-x: auto; }
+.toolbar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+.na-list .field { opacity: .8; }
+</style>
+</head>
+<body>
+<header>
+  <h1>CrustData Structured Search Playground</h1>
+  <span>Internal experiment tool. You choose the fields, values and Boolean grouping; nothing is interpreted, expanded or corrected. Not connected to RecruiterAI search.</span>
+</header>
+<main>
+  <section id="catalog-panel" aria-label="Field catalog">
+    <h2>Field catalog <span id="catalog-count" class="hint"></span></h2>
+    <div class="legend" id="legend"></div>
+    <input id="catalog-search" type="search" placeholder="Search fields (name, path, category)" style="width:100%; margin-bottom:6px" aria-label="Search fields">
+    <div id="catalog-list"></div>
+  </section>
+
+  <section aria-label="Query builder">
+    <h2>Query</h2>
+    <div class="toolbar">
+      <button id="btn-example" title="Loads the nested example from the brief; edit fields and values freely">Load example structure</button>
+      <button id="btn-clear">Clear</button>
+      <button id="btn-copy-tree">Copy tree JSON</button>
+      <button id="btn-paste-tree">Paste tree JSON</button>
+    </div>
+    <p class="hint" style="margin-top:0">Click a field in the catalog to add it to the highlighted group. Several values (one per line) in one row are joined with the row's OR / AND / ALL OF; use groups to nest.</p>
+    <div id="tree"></div>
+  </section>
+
+  <section aria-label="Output">
+    <h2>Result of the builder</h2>
+    <div id="issues"></div>
+    <h2 style="margin-top:10px">Boolean structure</h2>
+    <pre id="boolean-text">(build a query)</pre>
+    <h2>Exact request sent to CrustData <button id="btn-copy-json" style="float:right">Copy</button></h2>
+    <pre id="request-json">{}</pre>
+    <h2>Run</h2>
+    <div class="row" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+      <label>Results <input id="limit" type="number" min="1" max="50" value="10" style="width:64px"></label>
+      <span id="estimate" class="hint"></span>
+      <button id="btn-run" class="primary" disabled>Run this exact query</button>
+    </div>
+    <details style="margin-top:6px"><summary>Response fields requested</summary><div id="fields-box" class="hint"></div></details>
+    <div id="run-out" style="margin-top:8px"></div>
+  </section>
+</main>
+
+<script>
+"use strict";
+const TOKEN = document.querySelector('meta[name="playground-token"]').content;
+const STATUS_LABEL = { verified: "Verified in our account", documented_unverified: "Documented, not yet verified", unavailable: "Unavailable in our account" };
+let CAT = null, BY = {}, tree = null, selectedId = null, nextId = 1, buildTimer = null, lastBuilt = null;
+const statusOn = { verified: true, documented_unverified: true, unavailable: true };
+
+const $ = (s) => document.querySelector(s);
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") e.className = v; else if (k === "text") e.textContent = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else if (v !== null && v !== undefined && v !== false) e.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat()) if (kid !== null && kid !== undefined) e.append(kid.nodeType ? kid : document.createTextNode(kid));
+  return e;
+}
+async function api(path, body) {
+  const res = await fetch(path, { method: body ? "POST" : "GET", headers: { "Content-Type": "application/json", "X-Playground-Token": TOKEN }, body: body ? JSON.stringify(body) : undefined });
+  const data = await res.json().catch(() => ({}));
+  return { status: res.status, data };
+}
+
+/* ---------- tree model ---------- */
+function newGroup(op = "and") { return { id: nextId++, type: "group", op, children: [] }; }
+function newCond(field, operator) {
+  const f = BY[field]; const ops = f ? f.supported_operators : ["="];
+  return { id: nextId++, type: "condition", field: field || "", operator: operator || (ops.includes("(.)") ? "(.)" : ops[0]), values: [], combine: "or", geo: { location: "", distance: "", unit: "mi" } };
+}
+function findNode(node, id, parent = null) {
+  if (node.id === id) return { node, parent };
+  for (const c of node.children || []) { const r = findNode(c, id, node); if (r) return r; }
+  return null;
+}
+function serialize(node) {
+  if (node.type === "group") return { type: "group", op: node.op, children: node.children.map(serialize) };
+  const out = { type: "condition", field: node.field, operator: node.operator, values: node.values, combine: node.combine };
+  const shape = (CAT.operators[node.operator] || {}).shape;
+  if (shape === "geo") { const g = node.geo; out.geo = { location: g.location, distance: g.distance, unit: g.unit }; }
+  return out;
+}
+function persist() { try { localStorage.setItem("playground-tree", JSON.stringify(serialize(tree))); } catch (e) {} scheduleBuild(); }
+function fromSerialized(n) {
+  if (n.type === "group") { const g = newGroup(n.op); g.children = (n.children || []).map(fromSerialized); return g; }
+  const c = newCond(n.field, n.operator); c.values = n.values || []; c.combine = n.combine || "or"; if (n.geo) c.geo = Object.assign(c.geo, n.geo); return c;
+}
+
+/* ---------- catalog ---------- */
+function renderLegend() {
+  const box = $("#legend"); box.replaceChildren();
+  for (const s of ["verified", "documented_unverified", "unavailable"]) {
+    const cb = el("input", { type: "checkbox", checked: statusOn[s], onchange: (e) => { statusOn[s] = e.target.checked; renderCatalog(); } });
+    box.append(el("label", {}, cb, el("span", { class: "dot " + s }), `${STATUS_LABEL[s]} (${CAT.counts[s] || 0})`));
+  }
+}
+function renderCatalog() {
+  const q = $("#catalog-search").value.trim().toLowerCase();
+  const list = $("#catalog-list"); list.replaceChildren();
+  const groups = new Map();
+  for (const f of CAT.fields) {
+    if (!statusOn[f.verified_in_our_account]) continue;
+    const hay = (f.display_name + " " + f.provider_field + " " + f.category + " " + (f.subcategory || "")).toLowerCase();
+    if (q && !hay.includes(q)) continue;
+    const key = f.category + (f.subcategory ? " · " + f.subcategory : "");
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(f);
+  }
+  let shown = 0;
+  for (const [key, fields] of groups) {
+    const d = el("details", { open: !!q || fields.some((f) => f.verified_in_our_account === "verified") ? true : null });
+    d.append(el("summary", { text: `${key} (${fields.length})` }));
+    for (const f of fields) {
+      shown++;
+      const tags = [el("span", { class: "tag", text: f.value_type })];
+      if (f.response_gated) tags.push(el("span", { class: "tag gated", text: "response gated" }));
+      if (f.allowed_values) tags.push(el("span", { class: "tag", text: "closed set" }));
+      d.append(el("div", { class: "field", title: `${STATUS_LABEL[f.verified_in_our_account]}\nSource: ${f.source}\n${f.notes}` },
+        el("span", { class: "dot " + f.verified_in_our_account }),
+        el("div", { class: "txt" }, el("div", { class: "nm" }, f.display_name, ...tags), el("div", { class: "path", text: f.provider_field })),
+        el("button", { title: "Add to the highlighted group", "aria-label": "Add " + f.display_name, onclick: () => addField(f.name), text: "+" })));
+    }
+    list.append(d);
+  }
+  $("#catalog-count").textContent = `${shown} of ${CAT.fields.length} shown`;
+  const na = el("details", { class: "na-list" }, el("summary", { text: `Requested but NOT available as People Search filters (${CAT.unsupported_requests.length + CAT.not_documented_in_people_search.length})` }));
+  for (const u of CAT.unsupported_requests) na.append(el("div", { class: "field", title: u.notes }, el("span", { class: "dot unavailable" }), el("div", { class: "txt" }, el("div", { class: "nm", text: u.display_name }), el("div", { class: "path", text: u.notes }))));
+  for (const u of CAT.not_documented_in_people_search) na.append(el("div", { class: "field", title: u.notes }, el("span", { class: "dot na" }), el("div", { class: "txt" }, el("div", { class: "nm", text: u.display_name + " (not documented)" }), el("div", { class: "path", text: u.notes }))));
+  list.append(na);
+}
+function addField(name) {
+  const target = (findNode(tree, selectedId) || { node: tree }).node;
+  const group = target.type === "group" ? target : tree;
+  group.children.push(newCond(name));
+  renderTree(); persist();
+}
+
+/* ---------- tree rendering ---------- */
+function fieldSelect(cond) {
+  const sel = el("select", { class: "field-select", "aria-label": "Field", onchange: (e) => {
+    cond.field = e.target.value; const f = BY[cond.field];
+    if (f && !f.supported_operators.includes(cond.operator)) cond.operator = f.supported_operators.includes("(.)") ? "(.)" : f.supported_operators[0];
+    renderTree(); persist(); } });
+  sel.append(el("option", { value: "", text: "Choose a field…" }));
+  const byCat = new Map();
+  for (const f of CAT.fields) { if (!byCat.has(f.category)) byCat.set(f.category, []); byCat.get(f.category).push(f); }
+  const mark = { verified: "● ", documented_unverified: "◐ ", unavailable: "✕ " };
+  for (const [cat, fields] of byCat) {
+    const og = el("optgroup", { label: cat });
+    for (const f of fields) og.append(el("option", { value: f.name, selected: f.name === cond.field ? true : null, text: `${mark[f.verified_in_our_account]}${f.display_name}  —  ${f.provider_field}` }));
+    sel.append(og);
+  }
+  return sel;
+}
+function splitLines(text) { return text.split("\n").filter((l) => l.length > 0); }
+function condCard(cond, parent) {
+  const f = BY[cond.field]; const shape = f ? (CAT.operators[cond.operator] || {}).shape : null;
+  const card = el("div", { class: "cond" });
+  const top = el("div", { class: "row" }, fieldSelect(cond));
+  if (f) top.append(el("span", { class: "status-pill " + f.verified_in_our_account, text: STATUS_LABEL[f.verified_in_our_account], title: f.source }));
+  top.append(el("button", { title: "Remove", "aria-label": "Remove condition", text: "✕", onclick: () => { parent.children = parent.children.filter((c) => c !== cond); renderTree(); persist(); } }));
+  card.append(top);
+  if (!f) { card.append(el("div", { class: "hint", text: "Pick a field to continue." })); return card; }
+  const opSel = el("select", { "aria-label": "Operator", title: (CAT.operators[cond.operator] || {}).meaning, onchange: (e) => { cond.operator = e.target.value; renderTree(); persist(); } },
+    f.supported_operators.map((o) => el("option", { value: o, selected: o === cond.operator ? true : null, text: o + (f.verified_operators.includes(o) ? "  ✓ verified" : "") })));
+  const row2 = el("div", { class: "row" }, opSel, el("span", { class: "hint", text: (CAT.operators[cond.operator] || {}).meaning || "" }));
+  card.append(row2);
+  if (shape === "null") return card;
+  if (shape === "geo") {
+    const g = cond.geo; const mk = (key, ph, w) => el("input", { placeholder: ph, value: g[key], style: `width:${w}`, "aria-label": ph, oninput: (e) => { g[key] = e.target.value; persist(); } });
+    const unit = el("select", { "aria-label": "Unit", onchange: (e) => { g.unit = e.target.value; persist(); } }, ["km", "mi", "miles", "m", "meters", "ft", "feet"].map((u) => el("option", { value: u, selected: u === g.unit ? true : null, text: u })));
+    card.append(el("div", { class: "row" }, mk("location", "Place name, e.g. Toronto, ON", "220px"), mk("distance", "distance", "80px"), unit));
+    return card;
+  }
+  const ta = el("textarea", { "aria-label": "Values, one per line", placeholder: shape === "array" ? "one value per line (sent as one list)" : "one value per line", oninput: (e) => { cond.values = splitLines(e.target.value); persist(); const combo = card.querySelector(".combine"); if (combo) combo.style.display = cond.values.length > 1 ? "" : "none"; } });
+  ta.value = cond.values.join("\n");
+  card.append(ta);
+  if (f.allowed_values) card.append(el("div", { class: "hint", text: "Closed set: " + f.allowed_values.join(" · ") }));
+  if (shape === "scalar") {
+    const combo = el("div", { class: "row combine", style: cond.values.length > 1 ? "" : "display:none" }, el("span", { class: "hint", text: "Join these values with" }),
+      el("select", { "aria-label": "Join values with", onchange: (e) => { cond.combine = e.target.value; persist(); } },
+        [["or", "OR (any of them)"], ["and", "AND (all in one entry)"], ["all_of", "ALL OF (each in some entry)"]].map(([v, t]) => el("option", { value: v, selected: v === cond.combine ? true : null, text: t }))));
+    card.append(combo);
+  }
+  return card;
+}
+function groupCard(group, parent, depth) {
+  const card = el("div", { class: `group d${depth % 3}` + (group.id === selectedId ? " selected" : ""), onclick: (e) => { e.stopPropagation(); selectedId = group.id; renderTree(); } });
+  const opSel = el("select", { "aria-label": "Group operator", onchange: (e) => { group.op = e.target.value; renderTree(); persist(); }, onclick: (e) => e.stopPropagation() },
+    [["and", "AND — all of these"], ["or", "OR — any of these"], ["all_of", "ALL OF — each matched by some entry"]].map(([v, t]) => el("option", { value: v, selected: v === group.op ? true : null, text: t })));
+  const head = el("div", { class: "ghead" }, opSel, el("span", { class: "grow" }),
+    el("button", { onclick: (e) => { e.stopPropagation(); group.children.push(newCond("")); renderTree(); persist(); }, text: "+ condition" }),
+    el("button", { onclick: (e) => { e.stopPropagation(); const g = newGroup("or"); group.children.push(g); selectedId = g.id; renderTree(); persist(); }, text: "+ group" }));
+  if (parent) head.append(el("button", { "aria-label": "Remove group", onclick: (e) => { e.stopPropagation(); parent.children = parent.children.filter((c) => c !== group); if (selectedId === group.id) selectedId = tree.id; renderTree(); persist(); }, text: "✕" }));
+  card.append(head);
+  if (!group.children.length) card.append(el("div", { class: "hint", text: "Empty group. Add a condition or click a catalog field." }));
+  for (const child of group.children) card.append(child.type === "group" ? groupCard(child, group, depth + 1) : condCard(child, group));
+  return card;
+}
+function renderTree() { const root = $("#tree"); root.replaceChildren(groupCard(tree, null, 0)); }
+
+/* ---------- build + run ---------- */
+function scheduleBuild() { clearTimeout(buildTimer); buildTimer = setTimeout(doBuild, 200); }
+async function doBuild() {
+  const { status, data } = await api("/api/build", { tree: serialize(tree) });
+  if (status !== 200) return;
+  lastBuilt = data;
+  $("#boolean-text").textContent = data.ok ? data.boolean_text : "(fix the errors listed above to see the structure)";
+  $("#request-json").textContent = data.ok ? JSON.stringify({ filters: data.filters, limit: Number($("#limit").value) || 10, fields: CAT.default_fields }, null, 2) : "{}";
+  const box = $("#issues"); box.replaceChildren();
+  const add = (cls, list) => list.forEach((m) => box.append(el("div", { class: "msg " + cls, text: m.message })));
+  add("error", data.errors); add("warn", data.warnings); add("note", data.notes);
+  if (data.ok && !data.errors.length && !data.warnings.length && !data.notes.length) box.append(el("div", { class: "msg note", text: "No issues. Every field used is verified in our account." }));
+  $("#btn-run").disabled = !data.ok;
+  updateEstimate();
+}
+function selectedFields() { return [...document.querySelectorAll("#fields-box input:checked")].map((i) => i.value); }
+function updateEstimate() {
+  const n = Math.min(50, Math.max(1, Number($("#limit").value) || 10));
+  $("#estimate").textContent = `≈ ${(n * CAT.credits_per_result).toFixed(2)} credits at ~${CAT.credits_per_result}/result`;
+  if (lastBuilt && lastBuilt.ok) $("#request-json").textContent = JSON.stringify({ filters: lastBuilt.filters, limit: n, fields: selectedFields() }, null, 2);
+}
+async function run(confirmUnavailable = false) {
+  const limit = Math.min(50, Math.max(1, Number($("#limit").value) || 10));
+  if (!confirmUnavailable && !confirm(`Send this exact query to CrustData?\nUp to ${limit} results, ≈ ${(limit * CAT.credits_per_result).toFixed(2)} credits.`)) return;
+  const out = $("#run-out"); out.replaceChildren(el("div", { class: "hint", text: "Running…" }));
+  const { status, data } = await api("/api/run", { tree: serialize(tree), limit, fields: selectedFields(), confirm_unavailable: confirmUnavailable });
+  if (status === 409) {
+    if (confirm(data.detail.message + "\n\n" + data.detail.warnings.map((w) => w.message).join("\n\n"))) return run(true);
+    out.replaceChildren(el("div", { class: "hint", text: "Cancelled." })); return;
+  }
+  if (status !== 200) { out.replaceChildren(el("div", { class: "msg error", text: typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail) })); return; }
+  out.replaceChildren();
+  if (data.http_status !== 200) { out.append(el("div", { class: "msg error", text: `CrustData answered HTTP ${data.http_status}` }), el("pre", { text: JSON.stringify(data.error_body, null, 2) })); return; }
+  out.append(el("div", { class: "msg note", text: `Retrieved ${data.retrieved_count} · provider-reported total_count (search universe, not "matches"): ${data.total_count_provider_reported} · next_cursor: ${data.has_next_cursor ? "yes" : "no"} · ${data.elapsed_ms} ms` + (data.credits_used_header ? ` · credits used: ${data.credits_used_header}` : "") }));
+  out.append(el("div", { class: "hint", text: "Envelope keys: " + Object.keys(data.response_envelope).join(", ") + " · saved: " + data.saved_to }));
+  const tbl = el("table", {}, el("thead", {}, el("tr", {}, ["#", "Name", "Current title", "Company", "Location", "fit"].map((h) => el("th", { text: h })))));
+  const body = el("tbody");
+  for (const r of data.rows) body.append(el("tr", {}, el("td", { text: r.position }), el("td", {}, r.profile_url ? el("a", { href: r.profile_url, target: "_blank", rel: "noopener noreferrer", text: r.name || "(no name)" }) : (r.name || "")), el("td", { text: r.current_title || "" }), el("td", { text: r.current_company || "" }), el("td", { text: r.location || "" }), el("td", { text: r.fit || "" })));
+  tbl.append(body); out.append(el("div", { class: "scroll-x" }, tbl));
+}
+
+/* ---------- example + init ---------- */
+function exampleTree() {
+  const T = "experience.employment_details.current.title";
+  const cond = (field, op, values, combine = "or") => Object.assign(newCond(field, op), { values, combine });
+  const root = newGroup("and");
+  const a = newGroup("and");
+  a.children = [cond(T, "(.)", ["Backend Engineer", "Platform Engineer"]), cond("skills.professional_network_skills", "(.)", ["Java", "Python"])];
+  const b = cond("experience.employment_details.current.description", "(.)", ["LLM", "RAG"]);
+  root.children = [a, b];
+  return root;
+}
+function resetTo(t) { tree = t; selectedId = tree.id; renderTree(); persist(); }
+
+async function init() {
+  const { status, data } = await api("/api/catalog");
+  if (status !== 200) { document.body.prepend(el("div", { class: "msg error", text: "Could not load the catalog (token or server problem)." })); return; }
+  CAT = data; for (const f of CAT.fields) BY[f.name] = f;
+  renderLegend(); renderCatalog();
+  const fb = $("#fields-box"); fb.replaceChildren();
+  for (const f of CAT.projectable_fields) fb.append(el("label", { style: "margin-right:10px; display:inline-block" }, el("input", { type: "checkbox", value: f, checked: CAT.default_fields.includes(f) ? true : null, onchange: updateEstimate }), " " + f));
+  let saved = null; try { saved = JSON.parse(localStorage.getItem("playground-tree")); } catch (e) {}
+  tree = location.hash === "#example" ? exampleTree() : saved && saved.type === "group" ? fromSerialized(saved) : newGroup("and"); selectedId = tree.id;
+  renderTree(); scheduleBuild();
+  $("#catalog-search").addEventListener("input", renderCatalog);
+  $("#limit").addEventListener("input", updateEstimate);
+  $("#btn-run").addEventListener("click", () => run(false));
+  $("#btn-clear").addEventListener("click", () => resetTo(newGroup("and")));
+  $("#btn-example").addEventListener("click", () => resetTo(exampleTree()));
+  $("#btn-copy-tree").addEventListener("click", () => navigator.clipboard && navigator.clipboard.writeText(JSON.stringify(serialize(tree), null, 2)));
+  $("#btn-copy-json").addEventListener("click", () => navigator.clipboard && navigator.clipboard.writeText($("#request-json").textContent));
+  $("#btn-paste-tree").addEventListener("click", () => { const t = prompt("Paste a tree JSON (from Copy tree JSON):"); if (!t) return; try { resetTo(fromSerialized(JSON.parse(t))); } catch (e) { alert("That is not a valid tree JSON."); } });
+}
+init();
+</script>
+</body>
+</html>
