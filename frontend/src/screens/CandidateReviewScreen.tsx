@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, ExternalLink, Pencil, Upload, X } from 'lucide-react'
+import { AlertTriangle, Pencil, Upload, X } from 'lucide-react'
 import type { SearchBrief } from '../models/searchBrief'
 import type { SearchResponse } from '../types'
 import {
@@ -12,6 +12,7 @@ import {
   type RelevanceTier,
   type SortKey,
 } from '../models/discovery'
+import { CandidateRecord } from '../components/CandidateRecord'
 import { updateCandidateRecord } from '../services/recruiterWorkflow'
 import { SearchBriefReview, summarizeCompanies, summarizeExperience, summarizeLocations, summarizeSkills } from './SearchBriefReview'
 
@@ -40,12 +41,6 @@ const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
   { value: 'relevance', label: 'Relevance' },
   { value: 'updated', label: 'Profile Updated' },
   { value: 'name', label: 'Name' },
-]
-
-const DECISION_OPTIONS: Array<{ value: Decision; label: string }> = [
-  { value: 'shortlist', label: 'Shortlist' },
-  { value: 'maybe', label: 'Maybe' },
-  { value: 'reject', label: 'Reject' },
 ]
 
 const MAX_COMPARE = 3
@@ -467,200 +462,86 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
           </div>
 
           {selectedCandidate ? (
-            <aside className="discovery-profile" aria-label="Candidate review">
-              <div className="discovery-profile__head">
-                <div>
-                  <h2>{selectedCandidate.name}</h2>
-                  <p>
-                    {selectedCandidate.title} · {selectedCandidate.company}
+            <CandidateRecord
+              candidate={selectedCandidate}
+              position={sortKey === 'relevance' ? sortedCandidates.findIndex((candidate) => candidate.id === selectedCandidate.id) + 1 : undefined}
+              total={sortKey === 'relevance' ? sortedCandidates.length : undefined}
+              decision={decisions[selectedCandidate.id]}
+              onDecision={(decision) => setDecision(selectedCandidate.id, decision)}
+              onClose={() => setSelectedId(null)}
+            >
+            <div className="brief-section">
+              <h3 className="brief-section__title">Contact</h3>
+              <dl className="workspace__preview-list">
+                <div className="workspace__preview-row">
+                  <dt>Email</dt>
+                  <dd className={selectedCandidate.contactEmail ? '' : 'discovery-resume-status--empty'}>{emailStatusLine(selectedCandidate)}</dd>
+                </div>
+                <div className="workspace__preview-row">
+                  <dt>Phone</dt>
+                  <dd className={selectedCandidate.contactPhone ? '' : 'discovery-resume-status--empty'}>{phoneStatusLine(selectedCandidate)}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="brief-section">
+              <h3 className="brief-section__title">Resume</h3>
+              {resumes[selectedCandidate.id] ? (
+                <p className="discovery-resume-status">{resumes[selectedCandidate.id].name}</p>
+              ) : (
+                <p className="discovery-resume-status discovery-resume-status--empty">No resume on file.</p>
+              )}
+              <input
+                ref={fileInputRef}
+                type="file"
+                className="discovery-file-input"
+                onChange={(event) => {
+                  const file = event.target.files?.[0]
+                  if (file) uploadResume(selectedCandidate.id, file)
+                  event.target.value = ''
+                }}
+              />
+              <button type="button" className="discovery-action" onClick={() => fileInputRef.current?.click()}>
+                <Upload size={14} aria-hidden="true" />
+                {resumes[selectedCandidate.id] ? 'Replace Resume' : 'Upload Resume'}
+              </button>
+            </div>
+
+            <div className="brief-section">
+              <h3 className="brief-section__title">Notes</h3>
+              <div className="discovery-notes">
+                {(notes[selectedCandidate.id] ?? []).map((note) => (
+                  <p key={note.id} className="discovery-note">
+                    {note.text}
                   </p>
-                  {selectedCandidate.profileUrl ? (
-                    <a
-                      className="discovery-profile__linkedin"
-                      href={selectedCandidate.profileUrl}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                    >
-                      <ExternalLink size={13} aria-hidden="true" />
-                      LinkedIn · Open Profile
-                    </a>
-                  ) : null}
-                </div>
-                <button type="button" className="discovery-profile__close" onClick={() => setSelectedId(null)} aria-label="Close profile">
-                  <X size={16} />
-                </button>
+                ))}
+                {(notes[selectedCandidate.id] ?? []).length === 0 ? (
+                  <p className="discovery-note discovery-note--empty">No notes yet.</p>
+                ) : null}
               </div>
-
-              <div className="brief-section">
-                <div className="discovery-profile__tier-row">
-                  <div className={`assessment-verdict ${tierClassName(selectedCandidate.relevanceTier)}`}>
-                    {relevanceLabel(selectedCandidate.relevanceTier)}
-                  </div>
-                  {selectedCandidate.potentialConcerns.length ? (
-                    <span className="discovery-profile__concern-pill">
-                      <AlertTriangle size={12} aria-hidden="true" /> {selectedCandidate.potentialConcerns.length} concern
-                      {selectedCandidate.potentialConcerns.length === 1 ? '' : 's'}
-                    </span>
-                  ) : null}
-                </div>
-                <p className="assessment-narrative">{selectedCandidate.whyThisCandidate || 'Not enough information was returned to assess this candidate.'}</p>
-              </div>
-
-              <div className="brief-section">
-                <h3 className="brief-section__title">Strong Evidence</h3>
-                <ul className="assessment-list assessment-list--strengths">
-                  {selectedCandidate.strongEvidence.length ? (
-                    selectedCandidate.strongEvidence.map((item) => <li key={item}>{item}</li>)
-                  ) : (
-                    <li className="assessment-list__empty">No specific evidence found in the available profile data.</li>
-                  )}
-                </ul>
-              </div>
-
-              {selectedCandidate.potentialConcerns.length ? (
-                <div className="brief-section brief-section--concerns">
-                  <h3 className="brief-section__title brief-section__title--concerns">
-                    <AlertTriangle size={15} aria-hidden="true" />
-                    Potential Concerns
-                  </h3>
-                  <ul className="assessment-list assessment-list--concerns">
-                    {selectedCandidate.potentialConcerns.map((item) => <li key={item}>{item}</li>)}
-                  </ul>
-                </div>
-              ) : null}
-
-              <div className="brief-section">
-                <h3 className="brief-section__title">What We Don't Know</h3>
-                <ul className="assessment-list">
-                  {selectedCandidate.whatWeDontKnow.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="brief-section">
-                <h3 className="brief-section__title">Recruiter Decision</h3>
-                <div className="brief-segmented" role="group" aria-label="Recruiter decision">
-                  {DECISION_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={`brief-segmented__option${decisions[selectedCandidate.id] === option.value ? ' is-active' : ''}`}
-                      onClick={() => setDecision(selectedCandidate.id, option.value)}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="brief-section">
-                <h3 className="brief-section__title">Career</h3>
-                {selectedCandidate.pastRoles.length ? (
-                  <ul className="assessment-list">
-                    {selectedCandidate.pastRoles.slice(0, 3).map((role, index) => (
-                      <li key={`${role.title}-${index}`}>
-                        {role.title || 'Role'}
-                        {role.company ? ` · ${role.company}` : ''}
-                      </li>
-                    ))}
-                    {selectedCandidate.pastRoles.length > 3 ? (
-                      <li className="assessment-list__empty">+ {selectedCandidate.pastRoles.length - 3} earlier role(s) on record</li>
-                    ) : null}
-                  </ul>
-                ) : (
-                  <p className="discovery-resume-status discovery-resume-status--empty">No prior career history returned for this candidate.</p>
-                )}
-              </div>
-
-              <div className="brief-section">
-                <h3 className="brief-section__title">Education</h3>
-                {selectedCandidate.education.length ? (
-                  <ul className="assessment-list">
-                    {selectedCandidate.education.map((entry, index) => (
-                      <li key={index}>
-                        {[entry.degree, entry.fieldOfStudy].filter(Boolean).join(', ') || 'Degree not specified'}
-                        {entry.institution ? ` · ${entry.institution}` : ''}
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="discovery-resume-status discovery-resume-status--empty">Education was not returned for this candidate.</p>
-                )}
-              </div>
-
-              <div className="brief-section">
-                <h3 className="brief-section__title">Contact</h3>
-                <dl className="workspace__preview-list">
-                  <div className="workspace__preview-row">
-                    <dt>Email</dt>
-                    <dd className={selectedCandidate.contactEmail ? '' : 'discovery-resume-status--empty'}>{emailStatusLine(selectedCandidate)}</dd>
-                  </div>
-                  <div className="workspace__preview-row">
-                    <dt>Phone</dt>
-                    <dd className={selectedCandidate.contactPhone ? '' : 'discovery-resume-status--empty'}>{phoneStatusLine(selectedCandidate)}</dd>
-                  </div>
-                </dl>
-              </div>
-
-              <div className="brief-section">
-                <h3 className="brief-section__title">Resume</h3>
-                {resumes[selectedCandidate.id] ? (
-                  <p className="discovery-resume-status">{resumes[selectedCandidate.id].name}</p>
-                ) : (
-                  <p className="discovery-resume-status discovery-resume-status--empty">No resume on file.</p>
-                )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="discovery-file-input"
-                  onChange={(event) => {
-                    const file = event.target.files?.[0]
-                    if (file) uploadResume(selectedCandidate.id, file)
-                    event.target.value = ''
-                  }}
+              <div className="discovery-note-form">
+                <textarea
+                  className="discovery-note-input"
+                  placeholder="Add a note about this candidate…"
+                  value={noteDraft}
+                  onChange={(event) => setNoteDraft(event.target.value)}
+                  rows={2}
                 />
-                <button type="button" className="discovery-action" onClick={() => fileInputRef.current?.click()}>
-                  <Upload size={14} aria-hidden="true" />
-                  {resumes[selectedCandidate.id] ? 'Replace Resume' : 'Upload Resume'}
+                <button type="button" className="discovery-action" onClick={() => addNote(selectedCandidate.id)} disabled={!noteDraft.trim()}>
+                  Add Note
                 </button>
               </div>
+            </div>
 
-              <div className="brief-section">
-                <h3 className="brief-section__title">Notes</h3>
-                <div className="discovery-notes">
-                  {(notes[selectedCandidate.id] ?? []).map((note) => (
-                    <p key={note.id} className="discovery-note">
-                      {note.text}
-                    </p>
-                  ))}
-                  {(notes[selectedCandidate.id] ?? []).length === 0 ? (
-                    <p className="discovery-note discovery-note--empty">No notes yet.</p>
-                  ) : null}
-                </div>
-                <div className="discovery-note-form">
-                  <textarea
-                    className="discovery-note-input"
-                    placeholder="Add a note about this candidate…"
-                    value={noteDraft}
-                    onChange={(event) => setNoteDraft(event.target.value)}
-                    rows={2}
-                  />
-                  <button type="button" className="discovery-action" onClick={() => addNote(selectedCandidate.id)} disabled={!noteDraft.trim()}>
-                    Add Note
-                  </button>
-                </div>
-              </div>
-
-              <div className="brief-section">
-                <h3 className="brief-section__title">Coming Soon</h3>
-                <ul className="assessment-list assessment-list--future">
-                  <li>Interview Questions</li>
-                  <li>Outreach Draft</li>
-                  <li>Compensation Analysis</li>
-                </ul>
-              </div>
-            </aside>
+            <div className="brief-section">
+              <h3 className="brief-section__title">Coming Soon</h3>
+              <ul className="assessment-list assessment-list--future">
+                <li>Interview Questions</li>
+                <li>Outreach Draft</li>
+                <li>Compensation Analysis</li>
+              </ul>
+            </div>
+            </CandidateRecord>
           ) : null}
         </div>
       )}

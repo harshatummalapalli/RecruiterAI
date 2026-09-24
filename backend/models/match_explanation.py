@@ -52,3 +52,7 @@ class MatchExplanation(BaseModel):
     # "11+ years") was found.
     self_reported_notes: List[str] = []
     harvest_enriched: bool = False
+    # The three lines at the top of the candidate record: what is proven, what
+    # is not, what to watch. Composed only from verified judgments and the
+    # level/experience facts; empty when no judge ran for this candidate.
+    review_first: List[str] = []

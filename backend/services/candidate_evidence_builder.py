@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from backend.models.candidate import Candidate
 from backend.models.candidate_evidence import (
+    CareerEntry,
     CandidateEvidence,
     ContactEvidence,
     EducationEntry,
@@ -802,6 +803,103 @@ def _parse_contact(raw: Dict[str, Any], candidate: Candidate) -> ContactEvidence
     )
 
 
+_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+
+def _month_year(value: Any) -> Optional[str]:
+    """"2024-07-01T00:00:00" -> "Jul 2024" (display only)."""
+    parsed = _parse_role_date(value)
+    return f"{_MONTHS[parsed.month - 1]} {parsed.year}" if parsed else None
+
+
+def _harvest_date_text(value: Any) -> Optional[str]:
+    """The profile read gives dates as {"month": "Aug", "year": 2022, "text": "Aug 2022"}."""
+    if isinstance(value, dict):
+        return _clean_harvest_text(value.get("text")) or (str(value.get("year")) if value.get("year") else None)
+    return _clean_harvest_text(value)
+
+
+def _element(harvest: Optional[HarvestEvidence]) -> Dict[str, Any]:
+    if harvest is not None and harvest.success and isinstance(harvest.raw, dict):
+        element = harvest.raw.get("element")
+        if isinstance(element, dict):
+            return element
+    return {}
+
+
+def _photo_url(basic_profile: Dict[str, Any], element: Dict[str, Any]) -> Optional[str]:
+    """The search provider's own image link first (it is present at discovery
+    time, before any profile read), the profile read's photo as the fallback."""
+    for candidate in (basic_profile.get("profile_picture_permalink"), element.get("photo")):
+        if isinstance(candidate, str) and candidate.startswith("http"):
+            return candidate
+    picture = element.get("profilePicture")
+    if isinstance(picture, dict) and isinstance(picture.get("url"), str) and picture["url"].startswith("http"):
+        return picture["url"]
+    return None
+
+
+def _build_career(
+    element: Dict[str, Any], current: Dict[str, Any], current_title: str, current_company: str, past_roles: List[PastRole]
+) -> List[CareerEntry]:
+    """Career for the record. The profile read wins when present because it is
+    the only source of role descriptions; otherwise the search data gives titles
+    and dates."""
+    entries: List[CareerEntry] = []
+    for item in element.get("experience") or []:
+        if not isinstance(item, dict):
+            continue
+        title = _clean_harvest_text(item.get("position")) or ""
+        company = _clean_harvest_text(item.get("companyName")) or ""
+        if not title and not company:
+            continue
+        end = _harvest_date_text(item.get("endDate"))
+        entries.append(
+            CareerEntry(
+                title=title,
+                company=company,
+                start=_harvest_date_text(item.get("startDate")),
+                end=None if (not end or end.lower() == "present") else end,
+                current=(not end) or end.lower() == "present",
+                duration=_clean_harvest_text(item.get("duration")),
+                description=_clean_harvest_text(item.get("description")),
+            )
+        )
+    if entries:
+        return entries
+    if current_title or current_company:
+        entries.append(
+            CareerEntry(title=current_title, company=current_company, start=_month_year(current.get("start_date")), current=True)
+        )
+    for role in past_roles:
+        entries.append(
+            CareerEntry(title=role.title, company=role.company, start=_month_year(role.start_date), end=_month_year(role.end_date))
+        )
+    return entries
+
+
+def _harvest_education(element: Dict[str, Any]) -> List[EducationEntry]:
+    """Fallback only, used when the search data returned no education."""
+    entries: List[EducationEntry] = []
+    for item in element.get("education") or []:
+        if not isinstance(item, dict):
+            continue
+        institution = _clean_harvest_text(item.get("schoolName"))
+        if not institution:
+            continue
+        start, end = item.get("startDate"), item.get("endDate")
+        entries.append(
+            EducationEntry(
+                institution=institution,
+                degree=_clean_harvest_text(item.get("degree")),
+                field_of_study=_clean_harvest_text(item.get("fieldOfStudy")),
+                start_date=str(start.get("year")) if isinstance(start, dict) and start.get("year") else None,
+                end_date=str(end.get("year")) if isinstance(end, dict) and end.get("year") else None,
+            )
+        )
+    return entries
+
+
 def _clean_harvest_text(value: Any) -> Optional[str]:
     if isinstance(value, str) and value.strip():
         return value.strip()
@@ -921,6 +1019,15 @@ def build_candidate_evidence(
         _apply_harvest_normalization(evidence, harvest_evidence)
 
     evidence.derived_experience_years = _derive_experience_years(current, past_roles)
+
+    element = _element(harvest_evidence)
+    evidence.photo_url = _photo_url(basic_profile, element)
+    open_flag = element.get("openToWork")
+    evidence.open_to_work = open_flag if isinstance(open_flag, bool) else None
+    evidence.career = _build_career(element, current, candidate.title or "", candidate.company or "", past_roles)
+    if not evidence.education:
+        evidence.education = _harvest_education(element)
+
     judgments = raw.get("__requirement_judgments")
     evidence.requirement_judgments = judgments if isinstance(judgments, list) else None
 

@@ -130,6 +130,29 @@ export interface MatchExplanationRaw {
   // own summary. Kept structurally separate from strong_evidence.
   self_reported_notes?: string[]
   harvest_enriched?: boolean
+  // Release 2 (candidate record): three lines composed only from verified
+  // judgments — what is proven, what is not, what to watch. Empty when the
+  // requirement judge did not run for this candidate.
+  review_first?: string[]
+  experience_floor?: boolean | null
+  level_fit?: 'aligned' | 'above' | 'below' | 'unclear' | null
+}
+
+// One verified-or-not judgment per confirmed requirement (see
+// backend/services/requirement_judge.py). A "met" verdict always carries a
+// quote that was checked against the profile text; anything else carries no
+// proof and never counts as evidence.
+export interface RequirementJudgmentRaw {
+  tier: 'core' | 'supporting' | 'differentiator'
+  signal_text: string
+  verdict: 'met' | 'partly' | 'not_evidenced'
+  quote?: string
+  term?: string
+  source?: string
+  evidence_detail?: string
+  evidence_type?: string
+  strength?: string
+  review?: string
 }
 
 // Raw shape of a backend CandidateEvidence (dataclasses.asdict()) — career
@@ -163,6 +186,31 @@ export interface CandidateEvidenceRaw {
   contact: { email: string | null; phone: string | null; has_business_email: boolean | null }
   updated_at: string | null
   uncertainty: Array<{ field: string; note: string }>
+  // Release 2 (candidate record) — all optional so a search saved before this
+  // release still renders.
+  headline?: string
+  photo_url?: string | null
+  open_to_work?: boolean | null
+  career?: Array<{
+    title: string
+    company: string
+    start: string | null
+    end: string | null
+    current: boolean
+    duration: string | null
+    description: string | null
+  }>
+  harvest_skills?: string[]
+  harvest_certifications?: string[]
+  harvest_about?: string | null
+  derived_experience_years?: number | null
+  requirement_judgments?: RequirementJudgmentRaw[] | null
+  role_alignment?: {
+    experience_floor?: boolean | null
+    experience_floor_basis?: string
+    level_fit?: 'aligned' | 'above' | 'below' | 'unclear' | null
+    level_basis?: string
+  }
 }
 
 export interface SearchResponse {

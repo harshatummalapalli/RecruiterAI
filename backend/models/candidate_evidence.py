@@ -23,6 +23,22 @@ class PastRole:
 
 
 @dataclass
+class CareerEntry:
+    """One role on the candidate record. From the full profile read when there
+    is one (it carries descriptions), otherwise from the search data (titles
+    and dates only). Dates are display text ("Jul 2024"), exactly as the
+    source gave them."""
+
+    title: str
+    company: str
+    start: Optional[str] = None
+    end: Optional[str] = None
+    current: bool = False
+    duration: Optional[str] = None
+    description: Optional[str] = None
+
+
+@dataclass
 class EducationEntry:
     institution: Optional[str] = None
     degree: Optional[str] = None
@@ -188,6 +204,14 @@ class CandidateEvidence:
     # never a provider-returned field and never the candidate's own claim.
     # None when no role has a parseable start date.
     derived_experience_years: Optional[float] = None
+    # Candidate record (Release 2) - display data only; none of it feeds ranking.
+    # Photo: the search provider's stable image link first, the full-profile
+    # read's photo as the fallback. open_to_work is set ONLY from the profile
+    # read's own flag and is None (not False) when unknown; it is shown as a
+    # neutral chip when true and never used in ranking.
+    photo_url: Optional[str] = None
+    open_to_work: Optional[bool] = None
+    career: List[CareerEntry] = field(default_factory=list)
     # Verified requirement judgments (see backend/services/requirement_judge.py).
     # None = no judge ran for this candidate, so role_alignment falls back to
     # deterministic term matching; a list (possibly empty) = the judge ran and

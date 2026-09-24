@@ -63,6 +63,7 @@ class MatchExplainer:
             final_score=candidate.final_score,
             self_reported_notes=[evidence.harvest_self_reported_experience] if evidence.harvest_self_reported_experience else [],
             harvest_enriched=bool(harvest_evidence and harvest_evidence.success),
+            review_first=self._review_first(evidence),
         )
 
     def _to_signal_out(self, signal: MatchedSignal) -> MatchedSignalOut:
@@ -100,6 +101,38 @@ class MatchExplainer:
             parts.append("Surfaced independently by more than one search.")
 
         return " ".join(parts)
+
+    def _review_first(self, evidence: CandidateEvidence) -> List[str]:
+        """Three lines a recruiter can read in ten seconds: what is proven,
+        what is not, what to watch. Built only from verified judgments (never
+        from unverified text), and empty when no judge ran, so nothing is
+        implied about a candidate we could not check."""
+        if evidence.requirement_judgments is None:
+            return []
+        alignment = evidence.role_alignment
+        core_met = [s for s in alignment.matched_signals if s.tier == "core"]
+        core_missing = [s.signal_text for s in alignment.unmatched_signals if s.tier == "core"]
+        total = len(core_met) + len(core_missing)
+        if total == 0:
+            return []
+
+        def trim(text: str) -> str:
+            return text.rstrip(". ")
+
+        shown = [trim(s.signal_text) for s in core_met if s.strength == "strong" and s.source != "career dates"][:3]
+        first = f"Evidence for {len(core_met)} of {total} core requirements."
+        if shown:
+            first += " Shown in described work: " + "; ".join(shown) + "."
+        second = (
+            "Not evidenced on the profile: " + "; ".join(trim(t) for t in core_missing) + "."
+            if core_missing
+            else "Every core requirement has evidence on the profile."
+        )
+        watch: List[str] = list(self._potential_concerns(evidence)[:2])
+        if evidence.harvest_self_reported_experience:
+            watch.append(evidence.harvest_self_reported_experience)
+        third = "Watch: " + " ".join(watch) if watch else "Nothing flagged."
+        return [first, second, third]
 
     def _level_unknowns(self, evidence: CandidateEvidence) -> List[str]:
         """What the titles cannot tell us: level fit that stays unclear, and
