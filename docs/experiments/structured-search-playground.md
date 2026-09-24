@@ -7,6 +7,13 @@ ranking, admission, Harvest, Candidate Review, Living Brief or Release 1 / 1.1. 
 
     python -m backend.experiments.structured_playground     # then open http://127.0.0.1:8765
 
+## Two views
+
+- `/` **Recruiter view** (default): a LinkedIn-style page. "+ Add filter" opens a searchable list (job title, city, company, seniority, years of experience, distance from a place, school...). Each filter is a card: type values and press Enter to make chips, choose Include or Exclude (NOT), "words in any order" or "exact phrase", and ANY of these (OR) or ALL of these (AND). Filters are joined by AND (or OR, your choice) and "+ Add a group ( ... )" gives brackets with their own ANY/ALL. The page reads the search back in plain notation ("Current job title: ("A" OR "B") AND City: "Toronto" AND ...") and labels each filter Tested / Not tested yet / Not available.
+- `/advanced` **Advanced builder**: the operator-level view described below. "Open this search in the Advanced builder" carries the current search across.
+
+The recruiter view adds no capability: each filter maps to one catalog field and operators the advanced builder already validates (`backend/experiments/structured_playground/simple.py`). Exclude on a text filter is `(!)`, on a list filter `not_in`; "at least/at most" is `=>`/`=<`; distance is `geo_distance`/`geo_exclude`.
+
 ## What it does
 
 - **Field catalog**: 164 filterable People Search columns (CrustData `get_schema(person_search, detailed)`,

@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="playground-token" content="__PLAYGROUND_TOKEN__">
+<title>Candidate Search Playground</title>
+<style>
+:root {
+  --bg: #f4f6f9; --panel: #ffffff; --ink: #1b2430; --muted: #66707f; --line: #dfe3ea; --accent: #0a66c2; --accent-ink: #ffffff;
+  --green: #1a7f37; --green-bg: #e6f4ea; --yellow: #8a5a00; --yellow-bg: #fff4d6; --red: #b3261e; --red-bg: #fde7e6; --grey-bg: #eef1f5;
+  --chip: #e8f0fb; --chip-ink: #114a8b; --chip-x: #fdeaea; --chip-x-ink: #8f1d17;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161c; --panel: #1b212a; --ink: #e6eaf0; --muted: #98a2b3; --line: #2f3845; --accent: #6aa9ff; --accent-ink: #0d1520;
+    --green: #5bd28b; --green-bg: #17331f; --yellow: #f0c25b; --yellow-bg: #3a2f10; --red: #ff8a80; --red-bg: #3b1a18; --grey-bg: #262d38;
+    --chip: #22344d; --chip-ink: #a9caff; --chip-x: #472624; --chip-x-ink: #ffb3ad;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { padding: 14px 20px; background: var(--panel); border-bottom: 1px solid var(--line); display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+header h1 { margin: 0; font-size: 18px; }
+header .sub { color: var(--muted); font-size: 13px; flex: 1; }
+header a { color: var(--accent); font-size: 13px; }
+main { display: grid; grid-template-columns: minmax(340px, 560px) minmax(320px, 1fr); gap: 16px; padding: 16px 20px; align-items: start; max-width: 1400px; margin: 0 auto; }
+@media (max-width: 950px) { main { grid-template-columns: 1fr; } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; min-width: 0; }
+h2 { margin: 0 0 10px; font-size: 15px; }
+h3 { margin: 12px 0 6px; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+input, select, button { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; }
+button { cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; padding: 9px 16px; }
+button.link { border: 0; background: none; color: var(--accent); padding: 2px 4px; }
+button:disabled { opacity: .5; cursor: not-allowed; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.matchbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.card { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin: 8px 0; background: var(--panel); }
+.card .top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.card .title { font-weight: 600; flex: 1; min-width: 140px; }
+.badge { font-size: 11px; padding: 1px 8px; border-radius: 10px; }
+.badge.verified { background: var(--green-bg); color: var(--green); } .badge.documented_unverified { background: var(--yellow-bg); color: var(--yellow); } .badge.unavailable { background: var(--red-bg); color: var(--red); }
+.card.exclude { border-left: 4px solid var(--red); } .card.include { border-left: 4px solid var(--green); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; padding: 6px; border: 1px solid var(--line); border-radius: 8px; }
+.chip { background: var(--chip); color: var(--chip-ink); border-radius: 14px; padding: 2px 4px 2px 10px; display: inline-flex; align-items: center; gap: 4px; max-width: 100%; overflow-wrap: anywhere; }
+.exclude .chip { background: var(--chip-x); color: var(--chip-x-ink); }
+.chip button { border: 0; background: none; color: inherit; padding: 0 5px; line-height: 1; font-size: 15px; }
+.chips input { border: 0; flex: 1; min-width: 160px; padding: 4px; background: transparent; }
+.opts { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; font-size: 13.5px; align-items: center; }
+.opts label { display: inline-flex; gap: 5px; align-items: center; cursor: pointer; }
+.help { color: var(--muted); font-size: 12.5px; margin-top: 6px; }
+.choices { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.choices label { border: 1px solid var(--line); border-radius: 14px; padding: 3px 11px; cursor: pointer; font-size: 13.5px; }
+.choices label.on { background: var(--chip); color: var(--chip-ink); border-color: var(--chip-ink); }
+.choices input { display: none; }
+.group { border: 2px dashed var(--line); border-radius: 12px; padding: 8px 10px; margin: 10px 0; }
+.group > .ghead { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.joiner { text-align: center; color: var(--muted); font-size: 12px; font-weight: 700; letter-spacing: .08em; margin: 2px 0; }
+.add { margin-top: 6px; position: relative; display: flex; gap: 8px; flex-wrap: wrap; }
+#menu { position: fixed; z-index: 10; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,.25); width: min(380px, 92vw); max-height: 70vh; overflow: auto; padding: 8px; }
+#menu input { width: 100%; margin-bottom: 6px; }
+#menu .mgroup { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 8px 4px 2px; }
+#menu button { display: flex; width: 100%; justify-content: space-between; align-items: center; border: 0; text-align: left; padding: 6px 8px; border-radius: 6px; }
+#menu button:hover { background: var(--grey-bg); }
+.reads { background: var(--grey-bg); border-radius: 8px; padding: 8px 10px; white-space: pre-wrap; font-size: 13.5px; overflow-wrap: anywhere; }
+.msg { font-size: 13.5px; padding: 6px 9px; border-radius: 8px; margin: 6px 0; }
+.msg.problem { background: var(--red-bg); color: var(--red); } .msg.warn { background: var(--yellow-bg); color: var(--yellow); } .msg.note { background: var(--grey-bg); color: var(--muted); }
+.cand { border-bottom: 1px solid var(--line); padding: 8px 0; display: grid; grid-template-columns: 30px 1fr; gap: 8px; }
+.cand .n { color: var(--muted); font-size: 13px; }
+.cand .who a { font-weight: 600; color: var(--accent); text-decoration: none; }
+.cand .meta { color: var(--muted); font-size: 13.5px; }
+.runrow { display: flex; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.runrow .txt { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+pre { background: var(--grey-bg); border-radius: 8px; padding: 8px; overflow: auto; max-height: 260px; font-size: 12px; }
+details summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Candidate Search Playground</h1>
+  <span class="sub">Pick filters, type what you want, press Find candidates. Your words are used exactly as typed — nothing is guessed, corrected or expanded.</span>
+  <a href="/advanced">Advanced builder</a>
+</header>
+<main>
+  <div class="panel" aria-label="Search builder">
+    <h2>1. Build your search</h2>
+    <div class="matchbar"><span>Candidates must match</span>
+      <select id="top-combine" aria-label="Match all or any of the filters"><option value="and">ALL of these filters (AND)</option><option value="or">ANY of these filters (OR)</option></select></div>
+    <div id="items"></div>
+    <div class="add" id="top-add"></div>
+    <h3>Your search reads</h3>
+    <div class="reads" id="reads">Add a filter to start.</div>
+    <div id="messages"></div>
+    <details style="margin-top:8px"><summary>Technical details (the exact request)</summary><pre id="tech">{}</pre>
+      <button class="link" id="open-advanced">Open this search in the Advanced builder</button></details>
+  </div>
+
+  <div>
+    <div class="panel">
+      <h2>2. Find candidates</h2>
+      <div class="row">
+        <label>Show <select id="limit"><option>10</option><option>25</option><option>50</option></select> candidates</label>
+        <span class="help" id="cost"></span>
+      </div>
+      <div class="row" style="margin-top:10px"><button class="primary" id="run" disabled>Find candidates</button><span class="help">Each search is saved automatically.</span></div>
+      <div id="results" style="margin-top:12px"></div>
+    </div>
+    <div class="panel" style="margin-top:16px">
+      <h2>Recent searches</h2>
+      <div id="runs"></div>
+    </div>
+  </div>
+</main>
+<div id="menu" hidden></div>
+
+<script>
+"use strict";
+const TOKEN = document.querySelector('meta[name="playground-token"]').content;
+let FILTERS = [], BYID = {}, CFG = {}, state = { combine: "and", items: [] }, buildTimer = null, lastBuild = null, menuTarget = null, uid = 1, focusKey = null;
+const $ = (s) => document.querySelector(s);
+function el(tag, attrs = {}, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") e.className = v; else if (k === "text") e.textContent = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else if (v !== null && v !== undefined && v !== false) e.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat()) if (kid !== null && kid !== undefined) e.append(kid.nodeType ? kid : document.createTextNode(kid));
+  return e;
+}
+async function api(path, body) {
+  const res = await fetch(path, { method: body ? "POST" : "GET", headers: { "Content-Type": "application/json", "X-Playground-Token": TOKEN }, body: body ? JSON.stringify(body) : undefined });
+  return { status: res.status, data: await res.json().catch(() => ({})) };
+}
+function persist() { try { localStorage.setItem("simple-state", JSON.stringify(state)); } catch (e) {} clearTimeout(buildTimer); buildTimer = setTimeout(rebuild, 250); }
+
+/* ---------- state helpers ---------- */
+function newFilter(id) {
+  const spec = BYID[id];
+  return { _id: uid++, type: "filter", filter: id, mode: "include", values: [], match: "any", phrase: false, min: "", max: "", place: "", distance: "", unit: "mi" };
+}
+function clean(node) { const c = Object.assign({}, node); delete c._id; if (c.items) c.items = c.items.map(clean); return c; }
+function reassign(node) { node._id = uid++; (node.items || []).forEach(reassign); return node; }
+
+/* ---------- rendering ---------- */
+function statusBadge(spec) { return el("span", { class: "badge " + spec.status, title: spec.status_note || "", text: spec.status === "verified" ? "✓ Tested" : spec.status_word }); }
+function chipsBox(item, spec, onChange) {
+  // Chips refresh IN PLACE (never a full re-render): a re-render on blur would destroy whatever control the
+  // recruiter just clicked, which is the bug that made the advanced page's dropdowns unusable.
+  const box = el("div", { class: "chips" });
+  const refresh = (refocus) => { const nb = chipsBox(item, spec, onChange); box.replaceWith(nb); if (refocus) nb.querySelector("input").focus(); onChange(); persist(); };
+  item.values.forEach((v, i) => box.append(el("span", { class: "chip" }, v, el("button", { "aria-label": "Remove " + v, text: "×", onclick: () => { item.values.splice(i, 1); refresh(true); } }))));
+  const input = el("input", { type: "text", "data-key": item._id, placeholder: item.values.length ? "Add another…" : (spec.placeholder || "Type and press Enter"), "aria-label": spec.label });
+  const commit = (refocus) => { const parts = input.value.split("\n").filter((t) => t.length); if (!parts.length) return; parts.forEach((t) => item.values.push(t)); refresh(refocus); };
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); commit(true); } if (e.key === "Backspace" && !input.value && item.values.length) { item.values.pop(); refresh(true); } });
+  input.addEventListener("blur", () => { if (input.value.length) commit(false); });
+  input.addEventListener("paste", (e) => { const t = (e.clipboardData || window.clipboardData).getData("text"); if (t.includes("\n")) { e.preventDefault(); t.split(/\r?\n/).filter((x) => x.length).forEach((x) => item.values.push(x)); refresh(true); } });
+  box.append(input);
+  return box;
+}
+function radio(name, value, current, label, onchange) { return el("label", {}, el("input", { type: "radio", name, checked: value === current ? true : null, onchange }), label); }
+function filterCard(item, list) {
+  const spec = BYID[item.filter];
+  const card = el("div", { class: "card " + item.mode });
+  const modeSel = el("select", { "aria-label": "Include or exclude", onchange: (e) => { item.mode = e.target.value; render(); persist(); } },
+    el("option", { value: "include", selected: item.mode === "include" ? true : null, text: "Include" }), el("option", { value: "exclude", selected: item.mode === "exclude" ? true : null, text: "Exclude (NOT)" }));
+  card.append(el("div", { class: "top" }, el("span", { class: "title", text: spec.label }), statusBadge(spec), spec.kind === "years" ? null : modeSel,
+    el("button", { "aria-label": "Remove filter", text: "✕", onclick: () => { list.splice(list.indexOf(item), 1); render(); persist(); } })));
+  if (spec.kind === "text" || spec.kind === "list") {
+    let sync = () => {};
+    let opts = null;
+    if (spec.kind === "text") {
+      const matchWrap = el("span", {}, "Match ", el("select", { "aria-label": "Any or all values", onchange: (e) => { item.match = e.target.value; persist(); } },
+        el("option", { value: "any", selected: item.match === "any" ? true : null, text: "ANY of these (OR)" }), el("option", { value: "all", selected: item.match === "all" ? true : null, text: "ALL of these (AND)" })));
+      sync = () => { matchWrap.style.display = item.mode === "include" && item.values.length > 1 ? "" : "none"; };
+      opts = el("div", { class: "opts" }, radio("p" + item._id, "words", item.phrase ? "phrase" : "words", "words in any order", () => { item.phrase = false; persist(); }),
+        radio("p" + item._id, "phrase", item.phrase ? "phrase" : "words", "exact phrase", () => { item.phrase = true; persist(); }), matchWrap);
+      sync();
+    }
+    card.append(chipsBox(item, spec, sync));
+    if (opts) card.append(opts);
+  } else if (spec.kind === "choice") {
+    const box = el("div", { class: "choices" });
+    spec.options.forEach((opt) => {
+      const on = item.values.includes(opt);
+      box.append(el("label", { class: on ? "on" : "" }, el("input", { type: "checkbox", checked: on ? true : null, onchange: (e) => { if (e.target.checked) item.values.push(opt); else item.values = item.values.filter((v) => v !== opt); render(); persist(); } }), opt));
+    });
+    card.append(box);
+  } else if (spec.kind === "years") {
+    const num = (key, ph) => el("input", { type: "number", min: "0", step: "1", value: item[key], placeholder: ph, style: "width:90px", "aria-label": ph, oninput: (e) => { item[key] = e.target.value; persist(); } });
+    card.append(el("div", { class: "opts" }, "At least", num("min", "min"), "years", el("span", { style: "margin-left:10px" }, "and at most"), num("max", "max"), "years (optional)"));
+  } else if (spec.kind === "distance") {
+    card.append(el("div", { class: "opts" }, "Within", el("input", { type: "number", min: "1", value: item.distance, placeholder: "25", style: "width:80px", "aria-label": "Distance", oninput: (e) => { item.distance = e.target.value; persist(); } }),
+      el("select", { "aria-label": "Unit", onchange: (e) => { item.unit = e.target.value; persist(); } }, ["mi", "km"].map((u) => el("option", { value: u, selected: item.unit === u ? true : null, text: u === "mi" ? "miles" : "kilometres" }))),
+      "of", el("input", { type: "text", value: item.place, placeholder: "e.g. Toronto, Ontario", style: "flex:1; min-width:170px", "aria-label": "Place", oninput: (e) => { item.place = e.target.value; persist(); } })));
+  }
+  if (spec.help) card.append(el("div", { class: "help", text: spec.help }));
+  return card;
+}
+function container(items, isGroup, groupNode) {
+  const box = el("div");
+  const joinWord = () => (isGroup ? groupNode.combine : state.combine) === "or" ? "OR" : "AND";
+  items.forEach((item, i) => {
+    if (i) box.append(el("div", { class: "joiner", text: joinWord() }));
+    if (item.type === "group") box.append(groupBox(item, items));
+    else box.append(filterCard(item, items));
+  });
+  return box;
+}
+function addButtons(items, allowGroup) {
+  const wrap = el("div", { class: "add" });
+  wrap.append(el("button", { class: "primary", style: "padding:6px 12px", text: "+ Add filter", onclick: (e) => openMenu(e.currentTarget, items) }));
+  if (allowGroup) wrap.append(el("button", { text: "+ Add a group ( … )", title: "Like brackets: mix ANY/ALL logic inside one group", onclick: () => { items.push({ _id: uid++, type: "group", combine: "or", items: [] }); render(); persist(); } }));
+  return wrap;
+}
+function groupBox(group, parentItems) {
+  const box = el("div", { class: "group" });
+  const sel = el("select", { "aria-label": "Match all or any inside the group", onchange: (e) => { group.combine = e.target.value; render(); persist(); } },
+    el("option", { value: "or", selected: group.combine === "or" ? true : null, text: "ANY of these (OR)" }), el("option", { value: "and", selected: group.combine === "and" ? true : null, text: "ALL of these (AND)" }));
+  box.append(el("div", { class: "ghead" }, el("strong", { text: "Group ( … )" }), el("span", {}, "match"), sel, el("span", { style: "flex:1" }),
+    el("button", { "aria-label": "Remove group", text: "Remove group", onclick: () => { parentItems.splice(parentItems.indexOf(group), 1); render(); persist(); } })));
+  if (!group.items.length) box.append(el("div", { class: "help", text: "Empty group — add a filter to it." }));
+  box.append(container(group.items, true, group), addButtons(group.items, false));
+  return box;
+}
+function render() {
+  $("#top-combine").value = state.combine;
+  const root = $("#items"); root.replaceChildren(container(state.items, false, null));
+  const add = $("#top-add"); add.replaceChildren(...addButtons(state.items, true).children);
+  if (focusKey !== null) { const f = document.querySelector(`[data-key="${focusKey}"]`); if (f) f.focus(); focusKey = null; }
+}
+
+/* ---------- add-filter menu (search box + grouped list, like LinkedIn's "Add a filter") ---------- */
+function openMenu(anchor, items) {
+  menuTarget = items;
+  const menu = $("#menu"); menu.hidden = false; menu.replaceChildren();
+  const search = el("input", { type: "search", placeholder: "Search filters (job title, city, company…)", "aria-label": "Search filters" });
+  const list = el("div"); menu.append(search, list);
+  const draw = () => {
+    list.replaceChildren(); const q = search.value.trim().toLowerCase(); let last = "";
+    FILTERS.filter((f) => !q || (f.label + " " + f.group).toLowerCase().includes(q)).forEach((f) => {
+      if (f.group !== last) { list.append(el("div", { class: "mgroup", text: f.group })); last = f.group; }
+      list.append(el("button", { onclick: () => { const it = newFilter(f.id); menuTarget.push(it); closeMenu(); focusKey = it._id; render(); persist(); } }, el("span", { text: f.label }), statusBadge(f)));
+    });
+  };
+  search.addEventListener("input", draw); draw();
+  const r = anchor.getBoundingClientRect();
+  menu.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 400)) + "px"; menu.style.top = Math.min(r.bottom + 6, window.innerHeight - 200) + "px";
+  search.focus();
+}
+function closeMenu() { $("#menu").hidden = true; }
+document.addEventListener("mousedown", (e) => { const m = $("#menu"); if (!m.hidden && !m.contains(e.target) && !e.target.closest("#top-add, .add")) closeMenu(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeMenu(); });
+
+/* ---------- build / run ---------- */
+async function rebuild() {
+  const { status, data } = await api("/api/simple/build", { state: clean(state) });
+  if (status !== 200) return;
+  lastBuild = data;
+  $("#reads").textContent = data.text || "Add a filter to start.";
+  const box = $("#messages"); box.replaceChildren();
+  (data.ok ? [] : data.problems).forEach((m) => box.append(el("div", { class: "msg problem", text: m })));
+  data.warnings.forEach((m) => box.append(el("div", { class: "msg warn", text: m })));
+  data.notes.forEach((m) => box.append(el("div", { class: "msg note", text: m })));
+  $("#tech").textContent = data.ok ? JSON.stringify({ filters: data.technical.filters }, null, 2) : "{}";
+  $("#run").disabled = !data.ok;
+  updateCost();
+}
+function updateCost() { const n = Number($("#limit").value); $("#cost").textContent = `About ${(n * CFG.credits_per_result).toFixed(2)} credits (CrustData charges per result).`; }
+async function run(confirmed = false) {
+  const limit = Number($("#limit").value);
+  if (!confirmed && !confirm(`Find up to ${limit} candidates now?\nThis uses about ${(limit * CFG.credits_per_result).toFixed(2)} CrustData credits.`)) return;
+  const out = $("#results"); out.replaceChildren(el("div", { class: "help", text: "Searching…" })); $("#run").disabled = true;
+  const { status, data } = await api("/api/simple/run", { state: clean(state), limit, confirm_unavailable: confirmed });
+  $("#run").disabled = !(lastBuild && lastBuild.ok);
+  if (status === 409) { if (confirm(data.detail.message)) return run(true); out.replaceChildren(el("div", { class: "help", text: "Cancelled." })); return; }
+  if (status !== 200) { out.replaceChildren(el("div", { class: "msg problem", text: typeof data.detail === "string" ? data.detail : ((data.detail && data.detail.errors || []).map((x) => x.message).join(" ") || "Something went wrong.") })); return; }
+  showRun(data); loadRuns();
+}
+function showRun(data) {
+  const out = $("#results"); out.replaceChildren();
+  if (data.http_status !== 200) { out.append(el("div", { class: "msg problem", text: "CrustData could not run this search (HTTP " + data.http_status + ")." }), el("pre", { text: JSON.stringify(data.error_body, null, 2) })); return; }
+  out.append(el("div", { class: "msg note", text: `Showing ${data.retrieved_count} candidates, in CrustData's order. CrustData reports a pool of about ${Number(data.total_count_provider_reported).toLocaleString()} profiles for this search scope (a pool size, not a count of good matches).` + (data.credits_used_header ? ` Credits used: ${data.credits_used_header}.` : "") }));
+  if (!data.rows.length) out.append(el("div", { class: "help", text: "No candidates returned. Try removing a filter or loosening a value." }));
+  data.rows.forEach((r) => out.append(el("div", { class: "cand" }, el("div", { class: "n", text: r.position }),
+    el("div", { class: "who" }, r.profile_url ? el("a", { href: r.profile_url, target: "_blank", rel: "noopener noreferrer", text: r.name || "(no name)" }) : el("strong", { text: r.name || "(no name)" }),
+      el("div", { class: "meta", text: [r.current_title, r.current_company].filter(Boolean).join(" · ") }), el("div", { class: "meta", text: r.location || "" })))));
+  out.append(el("div", { class: "help", text: "Saved on the backend: " + data.saved_to }));
+}
+async function loadRuns() {
+  const { status, data } = await api("/api/runs"); const box = $("#runs"); box.replaceChildren();
+  if (status !== 200 || !data.length) { box.append(el("div", { class: "help", text: "No searches yet." })); return; }
+  data.slice(0, 12).forEach((r) => box.append(el("div", { class: "runrow" }, el("div", { class: "txt" }, (r.saved_at || "").replace("T", " ") + " · " + (r.http_status === 200 ? r.retrieved_count + " candidates" : "failed")),
+    el("button", { class: "link", text: "View", onclick: async () => { const res = await api("/api/runs/" + r.run_id); if (res.status === 200) showRun(res.data); } }),
+    el("button", { class: "link", text: "Reuse search", onclick: async () => { const res = await api("/api/runs/" + r.run_id); const st = res.data.context && res.data.context.ui_state; if (st) { state = reassign(st); render(); persist(); } else alert("This search was made in the Advanced builder; open it there."); } }))));
+}
+
+/* ---------- init ---------- */
+async function init() {
+  const res = await api("/api/simple/filters");
+  if (res.status !== 200) { document.body.prepend(el("div", { class: "msg problem", text: "Could not load filters (the page token or server is not valid). Reload the page." })); return; }
+  FILTERS = res.data.filters; CFG = res.data; FILTERS.forEach((f) => (BYID[f.id] = f));
+  let saved = null; try { saved = JSON.parse(localStorage.getItem("simple-state")); } catch (e) {}
+  if (location.hash === "#example") state = reassign({ combine: "and", items: [
+    { type: "filter", filter: "job_title", mode: "include", values: ["Backend Engineer", "Platform Engineer"], match: "any", phrase: false },
+    { type: "filter", filter: "city", mode: "include", values: ["Toronto"] },
+    { type: "filter", filter: "job_title", mode: "exclude", values: ["Intern"], phrase: false },
+    { type: "group", combine: "or", items: [{ type: "filter", filter: "company", mode: "include", values: ["Shopify", "Faire"] }, { type: "filter", filter: "years", mode: "include", min: "5", max: "" }] }] });
+  else if (saved && Array.isArray(saved.items)) state = reassign(saved);
+  $("#top-combine").addEventListener("change", (e) => { state.combine = e.target.value; render(); persist(); });
+  $("#limit").addEventListener("change", updateCost); $("#run").addEventListener("click", () => run(false));
+  $("#open-advanced").addEventListener("click", () => { if (lastBuild && lastBuild.tree) { try { localStorage.setItem("playground-tree", JSON.stringify(lastBuild.tree)); } catch (e) {} } location.href = "/advanced"; });
+  render(); rebuild(); loadRuns();
+}
+init();
+</script>
+</body>
+</html>

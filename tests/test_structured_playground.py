@@ -263,7 +263,7 @@ def test_the_local_server_requires_its_token_and_serves_the_catalog(playground) 
     assert client.post("/api/build", json={"tree": {}}, headers={"X-Playground-Token": "wrong"}).status_code == 403
     catalog = client.get("/api/catalog", headers=headers).json()
     assert len(catalog["fields"]) == len(CATALOG) and catalog["max_limit"] == 50
-    assert 'content="tok"' in client.get("/").text
+    assert 'content="tok"' in client.get("/").text and 'content="tok"' in client.get("/advanced").text
 
 
 def test_playground_does_not_touch_production_search_storage(playground) -> None:
@@ -286,3 +286,92 @@ def test_every_run_is_saved_and_can_be_listed_reloaded_and_restored(playground) 
     assert client.get("/api/runs/../../etc/passwd", headers=headers).status_code == 404
     assert client.get("/api/runs/run_x", headers=headers).status_code == 404
     assert client.get("/api/runs").status_code == 403
+
+
+# --- recruiter-level (simple) layer -------------------------------------------------------------------------------------
+from backend.experiments.structured_playground import simple  # noqa: E402
+
+
+def f(filter_id, values=None, mode="include", **extra):
+    return {"type": "filter", "filter": filter_id, "mode": mode, "values": values or [], **extra}
+
+
+def test_every_simple_filter_maps_to_a_real_catalog_field_and_offered_operators() -> None:
+    for spec in simple.FILTERS:
+        assert spec["field"] in BY_NAME, spec["id"]
+    assert len({s["id"] for s in simple.FILTERS}) == len(simple.FILTERS)
+    status = {s["id"]: s["status"] for s in simple.filters_payload()}
+    assert status["job_title"] == "verified" and status["skills"] == "unavailable" and status["school"] == "documented_unverified"
+
+
+def test_recruiter_search_becomes_the_same_tree_the_advanced_builder_validates() -> None:
+    state = {"combine": "and", "items": [
+        f("job_title", ["Backend Engineer", "Platform Engineer"]),
+        f("city", ["Toronto"]),
+        f("job_title", ["Intern", "Trainee"], mode="exclude"),
+        f("years", min="5", max="12"),
+    ]}
+    tree, problems = simple.to_tree(state)
+    assert problems == [] and tree["op"] == "and"
+    built = build(tree)["filters"]["conditions"]
+    assert built[0] == {"op": "or", "conditions": [leaf(TITLE, "(.)", "Backend Engineer"), leaf(TITLE, "(.)", "Platform Engineer")]}
+    assert built[1] == leaf("basic_profile.location.city", "in", ["Toronto"])
+    assert built[2] == {"op": "and", "conditions": [leaf(TITLE, "(!)", "Intern"), leaf(TITLE, "(!)", "Trainee")]}   # NOT a AND NOT b
+    assert built[3] == {"op": "and", "conditions": [leaf("years_of_experience_raw", "=>", 5), leaf("years_of_experience_raw", "=<", 12)]}
+
+
+def test_plain_choices_map_to_operators_and_values_stay_verbatim() -> None:
+    tree, _ = simple.to_tree({"combine": "and", "items": [f("job_title", ["Sofware  Enginer"], phrase=True)]})
+    assert build(tree)["filters"]["conditions"][0] == leaf(TITLE, "[.]", "Sofware  Enginer")
+    tree, _ = simple.to_tree({"combine": "and", "items": [f("job_title", ["A", "B"], match="all")]})
+    assert build(tree)["filters"]["conditions"][0]["op"] == "and"
+    tree, _ = simple.to_tree({"combine": "and", "items": [f("company", ["Shopify"], mode="exclude"), f("seniority", ["Senior", "Director"])]})
+    assert build(tree)["filters"]["conditions"] == [leaf("experience.employment_details.current.company_name", "not_in", ["Shopify"]),
+                                                      leaf("experience.employment_details.current.seniority_level", "in", ["Senior", "Director"])]
+    tree, _ = simple.to_tree({"combine": "and", "items": [f("distance", place="Toronto, ON", distance="25", unit="mi"), f("distance", mode="exclude", place="Waterloo", distance="10", unit="km")]})
+    conditions = build(tree)["filters"]["conditions"]
+    assert conditions[0] == leaf("basic_profile.location", "geo_distance", {"location": "Toronto, ON", "distance": 25, "unit": "mi"})
+    assert conditions[1]["type"] == "geo_exclude"
+
+
+def test_groups_give_recruiters_brackets_with_their_own_and_or() -> None:
+    state = {"combine": "and", "items": [
+        {"type": "group", "combine": "or", "items": [f("city", ["Toronto"]), f("city", ["Waterloo"])]},
+        f("job_title", ["Backend Engineer"])]}
+    tree, problems = simple.to_tree(state)
+    assert problems == [] and tree["children"][0]["op"] == "or"
+    text = simple.to_text(state)
+    assert "OR" in text and "AND" in text and "(" in text and 'City: "Toronto"' in text
+
+
+def test_incomplete_filters_get_recruiter_language_problems_not_technical_errors() -> None:
+    _, problems = simple.to_tree({"combine": "and", "items": [f("job_title"), f("years"), f("distance")]})
+    assert any("Current job title: add at least one value" in p for p in problems)
+    assert any("Years of experience" in p for p in problems) and any("place and a distance" in p for p in problems)
+    assert simple.to_tree({"items": []})[0] is None
+    _, group_problems = simple.to_tree({"items": [{"type": "group", "combine": "or", "items": []}]})
+    assert any("group is empty" in p for p in group_problems)
+
+
+def test_the_search_reads_back_in_recruiter_notation() -> None:
+    text = simple.to_text({"combine": "and", "items": [f("job_title", ["Backend Engineer", "Platform Engineer"]), f("job_title", ["Intern"], mode="exclude"), f("years", min="5")]})
+    assert 'Current job title: ("Backend Engineer" OR "Platform Engineer")' in text
+    assert 'Current job title: NOT "Intern"' in text and "Years of experience: at least 5" in text and "\nAND\n" in text
+
+
+def test_simple_endpoints_build_run_and_save_the_recruiter_state(playground) -> None:
+    client, captured, headers = playground
+    state = {"combine": "and", "items": [f("job_title", ["Backend Engineer"]), f("skills", ["Python"])]}
+    filters = client.get("/api/simple/filters", headers=headers).json()
+    assert len(filters["filters"]) == len(simple.FILTERS)
+    built = client.post("/api/simple/build", json={"state": state}, headers=headers).json()
+    assert built["ok"] and any("Skills" in w for w in built["warnings"]) and 'Current job title: "Backend Engineer"' in built["text"]
+    incomplete = client.post("/api/simple/build", json={"state": {"items": [f("city")]}}, headers=headers).json()
+    assert not incomplete["ok"] and "City: add at least one value" in incomplete["problems"][0]
+    assert client.post("/api/simple/run", json={"state": state}, headers=headers).status_code == 409 and captured == []   # skills is unavailable
+    ok_state = {"combine": "and", "items": [f("job_title", ["Backend Engineer"]), f("city", ["Toronto"])]}
+    run = client.post("/api/simple/run", json={"state": ok_state, "limit": 3}, headers=headers)
+    assert run.status_code == 200 and captured[0]["limit"] == 3 and "search" not in captured[0]
+    saved = client.get(f"/api/runs/{run.json()['run_id']}", headers=headers).json()
+    assert saved["context"]["ui_state"] == ok_state                                # can be reused from the recruiter page
+    assert client.post("/api/simple/run", json={"state": {"items": []}}, headers=headers).status_code == 422
