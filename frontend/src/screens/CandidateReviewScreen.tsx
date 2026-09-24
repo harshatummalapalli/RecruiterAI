@@ -26,6 +26,10 @@ type CandidateReviewScreenProps = {
   searchState: SearchState
   onRunSearch: () => void
   searchId: string | null
+  // Bumped once per "Find Candidates"/"Run Search Again" click — see
+  // RecruiterWorkspaceScreen.tsx. Drives the open-profile/compare/edit-brief
+  // UI reset without resetting on every progressive poll tick.
+  searchGeneration: number
 }
 
 type Note = { id: string; text: string; createdAt: string }
@@ -133,7 +137,7 @@ function ComparisonPanel({ candidates, onClose }: { candidates: DiscoveryCandida
   )
 }
 
-export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, searchState, onRunSearch, searchId }: CandidateReviewScreenProps) {
+export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, searchState, onRunSearch, searchId, searchGeneration }: CandidateReviewScreenProps) {
   const [sortKey, setSortKey] = useState<SortKey>('relevance')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isEditingBrief, setIsEditingBrief] = useState(false)
@@ -145,18 +149,30 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
   const [isComparing, setIsComparing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
+  // Progressive Candidate Workspace: searchResponse now updates repeatedly
+  // (once per poll tick) while the SAME search is still running, not just
+  // once when a new search starts. Resetting the open profile/compare/edit
+  // UI state on every one of those updates would involuntarily close
+  // whatever the recruiter is looking at every 1.5s — so that reset is
+  // keyed to the search actually CHANGING (a new search_id), not to every
+  // response update.
   useEffect(() => {
     setSelectedId(null)
     setIsEditingBrief(false)
     setCompareIds([])
     setIsComparing(false)
+  }, [searchGeneration])
 
+  useEffect(() => {
     // Hydrate from whatever the backend already has persisted for this
     // search, rather than starting empty — this is the actual fix for
     // decisions/notes disappearing on refresh. Root cause was that neither
     // POST /search nor GET /search/{id} returned recruiter_decisions/notes
     // at all, so there was nothing here to read; the backend was already
     // saving them correctly (see services/search_store.py) the whole time.
+    // Re-hydrating on every poll tick is harmless — decisions/notes are
+    // keyed by the same stable candidate_id and this just re-applies
+    // whatever the backend currently has.
     const decisionsRecord = searchResponse?.recruiter_decisions
     setDecisions((decisionsRecord as Record<string, Decision>) ?? {})
 
@@ -215,9 +231,13 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
   }
 
   const hasSearchedOnce = searchResponse !== null
-  const showSkeleton = searchState === 'searching'
+  // Progressive Candidate Workspace: the skeleton is only for the brief
+  // window before the FIRST candidates are admitted — once any candidate
+  // has surfaced, show the real (still-filling-in) list instead of a fake
+  // loading state, even while the search is still "searching" overall.
+  const showSkeleton = searchState === 'searching' && candidates.length === 0
   const showZeroResults = searchState === 'done' && hasSearchedOnce && candidates.length === 0
-  const showError = searchState === 'error' && !showSkeleton
+  const showError = searchState === 'error' && !showSkeleton && candidates.length === 0
 
   return (
     <div className="discovery">
@@ -363,7 +383,38 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
                   <span>Pipeline</span>
                 </div>
 
-                {sortedCandidates.map((candidate) => (
+                {sortedCandidates.map((candidate) => {
+                  const isReviewReady = candidate.lifecycleState === 'review_ready'
+                  if (!isReviewReady) {
+                    // SURFACED / BUILDING_CONTEXT — intentionally lightweight
+                    // and not interactive: no profile, no compare, no
+                    // shortlist/reject. RecruiterAI is still preparing this
+                    // candidate; nothing here should look clickable.
+                    return (
+                      <div key={candidate.id} className="candidate-row candidate-row--pending">
+                        <span aria-hidden="true" />
+                        <span className="candidate-row__identity">
+                          <span className="candidate-row__name">{candidate.name}</span>
+                          <span className="candidate-row__title">{candidate.title}</span>
+                        </span>
+                        <span>{candidate.company}</span>
+                        <span>{candidate.location}</span>
+                        <span className="candidate-row__lifecycle" style={{ gridColumn: 'span 4' }}>
+                          <span className={`candidate-badge candidate-badge--lifecycle-${candidate.lifecycleState}`}>
+                            {candidate.lifecycleState === 'building_context' ? (
+                              <>
+                                <span className="candidate-row__lifecycle-pulse" aria-hidden="true" />
+                                Building context…
+                              </>
+                            ) : (
+                              'Recently surfaced'
+                            )}
+                          </span>
+                        </span>
+                      </div>
+                    )
+                  }
+                  return (
                   <div key={candidate.id} className={`candidate-row${selectedId === candidate.id ? ' is-selected' : ''}`}>
                     <span className="candidate-row__compare">
                       <input
@@ -409,7 +460,8 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
                       </span>
                     </button>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             ) : null}
           </div>

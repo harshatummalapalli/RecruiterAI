@@ -27,6 +27,8 @@ export type EducationEntry = {
   fieldOfStudy: string | null
 }
 
+export type CandidateLifecycleState = 'surfaced' | 'building_context' | 'review_ready'
+
 export type DiscoveryCandidate = {
   id: string
   name: string
@@ -34,6 +36,13 @@ export type DiscoveryCandidate = {
   company: string
   location: string
   profileUrl: string | null
+
+  // System-driven processing state (Progressive Candidate Workspace) —
+  // completely separate from the recruiter's own shortlist/reject decision
+  // (see CandidateReviewScreen.tsx's `decisions` state). Defaults to
+  // 'review_ready' for a search response that predates this field (a
+  // finished, non-progressive search has nothing further to process).
+  lifecycleState: CandidateLifecycleState
 
   relevanceTier: RelevanceTier
   whyThisCandidate: string
@@ -129,13 +138,23 @@ export function buildDiscoveryCandidates(response: SearchResponse): DiscoveryCan
   const candidates = response.candidates ?? []
   const explanations = response.explanations ?? []
   const evidenceList = response.evidence ?? []
+  const candidateStates = response.candidate_states ?? {}
 
   return candidates.map((candidate, index) => {
     const explanation = explanations[index] ?? emptyExplanation()
     const evidence = evidenceList[index] ?? emptyEvidence()
+    // The provider's own stable identity — the ONLY safe key for
+    // lifecycle/decisions/notes across a progressively-updating response.
+    // profile_url/name-index are no longer used as identity (they aren't
+    // guaranteed stable across polls that reorder the list — see the
+    // Progressive Candidate Workspace's single post-Harvest rerank).
+    const id = readString(candidate.candidate_id) ?? `${candidate.name ?? 'candidate'}-${index}`
 
     return {
-      id: readString(candidate.profile_url) ?? `${candidate.name ?? 'candidate'}-${index}`,
+      id,
+      // Defaults to review_ready: a search response with no candidate_states
+      // at all predates this field (nothing left to process).
+      lifecycleState: candidateStates[id] ?? 'review_ready',
       name: candidate.name?.trim() || 'Unnamed candidate',
       title: candidate.title?.trim() || 'Title not available',
       company: candidate.company?.trim() || 'Not specified',

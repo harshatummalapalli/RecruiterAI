@@ -1,7 +1,7 @@
-import dataclasses
 import json
 import logging
 import tempfile
+import threading
 import time
 import uuid
 from datetime import datetime, timezone
@@ -28,7 +28,6 @@ from backend.config import (
     get_session_max_age_seconds,
 )
 from backend.errors import ConfigurationError, ParsingError, ProviderError, RecruiterAIError, RankingError
-from backend.models.candidate_evidence import HarvestEvidence
 from backend.models.intake import IntakeResult, SearchBoundary
 from backend.models.match_explanation import MatchExplanation
 from backend.models.provider_capabilities import ProviderCapabilities
@@ -37,7 +36,6 @@ from backend.models.search_plan import SearchPlan
 from backend.providers.base import BaseLLMProvider, BaseProvider
 from backend.providers.openai import OpenAIProvider
 from backend.providers.registry import ProviderRegistry
-from backend.services.candidate_evidence_builder import build_candidate_evidence
 from backend.services.candidate_merger import CandidateMerger
 from backend.services.candidate_ranker import CandidateRanker
 from backend.services.capability_mapper import CapabilityMapper
@@ -48,6 +46,12 @@ from backend.services.jd_parser import JDParser
 from backend.services.match_explainer import MatchExplainer
 from backend.services.query_expansion import QueryExpansionService
 from backend.services.search_diagnostics import SearchDiagnostics
+from backend.services.search_pipeline import (
+    MAX_WORKSPACE_CANDIDATES,
+    STATUS_RUNNING,
+    reconcile_interrupted_searches,
+    run_search_pipeline,
+)
 from backend.services.search_planner import SearchPlanner
 from backend.services.search_store import SearchStore
 from backend.exporters.excel import ExcelExporter
@@ -115,61 +119,6 @@ FRIENDLY_UNSUPPORTED_FILTER_LABELS = {
     "work_mode": "work mode (remote/hybrid/onsite)",
 }
 
-
-# Minimum merged/deduplicated candidate count before the supplementary
-# title-expansion query is skipped (Phase 3): re-derived, not left at its
-# pre-Phase-3 value of 20, once HARVEST_ENRICHMENT_TOP_N moved to 15 —
-# comfortably above the enrichment depth (a real tail beyond the enriched
-# slice, not just enough to fill it) while still easily cleared by a single
-# primary query at the new DISCOVERY_PAGE_SIZE=50, so title expansion now
-# runs only when the primary query's own unique yield is genuinely thin, not
-# reflexively on every search the way it did at page_size=10.
-DISCOVERY_TARGET_POOL_SIZE = 25
-
-
-def _run_adaptive_discovery(
-    provider: BaseProvider,
-    mapped_plan: SearchPlan,
-    options: Dict[str, Any],
-    candidate_merger: CandidateMerger,
-    target_pool_size: int,
-) -> tuple[List[Any], SearchPlan]:
-    """Run the primary natural-language query alone first; only run the
-    supplementary title-expansion query if the primary didn't reach the
-    target pool size. Returns the raw candidates from whichever queries
-    actually ran, plus a SearchPlan reflecting only those queries (for
-    accurate diagnostics/logging — never claim a query ran that didn't)."""
-    primary_queries = [q for q in mapped_plan.searches if q.query_name == "natural_language"]
-    other_queries = [q for q in mapped_plan.searches if q.query_name != "natural_language"]
-
-    def run(searches: List[Any]) -> List[Any]:
-        sub_plan = SearchPlan(searches=searches, strategy=mapped_plan.strategy, reasoning=mapped_plan.reasoning, confidence_score=mapped_plan.confidence_score)
-        if hasattr(provider, "search_with_options"):
-            return provider.search_with_options(sub_plan, options=options)
-        return provider.search(sub_plan)
-
-    if not primary_queries:
-        # No natural-language query available (e.g. an intent with no
-        # skills/title at all) — fall back to running whatever the plan has.
-        candidates = run(mapped_plan.searches)
-        return candidates, mapped_plan
-
-    candidates = run(primary_queries)
-    executed_searches = list(primary_queries)
-
-    if other_queries:
-        unique_so_far = len(candidate_merger.merge(candidates))
-        if unique_so_far < target_pool_size:
-            candidates = candidates + run(other_queries)
-            executed_searches = executed_searches + other_queries
-
-    executed_plan = SearchPlan(
-        searches=executed_searches,
-        strategy=mapped_plan.strategy,
-        reasoning=mapped_plan.reasoning,
-        confidence_score=mapped_plan.confidence_score,
-    )
-    return candidates, executed_plan
 
 
 def _raise_recruiter_friendly_error(detail: str, status_code: int = 503) -> None:
@@ -283,6 +232,14 @@ class SearchResponse(BaseModel):
     # record at response-build time, never fabricated.
     recruiter_decisions: Dict[str, str] = Field(default_factory=dict)
     notes: Dict[str, List[Dict[str, str]]] = Field(default_factory=dict)
+    # Progressive Candidate Workspace — search-level status and per-candidate
+    # lifecycle. `status` defaults to "complete" so a record persisted before
+    # this field existed still validates. `candidate_states` is keyed by the
+    # same stable candidate_id used everywhere else (never profile_url/
+    # array position) — see backend/services/search_pipeline.py.
+    status: str = "complete"
+    candidate_states: Dict[str, str] = Field(default_factory=dict)
+    progress: Dict[str, int] = Field(default_factory=dict)
 
 
 class CandidateUpdateRequest(BaseModel):
@@ -374,6 +331,12 @@ def create_app(
     search_store = search_store or SearchStore()
     intake_session_manager = intake_session_manager or IntakeSessionManager()
     harvest_enrichment_service = harvest_enrichment_service or HarvestEnrichmentService()
+
+    # A background search thread cannot survive a process restart — any
+    # record still marked "running" from a previous process instance is
+    # unambiguously orphaned. Reconcile once at startup so a polling
+    # frontend never waits on a search that will never finish.
+    reconcile_interrupted_searches(search_store)
 
     @app.get("/health")
     def health() -> Dict[str, str]:
@@ -637,288 +600,93 @@ def create_app(
             }
             options = {key: value for key, value in options.items() if value is not None}
 
-            # Adaptive retrieval (Part 14): the primary natural-language
-            # query runs first. The supplementary title-expansion query only
-            # runs if the primary alone didn't produce enough candidates to
-            # review — this is what keeps a well-covered role to one cheap
-            # query instead of always spending credits on both.
-            crustdata_started = time.perf_counter()
-            candidates, executed_plan = _run_adaptive_discovery(
-                provider=provider,
-                mapped_plan=mapped_plan,
-                options=options,
-                candidate_merger=candidate_merger,
-                target_pool_size=DISCOVERY_TARGET_POOL_SIZE,
-            )
-            crustdata_elapsed_ms = round((time.perf_counter() - crustdata_started) * 1000, 1)
-            if not isinstance(candidates, list):
-                raise ProviderError("Provider returned an invalid candidate list")
-            logger.info("[SEARCH] Candidates Returned | provider=%s count=%s queries_run=%s", request.provider, len(candidates), len(executed_plan.searches))
-            if not candidates:
-                logger.info("No candidates were returned for this search — this is a real empty result, not an error.")
-
-            logger.info("Merging candidates")
-            merged_candidates = candidate_merger.merge(candidates)
-            logger.info("Candidate merge complete (%s unique)", len(merged_candidates))
-
-            # CrustData retrieval diagnostics (Phase 3, section 9) — internal
-            # only, never part of SearchResponse. Built entirely from data
-            # already on each raw candidate (matched_queries, the
-            # __response_metadata CrustDataProvider already stamps on every
-            # item) — no change to CrustDataProvider's contract. Per-call
-            # request duration is already captured in CrustDataProvider's own
-            # structured logs (unchanged); this records the aggregate
-            # discovery-stage elapsed time, not a per-call breakdown.
-            results_per_query: Dict[str, int] = {}
-            total_count_per_query: Dict[str, Any] = {}
-            for raw_candidate in candidates:
-                matched = (raw_candidate.raw_data or {}).get("matched_queries") or []
-                query_name = matched[0] if matched else "unknown"
-                results_per_query[query_name] = results_per_query.get(query_name, 0) + 1
-                if query_name not in total_count_per_query:
-                    meta = (raw_candidate.raw_data or {}).get("__response_metadata") or {}
-                    if "total_count" in meta:
-                        total_count_per_query[query_name] = meta["total_count"]
-            crustdata_diagnostics = {
-                "provider_calls": len(executed_plan.searches),
-                "page_size": options.get("page_size"),
-                "max_pages": options.get("max_pages"),
-                "results_per_query": results_per_query,
-                "raw_candidate_count": len(candidates),
-                "merged_unique_count": len(merged_candidates),
-                "duplicate_count": len(candidates) - len(merged_candidates),
-                "total_count_per_query": total_count_per_query,
-                "elapsed_ms": crustdata_elapsed_ms,
-            }
-
-            ranked_candidates = candidate_ranker.rank(merged_candidates, intent)
-            logger.info("[SEARCH] Ranking Completed | count=%s", len(ranked_candidates))
-
-            # Baseline snapshot (Phase 3, section 7) — captured before Harvest
-            # enrichment/rerank ever touches final_score/order, so
-            # self-reinforcement diagnostics can compare "who would have been
-            # shown with zero enrichment" against what reranking produced.
-            baseline_snapshot = [
-                {"candidate_id": c.candidate_id or "", "name": c.name, "score": c.final_score}
-                for c in ranked_candidates
-            ]
-
-            # Loaded here (before enrichment) so a re-run of an existing
-            # search_id reuses any already-successful Harvest enrichment
-            # instead of re-spending credits on it — see
-            # HarvestEnrichmentService.enrich_top_n's idempotency check.
-            # Also carries forward recruiter_decisions/notes (see below).
+            # Everything from here on (CrustData discovery, baseline ranking,
+            # workspace admission, Harvest enrichment, rerank) is the slow,
+            # network-bound part of a search — it now runs on a background
+            # thread (Progressive Candidate Workspace) instead of blocking
+            # this request. See backend/services/search_pipeline.py.
             existing_record = search_store.load(search_id) or {}
-            existing_harvest_raw = existing_record.get("harvest_evidence", {})
-            existing_harvest = {
-                candidate_id: HarvestEvidence(**payload) for candidate_id, payload in existing_harvest_raw.items()
-            }
 
-            # Second-stage enrichment (Harvest): only the top-N baseline-
-            # ranked candidates, never the whole pool. A Harvest failure
-            # here can only affect matched_signals/explanations for that one
-            # candidate — it can never raise and never breaks the search.
-            harvest_by_candidate_id = harvest_enrichment_service.enrich_top_n(ranked_candidates, existing=existing_harvest)
-            harvest_diag = harvest_enrichment_service.last_enrichment_diagnostics
-            top_n = harvest_enrichment_service.top_n
-            ranked_candidates = candidate_ranker.rerank_top_n(
-                ranked_candidates, intent, harvest_by_candidate_id, top_n=top_n
-            )
-            logger.info(
-                "[SEARCH] Harvest enrichment complete | attempted=%s succeeded=%s max_concurrency=%s elapsed_ms=%s",
-                len(harvest_by_candidate_id),
-                sum(1 for evidence in harvest_by_candidate_id.values() if evidence.success),
-                harvest_diag.max_observed_concurrency if harvest_diag else None,
-                harvest_diag.total_elapsed_ms if harvest_diag else None,
-            )
-
-            # Self-reinforcement diagnostics (Phase 3, section 7) — internal
-            # only. Compares each investigated candidate's baseline position
-            # to its post-rerank position, and separately flags candidates
-            # just outside the investigated slice (ranks top_n+1..+10) whose
-            # baseline score was close enough to the cutoff that they might
-            # plausibly have deserved investigation too — a diagnostic
-            # observation using only existing scores, not a new scoring rule.
-            baseline_rank_by_id = {c["candidate_id"]: i + 1 for i, c in enumerate(baseline_snapshot)}
-            baseline_score_by_id = {c["candidate_id"]: (c["score"] or 0.0) for c in baseline_snapshot}
-            investigated_movement = []
-            for final_rank, candidate in enumerate(ranked_candidates[:top_n], start=1):
-                cid = candidate.candidate_id or ""
-                baseline_rank = baseline_rank_by_id.get(cid)
-                score_delta = (candidate.final_score or 0.0) - baseline_score_by_id.get(cid, 0.0)
-                moved = baseline_rank is not None and baseline_rank != final_rank
-                investigated_movement.append(
-                    {
-                        "candidate_id": cid,
-                        "baseline_rank": baseline_rank,
-                        "final_rank": final_rank,
-                        "moved": moved,
-                        "score_delta": round(score_delta, 3),
-                        "moved_substantially": bool(
-                            moved and (abs((baseline_rank or final_rank) - final_rank) >= 3 or score_delta >= 1.0)
-                        ),
-                    }
-                )
-            near_miss_ids: List[str] = []
-            if len(baseline_snapshot) >= top_n:
-                cutoff_score = baseline_score_by_id.get(baseline_snapshot[top_n - 1]["candidate_id"], 0.0)
-                near_miss_ids = [
-                    c["candidate_id"]
-                    for c in baseline_snapshot[top_n : top_n + 10]
-                    if (c["score"] or 0.0) >= cutoff_score - 1.0
-                ]
-            self_reinforcement_diagnostics = {
-                "investigated_count": len(investigated_movement),
-                "moved_count": sum(1 for m in investigated_movement if m["moved"]),
-                "moved_substantially_count": sum(1 for m in investigated_movement if m["moved_substantially"]),
-                "investigated_movement": investigated_movement,
-                "near_miss_count_ranks_beyond_top_n": len(near_miss_ids),
-                "near_miss_candidate_ids": near_miss_ids,
-            }
-
-            logger.info("Generating explanations")
-            explanations = [
-                match_explainer.explain(candidate, intent, harvest_evidence=harvest_by_candidate_id.get(candidate.candidate_id or "")).model_dump()
-                for candidate in ranked_candidates
-            ]
-            logger.info("Explanations generated")
-
-            evidence_payload = [
-                dataclasses.asdict(
-                    build_candidate_evidence(
-                        candidate, intent, harvest_evidence=harvest_by_candidate_id.get(candidate.candidate_id or "")
-                    )
-                )
-                for candidate in ranked_candidates
-            ]
-
-            logger.info("Generating diagnostics")
-            diagnostics = search_diagnostics.analyze(executed_plan, ranked_candidates)
-            logger.info("Diagnostics generated")
-
-            execution_time_ms = round((time.perf_counter() - started_at) * 1000, 2)
-
-            debug_payload: Optional[Dict[str, Any]] = None
-            if request.debug:
-                # Reflects the queries that were ACTUALLY dispatched
-                # (executed_plan), not the full candidate plan — adaptive
-                # retrieval may skip the title-expansion query entirely, and
-                # debug output must never look like more ran than did.
-                final_provider_payload = (
-                    provider.debug_payloads(executed_plan, options) if hasattr(provider, "debug_payloads") else None
-                )
-                debug_payload = {
-                    "search_id": search_id,
-                    "execution_time_ms": execution_time_ms,
-                    "jd_text": request.jd_text,
-                    "location_override": request.location.model_dump() if request.location else None,
-                    "generated_provider_query": [q.model_dump() for q in executed_plan.searches],
-                    "final_provider_payload": final_provider_payload,
-                    "capability_warnings": capability_warnings,
-                    "candidates_returned": len(candidates),
-                    "candidates_after_merge": len(merged_candidates),
-                    "candidates_ranked": len(ranked_candidates),
-                }
-
-            response = SearchResponse(
-                provider="platform",
-                search_id=search_id,
-                candidate_count=len(ranked_candidates),
-                candidates=[candidate.model_dump() for candidate in ranked_candidates],
-                explanations=explanations,
-                evidence=evidence_payload,
-                recruiter_decisions=existing_record.get("recruiter_decisions", {}),
-                notes=existing_record.get("notes", {}),
-                diagnostics={
-                    "total_queries": diagnostics.total_queries,
-                    "total_candidates": diagnostics.total_candidates,
-                    "candidates_per_query": diagnostics.candidates_per_query,
-                    "duplicate_candidates": diagnostics.duplicate_candidates,
-                    "average_provider_score": diagnostics.average_provider_score,
-                    "average_final_score": diagnostics.average_final_score,
-                    "top_job_titles": diagnostics.top_job_titles,
-                    "top_companies": diagnostics.top_companies,
-                    "query_execution_summary": diagnostics.query_execution_summary,
-                },
-                warnings=friendly_warnings,
-                debug=debug_payload,
-            )
-
+            # An immediate "running" record so a poll that lands before the
+            # background thread's first save still gets a coherent response
+            # instead of a 404, and so GET /search/{id} always has something
+            # to read.
             search_store.save(
                 search_id,
                 {
                     "search_id": search_id,
+                    "status": STATUS_RUNNING,
                     "created_at": existing_record.get("created_at", datetime.now(timezone.utc).isoformat()),
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                     "jd_text": request.jd_text,
                     "location_override": request.location.model_dump() if request.location else None,
-                    "response": response.model_dump(),
+                    "response": {
+                        "provider": "platform",
+                        "search_id": search_id,
+                        "candidate_count": 0,
+                        "candidates": [],
+                        "explanations": [],
+                        "evidence": [],
+                        "diagnostics": {},
+                        "warnings": friendly_warnings,
+                        "debug": None,
+                        "recruiter_decisions": existing_record.get("recruiter_decisions", {}),
+                        "notes": existing_record.get("notes", {}),
+                        "status": STATUS_RUNNING,
+                        "candidate_states": {},
+                        "progress": {"admitted": 0, "surfaced": 0, "building_context": 0, "review_ready": 0},
+                    },
                     "recruiter_decisions": existing_record.get("recruiter_decisions", {}),
                     "notes": existing_record.get("notes", {}),
-                    # Union of whatever was already persisted (candidates
-                    # outside this run's top-N, or from an earlier run) with
-                    # this run's results — never dropped just because a
-                    # candidate fell outside top_n this time.
-                    "harvest_evidence": {
-                        **existing_harvest_raw,
-                        **{candidate_id: dataclasses.asdict(evidence) for candidate_id, evidence in harvest_by_candidate_id.items()},
-                    },
-                    # Phase 3 internal diagnostics — never part of `response`
-                    # (the only key GET /search/{id} ever returns), so this
-                    # never reaches the recruiter-facing API surface.
-                    "internal_diagnostics": {
-                        "crustdata": crustdata_diagnostics,
-                        "harvest": dataclasses.asdict(harvest_diag) if harvest_diag else None,
-                        "self_reinforcement": self_reinforcement_diagnostics,
-                        "total_search_elapsed_ms": round((time.perf_counter() - started_at) * 1000, 1),
-                        "baseline_candidate_count": len(baseline_snapshot),
-                        "investigated_candidate_count": min(top_n, len(ranked_candidates)),
-                        "reranked_candidate_count": min(top_n, len(ranked_candidates)),
-                    },
+                    "candidate_states": {},
+                    "harvest_evidence": existing_record.get("harvest_evidence", {}),
+                    "internal_diagnostics": {},
                 },
             )
 
-            logger.info(
-                "[SEARCH] Phase 3 diagnostics summary",
-                extra={
-                    "search_id": search_id,
-                    "crustdata_provider_calls": crustdata_diagnostics["provider_calls"],
-                    "crustdata_page_size": crustdata_diagnostics["page_size"],
-                    "crustdata_merged_unique_count": crustdata_diagnostics["merged_unique_count"],
-                    "crustdata_elapsed_ms": crustdata_diagnostics["elapsed_ms"],
-                    "harvest_max_observed_concurrency": harvest_diag.max_observed_concurrency if harvest_diag else None,
-                    "harvest_attempted": harvest_diag.attempted_count if harvest_diag else None,
-                    "harvest_successful": harvest_diag.successful_count if harvest_diag else None,
-                    "harvest_failed": harvest_diag.failed_count if harvest_diag else None,
-                    "harvest_elapsed_ms": harvest_diag.total_elapsed_ms if harvest_diag else None,
-                    "self_reinforcement_moved_substantially": self_reinforcement_diagnostics["moved_substantially_count"],
-                    "self_reinforcement_near_miss_count": self_reinforcement_diagnostics["near_miss_count_ranks_beyond_top_n"],
-                },
-            )
+            threading.Thread(
+                target=run_search_pipeline,
+                kwargs=dict(
+                    search_id=search_id,
+                    intent=intent,
+                    mapped_plan=mapped_plan,
+                    options=options,
+                    provider=provider,
+                    candidate_merger=candidate_merger,
+                    candidate_ranker=candidate_ranker,
+                    harvest_enrichment_service=harvest_enrichment_service,
+                    match_explainer=match_explainer,
+                    search_diagnostics=search_diagnostics,
+                    search_store=search_store,
+                    jd_text=request.jd_text,
+                    location_override=request.location.model_dump() if request.location else None,
+                    friendly_warnings=friendly_warnings,
+                    debug=request.debug,
+                    existing_record=existing_record,
+                    target_pool_size=MAX_WORKSPACE_CANDIDATES,
+                ),
+                daemon=True,
+                name=f"search-{search_id}",
+            ).start()
 
-            logger.info(
-                "[SEARCH] Execution summary",
-                extra={
-                    "search_id": search_id,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                    "execution_time_ms": execution_time_ms,
-                    "queries_dispatched": len(executed_plan.searches),
-                    "candidates_returned": len(ranked_candidates),
-                    "validation_rules_fired": len(capability_warnings),
-                    "final_search_constraints": {
-                        "countries": intent.location.countries,
-                        "cities": intent.location.cities,
-                        "zip_codes": intent.location.zip_codes,
-                        "radius_miles": intent.location.radius_miles,
-                        "work_mode": intent.location.work_mode,
-                        "required_skills": intent.skills.required_skills,
-                        "minimum_years": intent.experience.minimum_years,
-                        "maximum_years": intent.experience.maximum_years,
-                    },
-                },
-            )
+            logger.info("[SEARCH] Background pipeline started | search_id=%s", search_id)
 
-            return response
+            return SearchResponse(
+                provider="platform",
+                search_id=search_id,
+                candidate_count=0,
+                candidates=[],
+                explanations=[],
+                evidence=[],
+                recruiter_decisions=existing_record.get("recruiter_decisions", {}),
+                notes=existing_record.get("notes", {}),
+                diagnostics={},
+                warnings=friendly_warnings,
+                debug=None,
+                status=STATUS_RUNNING,
+                candidate_states={},
+                progress={"admitted": 0, "surfaced": 0, "building_context": 0, "review_ready": 0},
+            )
         except HTTPException:
             raise
         except ConfigurationError as exc:

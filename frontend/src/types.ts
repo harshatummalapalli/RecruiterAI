@@ -65,6 +65,10 @@ export interface SearchIntent {
 }
 
 export interface Candidate {
+  // The provider's own stable identity — the ONLY safe key for lifecycle
+  // state, recruiter decisions, and notes across progressive updates. Never
+  // fall back to profile_url or array position (see models/discovery.ts).
+  candidate_id?: string | null
   name?: string | null
   title?: string | null
   company?: string | null
@@ -170,4 +174,12 @@ export interface SearchResponse {
   // state from these instead of starting empty on every mount.
   recruiter_decisions?: Record<string, string>
   notes?: Record<string, Array<{ text: string; created_at: string }>>
+  // Progressive Candidate Workspace — search-level status and per-candidate
+  // lifecycle. `status` is "running" while the background pipeline is still
+  // working; the frontend polls GET /search/{id} until it leaves "running".
+  // `candidate_states` is keyed by the same stable candidate_id as
+  // recruiter_decisions/notes above — see backend/services/search_pipeline.py.
+  status?: 'running' | 'complete' | 'interrupted' | 'error'
+  candidate_states?: Record<string, 'surfaced' | 'building_context' | 'review_ready'>
+  progress?: { admitted?: number; surfaced?: number; building_context?: number; review_ready?: number }
 }

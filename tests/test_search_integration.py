@@ -82,7 +82,22 @@ def test_search_endpoint_runs_full_pipeline_with_mock_provider() -> None:
     )
 
     assert response.status_code == 200
-    payload = response.json()
+    started = response.json()
+    assert started["provider"] == "platform"
+    assert started["status"] == "running"
+
+    # POST /search now returns immediately (Progressive Candidate Workspace);
+    # poll GET /search/{id} for the finished pipeline result, exactly like
+    # the real frontend does.
+    import time
+
+    deadline = time.time() + 5.0
+    payload = started
+    while time.time() < deadline and payload.get("status") == "running":
+        time.sleep(0.02)
+        payload = client.get(f"/search/{started['search_id']}").json()
+
     assert payload["provider"] == "platform"
+    assert payload["status"] == "complete"
     assert payload["candidate_count"] == 1
     assert payload["diagnostics"]["total_queries"] >= 1

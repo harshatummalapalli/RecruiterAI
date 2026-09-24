@@ -1,9 +1,11 @@
 import tempfile
+import time
 from pathlib import Path
 
 from fastapi.testclient import TestClient
 
 import backend.api as api_module
+import backend.services.search_pipeline as search_pipeline_module
 from backend.api import create_app
 from backend.auth import SESSION_COOKIE_NAME, create_session_cookie_value
 from backend.errors import ConfigurationError, ProviderError
@@ -21,6 +23,24 @@ from backend.services.search_planner import SearchPlanner
 from backend.exporters.excel import ExcelExporter
 from backend.models.provider_capabilities import ProviderCapabilities
 from backend.providers.registry import ProviderRegistry
+
+
+def _wait_for_search(client: TestClient, search_id: str, timeout: float = 5.0) -> dict:
+    """POST /search now returns immediately with status="running" (Progressive
+    Candidate Workspace — see backend/services/search_pipeline.py); the
+    actual pipeline runs on a background thread. Tests that need the
+    finished result poll GET /search/{id} until status leaves "running",
+    exactly like the real frontend does."""
+    deadline = time.time() + timeout
+    payload: dict = {}
+    while time.time() < deadline:
+        response = client.get(f"/search/{search_id}")
+        if response.status_code == 200:
+            payload = response.json()
+            if payload.get("status") != "running":
+                return payload
+        time.sleep(0.02)
+    raise AssertionError(f"search {search_id} did not leave 'running' within {timeout}s (last: {payload})")
 
 
 def _login(client: TestClient) -> None:
@@ -204,8 +224,13 @@ def test_search_endpoint_returns_structured_result() -> None:
     response = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"})
 
     assert response.status_code == 200
-    payload = response.json()
-    assert payload["provider"] == "platform"
+    started = response.json()
+    assert started["provider"] == "platform"
+    assert started["status"] == "running"
+    assert started["candidate_count"] == 0
+
+    payload = _wait_for_search(client, started["search_id"])
+    assert payload["status"] == "complete"
     assert payload["candidate_count"] == 1
     assert payload["candidates"][0]["name"] == "Alice"
     assert payload["explanations"][0]["relevance_tier"] == "direct"
@@ -214,6 +239,10 @@ def test_search_endpoint_returns_structured_result() -> None:
     # the frontend to re-derive from raw_data.
     assert payload["evidence"][0]["current_company"] == "OpenAI"
     assert payload["evidence"][0]["role_alignment"]["title_relevance"] == "direct"
+    # A single admitted candidate with no Harvest configured should have
+    # gone straight to REVIEW_READY (see backend/services/search_pipeline.py).
+    candidate_id = payload["candidates"][0]["candidate_id"] or ""
+    assert payload["candidate_states"].get(candidate_id) == "review_ready"
 
 
 class _HarvestableProvider(BaseProvider):
@@ -274,7 +303,8 @@ def test_harvest_evidence_persists_and_a_reload_never_recalls_harvest(tmp_path) 
     client = TestClient(app)
     _login(client)
 
-    created = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"}).json()
+    started = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"}).json()
+    created = _wait_for_search(client, started["search_id"])
     assert call_count["n"] == 1  # Alice has a profile_url and is within top_n
 
     reloaded = client.get(f"/search/{created['search_id']}").json()
@@ -319,9 +349,11 @@ def test_rerunning_the_same_search_id_does_not_re_enrich_an_already_successful_c
     _login(client)
 
     client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock", "search_id": "fixed-id"})
+    _wait_for_search(client, "fixed-id")
     assert call_count["n"] == 1
 
     client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock", "search_id": "fixed-id"})
+    _wait_for_search(client, "fixed-id")
 
     assert call_count["n"] == 1  # not re-enriched on the second run
 
@@ -337,9 +369,13 @@ def test_decision_and_note_survive_a_reload_of_the_same_search(tmp_path) -> None
     client = build_test_app(search_store=SearchStore(storage_dir=tmp_path))
     _login(client)
 
-    created = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"}).json()
+    started = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"}).json()
+    created = _wait_for_search(client, started["search_id"])
     search_id = created["search_id"]
-    candidate_id = created["candidates"][0].get("profile_url") or created["candidates"][0]["name"]
+    # Stable provider identity — never profile_url/name (see
+    # backend/services/search_pipeline.py's _candidate_key).
+    candidate_id = created["candidates"][0]["candidate_id"]
+    assert candidate_id
     # Not yet decided/noted anywhere.
     assert created["recruiter_decisions"] == {}
     assert created["notes"] == {}
@@ -368,11 +404,14 @@ def test_rerunning_the_same_search_id_carries_forward_existing_decisions(tmp_pat
     client = build_test_app(search_store=SearchStore(storage_dir=tmp_path))
     _login(client)
 
-    first = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock", "search_id": "fixed-id"}).json()
-    candidate_id = first["candidates"][0].get("profile_url") or first["candidates"][0]["name"]
+    client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock", "search_id": "fixed-id"})
+    first = _wait_for_search(client, "fixed-id")
+    candidate_id = first["candidates"][0]["candidate_id"]
+    assert candidate_id
     client.patch(f"/search/{first['search_id']}/candidate", json={"candidate_id": candidate_id, "decision": "maybe"})
 
-    rerun = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock", "search_id": "fixed-id"}).json()
+    client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock", "search_id": "fixed-id"})
+    rerun = _wait_for_search(client, "fixed-id")
 
     assert rerun["search_id"] == "fixed-id"
     assert rerun["recruiter_decisions"] == {candidate_id: "maybe"}
@@ -507,8 +546,18 @@ def test_search_endpoint_returns_recruiter_friendly_error_for_provider_failures(
     _login(client)
     response = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"})
 
-    assert response.status_code == 502
-    assert response.json()["detail"] == "The sourcing provider could not complete this search. Please try again."
+    # Provider lookup/intent resolution/plan building are still synchronous
+    # (see backend/api.py) — a provider that only fails once actually
+    # QUERIED fails inside the background pipeline instead, surfaced via
+    # status="error" on a subsequent poll rather than an immediate HTTP
+    # error (see backend/services/search_pipeline.py's broad except).
+    assert response.status_code == 200
+    started = response.json()
+    assert started["status"] == "running"
+
+    failed = _wait_for_search(client, started["search_id"])
+    assert failed["status"] == "error"
+    assert failed["candidate_count"] == 0
 
 
 def test_export_endpoint_returns_excel_file() -> None:
@@ -758,7 +807,8 @@ def test_patch_candidate_persists_decision_and_note(tmp_path) -> None:
     _login(client)
     response = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"})
     search_id = response.json()["search_id"]
-    candidate_id = response.json()["candidates"][0]["candidate_id"] or "candidate-1"
+    finished = _wait_for_search(client, search_id)
+    candidate_id = finished["candidates"][0]["candidate_id"] or "candidate-1"
 
     patch_response = client.patch(
         f"/search/{search_id}/candidate",
@@ -957,12 +1007,12 @@ def _two_query_plan():
 
 def test_title_expansion_is_skipped_when_primary_pool_already_meets_the_target() -> None:
     provider = _TwoQueryProvider(primary_count=30)  # >= DISCOVERY_TARGET_POOL_SIZE (25)
-    candidates, executed_plan = api_module._run_adaptive_discovery(
+    candidates, executed_plan = search_pipeline_module.run_adaptive_discovery(
         provider=provider,
         mapped_plan=_two_query_plan(),
         options={},
         candidate_merger=CandidateMerger(),
-        target_pool_size=api_module.DISCOVERY_TARGET_POOL_SIZE,
+        target_pool_size=search_pipeline_module.DISCOVERY_TARGET_POOL_SIZE,
     )
     assert provider.calls == [["natural_language"]]  # title_expansion never ran
     assert len(executed_plan.searches) == 1
@@ -971,12 +1021,12 @@ def test_title_expansion_is_skipped_when_primary_pool_already_meets_the_target()
 
 def test_title_expansion_still_runs_when_primary_unique_pool_is_thin() -> None:
     provider = _TwoQueryProvider(primary_count=3)  # well below the target
-    candidates, executed_plan = api_module._run_adaptive_discovery(
+    candidates, executed_plan = search_pipeline_module.run_adaptive_discovery(
         provider=provider,
         mapped_plan=_two_query_plan(),
         options={},
         candidate_merger=CandidateMerger(),
-        target_pool_size=api_module.DISCOVERY_TARGET_POOL_SIZE,
+        target_pool_size=search_pipeline_module.DISCOVERY_TARGET_POOL_SIZE,
     )
     assert provider.calls == [["natural_language"], ["title_expansion"]]
     assert len(executed_plan.searches) == 2
@@ -1006,11 +1056,11 @@ def test_adaptive_discovery_decision_uses_merged_unique_count_not_raw_count() ->
             return [_candidate(i, "title_expansion") for i in range(5)]
 
     provider = DuplicateHeavyProvider()
-    candidates, executed_plan = api_module._run_adaptive_discovery(
+    candidates, executed_plan = search_pipeline_module.run_adaptive_discovery(
         provider=provider,
         mapped_plan=_two_query_plan(),
         options={},
         candidate_merger=CandidateMerger(),
-        target_pool_size=api_module.DISCOVERY_TARGET_POOL_SIZE,
+        target_pool_size=search_pipeline_module.DISCOVERY_TARGET_POOL_SIZE,
     )
     assert provider.calls == [["natural_language"], ["title_expansion"]]

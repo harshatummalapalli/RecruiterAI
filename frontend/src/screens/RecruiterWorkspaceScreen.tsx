@@ -91,7 +91,19 @@ export function RecruiterWorkspaceScreen() {
   const [searchState, setSearchState] = useState<SearchState>('idle')
   const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null)
   const [searchId, setSearchId] = useState<string | null>(null)
+  // Bumped once per "Find Candidates"/"Run Search Again" click — lets
+  // CandidateReviewScreen reset its open-profile/compare/edit-brief UI
+  // state exactly once per NEW search, without resetting on every
+  // progressive poll tick of the SAME still-running search (search_id
+  // alone doesn't distinguish those: a "Run Search Again" reuses the same
+  // search_id).
+  const [searchGeneration, setSearchGeneration] = useState(0)
   const titleInputRef = useRef<HTMLInputElement | null>(null)
+  // Progressive Candidate Workspace — the poll loop for a running search.
+  // Ref (not state) because it's plumbing, not something that should ever
+  // trigger a re-render on its own; cleared whenever a new search starts or
+  // the component unmounts, so at most one poll loop is ever active.
+  const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const greeting = `${getGreeting(new Date().getHours())}, ${RECRUITER_NAME}.`
   const hasJdText = jdText.trim().length > 0
@@ -119,9 +131,16 @@ export function RecruiterWorkspaceScreen() {
       setLockedFields(new Set(pointer.lockedFields))
       setSearchId(pointer.searchId)
       setSearchResponse(response)
-      setSearchState('done')
       setParseState('success')
       setStep('review')
+      if (response.status === 'running') {
+        // The search was still in progress when the browser was closed/
+        // refreshed — resume polling rather than treating it as finished.
+        setSearchState('searching')
+        pollSearch(pointer.searchId, pointer.brief)
+      } else {
+        setSearchState(response.status === 'error' ? 'error' : 'done')
+      }
     })()
     return () => {
       cancelled = true
@@ -219,9 +238,50 @@ export function RecruiterWorkspaceScreen() {
     }
   }
 
+  // Progressive Candidate Workspace: POST /search now returns almost
+  // immediately with status="running" — the actual CrustData/Harvest
+  // pipeline runs on a backend background thread (see backend/services/
+  // search_pipeline.py). This polls GET /search/{id} every 1.5s and
+  // updates the on-screen candidate list as candidates move SURFACED ->
+  // BUILDING_CONTEXT -> REVIEW_READY, stopping once the search leaves
+  // "running" (complete/error/interrupted).
+  const POLL_INTERVAL_MS = 1500
+
+  const stopPolling = () => {
+    if (pollTimeoutRef.current !== null) {
+      clearTimeout(pollTimeoutRef.current)
+      pollTimeoutRef.current = null
+    }
+  }
+
+  const pollSearch = (id: string, activeBrief: SearchBrief) => {
+    stopPolling()
+    const tick = async () => {
+      const response = await loadPersistedSearch(id).catch(() => null)
+      if (!response) {
+        return
+      }
+      setSearchResponse(response)
+      if (response.status === 'running') {
+        pollTimeoutRef.current = setTimeout(tick, POLL_INTERVAL_MS)
+        return
+      }
+      setSearchState(response.status === 'complete' ? 'done' : 'error')
+      savePersistedSearchPointer({
+        searchId: id,
+        jdText,
+        brief: activeBrief,
+        lockedFields: Array.from(lockedFields),
+      })
+    }
+    void tick()
+  }
+
   const handleFindCandidates = async (briefOverride?: SearchBrief) => {
     const activeBrief = briefOverride ?? brief
     setSearchState('searching')
+    setSearchGeneration((current) => current + 1)
+    stopPolling()
 
     try {
       const response = await runCandidateSearch(
@@ -233,20 +293,19 @@ export function RecruiterWorkspaceScreen() {
           debug: import.meta.env.DEV,
         },
       )
+      // The search has already started server-side — show the workspace
+      // immediately (0 candidates, "running") rather than waiting for the
+      // whole pipeline; polling fills it in progressively.
       setSearchResponse(response)
-      setSearchState('done')
       setStep('review')
       setSearchId(response.search_id)
-      savePersistedSearchPointer({
-        searchId: response.search_id,
-        jdText,
-        brief: activeBrief,
-        lockedFields: Array.from(lockedFields),
-      })
+      pollSearch(response.search_id, activeBrief)
     } catch {
       setSearchState('error')
     }
   }
+
+  useEffect(() => stopPolling, [])
 
   // Persistence means a page load always restores the last search — this is
   // the only way back to a blank slate. Clears the pointer (not the backend
@@ -269,14 +328,38 @@ export function RecruiterWorkspaceScreen() {
     setSearchId(null)
   }
 
+  // Candidate Review is contextual to the active search, not a generic
+  // greeting — the recruiter is deep into one role by that point, and the
+  // header's job shifts from "what are you hiring for" to "how is this
+  // search going" (see backend's progress: admitted/surfaced/
+  // building_context/review_ready counts, populated progressively).
+  const progress = searchResponse?.progress
+  const workspaceSubtitle = (() => {
+    if (!progress || !progress.admitted) {
+      return searchState === 'searching' ? 'Finding candidates…' : 'What are you hiring for today?'
+    }
+    const parts = [`${progress.admitted} candidate${progress.admitted === 1 ? '' : 's'} selected`]
+    if (progress.review_ready) parts.push(`${progress.review_ready} ready for review`)
+    if (progress.building_context) parts.push(`${progress.building_context} building context`)
+    if (progress.surfaced) parts.push(`${progress.surfaced} surfaced`)
+    return parts.join(' · ')
+  })()
+
   return (
     <main className="workspace">
       <div className="workspace__content">
         <header className="workspace__greeting">
-          <div>
-            <h1>{greeting}</h1>
-            <p>What are you hiring for today?</p>
-          </div>
+          {step === 'review' ? (
+            <div>
+              <h1>{brief.role.primaryTitle || 'Candidate Workspace'}</h1>
+              <p>{workspaceSubtitle}</p>
+            </div>
+          ) : (
+            <div>
+              <h1>{greeting}</h1>
+              <p>What are you hiring for today?</p>
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 8 }}>
             {step !== 'jd' ? (
               <button type="button" className="workspace__new-search" onClick={handleStartNewSearch}>
@@ -417,6 +500,7 @@ export function RecruiterWorkspaceScreen() {
             searchState={searchState}
             onRunSearch={() => handleFindCandidates()}
             searchId={searchId}
+            searchGeneration={searchGeneration}
           />
         ) : null}
 

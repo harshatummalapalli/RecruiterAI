@@ -1322,6 +1322,58 @@
   color: var(--color-error);
 }
 
+/* Progressive Candidate Workspace — SURFACED / BUILDING_CONTEXT rows.
+   Intentionally quieter than a Review Ready row (no hover/selection
+   affordance, nothing looks clickable) but never styled as an error or a
+   generic loading skeleton — this is RecruiterAI actively preparing a real
+   candidate, not a placeholder. */
+
+.candidate-row--pending {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.candidate-row--pending:hover {
+  border-color: var(--color-border);
+  background: transparent;
+}
+
+.candidate-row__lifecycle {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+}
+
+.candidate-badge--lifecycle-surfaced,
+.candidate-badge--lifecycle-building_context {
+  gap: 6px;
+  font-weight: 500;
+}
+
+.candidate-badge--lifecycle-surfaced {
+  background: var(--color-bg);
+  color: var(--color-muted);
+}
+
+.candidate-badge--lifecycle-building_context {
+  background: var(--color-preview-bg);
+  color: var(--color-primary-text);
+  border-color: var(--color-accent);
+}
+
+.candidate-row__lifecycle-pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  animation: candidate-lifecycle-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes candidate-lifecycle-pulse {
+  0%, 100% { opacity: 0.35; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
 /* Skeleton loading rows */
 
 .candidate-row--skeleton {
