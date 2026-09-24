@@ -5,6 +5,7 @@
 - Each run is written to output/experiments/structured_playground/runs/ (gitignored; contains candidate data)."""
 
 import json
+import re
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -62,7 +63,7 @@ def _rows(items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return rows
 
 
-def run(filters: Dict[str, Any], limit: int, fields: Optional[List[str]] = None, client: Optional[httpx.Client] = None) -> Dict[str, Any]:
+def run(filters: Dict[str, Any], limit: int, fields: Optional[List[str]] = None, client: Optional[httpx.Client] = None, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     key = get_crustdata_api_key()
     if not key:
         raise RunError("CRUSTDATA_API_KEY is not configured.")
@@ -84,6 +85,8 @@ def run(filters: Dict[str, Any], limit: int, fields: Optional[List[str]] = None,
     except ValueError:
         payload = {"raw_text": response.text[:2000]}
     result: Dict[str, Any] = {
+        "saved_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "context": context or {},        # the builder tree + Boolean text that produced this request
         "request": body,
         "http_status": response.status_code,
         "elapsed_ms": elapsed_ms,
@@ -111,6 +114,39 @@ def run(filters: Dict[str, Any], limit: int, fields: Optional[List[str]] = None,
 
 def _save(result: Dict[str, Any]) -> None:
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
-    path = RUNS_DIR / f"run_{time.strftime('%Y%m%d_%H%M%S')}_{int(time.time() * 1000) % 1000:03d}.json"
-    path.write_text(json.dumps(result, indent=1, ensure_ascii=False, default=str), encoding="utf-8")
+    run_id = f"run_{time.strftime('%Y%m%d_%H%M%S')}_{int(time.time() * 1000) % 1000:03d}"
+    path = RUNS_DIR / f"{run_id}.json"
+    result["run_id"] = run_id
     result["saved_to"] = str(path)
+    path.write_text(json.dumps(result, indent=1, ensure_ascii=False, default=str), encoding="utf-8")
+
+
+_RUN_ID = re.compile(r"^run_\d{8}_\d{6}_\d{3}$")
+
+
+def list_runs() -> List[Dict[str, Any]]:
+    """Newest first: a one-line summary of every saved run."""
+    if not RUNS_DIR.exists():
+        return []
+    out = []
+    for path in sorted(RUNS_DIR.glob("run_*.json"), reverse=True):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        out.append({
+            "run_id": path.stem, "saved_at": data.get("saved_at"), "http_status": data.get("http_status"),
+            "retrieved_count": data.get("retrieved_count"), "total_count": data.get("total_count_provider_reported"),
+            "limit": (data.get("request") or {}).get("limit"),
+            "boolean_text": ((data.get("context") or {}).get("boolean_text") or "")[:300],
+        })
+    return out
+
+
+def load_run(run_id: str) -> Dict[str, Any]:
+    if not _RUN_ID.match(run_id):
+        raise RunError("Invalid run id.")
+    path = RUNS_DIR / f"{run_id}.json"
+    if not path.exists():
+        raise RunError("No such saved run.")
+    return json.loads(path.read_text(encoding="utf-8"))

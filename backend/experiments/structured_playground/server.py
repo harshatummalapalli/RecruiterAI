@@ -67,9 +67,21 @@ def create_app(token: Optional[str] = None, client: Any = None) -> FastAPI:
         if unavailable and not req.confirm_unavailable:
             raise HTTPException(409, {"message": "The query uses field(s) marked UNAVAILABLE for our account. Confirm to send it anyway.", "warnings": unavailable})
         try:
-            return {"built": built, **runner.run(built["filters"], req.limit, req.fields, client=client)}
+            context = {"tree": req.tree, "boolean_text": built["boolean_text"], "warnings": built["warnings"]}
+            return {"built": built, **runner.run(built["filters"], req.limit, req.fields, client=client, context=context)}
         except runner.RunError as exc:
             raise HTTPException(400, str(exc))
+
+    @app.get("/api/runs", dependencies=[Depends(guard)])
+    def runs() -> List[Dict[str, Any]]:
+        return runner.list_runs()
+
+    @app.get("/api/runs/{run_id}", dependencies=[Depends(guard)])
+    def run_detail(run_id: str) -> Dict[str, Any]:
+        try:
+            return runner.load_run(run_id)
+        except runner.RunError as exc:
+            raise HTTPException(404, str(exc))
 
     return app
 

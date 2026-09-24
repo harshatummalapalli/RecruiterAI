@@ -113,6 +113,8 @@ th, td { text-align: left; padding: 3px 5px; border-bottom: 1px solid var(--line
     </div>
     <details style="margin-top:6px"><summary>Response fields requested</summary><div id="fields-box" class="hint"></div></details>
     <div id="run-out" style="margin-top:8px"></div>
+    <h2 style="margin-top:12px">Saved runs (backend)</h2>
+    <div id="runs-list"></div>
   </section>
 </main>
 
@@ -307,14 +309,29 @@ async function run(confirmUnavailable = false) {
     out.replaceChildren(el("div", { class: "hint", text: "Cancelled." })); return;
   }
   if (status !== 200) { out.replaceChildren(el("div", { class: "msg error", text: typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail) })); return; }
-  out.replaceChildren();
+  renderRun(data); loadRuns();
+}
+function renderRun(data) {
+  const out = $("#run-out"); out.replaceChildren();
   if (data.http_status !== 200) { out.append(el("div", { class: "msg error", text: `CrustData answered HTTP ${data.http_status}` }), el("pre", { text: JSON.stringify(data.error_body, null, 2) })); return; }
   out.append(el("div", { class: "msg note", text: `Retrieved ${data.retrieved_count} · provider-reported total_count (search universe, not "matches"): ${data.total_count_provider_reported} · next_cursor: ${data.has_next_cursor ? "yes" : "no"} · ${data.elapsed_ms} ms` + (data.credits_used_header ? ` · credits used: ${data.credits_used_header}` : "") }));
-  out.append(el("div", { class: "hint", text: "Envelope keys: " + Object.keys(data.response_envelope).join(", ") + " · saved: " + data.saved_to }));
+  out.append(el("div", { class: "hint", text: "Envelope keys: " + Object.keys(data.response_envelope).join(", ") + " · saved at the backend: " + data.saved_to }));
   const tbl = el("table", {}, el("thead", {}, el("tr", {}, ["#", "Name", "Current title", "Company", "Location", "fit"].map((h) => el("th", { text: h })))));
   const body = el("tbody");
   for (const r of data.rows) body.append(el("tr", {}, el("td", { text: r.position }), el("td", {}, r.profile_url ? el("a", { href: r.profile_url, target: "_blank", rel: "noopener noreferrer", text: r.name || "(no name)" }) : (r.name || "")), el("td", { text: r.current_title || "" }), el("td", { text: r.current_company || "" }), el("td", { text: r.location || "" }), el("td", { text: r.fit || "" })));
   tbl.append(body); out.append(el("div", { class: "scroll-x" }, tbl));
+}
+async function loadRuns() {
+  const { status, data } = await api("/api/runs");
+  const box = $("#runs-list"); box.replaceChildren();
+  if (status !== 200 || !data.length) { box.append(el("div", { class: "hint", text: "No saved runs yet. Every run is saved on the backend automatically." })); return; }
+  for (const r of data.slice(0, 30)) {
+    box.append(el("div", { class: "field", title: r.boolean_text }, el("div", { class: "txt" },
+      el("div", { class: "nm", text: `${(r.saved_at || "").replace("T", " ")} · ${r.http_status === 200 ? r.retrieved_count + " retrieved" : "HTTP " + r.http_status}` }),
+      el("div", { class: "path", text: (r.total_count != null ? "universe " + r.total_count + " · " : "") + r.run_id })),
+      el("button", { text: "View", onclick: async () => { const res = await api("/api/runs/" + r.run_id); if (res.status === 200) renderRun(res.data); } }),
+      el("button", { text: "Restore query", onclick: async () => { const res = await api("/api/runs/" + r.run_id); if (res.status === 200 && res.data.context && res.data.context.tree) resetTo(fromSerialized(res.data.context.tree)); } })));
+  }
 }
 
 /* ---------- example + init ---------- */
@@ -339,7 +356,7 @@ async function init() {
   for (const f of CAT.projectable_fields) fb.append(el("label", { style: "margin-right:10px; display:inline-block" }, el("input", { type: "checkbox", value: f, checked: CAT.default_fields.includes(f) ? true : null, onchange: updateEstimate }), " " + f));
   let saved = null; try { saved = JSON.parse(localStorage.getItem("playground-tree")); } catch (e) {}
   tree = location.hash === "#example" ? exampleTree() : saved && saved.type === "group" ? fromSerialized(saved) : newGroup("and"); selectedId = tree.id;
-  renderTree(); scheduleBuild();
+  renderTree(); scheduleBuild(); loadRuns();
   $("#catalog-search").addEventListener("input", renderCatalog);
   $("#limit").addEventListener("input", updateEstimate);
   $("#btn-run").addEventListener("click", () => run(false));

@@ -272,3 +272,17 @@ def test_playground_does_not_touch_production_search_storage(playground) -> None
     before = set(store.glob("*.json")) if store.exists() else set()
     client.post("/api/run", json={"tree": group("and", cond(TITLE, "(.)", ["x"])), "limit": 1}, headers=headers)
     assert (set(store.glob("*.json")) if store.exists() else set()) == before
+
+
+def test_every_run_is_saved_and_can_be_listed_reloaded_and_restored(playground) -> None:
+    client, _, headers = playground
+    tree = group("and", cond(TITLE, "(.)", ["Backend Engineer"]))
+    run = client.post("/api/run", json={"tree": tree, "limit": 2}, headers=headers).json()
+    listing = client.get("/api/runs", headers=headers).json()
+    assert listing[0]["run_id"] == run["run_id"] and listing[0]["retrieved_count"] == 2 and "Backend Engineer" in listing[0]["boolean_text"]
+    saved = client.get(f"/api/runs/{run['run_id']}", headers=headers).json()
+    assert saved["context"]["tree"] == tree                                   # the query can be restored
+    assert [r["crustdata_person_id"] for r in saved["rows"]] == [9, 1] and len(saved["raw_items"]) == 2
+    assert client.get("/api/runs/../../etc/passwd", headers=headers).status_code == 404
+    assert client.get("/api/runs/run_x", headers=headers).status_code == 404
+    assert client.get("/api/runs").status_code == 403
