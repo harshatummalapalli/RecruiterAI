@@ -173,6 +173,23 @@ def _radius_place_from_boundary(boundary: SearchBoundary) -> Optional[str]:
     return ", ".join(part for part in [boundary.city, normalize_state(boundary.state)] if part)
 
 
+_DURATION_MENTION = re.compile(r"\b\d+\s*\+?\s*(?:years?|yrs?)\b", re.IGNORECASE)
+
+
+def _core_signals_with_duration(
+    core: List[str], supporting: List[str], minimum_years: Optional[int]
+) -> List[str]:
+    """The minimum years is a structured fact the intake already extracted
+    (it was 3 in every one of five runs on the same JD), but whether the
+    model ALSO wrote it up as a requirement varied (present in 3 of 5 runs).
+    A stated minimum must always be a requirement, so add it when no signal
+    of any tier already states a duration. Deterministic and never
+    role-specific."""
+    if not minimum_years or _DURATION_MENTION.search(" ".join(core + supporting)):
+        return core
+    return [f"{minimum_years}+ years of professional experience", *core]
+
+
 def build_confirmed_hiring_intent(result: IntakeResult, boundary: Optional[SearchBoundary] = None) -> ConfirmedHiringIntent:
     """Stage 1: IntakeResult -> Confirmed Hiring Intent. Refuses while any
     ask issue is pending — a contradictory or otherwise unresolved intake
@@ -234,7 +251,11 @@ def build_confirmed_hiring_intent(result: IntakeResult, boundary: Optional[Searc
         # downstream re-derives or re-applies it once set.
         exclude_current_companies=[hiring_company] if hiring_company else [],
         preferred_company_types=[],
-        core_search_signals=list(decision.final_search_intent.hard_requirements),
+        core_search_signals=_core_signals_with_duration(
+            list(decision.final_search_intent.hard_requirements),
+            list(decision.final_search_intent.strong_signals),
+            constraints.experience_minimum_years,
+        ),
         supporting_search_signals=list(decision.final_search_intent.strong_signals),
         differentiator_search_signals=list(decision.final_search_intent.preferred_differentiators),
         natural_language_search_query=decision.final_search_intent.natural_language_search_query or "",

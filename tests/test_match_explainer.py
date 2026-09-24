@@ -22,8 +22,9 @@ def test_explainer_builds_grounded_explanation_for_a_direct_match() -> None:
 
     assert explanation.relevance_tier == "direct"
     assert explanation.seniority_alignment is True
-    # The seniority sentence is the evidence-cited basis, not a restatement of a provider label.
-    assert "directly names the target seniority" in explanation.why_this_candidate
+    # Level alignment is judged from the title text, not restated from a provider label.
+    assert "Level alignment: the current title" in explanation.why_this_candidate
+    assert "consistent with the target Senior role" in explanation.why_this_candidate
     assert any("python" in item.lower() for item in explanation.strong_evidence)
     assert any(item.startswith("Current title") or item.startswith("Headline") for item in explanation.strong_evidence)
     assert explanation.potential_concerns == []
@@ -156,7 +157,9 @@ def test_strong_evidence_and_concern_are_both_populated_together() -> None:
 
     assert len(explanation.strong_evidence) >= 1
     assert len(explanation.potential_concerns) == 1
-    assert "Entry Level" in explanation.potential_concerns[0]
+    # Judged from the title ("Senior"), not the provider's "Entry Level" label.
+    assert "may indicate a level below the target Lead role" in explanation.potential_concerns[0]
+    assert "Entry Level" not in explanation.potential_concerns[0]
 
 
 def test_strong_evidence_with_no_concern_produces_an_empty_concerns_list() -> None:
@@ -210,7 +213,7 @@ def test_multiple_concerns_all_remain_visible() -> None:
     explanation = MatchExplainer().explain(candidate, intent)
 
     assert len(explanation.potential_concerns) == 2
-    assert any("seniority" in item.lower() or "does not match" in item.lower() for item in explanation.potential_concerns)
+    assert any("may indicate a level below the target senior role" in item.lower() for item in explanation.potential_concerns)
     assert any("verifying manually" in item.lower() for item in explanation.potential_concerns)
 
 

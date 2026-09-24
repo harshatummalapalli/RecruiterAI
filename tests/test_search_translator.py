@@ -530,3 +530,31 @@ def test_no_boundary_falls_back_to_task_a_extraction_unchanged() -> None:
     assert confirmed.radius_miles is None
     assert confirmed.hiring_company is None
     assert confirmed.exclude_current_companies == []
+
+
+# ---------------------------------------------------------------------------
+# Requirement-model stability: a stated minimum is always a requirement
+# ---------------------------------------------------------------------------
+
+
+def _with_min_years(result: IntakeResult, years):
+    result.role_understanding.explicit_constraints.experience_minimum_years = years
+    return result
+
+
+def test_a_stated_minimum_years_becomes_a_core_requirement_when_the_model_omitted_it() -> None:
+    result = _with_min_years(_result("Backend Engineer", core=["Proficiency in Python"]), 3)
+    intent = build_confirmed_hiring_intent(result)
+    assert intent.core_search_signals == ["3+ years of professional experience", "Proficiency in Python"]
+
+
+def test_the_years_requirement_is_not_duplicated_when_any_tier_already_states_a_duration() -> None:
+    core_has_it = _with_min_years(_result("Backend Engineer", core=["3+ years building backend services", "Python"]), 3)
+    assert build_confirmed_hiring_intent(core_has_it).core_search_signals == ["3+ years building backend services", "Python"]
+    supporting_has_it = _with_min_years(_result("Backend Engineer", core=["Python"], supporting=["5 years of AWS"]), 3)
+    assert build_confirmed_hiring_intent(supporting_has_it).core_search_signals == ["Python"]
+
+
+def test_no_minimum_years_adds_no_requirement() -> None:
+    result = _with_min_years(_result("Backend Engineer", core=["Python"]), None)
+    assert build_confirmed_hiring_intent(result).core_search_signals == ["Python"]

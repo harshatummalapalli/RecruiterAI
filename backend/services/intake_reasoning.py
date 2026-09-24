@@ -532,6 +532,10 @@ class IntakeReasoner:
                 {"role": "user", "content": user_prompt},
             ],
             text={"format": {"type": "json_object"}},
+            # The same job description must produce the same requirement model.
+            # Left at the default sampling temperature, five runs on one JD
+            # produced 4-6 core, 0-4 supporting and 2-4 differentiator items.
+            temperature=0,
         )
         content = getattr(response, "output_text", None)
         if not content:

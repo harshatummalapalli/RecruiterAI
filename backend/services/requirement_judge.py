@@ -26,6 +26,7 @@ import json
 import logging
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
@@ -39,6 +40,8 @@ from backend.services.candidate_evidence_builder import build_candidate_evidence
 
 logger = logging.getLogger(__name__)
 
+# Parallel single-claim review calls per candidate (the pipeline already runs several candidates at once).
+REVIEW_CONCURRENCY = 4
 JUDGE_MODEL = "gpt-4o-mini"
 # OpenAI list price per 1M tokens for gpt-4o-mini, used ONLY to estimate spend
 # in internal diagnostics. An assumption to re-check against the current price
@@ -94,19 +97,25 @@ def _normalize(text: str) -> str:
 
 _REVIEW_PROMPT = """You review whether a quote from a candidate's profile is genuine evidence for a hiring requirement.
 
-For each CLAIM you get a job REQUIREMENT and a QUOTE. Decide whether the QUOTE, read by itself, shows that the
-candidate has done the requirement's core skill, used its core tool, or done its kind of work.
+For each CLAIM you get a job REQUIREMENT and a QUOTE. Judge every claim on its own, using only that requirement and
+that quote. Decide whether the QUOTE, read by itself, shows the candidate did or used what the requirement names.
 
-supports=true when the quote names that core skill or tool, or clearly describes that kind of work. Qualifiers in the
-requirement (who consumes it, scale, "designing and implementing", how many years) do not each have to be restated.
-A quote that shows the candidate building or using the thing is enough.
+supports=true when the quote states the requirement's own skill, tool or kind of work. A named tool of the
+requirement's own kind counts (Docker for containerized deployment, Kafka or RabbitMQ for message queues, PostgreSQL
+or MySQL for relational databases, AWS/GCP/Azure for a cloud platform). Details such as who consumes the work, scale, or
+"designing and implementing" do not each have to be restated.
 
-supports=false when the quote is about a different skill, tool or activity, or is only a generic statement that would
-fit almost any engineering requirement (for example designing systems, running infrastructure, working on services)
-without naming the requirement's own subject. Also false when a related tool is named but nothing shows the
-requirement itself was done.
+supports=false when the quote:
+- is about a different skill, tool or activity, or fits almost any engineering requirement (designing systems,
+  running infrastructure, working on services) without naming the requirement's own subject;
+- names a related tool, or a broader thing, without the requirement's distinguishing qualifier (for example "APIs" or
+  "services" without REST, "data" or "an API" without relational databases);
+- describes meeting, planning, scoping, assessing or intending to do the work rather than having done it;
+- would only support the requirement if you inferred it from general knowledge.
 
-Do not be stricter than that: do not reject a quote just because it omits a detail of the requirement.
+Example of the qualifier rule: requirement "Experience with GraphQL APIs" with quote "Built high-performance APIs for
+mobile clients" is supports=false, because the quote never says GraphQL. The same quote for "Experience building APIs"
+is supports=true.
 
 Return only JSON: {"results":[{"i":<claim number>,"supports":true|false}]}
 Include every claim exactly once."""
@@ -251,8 +260,13 @@ class RequirementJudge:
         was claimed is asked here, of a reviewer that sees only the
         requirement and the quote. Anything not affirmed is downgraded to
         "partly", which never counts as evidence. The generated career-dates
-        claim is exempt (it is computed, not model-quoted). If the review call
-        itself fails, first-pass verdicts stand and the failure is recorded."""
+        claim is exempt (it is computed, not model-quoted).
+
+        Each claim is reviewed in its own call: measured on real quotes, the
+        same claim got different verdicts depending on which other claims
+        shared its call, while a single-claim call was stable across repeats.
+        If a review call itself fails, that claim's first-pass verdict stands
+        and the failure is recorded."""
         claims = [
             (index, judgment)
             for index, judgment in enumerate(outcome.judgments or [])
@@ -260,34 +274,45 @@ class RequirementJudge:
         ]
         if not claims:
             return
-        try:
-            response = client.responses.create(
-                model=self._model,
-                input=[
-                    {"role": "system", "content": _REVIEW_PROMPT},
-                    {
-                        "role": "user",
-                        "content": json.dumps(
-                            {"claims": [{"i": index, "requirement": j["signal_text"], "quote": j["quote"]} for index, j in claims]},
-                            ensure_ascii=False,
-                        ),
-                    },
-                ],
-                text={"format": {"type": "json_object"}},
-                temperature=0,
-            )
+
+        def review_one(index: int, judgment: Dict[str, Any]) -> tuple:
+            try:
+                response = client.responses.create(
+                    model=self._model,
+                    input=[
+                        {"role": "system", "content": _REVIEW_PROMPT},
+                        {
+                            "role": "user",
+                            "content": json.dumps(
+                                {"claims": [{"i": index, "requirement": judgment["signal_text"], "quote": judgment["quote"]}]},
+                                ensure_ascii=False,
+                            ),
+                        },
+                    ],
+                    text={"format": {"type": "json_object"}},
+                    temperature=0,
+                )
+                usage = getattr(response, "usage", None)
+                reviewed = json.loads(getattr(response, "output_text", "") or "{}").get("results", [])
+                supported = any(
+                    isinstance(r, dict) and r.get("i") == index and bool(r.get("supports")) for r in reviewed
+                )
+                return index, supported, None, usage
+            except Exception as exc:  # noqa: BLE001 - review failure keeps this claim's first-pass verdict
+                return index, None, exc, None
+
+        with ThreadPoolExecutor(max_workers=REVIEW_CONCURRENCY) as pool:
+            results = list(pool.map(lambda item: review_one(*item), claims))
+        for index, supported, error, usage in results:
+            if error is not None:
+                logger.warning("Requirement review call failed; first-pass verdict stands", exc_info=error)
+                outcome.review_failed = True
+                continue
             outcome.calls += 1
-            usage = getattr(response, "usage", None)
             outcome.input_tokens += int(getattr(usage, "input_tokens", 0) or 0)
             outcome.output_tokens += int(getattr(usage, "output_tokens", 0) or 0)
-            reviewed = json.loads(getattr(response, "output_text", "") or "{}").get("results", [])
-            supports = {int(r["i"]): bool(r.get("supports")) for r in reviewed if isinstance(r, dict) and "i" in r}
-        except Exception:  # noqa: BLE001 - review failure keeps first-pass verdicts
-            logger.warning("Requirement review pass failed; first-pass verdicts stand", exc_info=True)
-            outcome.review_failed = True
-            return
-        for index, judgment in claims:
-            if not supports.get(index, False):  # an omitted claim is not affirmed
+            if not supported:  # an omitted or unparseable answer is not affirmation
+                judgment = outcome.judgments[index]
                 judgment["verdict"] = "partly"
                 judgment["review"] = "not_supported_by_quote_alone"
                 outcome.downgraded_by_review += 1

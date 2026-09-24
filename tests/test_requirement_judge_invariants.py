@@ -361,3 +361,74 @@ def test_live_genuine_evidence_is_found_with_a_real_quote() -> None:
     harvest = _harvest("Built REST APIs enabling data exchange across enterprise systems.", "Designed and optimized relational data models and SQL queries for performance.")
     result = _live(intent, harvest)
     assert result[REST_REQ]["verdict"] == "met" and result[DB_REQ]["verdict"] == "met"
+
+
+# ---------------------------------------------------------------------------------------------------------
+# Release 1.1: the reviewer judges each claim in its own call (batched calls flipped verdicts on real quotes)
+# ---------------------------------------------------------------------------------------------------------
+def test_each_met_claim_is_reviewed_in_its_own_call() -> None:
+    intent, harvest = _intent(PY_REQ, REST_REQ), _harvest("Wrote Python services.", "Built REST APIs for partners.")
+    p = build_passages(_candidate(), intent, harvest)
+    payloads: List[List[int]] = []
+
+    class Recording(_Scripted):
+        def create(self, **kwargs):
+            if kwargs["input"][0]["content"].startswith("You review whether a quote"):
+                payloads.append([c["i"] for c in json.loads(kwargs["input"][1]["content"])["claims"]])
+                self.review_calls += 1
+                claims = json.loads(kwargs["input"][1]["content"])["claims"]
+                return SimpleNamespace(output_text=json.dumps({"results": [{"i": c["i"], "supports": True} for c in claims]}), usage=None)
+            return super().create(**kwargs)
+
+    results = [
+        {"r": 0, "verdict": "met", "p": _index(p, "Wrote Python"), "quote": "Wrote Python services", "term": "Python"},
+        {"r": 1, "verdict": "met", "p": _index(p, "Built REST"), "quote": "Built REST APIs for partners", "term": "REST APIs"},
+    ]
+    RequirementJudge(client=Recording(results)).judge_detailed(_candidate(), intent, harvest)
+    assert sorted(payloads) == [[0], [1]]  # two claims -> two single-claim calls, never one shared call
+
+
+def test_one_failed_review_call_leaves_only_that_claim_unreviewed() -> None:
+    intent, harvest = _intent(PY_REQ, REST_REQ), _harvest("Wrote Python services.", "Built REST APIs for partners.")
+    p = build_passages(_candidate(), intent, harvest)
+
+    class FlakyReview(_Scripted):
+        def create(self, **kwargs):
+            if kwargs["input"][0]["content"].startswith("You review whether a quote"):
+                claims = json.loads(kwargs["input"][1]["content"])["claims"]
+                if claims[0]["requirement"] == PY_REQ:
+                    raise RuntimeError("one review call failed")
+                # the other claim is rejected by the reviewer
+                return SimpleNamespace(output_text=json.dumps({"results": [{"i": claims[0]["i"], "supports": False}]}), usage=None)
+            return super().create(**kwargs)
+
+    results = [
+        {"r": 0, "verdict": "met", "p": _index(p, "Wrote Python"), "quote": "Wrote Python services", "term": "Python"},
+        {"r": 1, "verdict": "met", "p": _index(p, "Built REST"), "quote": "Built REST APIs for partners", "term": "REST APIs"},
+    ]
+    outcome = RequirementJudge(client=FlakyReview(results)).judge_detailed(_candidate(), intent, harvest)
+    by_text = {j["signal_text"]: j["verdict"] for j in outcome.judgments}
+    assert by_text[PY_REQ] == "met" and outcome.review_failed is True    # failed call: first-pass verdict stands, recorded
+    assert by_text[REST_REQ] == "partly"                                   # the other claim was still reviewed and rejected
+
+
+@live
+def test_live_reviewer_rejects_generic_mentions_and_plans_but_keeps_real_evidence() -> None:
+    """The semantic pattern behind the borderline live matches: a generic mention ("high-performance APIs"),
+    or discussing/planning the work ("held meetings to ... design solutions such as APIs"), is not the
+    requirement itself; a quote that names it (or a tool of its own kind) still is."""
+    from openai import OpenAI
+
+    from backend.config import get_openai_api_key
+    from backend.services.requirement_judge import RequirementJudge as Real
+
+    def reviewed(requirement: str, quote: str) -> str:
+        judgment = {"tier": "core", "signal_text": requirement, "verdict": "met", "quote": quote, "source": "harvest: employment description"}
+        outcome = SimpleNamespace(judgments=[judgment], calls=0, input_tokens=0, output_tokens=0, review_failed=False, downgraded_by_review=0)
+        Real()._review(OpenAI(api_key=get_openai_api_key()), outcome)
+        return judgment["verdict"]
+
+    assert reviewed(REST_REQ, "Designed and developed scalable backend services in Go and Python, delivering high-performance APIs for education platforms.") == "partly"
+    assert reviewed(REST_REQ, "I held meetings to assess technical requirements and design solutions such as APIs and front-end architecture.") == "partly"
+    assert reviewed(REST_REQ, "Built REST APIs in Flask for partner integrations.") == "met"
+    assert reviewed("Familiarity with containerized deployment", "Provided consulting on microservices, leveraging Docker for deployment and scaling.") == "met"

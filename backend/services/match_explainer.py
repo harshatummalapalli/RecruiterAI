@@ -27,6 +27,12 @@ _HARVEST_SOURCE_PHRASING = {
 }
 
 
+def _labelled(label: str, basis: str) -> str:
+    """"Level alignment: the current title ..." — the basis is a full sentence
+    that starts with a capital, so it is lower-cased after the label."""
+    return f"{label}: {basis[:1].lower()}{basis[1:]}" if basis else label
+
+
 class MatchExplainer:
     """Builds a recruiter-facing explanation from the same CandidateEvidence
     CandidateRanker scores against — one source of truth for both, so the
@@ -44,9 +50,13 @@ class MatchExplainer:
             why_this_candidate=self._why_this_candidate(evidence, intent),
             strong_evidence=self._strong_evidence(evidence),
             potential_concerns=self._potential_concerns(evidence),
-            what_we_dont_know=[note.note for note in evidence.uncertainty] + self._unevidenced_core(evidence),
+            what_we_dont_know=[note.note for note in evidence.uncertainty]
+            + self._level_unknowns(evidence)
+            + self._unevidenced_core(evidence),
             matched_signals=[self._to_signal_out(s) for s in alignment.matched_signals],
             seniority_alignment=alignment.seniority_alignment,
+            experience_floor=alignment.experience_floor,
+            level_fit=alignment.level_fit,
             provider_fit=evidence.search_evidence.provider_fit,
             convergence=evidence.search_evidence.convergence,
             matched_queries=evidence.search_evidence.matched_queries,
@@ -77,16 +87,30 @@ class MatchExplainer:
         alignment = evidence.role_alignment
         parts = [alignment.title_relevance_basis]
 
-        # The basis is already a complete, evidence-cited sentence (years from
-        # role dates, a title that names the level, or the provider label as a
-        # last resort) — restating the provider label here contradicted it.
-        if alignment.seniority_alignment is not None:
-            parts.append(alignment.seniority_alignment_basis)
+        # Two separate facts, never blended: the experience floor (arithmetic
+        # on dated roles) and level alignment (what the titles say against
+        # the target). Level is stated here only when it fits; a level that
+        # may be above/below is a concern, and an unknown level is a gap.
+        if alignment.experience_floor is True:
+            parts.append(_labelled("Experience floor met", alignment.experience_floor_basis))
+        if alignment.level_fit == "aligned":
+            parts.append(_labelled("Level alignment", alignment.level_basis))
 
         if evidence.search_evidence.convergence:
             parts.append("Surfaced independently by more than one search.")
 
         return " ".join(parts)
+
+    def _level_unknowns(self, evidence: CandidateEvidence) -> List[str]:
+        """What the titles cannot tell us: level fit that stays unclear, and
+        an experience floor that cannot be checked."""
+        alignment = evidence.role_alignment
+        notes: List[str] = []
+        if alignment.level_fit == "unclear":
+            notes.append(_labelled("Level alignment", alignment.level_basis))
+        if alignment.experience_floor is None and alignment.experience_floor_basis:
+            notes.append(alignment.experience_floor_basis)
+        return notes
 
     def _unevidenced_core(self, evidence: CandidateEvidence) -> List[str]:
         """What the profile does NOT prove: the search's core requirements
@@ -138,7 +162,21 @@ class MatchExplainer:
         concerns: List[str] = []
         alignment = evidence.role_alignment
 
-        if alignment.seniority_alignment is False:
+        if alignment.experience_floor is False:
+            concerns.append(_labelled("Experience floor not met", alignment.experience_floor_basis))
+        if alignment.level_fit in ("above", "below"):
+            note = _labelled("Level alignment", alignment.level_basis)
+            if alignment.level_fit == "above":
+                note += " Worth confirming the candidate would consider this level."
+            concerns.append(note)
+        if (
+            alignment.seniority_alignment is False
+            and alignment.experience_floor is not False
+            and alignment.level_fit not in ("above", "below")
+        ):
+            # The ranker still applies its small penalty for this case (only
+            # reachable when the search states no minimum years), so the
+            # reason stays visible rather than the ordering going unexplained.
             concerns.append(alignment.seniority_alignment_basis)
 
         if alignment.title_relevance in ("tangential", "unclear"):

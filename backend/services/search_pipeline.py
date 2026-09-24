@@ -341,6 +341,10 @@ def run_search_pipeline(
         # within 1.0 of the last admitted one, the data needed to decide
         # later whether retrieving more than 50 would change who is shown.
         near_miss_count = sum(1 for score in baseline_scores[len(admitted): len(admitted) + 10] if score >= cutoff_score - 1.0)
+        # Diagnostic only: how many retrieved candidates share the cutoff's
+        # baseline score. When this is large, who lands inside the 25 was
+        # decided by tie-breaking on thin, pre-read evidence, not by merit.
+        tied_at_cutoff = sum(1 for score in baseline_scores if abs(score - cutoff_score) < 1e-9)
 
         # CrustData always provides candidate_id in practice (CandidateMerger
         # already relies on it as its primary dedup key for the same reason),
@@ -510,6 +514,7 @@ def run_search_pipeline(
         funnel["read_in_depth"] = read_ok
         funnel["presented"] = sum(1 for state in candidate_states.values() if state == REVIEW_READY)
 
+        ranking_rows = candidate_ranker.diagnose(admitted, intent, harvest_by_id)
         core_met, supporting_met, judged_candidates, no_core_evidence, level_known = [], [], 0, 0, 0
         for entry in evidence:
             alignment = (entry or {}).get("role_alignment") or {}
@@ -529,6 +534,10 @@ def run_search_pipeline(
             "candidates_with_no_core_evidence": no_core_evidence,
             "candidates_with_level_fit_known": level_known,
             "distinct_final_scores": len({round(c.final_score or 0.0, 3) for c in admitted}),
+            "level_fit": {
+                fit: sum(1 for row in ranking_rows if row["level_fit"] == fit)
+                for fit in ("aligned", "above", "below", "unclear")
+            },
         }
 
         diagnostics_report = search_diagnostics.analyze(executed_plan, admitted)
@@ -614,7 +623,8 @@ def run_search_pipeline(
                     "avg_latency_ms_per_candidate": round(judge_stats["elapsed_ms"] / max(1, judge_stats["attempted"]), 1),
                 },
                 "evidence_coverage": evidence_coverage,
-                "admission": {"near_miss_just_outside_cut": near_miss_count, "admitted": len(admitted), "final_candidate_count": len(admitted)},
+                "ranking": ranking_rows,
+                "admission": {"near_miss_just_outside_cut": near_miss_count, "tied_at_cutoff_baseline_score": tied_at_cutoff, "admitted": len(admitted), "final_candidate_count": len(admitted)},
                 "total_search_elapsed_ms": round((time.perf_counter() - started_at) * 1000, 1),
             },
         )

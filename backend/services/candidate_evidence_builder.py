@@ -437,6 +437,125 @@ def _classify_seniority(
     )
 
 
+# Seniority ladder used ONLY to compare a stated level in a title with the
+# target level. A title with no marker on this ladder ("Backend Engineer")
+# states no level, and years alone are never used to place someone on it.
+_LEVEL_LADDER: Tuple[Tuple[int, str, Tuple[str, ...]], ...] = (
+    (0, "intern", ("intern", "internship", "trainee", "apprentice")),
+    (1, "junior", ("junior", "jr", "entry", "graduate")),
+    (2, "mid", ("mid", "intermediate")),
+    (3, "senior", ("senior", "sr")),
+    (4, "staff/lead", ("staff", "lead")),
+    (5, "principal", ("principal", "distinguished", "fellow")),
+    (6, "director", ("director", "vp", "vice", "head", "chief", "cto")),
+)
+_NUMBERED_LEVEL = re.compile(r"\b(?:level|engineer|developer|sde|swe|analyst)\s+(iii|ii|i|3|2|1)\b", re.IGNORECASE)
+_NUMBERED_RANK = {"i": 1, "1": 1, "ii": 2, "2": 2, "iii": 3, "3": 3}
+
+
+def _level_marker(text: Optional[str]) -> Optional[Tuple[int, str]]:
+    """The highest level a title/headline states, as (rank, label), or None
+    when it states none."""
+    if not text:
+        return None
+    tokens = set(re.findall(r"[a-z0-9]+", text.lower()))
+    found: List[int] = []
+    for rank, _label, words in _LEVEL_LADDER:
+        if any(word in tokens for word in words):
+            found.append(rank)
+    numbered = _NUMBERED_LEVEL.search(text)
+    if numbered:
+        found.append(_NUMBERED_RANK[numbered.group(1).lower()])
+    if not found:
+        return None
+    rank = max(found)
+    return rank, next(label for r, label, _ in _LEVEL_LADDER if r == rank)
+
+
+def _classify_experience_floor(
+    evidence: CandidateEvidence, minimum_years: Optional[int]
+) -> Tuple[Optional[bool], str]:
+    """The arithmetic fact only: do the dated roles add up to the years the
+    search asked for. None when the search asked for no minimum or the
+    profile has no usable dates."""
+    if not minimum_years:
+        return None, ""
+    years = evidence.derived_experience_years
+    if years is None:
+        return None, f"No dated roles on the profile, so the {minimum_years}+ years asked cannot be checked."
+    if years >= minimum_years:
+        return True, (
+            f"About {years:g} years of professional experience are visible in dated roles, which meets the "
+            f"{minimum_years}+ years asked; years in the specific discipline are not independently verified."
+        )
+    return False, (
+        f"About {years:g} years of professional experience are visible in dated roles, below the "
+        f"{minimum_years}+ years asked."
+    )
+
+
+def _classify_level(
+    evidence: CandidateEvidence, target_seniority: Optional[str], floor: Optional[bool]
+) -> Tuple[Optional[str], str]:
+    """Does the candidate's own stated level fit the target, judged from the
+    titles and never from years alone.
+
+    Evidence, strongest first: the current title, then the headline, then the
+    two most recent earlier titles. Earlier titles can only CONFIRM a fit
+    (someone whose current title states no level but was recently a Senior
+    Engineer) - they never flag a candidate as above or below, because titles
+    drift. Where the current title and the headline point different ways the
+    answer is "unclear". A title that states no level places nobody on the
+    ladder: the answer is "unclear", except that a profile whose dated roles
+    fall short of the years the search asked for is "below". "above" and
+    "below" describe what the profile may indicate, not a verdict."""
+    target = _level_marker(target_seniority)
+    if not target_seniority or target is None:
+        return None, ""
+    target_rank, _ = target
+
+    def relation(rank: int) -> str:
+        return "above" if rank > target_rank else "below" if rank < target_rank else "aligned"
+
+    title = _level_marker(evidence.current_title)
+    headline = _level_marker(evidence.headline)
+    title_text = evidence.current_title or ""
+
+    if title and headline and relation(title[0]) != relation(headline[0]):
+        return "unclear", (
+            f"The current title (\"{title_text}\", {title[1]}-level) and the headline ({headline[1]}-level) point to different "
+            f"levels, so fit with the target {target_seniority} role cannot be confirmed from the profile."
+        )
+
+    stated = title or headline
+    if stated:
+        where = f"current title (\"{title_text}\")" if title else "headline"
+        fit = relation(stated[0])
+        if fit == "aligned":
+            return fit, f"The {where} reads as {stated[1]}-level, consistent with the target {target_seniority} role."
+        if fit == "above":
+            return fit, f"The {where} reads as {stated[1]}-level, which may indicate a level above the target {target_seniority} role."
+        return fit, f"The {where} reads as {stated[1]}-level, which may indicate a level below the target {target_seniority} role."
+
+    for role in evidence.past_roles[:2]:
+        earlier = _level_marker(role.title)
+        if earlier and relation(earlier[0]) == "aligned":
+            return "aligned", (
+                f"The current title states no level, but a recent earlier role (\"{role.title}\") read as {earlier[1]}-level, "
+                f"consistent with the target {target_seniority} role."
+            )
+
+    if floor is False:
+        return "below", (
+            f"The current title states no level, and the dated roles fall short of the years asked for the target "
+            f"{target_seniority} role."
+        )
+    return "unclear", (
+        f"The current title states no level, so fit with the target {target_seniority} role cannot be confirmed "
+        "from the profile."
+    )
+
+
 def _parse_role_date(value: Any) -> Optional[date]:
     if not value or not isinstance(value, str):
         return None
@@ -486,6 +605,7 @@ def _alignment_from_judgments(
     title_basis: str,
     seniority_alignment: Optional[bool],
     seniority_basis: str,
+    level_kwargs: Dict[str, Any],
 ) -> RoleAlignment:
     """Role alignment built ONLY from judgments whose quote was verified
     against the profile text (see requirement_judge.py). A requirement with
@@ -522,6 +642,7 @@ def _alignment_from_judgments(
         seniority_alignment_basis=seniority_basis,
         matched_signals=matched,
         unmatched_signals=unmatched,
+        **level_kwargs,
     )
 
 
@@ -529,13 +650,17 @@ def _build_role_alignment(evidence: CandidateEvidence, intent: SearchIntent) -> 
     title_relevance, title_basis = _classify_title_relevance(
         evidence.current_title, evidence.headline, intent.role.title, intent.titles.include_titles
     )
-    seniority_alignment, seniority_basis = _classify_seniority(
-        evidence, intent.role.seniority, intent.experience.minimum_years or None
+    minimum_years = intent.experience.minimum_years or None
+    seniority_alignment, seniority_basis = _classify_seniority(evidence, intent.role.seniority, minimum_years)
+    floor, floor_basis = _classify_experience_floor(evidence, minimum_years)
+    level_fit, level_basis = _classify_level(evidence, intent.role.seniority, floor)
+    level_kwargs = dict(
+        experience_floor=floor, experience_floor_basis=floor_basis, level_fit=level_fit, level_basis=level_basis
     )
 
     if evidence.requirement_judgments is not None:
         return _alignment_from_judgments(
-            evidence, intent, title_relevance, title_basis, seniority_alignment, seniority_basis
+            evidence, intent, title_relevance, title_basis, seniority_alignment, seniority_basis, level_kwargs
         )
 
     # Sources are searched in STRENGTH order (demonstrated work/certification
@@ -593,6 +718,7 @@ def _build_role_alignment(evidence: CandidateEvidence, intent: SearchIntent) -> 
         seniority_alignment_basis=seniority_basis,
         matched_signals=matched,
         unmatched_signals=unmatched,
+        **level_kwargs,
     )
 
 

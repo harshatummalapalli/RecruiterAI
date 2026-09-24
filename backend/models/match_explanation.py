@@ -39,6 +39,8 @@ class MatchExplanation(BaseModel):
     what_we_dont_know: List[str] = []
     matched_signals: List[MatchedSignalOut] = []
     seniority_alignment: Optional[bool] = None
+    experience_floor: Optional[bool] = None
+    level_fit: Optional[str] = None
     provider_fit: Optional[str] = None
     convergence: bool = False
     matched_queries: List[str] = []

@@ -94,6 +94,16 @@ class RoleAlignment:
     seniority_alignment_basis: str
     matched_signals: List[MatchedSignal] = field(default_factory=list)
     unmatched_signals: List[MatchedSignal] = field(default_factory=list)  # matched_term is "" here
+    # Two different facts, kept apart. The experience floor is arithmetic:
+    # do the dated roles add up to the years the search asked for. Level fit
+    # is a judgement about the title(s) against the target seniority:
+    # "aligned" | "above" | "below" | "unclear", None when the search states
+    # no target seniority. Neither is a hiring decision; "above" means the
+    # profile MAY indicate a level higher than the target.
+    experience_floor: Optional[bool] = None
+    experience_floor_basis: str = ""
+    level_fit: Optional[str] = None
+    level_basis: str = ""
 
 
 @dataclass
