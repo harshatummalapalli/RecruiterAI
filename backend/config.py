@@ -20,7 +20,7 @@ class Settings(BaseModel):
     openai_api_key: Optional[str] = Field(default=None, description="OpenAI API key")
     crustdata_api_key: Optional[str] = Field(default=None, description="CrustData API key")
     harvest_api_key: Optional[str] = Field(default=None, description="HarvestAPI (harvestapi.io) API key")
-    harvest_enrichment_top_n: int = Field(default=15, description="How many top-ranked candidates to enrich via Harvest per search")
+    harvest_enrichment_top_n: int = Field(default=25, description="How many top-ranked candidates to enrich via Harvest per search")
     harvest_enrichment_concurrency: int = Field(default=3, description="Max concurrent in-flight Harvest requests per search")
     discovery_page_size: int = Field(default=50, description="CrustData /person/search page size (results per query) — backend-owned, not the frontend's")
     discovery_max_pages: int = Field(default=1, description="Max CrustData pages fetched per query")
@@ -129,7 +129,7 @@ def get_harvest_api_key() -> Optional[str]:
 
 def get_harvest_enrichment_top_n() -> int:
     """How many top-baseline-ranked candidates to enrich via Harvest per search. Configurable via
-    HARVEST_ENRICHMENT_TOP_N; defaults to 15 (Phase 3)."""
+    HARVEST_ENRICHMENT_TOP_N; defaults to 25 so every candidate shown in the workspace is read in depth."""
     return get_settings().harvest_enrichment_top_n
 
 

@@ -142,6 +142,13 @@ _CATEGORY_KEYWORDS = {
 _LOCATION_AGNOSTIC_TERMS = ["remote", "anywhere", "work from home", "fully remote", "open to any location"]
 
 
+MISSING_LOCATION_WARNING = (
+    "No location was stated for this role, and it isn't described as remote/open to any "
+    "location. Location materially affects candidate availability, so this should be "
+    "confirmed before searching."
+)
+
+
 def detect_missing_location(raw_input: str, has_structured_location: bool) -> List[ContradictionFinding]:
     """Same guaranteed-floor idea as detect_intake_contradictions, but for a
     different, equally demonstrated gap: Task A does not always flag a
@@ -155,11 +162,7 @@ def detect_missing_location(raw_input: str, has_structured_location: bool) -> Li
     return [
         ContradictionFinding(
             category="missing_location",
-            warning=(
-                "No location was stated for this role, and it isn't described as remote/open to any "
-                "location. Location materially affects candidate availability, so this should be "
-                "confirmed before searching."
-            ),
+            warning=MISSING_LOCATION_WARNING,
             evidence=[],
         )
     ]
@@ -336,6 +339,11 @@ def apply_search_boundary(result: IntakeResult, boundary: SearchBoundary) -> Int
     A's own, boundary-blind JD reading points somewhere different. Mutates
     and returns `result`; never touches the boundary itself."""
     _strip_issues_in_category(result.decision, "missing_location")
+    # The recruiter's own selection IS the location, so the "no location was
+    # stated" notice is now false. Stripping only the ask (above) left this
+    # warning on screen next to a confirmed Toronto boundary.
+    result.decision.warnings = [w for w in result.decision.warnings if w != MISSING_LOCATION_WARNING]
+    result.contradictions = [c for c in result.contradictions if getattr(c, "category", None) != "missing_location"]
 
     conflict = _location_conflicts_with_boundary(result.role_understanding, boundary)
     if conflict:

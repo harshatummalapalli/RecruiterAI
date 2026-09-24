@@ -125,6 +125,8 @@ class HarvestEvidence:
     cost: Optional[float] = None
     latency_ms: Optional[float] = None
     error: Optional[str] = None  # short machine-readable reason when success is False
+    # How many times the profile was requested (2 = the one malformed-response retry was used).
+    attempts: int = 1
 
 
 @dataclass
@@ -171,6 +173,17 @@ class CandidateEvidence:
     # explanation-only, and always presented as self-reported.
     harvest_about: Optional[str] = None
     harvest_self_reported_experience: Optional[str] = None
+    # Total time covered by the employment dates on record (overlaps merged,
+    # a current role counted up to today), in years. DERIVED from dates —
+    # never a provider-returned field and never the candidate's own claim.
+    # None when no role has a parseable start date.
+    derived_experience_years: Optional[float] = None
+    # Verified requirement judgments (see backend/services/requirement_judge.py).
+    # None = no judge ran for this candidate, so role_alignment falls back to
+    # deterministic term matching; a list (possibly empty) = the judge ran and
+    # role_alignment reflects ONLY judgments whose quote was verified against
+    # the profile text.
+    requirement_judgments: Optional[List[Dict[str, Any]]] = None
 
     def labeled_text_sources(self) -> List["TextSource"]:
         """Where signal-matching is allowed to look for literal evidence.

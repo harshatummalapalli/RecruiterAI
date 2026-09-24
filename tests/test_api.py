@@ -763,6 +763,7 @@ def test_search_endpoint_persists_and_reloads_without_rerunning_pipeline(tmp_pat
     assert response.status_code == 200
     search_id = response.json()["search_id"]
     assert search_id
+    _wait_for_search(client, search_id)
 
     # PlanCapturingProvider returns a single candidate for the primary query,
     # which is below the discovery target pool size, so the title-expansion

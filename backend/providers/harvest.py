@@ -225,33 +225,40 @@ class HarvestEnrichmentService:
         return results
 
     def _fetch_one(self, candidate: Candidate) -> HarvestEvidence:
+        attempts = 1
         if not candidate.profile_url:
-            return HarvestEvidence(success=False, error="missing_profile_url", fetched_at=_now_iso())
+            return HarvestEvidence(attempts=attempts, success=False, error="missing_profile_url", fetched_at=_now_iso())
 
         started = time.perf_counter()
         try:
             body = self._client.fetch_profile(candidate.profile_url)
+            # A 200 whose body has no profile ("malformed_response") failed 2
+            # of 15 reads on a real search. It is cheap and usually transient,
+            # so one immediate retry; every other failure mode is unchanged.
+            if not isinstance(body, dict) or not isinstance(body.get("element"), dict):
+                attempts = 2
+                body = self._client.fetch_profile(candidate.profile_url)
         except HarvestNotConfiguredError:
-            return HarvestEvidence(success=False, error="not_configured", fetched_at=_now_iso())
+            return HarvestEvidence(attempts=attempts, success=False, error="not_configured", fetched_at=_now_iso())
         except httpx.TimeoutException:
             latency_ms = round((time.perf_counter() - started) * 1000, 1)
             logger.warning("Harvest enrichment timed out | candidate_id=%s", candidate.candidate_id)
-            return HarvestEvidence(success=False, error="timeout", latency_ms=latency_ms, fetched_at=_now_iso())
+            return HarvestEvidence(attempts=attempts, success=False, error="timeout", latency_ms=latency_ms, fetched_at=_now_iso())
         except httpx.HTTPStatusError as exc:
             latency_ms = round((time.perf_counter() - started) * 1000, 1)
             status = exc.response.status_code
             error = "rate_limited" if status == 429 else f"http_{status}"
             logger.warning("Harvest enrichment failed | candidate_id=%s status=%s", candidate.candidate_id, status)
-            return HarvestEvidence(success=False, error=error, latency_ms=latency_ms, fetched_at=_now_iso())
+            return HarvestEvidence(attempts=attempts, success=False, error=error, latency_ms=latency_ms, fetched_at=_now_iso())
         except (httpx.RequestError, HarvestResponseError) as exc:
             latency_ms = round((time.perf_counter() - started) * 1000, 1)
             logger.warning("Harvest enrichment failed | candidate_id=%s error=%s", candidate.candidate_id, exc)
-            return HarvestEvidence(success=False, error="request_error", latency_ms=latency_ms, fetched_at=_now_iso())
+            return HarvestEvidence(attempts=attempts, success=False, error="request_error", latency_ms=latency_ms, fetched_at=_now_iso())
 
         latency_ms = round((time.perf_counter() - started) * 1000, 1)
         if not isinstance(body, dict) or not isinstance(body.get("element"), dict):
             logger.warning("Harvest enrichment returned a malformed response | candidate_id=%s", candidate.candidate_id)
-            return HarvestEvidence(
+            return HarvestEvidence(attempts=attempts, 
                 success=False,
                 error="malformed_response",
                 latency_ms=latency_ms,
@@ -260,4 +267,4 @@ class HarvestEnrichmentService:
             )
 
         cost = body.get("cost") if isinstance(body.get("cost"), (int, float)) else None
-        return HarvestEvidence(raw=body, success=True, cost=cost, latency_ms=latency_ms, fetched_at=_now_iso())
+        return HarvestEvidence(attempts=attempts, raw=body, success=True, cost=cost, latency_ms=latency_ms, fetched_at=_now_iso())

@@ -80,6 +80,9 @@ def test_intake_confirm_maps_to_search_intent_when_ready(tmp_path: Path) -> None
     assert intent["ranking"]["must_have"] == []
     assert intent["skills"]["required_skills"] == []
     assert "Python" in intent["natural_language_search_query"]
+    # The requirement sentences must reach the frontend so it can send them back
+    # with the search; dropping them left every candidate with zero evidence.
+    assert intent["core_signals"] and any("Python" in signal for signal in intent["core_signals"])
 
 
 def test_intake_confirm_refuses_while_contradiction_unresolved(tmp_path: Path) -> None:

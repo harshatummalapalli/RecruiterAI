@@ -256,11 +256,22 @@ export function RecruiterWorkspaceScreen() {
 
   const pollSearch = (id: string, activeBrief: SearchBrief) => {
     stopPolling()
+    // One failed or empty poll (a network blip, a deploy restart) must not end
+    // the loop: it would leave the workspace frozen mid-search with no error.
+    // Retry a few times, then surface the error state.
+    let consecutiveFailures = 0
     const tick = async () => {
       const response = await loadPersistedSearch(id).catch(() => null)
       if (!response) {
+        consecutiveFailures += 1
+        if (consecutiveFailures >= 5) {
+          setSearchState('error')
+          return
+        }
+        pollTimeoutRef.current = setTimeout(tick, POLL_INTERVAL_MS)
         return
       }
+      consecutiveFailures = 0
       setSearchResponse(response)
       if (response.status === 'running') {
         pollTimeoutRef.current = setTimeout(tick, POLL_INTERVAL_MS)

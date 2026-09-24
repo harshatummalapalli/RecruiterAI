@@ -62,6 +62,14 @@ export interface SearchIntent {
   }
   confidence_score?: number | null
   natural_language_search_query?: string | null
+  // The confirmed requirement sentences (Core / Supporting / Differentiator)
+  // for THIS search. The backend evidence engine checks each candidate's
+  // profile against them; they were previously dropped on the way from the
+  // confirmed intake to the search request, leaving every candidate with zero
+  // evidence. They must round-trip unchanged.
+  core_signals?: string[]
+  supporting_signals?: string[]
+  differentiator_signals?: string[]
 }
 
 export interface Candidate {

@@ -58,6 +58,11 @@ export type SearchBrief = {
   industries: string[]
   education: string[]
   employmentTypes: EmploymentType[]
+  /** The confirmed requirement sentences, carried untouched from the
+   * confirmed intake to the search request (see SearchIntent in types.ts).
+   * Optional because a Search Brief restored from an older browser session
+   * predates this field. */
+  requirements?: { core: string[]; supporting: string[]; differentiators: string[] }
 }
 
 export { DEFAULT_EXCLUDED_TITLES }
@@ -94,6 +99,7 @@ export function createEmptySearchBrief(): SearchBrief {
     industries: [],
     education: [],
     employmentTypes: [],
+    requirements: { core: [], supporting: [], differentiators: [] },
   }
 }
 
@@ -407,6 +413,9 @@ export function briefToSearchIntent(brief: SearchBrief): SearchIntent {
       preferred_company_types: [],
     },
     ranking: { must_have: brief.skills.required, nice_to_have: brief.skills.preferred, bonus: [] },
+    core_signals: brief.requirements?.core ?? [],
+    supporting_signals: brief.requirements?.supporting ?? [],
+    differentiator_signals: brief.requirements?.differentiators ?? [],
   }
 }
 
@@ -562,5 +571,10 @@ export function searchIntentToBrief(intent: SearchIntent): SearchBrief {
     industries: [],
     education: [],
     employmentTypes: intent.role.employment_type ? [intent.role.employment_type as EmploymentType] : [],
+    requirements: {
+      core: intent.core_signals ?? [],
+      supporting: intent.supporting_signals ?? [],
+      differentiators: intent.differentiator_signals ?? [],
+    },
   }
 }

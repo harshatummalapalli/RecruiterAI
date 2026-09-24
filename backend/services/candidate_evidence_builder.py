@@ -15,6 +15,7 @@ evaluates a Backend Engineer search and a Lead Data Analyst search identically.
 
 import re
 from dataclasses import dataclass
+from datetime import date, datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from backend.models.candidate import Candidate
@@ -319,6 +320,12 @@ def _extract_context_sentence(text: str, match: "re.Match[str]") -> str:
     return snippet or text.strip()
 
 
+def _format_terms(terms: Any) -> str:
+    """Recruiter-readable term list: “backend”, “engineer” — never a Python
+    list repr like ['backend'] leaking into a sentence."""
+    return ", ".join(f"“{term}”" for term in sorted(terms))
+
+
 def _classify_title_relevance(
     candidate_title: str, headline: str, target_title: Optional[str], include_titles: List[str]
 ) -> Tuple[str, str]:
@@ -354,15 +361,18 @@ def _classify_title_relevance(
         overlap = target_words & combined_words
         ratio = len(overlap) / len(target_words)
         source = "title" if overlap <= candidate_title_words else "title/headline"
+        shared = _format_terms(overlap)
         if ratio >= 0.6:
-            return "direct", f"Current {source} shares the core term(s) {sorted(overlap)} with the target role."
+            return "direct", f"Current {source} shares the core term(s) {shared} with the target role."
         if ratio > 0:
-            return "adjacent", f"Current {source} shares the term(s) {sorted(overlap)} with the target role, but not all of it."
+            return "adjacent", f"Current {source} shares the term(s) {shared} with the target role, but not all of it."
 
     return "unclear", "Current title/headline has no clear textual overlap with the target role; not verified either way."
 
 
-def _classify_seniority(evidence: CandidateEvidence, target_seniority: Optional[str]) -> Tuple[Optional[bool], str]:
+def _classify_seniority(
+    evidence: CandidateEvidence, target_seniority: Optional[str], minimum_years: Optional[int] = None
+) -> Tuple[Optional[bool], str]:
     """Evidence-based, not provider-normalized-field-based. A real live
     candidate exposed the bug this fixes: CrustData's own `seniority_level`
     said "Senior" while the candidate's actual current title was "Team Lead
@@ -393,11 +403,29 @@ def _classify_seniority(evidence: CandidateEvidence, target_seniority: Optional[
         if target_norm in text.strip().lower():
             return True, f"Candidate's {label} directly names the target seniority (\"{target_seniority}\")."
 
+    # Step 3 (replaces trusting the provider's label first): when the search
+    # states a minimum-years requirement and the candidate's role dates let
+    # us derive their time in work, compare those two FACTS. A provider label
+    # like "Entry Level" on someone with several years of dated roles was
+    # found to produce false level concerns on a real search.
+    if minimum_years and evidence.derived_experience_years is not None:
+        years = evidence.derived_experience_years
+        if years >= minimum_years:
+            return True, (
+                f"About {years:g} years of professional experience are visible in dated roles, which meets the "
+                f"{minimum_years}+ years asked for a {target_seniority} role; years in the specific discipline "
+                "are not independently verified."
+            )
+        return False, (
+            f"About {years:g} years of professional experience are visible in dated roles, below the "
+            f"{minimum_years}+ years asked for a {target_seniority} role."
+        )
+
     candidate_seniority = evidence.current_seniority
     if not candidate_seniority:
         return (
             None,
-            "Candidate's seniority level was not returned by the provider, and no title evidence "
+            "The candidate's seniority level is not stated on their profile, and no title evidence "
             "(current or recent past roles) confirms or contradicts the target seniority.",
         )
     candidate_norm = candidate_seniority.strip().lower()
@@ -409,11 +437,106 @@ def _classify_seniority(evidence: CandidateEvidence, target_seniority: Optional[
     )
 
 
+def _parse_role_date(value: Any) -> Optional[date]:
+    if not value or not isinstance(value, str):
+        return None
+    try:
+        return datetime.fromisoformat(value.replace("Z", "+00:00")).date()
+    except ValueError:
+        try:
+            return date.fromisoformat(value[:10])
+        except ValueError:
+            return None
+
+
+def _derive_experience_years(
+    current: Dict[str, Any], past_roles: List[PastRole], today: Optional[date] = None
+) -> Optional[float]:
+    """Time covered by the employment dates on record, in years, with
+    overlapping roles merged so concurrent jobs aren't double counted. A
+    current role runs to today; a past role with no end date is skipped
+    rather than guessed. Derived from CrustData's own dated roles — a fact
+    we can show, not the candidate's claim and not a provider field."""
+    today = today or date.today()
+    intervals: List[Tuple[date, date]] = []
+    current_start = _parse_role_date(current.get("start_date")) if current else None
+    if current_start and current_start <= today:
+        intervals.append((current_start, today))
+    for role in past_roles:
+        start, end = _parse_role_date(role.start_date), _parse_role_date(role.end_date)
+        if start and end and start <= end:
+            intervals.append((start, end))
+    if not intervals:
+        return None
+    intervals.sort()
+    merged = [list(intervals[0])]
+    for start, end in intervals[1:]:
+        if start <= merged[-1][1]:
+            merged[-1][1] = max(merged[-1][1], end)
+        else:
+            merged.append([start, end])
+    days = sum((end - start).days for start, end in merged)
+    return round(days / 365.25, 1)
+
+
+def _alignment_from_judgments(
+    evidence: CandidateEvidence,
+    intent: SearchIntent,
+    title_relevance: str,
+    title_basis: str,
+    seniority_alignment: Optional[bool],
+    seniority_basis: str,
+) -> RoleAlignment:
+    """Role alignment built ONLY from judgments whose quote was verified
+    against the profile text (see requirement_judge.py). A requirement with
+    no verified judgment is unmatched — never a guessed match."""
+    by_key = {(j.get("tier"), j.get("signal_text")): j for j in (evidence.requirement_judgments or [])}
+    matched: List[MatchedSignal] = []
+    unmatched: List[MatchedSignal] = []
+    for tier, sentences in (
+        ("core", intent.core_signals),
+        ("supporting", intent.supporting_signals),
+        ("differentiator", intent.differentiator_signals),
+    ):
+        for sentence in sentences:
+            judgment = by_key.get((tier, sentence))
+            if judgment and judgment.get("verdict") == "met":
+                matched.append(
+                    MatchedSignal(
+                        tier=tier,
+                        signal_text=sentence,
+                        matched_term=judgment.get("term") or "",
+                        source=judgment.get("source") or "",
+                        evidence_detail=judgment.get("evidence_detail") or "",
+                        evidence_type=judgment.get("evidence_type") or "",
+                        evidence_text=judgment.get("quote") or "",
+                        strength=judgment.get("strength") or "",
+                    )
+                )
+            else:
+                unmatched.append(MatchedSignal(tier=tier, signal_text=sentence, matched_term="", source=""))
+    return RoleAlignment(
+        title_relevance=title_relevance,
+        title_relevance_basis=title_basis,
+        seniority_alignment=seniority_alignment,
+        seniority_alignment_basis=seniority_basis,
+        matched_signals=matched,
+        unmatched_signals=unmatched,
+    )
+
+
 def _build_role_alignment(evidence: CandidateEvidence, intent: SearchIntent) -> RoleAlignment:
     title_relevance, title_basis = _classify_title_relevance(
         evidence.current_title, evidence.headline, intent.role.title, intent.titles.include_titles
     )
-    seniority_alignment, seniority_basis = _classify_seniority(evidence, intent.role.seniority)
+    seniority_alignment, seniority_basis = _classify_seniority(
+        evidence, intent.role.seniority, intent.experience.minimum_years or None
+    )
+
+    if evidence.requirement_judgments is not None:
+        return _alignment_from_judgments(
+            evidence, intent, title_relevance, title_basis, seniority_alignment, seniority_basis
+        )
 
     # Sources are searched in STRENGTH order (demonstrated work/certification
     # before headline/title-history/named-skill — see TextSource docs on
@@ -671,6 +794,10 @@ def build_candidate_evidence(
     if harvest_evidence is not None and harvest_evidence.success:
         _apply_harvest_normalization(evidence, harvest_evidence)
 
+    evidence.derived_experience_years = _derive_experience_years(current, past_roles)
+    judgments = raw.get("__requirement_judgments")
+    evidence.requirement_judgments = judgments if isinstance(judgments, list) else None
+
     evidence.role_alignment = _build_role_alignment(evidence, intent)
     evidence.uncertainty = _build_uncertainty(evidence)
     return evidence
@@ -680,7 +807,13 @@ def _build_uncertainty(evidence: CandidateEvidence) -> List[UncertaintyNote]:
     notes = [
         UncertaintyNote(
             field="years_of_experience",
-            note="Total years of professional experience is not returned as a verified field by either provider. "
+            note="Total years of professional experience is not independently verified. "
+            + (
+                f"About {evidence.derived_experience_years:g} years of professional experience are visible in "
+                "dated roles (all roles combined); years in a specific discipline are not verified. "
+                if evidence.derived_experience_years is not None
+                else "No dated roles were available to estimate it. "
+            )
             + (
                 "A self-reported figure appears in the candidate's own profile summary (see below) but is not verified."
                 if evidence.harvest_self_reported_experience
@@ -690,12 +823,11 @@ def _build_uncertainty(evidence: CandidateEvidence) -> List[UncertaintyNote]:
         UncertaintyNote(
             field="skills",
             note=(
-                "Specific skills/technologies were found in this candidate's Harvest enrichment; anything not "
-                "listed there is only what appears literally in title/headline/career history text."
+                "Skills are as the candidate listed them on their profile; anything not listed there is only what "
+                "appears literally in title/headline/career history text."
                 if evidence.harvest_skills
-                else "Specific skills/technologies are not returned as a structured field by CrustData; any "
-                "technology mentioned above is only what appears literally in the candidate's title, headline, "
-                "or career history text."
+                else "A skills list was not available for this candidate; any technology mentioned above is only "
+                "what appears literally in the candidate's title, headline, or career history text."
             ),
         ),
     ]
@@ -704,13 +836,6 @@ def _build_uncertainty(evidence: CandidateEvidence) -> List[UncertaintyNote]:
             UncertaintyNote(
                 field="education",
                 note="Education was not returned for this candidate in this search's response.",
-            )
-        )
-    if evidence.search_evidence.provider_fit is None:
-        notes.append(
-            UncertaintyNote(
-                field="fit",
-                note="The provider's relevance signal (fit) was not returned for this candidate.",
             )
         )
     if not evidence.updated_at:

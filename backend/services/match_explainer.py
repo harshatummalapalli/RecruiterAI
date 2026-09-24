@@ -23,6 +23,7 @@ _HARVEST_SOURCE_PHRASING = {
     "harvest: project": lambda detail, term, text: f"Built a project ({detail}): “{text}”",
     "harvest: certification": lambda detail, term, text: f"Holds a certification: {detail}.",
     "harvest: skill": lambda detail, term, text: f"Lists {detail} as a skill.",
+    "career dates": lambda detail, term, text: detail,
 }
 
 
@@ -43,7 +44,7 @@ class MatchExplainer:
             why_this_candidate=self._why_this_candidate(evidence, intent),
             strong_evidence=self._strong_evidence(evidence),
             potential_concerns=self._potential_concerns(evidence),
-            what_we_dont_know=[note.note for note in evidence.uncertainty],
+            what_we_dont_know=[note.note for note in evidence.uncertainty] + self._unevidenced_core(evidence),
             matched_signals=[self._to_signal_out(s) for s in alignment.matched_signals],
             seniority_alignment=alignment.seniority_alignment,
             provider_fit=evidence.search_evidence.provider_fit,
@@ -76,15 +77,29 @@ class MatchExplainer:
         alignment = evidence.role_alignment
         parts = [alignment.title_relevance_basis]
 
-        if alignment.seniority_alignment is True:
-            parts.append(f"Seniority ({evidence.current_seniority}) aligns with the target level.")
-        elif alignment.seniority_alignment is False:
-            parts.append(f"Seniority ({evidence.current_seniority}) does not align with the target level ({intent.role.seniority}).")
+        # The basis is already a complete, evidence-cited sentence (years from
+        # role dates, a title that names the level, or the provider label as a
+        # last resort) — restating the provider label here contradicted it.
+        if alignment.seniority_alignment is not None:
+            parts.append(alignment.seniority_alignment_basis)
 
         if evidence.search_evidence.convergence:
             parts.append("Surfaced independently by more than one search.")
 
         return " ".join(parts)
+
+    def _unevidenced_core(self, evidence: CandidateEvidence) -> List[str]:
+        """What the profile does NOT prove: the search's core requirements
+        with no verified evidence. Only reported when the requirement judge
+        ran, because without it "unmatched" only means "no keyword hit" and
+        would misstate the candidate. Uses the existing What We Don't Know
+        section, so no UI change is needed for a recruiter to see it."""
+        if evidence.requirement_judgments is None:
+            return []
+        missing = [s.signal_text for s in evidence.role_alignment.unmatched_signals if s.tier == "core"]
+        if not missing:
+            return []
+        return ["No evidence found on the profile for these core requirements: " + "; ".join(missing) + "."]
 
     def _strong_evidence(self, evidence: CandidateEvidence) -> List[str]:
         """Every bullet names WHERE the evidence came from (source) rather
@@ -107,7 +122,17 @@ class MatchExplainer:
                 source = signal.source.capitalize() if signal.source else "Profile"
                 items.append(f"{source} mentions “{signal.matched_term}”.")
 
-        return items
+        # The same sentence can corroborate several requirements (one role
+        # description covering both "backend services" and "high-volume
+        # systems"); showing it twice reads as noise, not extra evidence.
+        seen: set = set()
+        unique: List[str] = []
+        for item in items:
+            key = " ".join(item.split()).casefold()
+            if key not in seen:
+                seen.add(key)
+                unique.append(item)
+        return unique
 
     def _potential_concerns(self, evidence: CandidateEvidence) -> List[str]:
         concerns: List[str] = []

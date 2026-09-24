@@ -33,6 +33,23 @@ CONVERGENCE_BONUS = 0.5
 PROVIDER_SCORE_WEIGHT = 0.01
 
 
+def _freshness(candidate: Candidate) -> str:
+    """The provider's own profile-updated timestamp (ISO, so it sorts
+    lexicographically), "" when absent. Used only to break exact score ties."""
+    metadata = (candidate.raw_data or {}).get("metadata")
+    updated = metadata.get("updated_at") if isinstance(metadata, dict) else None
+    return updated if isinstance(updated, str) else ""
+
+
+def _order(candidates: List[Candidate]) -> List[Candidate]:
+    """Score descending; exact ties broken by the most recently updated
+    profile first, then by name only as a last, non-evidentiary resort. Three
+    stable passes (least significant key first) so no key needs negating."""
+    ordered = sorted(candidates, key=lambda item: item.name or "")
+    ordered = sorted(ordered, key=_freshness, reverse=True)
+    return sorted(ordered, key=lambda item: -(item.final_score or 0.0))
+
+
 class CandidateRanker:
     """Rank candidates by evidence against the Confirmed Hiring Intent that
     produced this search — role relevance, seniority alignment, literal
@@ -56,7 +73,7 @@ class CandidateRanker:
         # stable, non-evidentiary final tiebreaker; deliberately NOT the
         # number of career roles on record, which rewards long resumes
         # rather than relevance.
-        return sorted(ranked_candidates, key=lambda item: (-(item.final_score or 0.0), item.name or ""))
+        return _order(ranked_candidates)
 
     def rerank_top_n(
         self,
@@ -85,7 +102,7 @@ class CandidateRanker:
             evidence = build_candidate_evidence(candidate, intent, harvest_evidence=harvest)
             candidate.final_score = self._calculate_score(evidence, candidate.provider_score)
 
-        reranked_head = sorted(head, key=lambda item: (-(item.final_score or 0.0), item.name or ""))
+        reranked_head = _order(head)
         return reranked_head + tail
 
     def _calculate_score(self, evidence, provider_score) -> float:

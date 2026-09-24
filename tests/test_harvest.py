@@ -242,7 +242,7 @@ def test_default_top_n_and_concurrency_match_phase_3_config(monkeypatch) -> None
             return False
 
     service = HarvestEnrichmentService(client=StubClient())
-    assert service.top_n == 15
+    assert service.top_n == 25  # every candidate shown in the workspace is read in depth
     assert service.concurrency == 3
 
 

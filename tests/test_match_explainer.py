@@ -22,7 +22,8 @@ def test_explainer_builds_grounded_explanation_for_a_direct_match() -> None:
 
     assert explanation.relevance_tier == "direct"
     assert explanation.seniority_alignment is True
-    assert "aligns with the target level" in explanation.why_this_candidate
+    # The seniority sentence is the evidence-cited basis, not a restatement of a provider label.
+    assert "directly names the target seniority" in explanation.why_this_candidate
     assert any("python" in item.lower() for item in explanation.strong_evidence)
     assert any(item.startswith("Current title") or item.startswith("Headline") for item in explanation.strong_evidence)
     assert explanation.potential_concerns == []
@@ -111,14 +112,17 @@ def test_explainer_never_leaks_internal_ranking_vocabulary_into_recruiter_text()
         assert internal_term not in recruiter_facing_text
 
 
-def test_explainer_reports_fit_as_unavailable_rather_than_omitting_it_silently() -> None:
+def test_missing_provider_fit_is_not_surfaced_as_an_unknown_to_recruiters() -> None:
+    # Release 1: "the search's relevance signal (fit) was not returned" is
+    # internal plumbing a recruiter cannot act on, so it no longer appears in
+    # What We Don't Know. provider_fit stays None on the explanation itself.
     candidate = Candidate(name="No Fit Data", title="Data Engineer", raw_data={})
     intent = SearchIntent(role=Role(title="Data Engineer"))
 
     explanation = MatchExplainer().explain(candidate, intent)
 
     assert explanation.provider_fit is None
-    assert any("fit" in note.lower() and "not returned" in note.lower() for note in explanation.what_we_dont_know)
+    assert not any("fit" in note.lower() for note in explanation.what_we_dont_know)
 
 
 # ---------------------------------------------------------------------------

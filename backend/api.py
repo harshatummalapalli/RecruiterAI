@@ -45,6 +45,7 @@ from backend.services.search_translator import build_confirmed_hiring_intent, to
 from backend.services.jd_parser import JDParser
 from backend.services.match_explainer import MatchExplainer
 from backend.services.query_expansion import QueryExpansionService
+from backend.services.requirement_judge import RequirementJudge
 from backend.services.search_diagnostics import SearchDiagnostics
 from backend.services.search_pipeline import (
     MAX_WORKSPACE_CANDIDATES,
@@ -132,7 +133,7 @@ def _apply_radius_degradation(intent: SearchIntent) -> Optional[str]:
     rather than pretending it was applied."""
     if intent.location.radius_miles is not None and not intent.location.radius_place:
         intent.location.radius_miles = None
-        return "Current provider cannot filter by search radius without a place or ZIP to search around. The search may include broader results."
+        return "A search radius needs a place to search around, so it was not applied. Results may include candidates outside that distance."
     return None
 
 
@@ -145,7 +146,7 @@ def _friendly_capability_warnings(raw_warnings: List[str]) -> List[str]:
         for field_name, label in FRIENDLY_UNSUPPORTED_FILTER_LABELS.items():
             if f"'{field_name}'" in raw and field_name not in seen_fields:
                 seen_fields.add(field_name)
-                friendly.append(f"Current provider cannot filter by {label}. The search may include broader results.")
+                friendly.append(f"This search cannot filter by {label}, so results may include other arrangements.")
     return friendly
 
 
@@ -301,6 +302,7 @@ def create_app(
     search_store: Optional[SearchStore] = None,
     intake_session_manager: Optional[IntakeSessionManager] = None,
     harvest_enrichment_service: Optional[HarvestEnrichmentService] = None,
+    requirement_judge: Optional[RequirementJudge] = None,
 ) -> FastAPI:
     app = FastAPI(title="RecruiterAI API")
     app.add_middleware(
@@ -331,6 +333,7 @@ def create_app(
     search_store = search_store or SearchStore()
     intake_session_manager = intake_session_manager or IntakeSessionManager()
     harvest_enrichment_service = harvest_enrichment_service or HarvestEnrichmentService()
+    requirement_judge = requirement_judge or RequirementJudge()
 
     # A background search thread cannot survive a process restart — any
     # record still marked "running" from a previous process instance is
@@ -495,16 +498,20 @@ def create_app(
 
     @app.patch("/search/{search_id}/candidate", dependencies=[Depends(require_session)])
     def update_candidate(search_id: str, update: CandidateUpdateRequest) -> Dict[str, Any]:
-        record = search_store.load(search_id)
+        def apply(record: Dict[str, Any]) -> None:
+            if update.decision is not None:
+                record.setdefault("recruiter_decisions", {})[update.candidate_id] = update.decision
+            if update.note:
+                record.setdefault("notes", {}).setdefault(update.candidate_id, []).append(
+                    {"text": update.note, "created_at": datetime.now(timezone.utc).isoformat()}
+                )
+
+        # update() is atomic with respect to the running search's own progress
+        # saves, so a shortlist recorded mid-search is never overwritten by the
+        # pipeline's next write (and vice versa).
+        record = search_store.update(search_id, apply)
         if record is None:
             raise HTTPException(status_code=404, detail="Search not found.")
-        if update.decision is not None:
-            record.setdefault("recruiter_decisions", {})[update.candidate_id] = update.decision
-        if update.note:
-            record.setdefault("notes", {}).setdefault(update.candidate_id, []).append(
-                {"text": update.note, "created_at": datetime.now(timezone.utc).isoformat()}
-            )
-        search_store.save(search_id, record)
         logger.info("[SEARCH] Recruiter decision/note persisted | search_id=%s candidate_id=%s", search_id, update.candidate_id)
         return {"recruiter_decisions": record.get("recruiter_decisions", {}), "notes": record.get("notes", {})}
 
@@ -655,6 +662,7 @@ def create_app(
                     candidate_merger=candidate_merger,
                     candidate_ranker=candidate_ranker,
                     harvest_enrichment_service=harvest_enrichment_service,
+                    requirement_judge=requirement_judge,
                     match_explainer=match_explainer,
                     search_diagnostics=search_diagnostics,
                     search_store=search_store,
