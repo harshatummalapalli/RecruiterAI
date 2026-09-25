@@ -23,3 +23,7 @@ output/searches/
 output/intake_sessions/
 # Experiment artifacts (raw provider data / candidate PII)
 output/experiments/
+
+# Local record-preview data (real candidate profiles)
+output/record_preview/
+frontend/src/preview-data/
