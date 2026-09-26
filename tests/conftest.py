@@ -32,6 +32,14 @@ def _isolated_default_stores(monkeypatch, tmp_path):
 
 
 @pytest.fixture(autouse=True)
+def _legacy_search_path_by_default(monkeypatch):
+    """Most existing tests exercise the search pipeline directly. Production requires a confirmed brief for every
+    search (RECRUITERAI_REQUIRE_CONFIRMATION defaults to true); tests that cover the gate build the app with
+    require_confirmation=True explicitly."""
+    monkeypatch.setenv("RECRUITERAI_REQUIRE_CONFIRMATION", "false")
+
+
+@pytest.fixture(autouse=True)
 def _no_real_requirement_judge(monkeypatch):
     """RequirementJudge reads OPENAI_API_KEY from the environment/.env; on a
     developer machine that key exists, so without this every app-level test

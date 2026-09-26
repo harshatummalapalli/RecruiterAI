@@ -4,7 +4,11 @@ from typing import List, Optional
 
 @dataclass
 class Role:
+    # The candidate identity the search targets (what RecruiterAI believes should be searched for).
     title: Optional[str] = None
+    # What the recruiter or company called the role, kept separate and never used as a search input.
+    posted_title: Optional[str] = None
+    posted_title_source: Optional[str] = None
     seniority: Optional[str] = None
     employment_type: Optional[str] = None
     confidence_score: Optional[float] = None

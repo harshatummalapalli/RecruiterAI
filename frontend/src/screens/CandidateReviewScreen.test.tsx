@@ -62,6 +62,8 @@ async function render(response: SearchResponse, searchState: 'searching' | 'done
         onRunSearch={() => undefined}
         searchId="test"
         searchGeneration={1}
+        boundary={null}
+        onApplyBoundary={async () => undefined}
       />,
     )
   })

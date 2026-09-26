@@ -231,6 +231,7 @@ def build_confirmed_hiring_intent(result: IntakeResult, boundary: Optional[Searc
 
     return ConfirmedHiringIntent(
         posted_title=role.posted_title,
+        posted_title_source=role.posted_title_source,
         hiring_company=hiring_company,
         candidate_identity=role.primary_candidate_identity.value or "",
         seniority=role.seniority_scope.value,
@@ -297,7 +298,12 @@ def to_search_intent(intent: ConfirmedHiringIntent, query_expander: Optional[Que
     location.work_mode = intent.work_mode
 
     return SearchIntent(
-        role=Role(title=normalized_identity, seniority=intent.seniority),
+        role=Role(
+            title=normalized_identity,
+            seniority=intent.seniority,
+            posted_title=intent.posted_title,
+            posted_title_source=intent.posted_title_source,
+        ),
         location=location,
         experience=Experience(
             minimum_years=intent.experience_minimum_years,

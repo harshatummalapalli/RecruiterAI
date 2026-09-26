@@ -14,7 +14,10 @@ import {
 import { CandidateRecord } from '../components/CandidateRecord'
 import { CandidateWorkspace } from '../components/CandidateWorkspace'
 import { setWorkspaceArranged, updateCandidateRecord } from '../services/recruiterWorkflow'
-import { SearchBriefReview, summarizeCompanies, summarizeExperience, summarizeLocations, summarizeSkills } from './SearchBriefReview'
+import { BoundaryEditor } from '../components/BoundaryEditor'
+import { formatBoundaryLocation, workModeLabel } from '../models/livingBrief'
+import type { SearchBoundary } from '../models/searchBoundary'
+import { SearchBriefReview, summarizeCompanies, summarizeExperience, summarizeSkills } from './SearchBriefReview'
 
 type FieldChange = (path: string, updater: (current: SearchBrief) => SearchBrief) => void
 
@@ -27,6 +30,13 @@ type CandidateReviewScreenProps = {
   searchState: SearchState
   onRunSearch: () => void
   searchId: string | null
+  // The Search Boundary is the single source for where and work mode. Null only when the brief this search came from
+  // could not be resumed, in which case it is shown as unavailable rather than editable.
+  boundary: SearchBoundary | null
+  onApplyBoundary: (boundary: SearchBoundary) => Promise<void>
+  boundaryLimitation?: string | null
+  // Why the last attempt to search again was refused, in plain sentences.
+  searchErrors?: string[]
   // Bumped once per "Find Candidates"/"Run Search Again" click — see
   // RecruiterWorkspaceScreen.tsx. Drives the open-profile/compare/edit-brief
   // UI reset without resetting on every progressive poll tick.
@@ -50,7 +60,7 @@ function SkeletonRows() {
   )
 }
 
-export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, searchState, onRunSearch, searchId, searchGeneration }: CandidateReviewScreenProps) {
+export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, searchState, onRunSearch, searchId, searchGeneration, boundary, onApplyBoundary, boundaryLimitation = null, searchErrors = [] }: CandidateReviewScreenProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isEditingBrief, setIsEditingBrief] = useState(false)
   const [decisions, setDecisions] = useState<Record<string, Decision | undefined>>({})
@@ -175,7 +185,17 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
 
       {isEditingBrief ? (
         <div className="workspace__grid">
-          <SearchBriefReview brief={brief} onChange={onChangeBrief} variant="embedded" />
+          <div className="discovery-edit-panel">
+            {boundary ? (
+              <section className="brief-panel" aria-label="Search boundary">
+                <h2 className="brief-section__title">Search boundary</h2>
+                <BoundaryEditor boundary={boundary} onApply={onApplyBoundary} limitation={boundaryLimitation} />
+              </section>
+            ) : (
+              <p className="discovery-empty">The brief this search came from is no longer available, so the boundary cannot be edited. Start a new search to change it.</p>
+            )}
+            <SearchBriefReview brief={brief} onChange={onChangeBrief} />
+          </div>
 
           <aside className="workspace__preview" aria-label="Search summary">
             <p className="workspace__preview-label">Search Summary</p>
@@ -186,7 +206,7 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
               </div>
               <div className="workspace__preview-row">
                 <dt>Location</dt>
-                <dd>{summarizeLocations(brief)}</dd>
+                <dd>{boundary ? `${formatBoundaryLocation(boundary)} · ${workModeLabel(boundary)}` : 'Not available'}</dd>
               </div>
               <div className="workspace__preview-row">
                 <dt>Experience</dt>
@@ -213,7 +233,13 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
             </button>
 
             <div className="brief-find-slot">
-              {showError ? (
+              {searchErrors.length ? (
+                <div className="workspace__status workspace__status--error" role="alert">
+                  {searchErrors.map((message) => (
+                    <p key={message}>{message}</p>
+                  ))}
+                </div>
+              ) : showError ? (
                 <div className="workspace__status workspace__status--error" role="alert">
                   <p>We couldn't complete this search. You can try again.</p>
                 </div>

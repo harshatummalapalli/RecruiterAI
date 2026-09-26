@@ -240,4 +240,13 @@ export interface SearchResponse {
   progress?: { admitted?: number; surfaced?: number; building_context?: number; review_ready?: number }
   // True once the recruiter accepted the one-time grouping of this search's candidates.
   workspace_arranged?: boolean
+  // Which confirmed brief this search ran from: the role as posted, and what RecruiterAI searched for instead.
+  confirmed_brief?: {
+    confirmation_id: string
+    session_id: string
+    posted_title: string | null
+    posted_title_source: 'recruiter' | 'jd' | null
+    candidate_identity: string | null
+    content_hash: string
+  } | null
 }

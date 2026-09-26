@@ -10,3 +10,4 @@ if "%~1"=="" (
 cd frontend
 start "" http://localhost:5173/preview.html
 npm run dev
+REM The Release 4 Living Brief preview (run intake_preview first): http://localhost:5173/preview-brief.html

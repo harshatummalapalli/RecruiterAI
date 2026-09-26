@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import tempfile
 import threading
 import time
@@ -41,6 +42,16 @@ from backend.services.candidate_ranker import CandidateRanker
 from backend.services.capability_mapper import CapabilityMapper
 from backend.providers.harvest import HarvestEnrichmentService
 from backend.services.intake_session import IntakeSessionManager
+from backend.services.search_boundary import BoundaryValidationError, validate_search_boundary
+from backend.services.confirmation import (
+    ConfirmationEdits,
+    ConfirmationRefused,
+    ConfirmationStore,
+    brief_summary,
+    build_snapshot,
+    location_override_for_search,
+    search_intent_from_snapshot,
+)
 from backend.services.search_translator import build_confirmed_hiring_intent, to_search_intent
 from backend.services.jd_parser import JDParser
 from backend.services.match_explainer import MatchExplainer
@@ -199,6 +210,9 @@ class SearchRequest(ParseRequest):
     location: Optional[LocationOverride] = None
     debug: Optional[bool] = None
     search_id: Optional[str] = None
+    # The id of a confirmed brief (POST /intake/{id}/confirmations). When the server requires confirmation (the
+    # default), this is the ONLY accepted source of the search intent: the browser is never trusted to supply it.
+    confirmation_id: Optional[str] = None
     # The recruiter's already-parsed-and-edited Search Brief. When present,
     # this is authoritative and the search pipeline uses it directly instead
     # of re-parsing `jd_text` through the LLM a second time — a second pass
@@ -245,6 +259,9 @@ class SearchResponse(BaseModel):
     # search's candidates by evidence. Presentation state only: it never
     # touches evidence, ranking or admission.
     workspace_arranged: bool = False
+    # Which confirmed brief this search ran from (posted title, candidate identity). Lets the workspace name the
+    # role correctly after a reload without any browser state.
+    confirmed_brief: Optional[Dict[str, Any]] = None
 
 
 class WorkspaceUpdateRequest(BaseModel):
@@ -284,10 +301,16 @@ class SearchBoundaryRequest(BaseModel):
 
 class IntakeStartRequest(BaseModel):
     raw_input: str
-    # Optional for backward compatibility with any caller that doesn't send
-    # one (e.g. existing tests) — the intake flow behaves exactly as before
-    # when omitted.
-    boundary: Optional[SearchBoundaryRequest] = None
+    # Required: the boundary is recruiter-owned, and the server (not the
+    # browser) validates it. See backend/services/search_boundary.py.
+    boundary: SearchBoundaryRequest
+    # The role title exactly as the recruiter typed it. Optional; when given it
+    # is the posted title, verbatim, and is never rewritten or replaced.
+    posted_title: Optional[str] = None
+
+
+class ConfirmationRequest(BaseModel):
+    edits: ConfirmationEdits = Field(default_factory=ConfirmationEdits)
 
 
 class IntakeAnswerRequest(BaseModel):
@@ -311,6 +334,8 @@ def create_app(
     intake_session_manager: Optional[IntakeSessionManager] = None,
     harvest_enrichment_service: Optional[HarvestEnrichmentService] = None,
     requirement_judge: Optional[RequirementJudge] = None,
+    confirmation_store: Optional[ConfirmationStore] = None,
+    require_confirmation: Optional[bool] = None,
 ) -> FastAPI:
     app = FastAPI(title="RecruiterAI API")
     app.add_middleware(
@@ -340,6 +365,13 @@ def create_app(
     excel_exporter = excel_exporter or ExcelExporter()
     search_store = search_store or SearchStore()
     intake_session_manager = intake_session_manager or IntakeSessionManager()
+    confirmation_store = confirmation_store or ConfirmationStore()
+    if require_confirmation is None:
+        require_confirmation = os.environ.get("RECRUITERAI_REQUIRE_CONFIRMATION", "true").strip().lower() not in ("0", "false", "no")
+    # Retrieval parity: the browser has never sent the model-written search sentence, so it has never reached the
+    # provider. Sending it now would change which candidates are retrieved, which is a separate decision. Off by
+    # default; the sentence is still stored in the confirmed snapshot.
+    send_confirmed_sentence = os.environ.get("RECRUITERAI_SEND_CONFIRMED_SEARCH_SENTENCE", "false").strip().lower() in ("1", "true", "yes")
     harvest_enrichment_service = harvest_enrichment_service or HarvestEnrichmentService()
     requirement_judge = requirement_judge or RequirementJudge()
 
@@ -399,32 +431,38 @@ def create_app(
             _raise_recruiter_friendly_error("Please contact your administrator.")
         return intent
 
+    def _validated_boundary(body: SearchBoundaryRequest) -> SearchBoundary:
+        try:
+            return validate_search_boundary(
+                SearchBoundary(
+                    hiring_company=body.hiring_company,
+                    country=body.country,
+                    work_mode=body.work_mode,
+                    state=body.state,
+                    city=body.city,
+                    radius_miles=body.radius_miles,
+                    remote_scope=body.remote_scope,
+                    remote_states=list(body.remote_states),
+                    remote_cities=list(body.remote_cities),
+                )
+            )
+        except BoundaryValidationError as exc:
+            raise HTTPException(status_code=422, detail={"message": "The search boundary is incomplete.", "errors": exc.errors})
+
     @app.post("/intake/start", dependencies=[Depends(require_session)])
     def intake_start(request: IntakeStartRequest) -> Dict[str, Any]:
-        boundary = (
-            SearchBoundary(
-                hiring_company=request.boundary.hiring_company,
-                country=request.boundary.country,
-                work_mode=request.boundary.work_mode,
-                state=request.boundary.state,
-                city=request.boundary.city,
-                radius_miles=request.boundary.radius_miles,
-                remote_scope=request.boundary.remote_scope,
-                remote_states=list(request.boundary.remote_states),
-                remote_cities=list(request.boundary.remote_cities),
-            )
-            if request.boundary is not None
-            else None
-        )
+        boundary = _validated_boundary(request.boundary)
+        if not (request.raw_input or "").strip():
+            raise HTTPException(status_code=422, detail={"message": "Describe the role first.", "errors": ["Paste a job description or describe the role."]})
         try:
-            record = intake_session_manager.start(request.raw_input, boundary=boundary)
+            record = intake_session_manager.start(request.raw_input, boundary=boundary, posted_title=request.posted_title)
         except ConfigurationError as exc:
             logger.warning("Intake reasoning is unavailable", exc_info=exc)
             _raise_recruiter_friendly_error("Unable to understand this role right now.")
         except RecruiterAIError as exc:
             logger.exception("Intake reasoning failed")
             _raise_recruiter_friendly_error("Please contact your administrator.")
-        return {"session_id": record.session_id, "result": record.result}
+        return {"session_id": record.session_id, "result": record.result, "boundary": record.boundary}
 
     @app.post("/intake/{session_id}/answer", dependencies=[Depends(require_session)])
     def intake_answer(session_id: str, request: IntakeAnswerRequest) -> Dict[str, Any]:
@@ -441,6 +479,64 @@ def create_app(
             logger.exception("Intake reasoning failed")
             _raise_recruiter_friendly_error("Please contact your administrator.")
         return {"session_id": record.session_id, "result": record.result}
+
+    def _gate_search_request(request: SearchRequest) -> tuple[SearchRequest, Optional[Dict[str, Any]]]:
+        """The deterministic guardrail. With confirmation required, a search runs only from a valid confirmed
+        snapshot; the browser's own intent, location or description are never used."""
+        if request.confirmation_id:
+            snapshot = confirmation_store.load(request.confirmation_id)
+            if snapshot is None:
+                raise HTTPException(status_code=422, detail="This confirmation is not valid. Confirm the brief again before searching.")
+            if request.intent is not None or request.location is not None:
+                raise HTTPException(status_code=422, detail="A confirmed search cannot also carry its own intent or location.")
+            intent = search_intent_from_snapshot(snapshot)
+            if not send_confirmed_sentence:
+                intent.natural_language_search_query = None
+            override = LocationOverride(**location_override_for_search(intent, snapshot["boundary"]))
+            return request.model_copy(update={"intent": intent, "location": override, "jd_text": snapshot["raw_input"]}), snapshot
+        if require_confirmation:
+            raise HTTPException(status_code=409, detail="Confirm the brief before searching.")
+        return request, None
+
+    @app.post("/intake/{session_id}/confirmations", dependencies=[Depends(require_session)])
+    def intake_confirmations(session_id: str, request: ConfirmationRequest) -> Dict[str, Any]:
+        """The recruiter presses Search. The server checks the gate, builds the executable intent itself, applies the
+        whitelisted edits, and stores an immutable snapshot that /search then runs from."""
+        record = intake_session_manager.get(session_id)
+        if record is None or record.result is None:
+            raise HTTPException(status_code=404, detail="Intake session not found.")
+        try:
+            payload = build_snapshot(record, request.edits, query_expander)
+        except ConfirmationRefused as exc:
+            raise HTTPException(status_code=409, detail={"message": "This brief is not ready to search.", "reasons": exc.reasons})
+        snapshot = confirmation_store.create(payload)
+        return {**brief_summary(snapshot), "search_intent": snapshot["search_intent"], "edits": snapshot["edits"]}
+
+    @app.get("/intake/{session_id}", dependencies=[Depends(require_session)])
+    def intake_get(session_id: str) -> Dict[str, Any]:
+        """Everything needed to resume a brief after a reload. Read only: no model call."""
+        record = intake_session_manager.get(session_id)
+        if record is None or record.result is None:
+            raise HTTPException(status_code=404, detail="Intake session not found.")
+        return {
+            "session_id": record.session_id,
+            "result": record.result,
+            "boundary": record.boundary,
+            "posted_title_input": record.posted_title_input,
+        }
+
+    @app.patch("/intake/{session_id}/boundary", dependencies=[Depends(require_session)])
+    def intake_update_boundary(session_id: str, request: SearchBoundaryRequest) -> Dict[str, Any]:
+        """The recruiter edits the Search Boundary. Deterministic: validated and re-applied to the pinned reading with
+        no model call."""
+        boundary = _validated_boundary(request)
+        try:
+            record = intake_session_manager.update_boundary(session_id, boundary)
+        except KeyError:
+            raise HTTPException(status_code=404, detail="Intake session not found.")
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        return {"session_id": record.session_id, "result": record.result, "boundary": record.boundary}
 
     @app.post("/intake/{session_id}/confirm", dependencies=[Depends(require_session)])
     def intake_confirm(session_id: str) -> SearchIntent:
@@ -503,6 +599,7 @@ def create_app(
         response_data["recruiter_decisions"] = record.get("recruiter_decisions", {})
         response_data["notes"] = record.get("notes", {})
         response_data["workspace_arranged"] = bool(record.get("workspace_arranged", False))
+        response_data["confirmed_brief"] = record.get("confirmed_brief")
         return SearchResponse(**response_data)
 
     @app.patch("/search/{search_id}/workspace", dependencies=[Depends(require_session)])
@@ -539,6 +636,8 @@ def create_app(
 
     @app.post("/search", response_model=SearchResponse, dependencies=[Depends(require_session)])
     def search(request: SearchRequest) -> SearchResponse:
+        request, confirmed_snapshot = _gate_search_request(request)
+        confirmed_brief = brief_summary(confirmed_snapshot) if confirmed_snapshot else None
         search_id = request.search_id or str(uuid.uuid4())
         started_at = time.perf_counter()
         logger.info(
@@ -668,6 +767,7 @@ def create_app(
                     "recruiter_decisions": existing_record.get("recruiter_decisions", {}),
                     "notes": existing_record.get("notes", {}),
                     "candidate_states": {},
+                    "confirmed_brief": confirmed_brief,
                     "harvest_evidence": existing_record.get("harvest_evidence", {}),
                     "internal_diagnostics": {},
                 },
@@ -716,6 +816,7 @@ def create_app(
                 status=STATUS_RUNNING,
                 candidate_states={},
                 progress={"admitted": 0, "surfaced": 0, "building_context": 0, "review_ready": 0},
+                confirmed_brief=confirmed_brief,
             )
         except HTTPException:
             raise
@@ -734,6 +835,7 @@ def create_app(
 
     @app.post("/export", dependencies=[Depends(require_session)])
     def export(request: SearchRequest) -> FileResponse:
+        request, _ = _gate_search_request(request)
         try:
             provider = provider_registry.get(request.provider)
         except KeyError as exc:

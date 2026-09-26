@@ -61,6 +61,9 @@ class RoleUnderstanding:
     # synthesized understanding of who is actually being hired), which may
     # legitimately differ from it (see role_interpretation).
     posted_title: Optional[str] = None
+    # "recruiter" when the recruiter typed the title (kept verbatim, never rewritten), "jd" when it was read from
+    # the job description and verified to appear in the text. None when there is no verified posted title.
+    posted_title_source: Optional[str] = None
     primary_candidate_identity: FieldValue = field(default_factory=FieldValue)
     # The company actually doing the hiring (the employer), not the
     # candidate's own current employer — set only when genuinely
@@ -136,6 +139,9 @@ class FinalSearchIntentDraft:
     preferred_differentiators: List[str] = field(default_factory=list)
     natural_language_search_query: Optional[str] = None
     exclusions: List[str] = field(default_factory=list)
+    # requirement text -> the sentence of the raw input that states it, found by code (never by the model). Empty
+    # for a requirement the input does not state, which is what "Inferred" means.
+    evidence: Dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -152,6 +158,10 @@ class IntakeDecision:
     # deliberately not required). Always populated — this is a factual bridge
     # statement, not an optional "insight".
     search_consequence_summary: Optional[str] = None
+    # Things the product cannot enforce for this search (for example, work mode
+    # is recorded but is not a search filter). Deterministic, never LLM-written,
+    # and shown to the recruiter as a "System limitation", distinct from a warning.
+    limitations: List[str] = field(default_factory=list)
     final_search_intent: FinalSearchIntentDraft = field(default_factory=FinalSearchIntentDraft)
 
 
@@ -193,6 +203,18 @@ class SearchBoundary:
 
 
 @dataclass
+class ConfirmedChange:
+    """One structured field the recruiter changed by answering a question. Drives the "Confirmed by you" provenance,
+    so it records exactly which field, and never a whole-brief claim."""
+
+    field: str  # "experience" | "seniority" | "identity" | "requirement" | "exclusion" | "leadership"
+    description: str  # recruiter-readable, e.g. "Experience: 8-10 years"
+    item: Optional[str] = None  # the requirement text, for "requirement"
+    issue: Optional[str] = None  # the question that was answered
+    answer: Optional[str] = None  # the label of the option the recruiter chose
+
+
+@dataclass
 class IntakeResult:
     raw_input: str = ""
     role_understanding: RoleUnderstanding = field(default_factory=RoleUnderstanding)
@@ -201,6 +223,8 @@ class IntakeResult:
     # "needs_clarification": at least one ask issue (LLM-authored or
     # backstop-injected) is pending. "ready": safe to map to a SearchIntent.
     status: str = "ready"
+    # Fields changed by recruiter answers (everything else is exactly what the pinned reading produced).
+    confirmed: List[ConfirmedChange] = field(default_factory=list)
 
     @property
     def pending_ask_issues(self) -> List[IntakeIssue]:

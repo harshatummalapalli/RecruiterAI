@@ -87,6 +87,8 @@ function Preview() {
             onRunSearch={() => undefined}
             searchId={null}
             searchGeneration={1}
+            boundary={null}
+            onApplyBoundary={async () => undefined}
           />
         ) : null}
       </div>

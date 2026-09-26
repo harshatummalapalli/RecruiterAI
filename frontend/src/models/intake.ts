@@ -6,7 +6,8 @@
 export type FieldValue = {
   value: string | null
   evidence: string | null
-  source: 'explicit' | 'inferred' | null
+  // "recruiter" once the recruiter confirmed the value by answering a question.
+  source: 'explicit' | 'inferred' | 'recruiter' | null
 }
 
 export type CapabilityItem = {
@@ -48,6 +49,9 @@ export type RoleUnderstanding = {
   // The literal title line as written in the input — a plain fact, never an
   // interpretation. May legitimately differ from primary_candidate_identity.
   posted_title: string | null
+  // "recruiter": typed by the recruiter and kept verbatim. "jd": read from the job description and verified to
+  // appear in it. null: no verified posted title.
+  posted_title_source: 'recruiter' | 'jd' | null
   primary_candidate_identity: FieldValue
   // The employer actually doing the hiring, when genuinely identifiable —
   // never the candidate's own current employer. Drives a default
@@ -85,15 +89,24 @@ export type IntakeIssue = {
   backstop_category: string | null
 }
 
+// One structured field the recruiter changed by answering a question. Drives "Confirmed by you".
+export type ConfirmedChange = {
+  field: 'experience' | 'seniority' | 'identity' | 'requirement' | 'exclusion' | 'leadership'
+  description: string
+  item: string | null
+  issue: string | null
+  answer: string | null
+}
+
 export type FinalSearchIntentDraft = {
   hard_requirements: string[]
   strong_signals: string[]
   preferred_differentiators: string[]
   natural_language_search_query: string | null
-  location: string | null
-  experience_minimum_years: number | null
-  experience_maximum_years: number | null
   exclusions: string[]
+  // requirement text -> the sentence of the input that states it, found by the server. A requirement with no entry
+  // is inferred.
+  evidence?: Record<string, string>
 }
 
 export type IntakeDecision = {
@@ -104,6 +117,8 @@ export type IntakeDecision = {
   // One or two sentences bridging interpretation -> search: how the role
   // understanding actually changed what gets searched. Always populated.
   search_consequence_summary: string | null
+  // Things the product cannot enforce for this search (for example, work mode). Shown as "System limitation".
+  limitations?: string[]
   final_search_intent: FinalSearchIntentDraft
 }
 
@@ -112,9 +127,42 @@ export type IntakeResult = {
   role_understanding: RoleUnderstanding
   decision: IntakeDecision
   status: 'understanding' | 'needs_clarification' | 'ready'
+  confirmed?: ConfirmedChange[]
 }
 
-export type IntakeStartResponse = { session_id: string; result: IntakeResult }
+// `boundary` is the boundary as the server stored it (validated and normalized), which is the one to display.
+export type IntakeStartResponse = { session_id: string; result: IntakeResult; boundary?: import('./searchBoundary').SearchBoundary | null }
+
+// GET /intake/{id}: everything needed to resume a brief after a reload.
+export type IntakeSessionResponse = IntakeStartResponse & {
+  boundary: import('./searchBoundary').SearchBoundary | null
+  posted_title_input: string | null
+}
+
+// What the server needs to build the executable search from a confirmed brief. Only these fields can be edited.
+export type ConfirmationEdits = {
+  candidate_identity?: string
+  seniority?: string | null
+  employment_type?: string | null
+  include_titles?: string[]
+  exclude_titles?: string[]
+  minimum_years?: number | null
+  maximum_years?: number | null
+  core_signals?: string[]
+  supporting_signals?: string[]
+  differentiator_signals?: string[]
+  exclude_current_companies?: string[]
+  preferred_companies?: string[]
+}
+
+export type ConfirmationResponse = {
+  confirmation_id: string
+  session_id: string
+  posted_title: string | null
+  posted_title_source: 'recruiter' | 'jd' | null
+  candidate_identity: string | null
+  content_hash: string
+}
 
 export function pendingAskIssues(result: IntakeResult): IntakeIssue[] {
   return result.decision.issues.filter((issue) => issue.decision === 'ask')

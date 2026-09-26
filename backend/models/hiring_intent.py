@@ -19,6 +19,7 @@ class StructuredLocation:
 @dataclass
 class ConfirmedHiringIntent:
     posted_title: Optional[str] = None
+    posted_title_source: Optional[str] = None
     # The employer doing the hiring, when genuinely identifiable — see
     # RoleUnderstanding.hiring_company. Drives the default
     # exclude_current_companies below; never invented from weak evidence.

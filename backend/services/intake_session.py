@@ -1,17 +1,19 @@
-"""Thin, additive orchestration on top of IntakeReasoner for Phase 3 (Living
-Brief UI). Does not change Task A, Task B, or the contradiction backstop —
-it only tracks a conversation across multiple reasoning calls and gives each
-issue a stable id the frontend can reference.
+"""Orchestration of an intake conversation on top of IntakeReasoner.
 
-Reconciling a recruiter's answer works by re-running the SAME reasoning
-pipeline (Task A -> Task B -> backstop) on the raw input with the recruiter's
-prior answers appended as explicit, already-resolved facts — this is what
-Phase 1/2 validated the model actually responds to (an explicit resolving
-statement stops it from re-asking). The one exception is a backstop-detected
-contradiction: since the raw text still literally contains both sides of the
-contradiction, the regex backstop would fire again on every re-run, so a
-resolved contradiction category is suppressed here rather than relied on the
-LLM to drop — that is the "hard safety state" the product spec calls for.
+The role understanding is PINNED. Task A runs once, at the start. Task B decides ASK/TELL/IGNORE once, at the start.
+After that:
+
+    recruiter answers a question
+      -> ONE small model call proposes a patch (which structured fields the answer changes)
+      -> code validates the patch and applies only what passes (backend/services/intake_answer.py)
+      -> the answered question, and only that question, is resolved
+
+Nothing the answer does not name can change, so answering one question never makes an unrelated part of the brief
+drift, and a resolved question can never reappear (it is not re-derived). Task A is never re-run. Editing the Search
+Boundary is fully deterministic and makes no model call at all.
+
+Every recruiter-confirmed change is recorded (IntakeResult.confirmed) so the brief can say exactly which fields the
+recruiter confirmed.
 """
 
 import uuid
@@ -20,10 +22,20 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from backend.models.intake import IntakeIssue, IntakeResult, SearchBoundary
-from backend.services.intake_reasoning import IntakeReasoner, apply_search_boundary, infer_backstop_category
+from backend.services.intake_answer import apply_patch, propose_patch, valid_new_issues
+from backend.services.intake_reasoning import (
+    IntakeReasoner,
+    apply_search_boundary,
+    boundary_fingerprint,
+    infer_backstop_category,
+)
 from backend.services.search_store import SearchStore
 
 DEFAULT_INTAKE_STORAGE_DIR = Path(__file__).resolve().parents[2] / "output" / "intake_sessions"
+
+# Answer values that resolve nothing by themselves.
+_DEFERRING_VALUE = "recruiter_will_clarify"
+_KEEP_BOUNDARY_VALUE = "keep_selected_location"
 
 
 @dataclass
@@ -33,6 +45,8 @@ class RecordedAnswer:
     value: str
     label: str
     backstop_category: Optional[str] = None
+    # For a boundary conflict the recruiter chose to keep: which boundary that choice was about.
+    boundary_fingerprint: Optional[str] = None
 
 
 @dataclass
@@ -41,76 +55,80 @@ class IntakeSessionRecord:
     raw_input: str
     answers: List[RecordedAnswer] = field(default_factory=list)
     result: Optional[IntakeResult] = None
-    # The recruiter-confirmed search boundary from intake start, if any —
-    # authoritative for hiring company/location/work mode at confirm time
-    # (see backend/services/search_translator.py's build_confirmed_hiring_
-    # intent). None for any caller that doesn't submit one (backward
-    # compatible with the pre-boundary intake flow).
+    # The recruiter-confirmed search boundary, authoritative for hiring company/location/work mode. None only for a
+    # session stored before boundaries were mandatory.
     boundary: Optional[SearchBoundary] = None
-
-
-def _augment_raw_input(raw_input: str, answers: List[RecordedAnswer]) -> str:
-    if not answers:
-        return raw_input
-    lines = [raw_input, "", "Recruiter clarifications (already resolved — do not ask about these again):"]
-    for answer in answers:
-        question = answer.question or answer.issue_key
-        lines.append(f"- Q: {question}  A: {answer.label}")
-    return "\n".join(lines)
+    # The title exactly as the recruiter typed it (None when they left it blank).
+    posted_title_input: Optional[str] = None
 
 
 def _assign_issue_ids(result: IntakeResult) -> None:
-    llm_index = 0
-    backstop_index = 0
+    """Gives an id to every issue that has none. Existing ids never change, so an id the browser holds stays valid
+    across answers and reloads."""
+    llm_used = [
+        int(i.id.split("-", 1)[1])
+        for i in result.decision.issues
+        if i.id and i.id.startswith("issue-") and i.id.split("-", 1)[1].isdigit()
+    ]
+    next_llm = (max(llm_used) + 1) if llm_used else 0
     for issue in result.decision.issues:
+        if issue.id:
+            continue
         if issue.injected_by_backstop:
-            issue.id = f"backstop-{issue.backstop_category or backstop_index}"
-            backstop_index += 1
+            issue.id = f"backstop-{issue.backstop_category or 'issue'}"
         else:
-            issue.id = f"issue-{llm_index}"
-            llm_index += 1
+            issue.id = f"issue-{next_llm}"
+            next_llm += 1
 
 
-def _suppress_resolved_issues(result: IntakeResult, answers: List[RecordedAnswer]) -> None:
-    resolved_keys = {answer.issue_key for answer in answers}
-    resolved_categories = {answer.backstop_category for answer in answers if answer.backstop_category}
+def _refresh_status(result: IntakeResult) -> None:
+    result.decision.recommended_ask_count = sum(1 for issue in result.decision.issues if issue.decision == "ask")
+    result.status = "needs_clarification" if result.decision.recommended_ask_count else "ready"
 
+
+def _resolved_conflicts(answers: List[RecordedAnswer]) -> List[str]:
+    return [a.boundary_fingerprint for a in answers if a.backstop_category == "location_boundary_conflict" and a.boundary_fingerprint]
+
+
+def _drop_resolved_category(result: IntakeResult, category: Optional[str], answered_key: str) -> None:
+    """Removes the answered question, anything else that is the same contradiction, and its now-stale warnings."""
+    stale_warnings = {c.warning for c in result.contradictions if category and c.category == category}
     remaining: List[IntakeIssue] = []
     for issue in result.decision.issues:
-        if issue.issue in resolved_keys:
+        if issue.issue == answered_key:
             continue
-        # Covers both a backstop-tagged reinjection AND a freshly-worded LLM
-        # ask this round that turns out to address a category the recruiter
-        # already resolved — Task B's exact phrasing varies run to run, so
-        # matching by category (not just exact text) is what actually makes
-        # a resolved contradiction stay resolved across re-runs.
         issue_category = issue.backstop_category or infer_backstop_category(issue.issue, issue.question)
-        if issue_category and issue_category in resolved_categories:
+        if category and issue.decision == "ask" and issue_category == category:
             continue
         remaining.append(issue)
-
     result.decision.issues = remaining
-    result.status = "needs_clarification" if any(issue.decision == "ask" for issue in remaining) else "ready"
+    if category:
+        result.decision.warnings = [
+            w for w in result.decision.warnings if w not in stale_warnings and infer_backstop_category(w, None) != category
+        ]
+        result.contradictions = [c for c in result.contradictions if c.category != category]
 
 
 class IntakeSessionManager:
-    """Owns the additive persistence + reconciliation loop described above.
-    `reasoner` and `store` are injectable for tests, matching the rest of
-    this codebase's dependency-injection pattern."""
+    """`reasoner` and `store` are injectable for tests, matching the rest of this codebase's dependency-injection
+    pattern."""
 
     def __init__(self, reasoner: Optional[IntakeReasoner] = None, store: Optional[SearchStore] = None) -> None:
         self._reasoner = reasoner or IntakeReasoner()
         self._store = store or SearchStore(storage_dir=DEFAULT_INTAKE_STORAGE_DIR)
 
-    def start(self, raw_input: str, boundary: Optional[SearchBoundary] = None) -> IntakeSessionRecord:
+    def start(self, raw_input: str, boundary: Optional[SearchBoundary] = None, posted_title: Optional[str] = None) -> IntakeSessionRecord:
         session_id = str(uuid.uuid4())
-        # Task A/B run on raw_input alone, unmodified by the boundary — see
-        # apply_search_boundary's docstring for why that independence matters.
-        result = self._reasoner.run(raw_input)
+        # Task A and Task B run on raw_input alone, unmodified by the boundary, so Task A's own location reading
+        # stays an independent check. This is the only time either runs.
+        result = self._reasoner.run(raw_input, posted_title=posted_title)
         if boundary is not None:
             apply_search_boundary(result, boundary)
         _assign_issue_ids(result)
-        record = IntakeSessionRecord(session_id=session_id, raw_input=raw_input, answers=[], result=result, boundary=boundary)
+        _refresh_status(result)
+        record = IntakeSessionRecord(
+            session_id=session_id, raw_input=raw_input, answers=[], result=result, boundary=boundary, posted_title_input=posted_title
+        )
         self._save(record)
         return record
 
@@ -120,36 +138,52 @@ class IntakeSessionManager:
             raise KeyError(session_id)
         if record.result is None:
             raise ValueError("Intake session has no prior result to answer against.")
+        result = record.result
 
-        answered_issue = next((issue for issue in record.result.decision.issues if issue.id == issue_id), None)
-        if answered_issue is None:
-            raise ValueError(f"Unknown issue id: {issue_id}")
+        issue = next((i for i in result.decision.issues if i.id == issue_id and i.decision == "ask"), None)
+        if issue is None:
+            raise ValueError(f"Unknown or already resolved question: {issue_id}")
 
-        record.answers.append(
-            RecordedAnswer(
-                issue_key=answered_issue.issue,
-                question=answered_issue.question,
-                value=value,
-                label=label,
-                # Even when an LLM-authored ask (not the backstop) is the one
-                # that surfaced a contradiction, recognize which contradiction
-                # category it addressed — otherwise the backstop would
-                # re-inject a fresh ask for the same category on the very
-                # next reasoning round, since the raw text still literally
-                # contains both sides of the contradiction.
-                backstop_category=answered_issue.backstop_category
-                or infer_backstop_category(answered_issue.issue, answered_issue.question),
-            )
-        )
+        # "Let me reconsider" resolves nothing: the question stays until the boundary or the description changes.
+        if value == _DEFERRING_VALUE:
+            return record
 
-        augmented_input = _augment_raw_input(record.raw_input, record.answers)
-        result = self._reasoner.run(augmented_input)
-        if record.boundary is not None:
-            apply_search_boundary(result, record.boundary)
+        category = issue.backstop_category or infer_backstop_category(issue.issue, issue.question)
+        answer = RecordedAnswer(issue_key=issue.issue, question=issue.question, value=value, label=label, backstop_category=category)
+        prior = [{"question": a.question or a.issue_key, "answer": a.label} for a in record.answers]
+
+        new_issues: List[IntakeIssue] = []
+        if category == "location_boundary_conflict" and value == _KEEP_BOUNDARY_VALUE and record.boundary is not None:
+            # Deterministic: the recruiter kept the boundary they chose. Nothing to interpret.
+            answer.boundary_fingerprint = boundary_fingerprint(record.boundary)
+        else:
+            patch = propose_patch(self._reasoner, result, issue, value, label, prior, record.raw_input)
+            apply_patch(result, patch, issue, label, record.raw_input)
+            answered_stubs = [IntakeIssue(issue=a.issue_key, decision="ask", question=a.question) for a in record.answers]
+            new_issues = valid_new_issues(patch, result, [*answered_stubs, issue], {a.backstop_category for a in record.answers if a.backstop_category})
+            reasoning = patch.get("reasoning") if isinstance(patch.get("reasoning"), str) else None
+            if reasoning:
+                result.decision.stop_reasoning = reasoning
+
+        record.answers.append(answer)
+        _drop_resolved_category(result, category, issue.issue)
+        result.decision.issues.extend(new_issues)
         _assign_issue_ids(result)
-        _suppress_resolved_issues(result, record.answers)
+        _refresh_status(result)
+        self._save(record)
+        return record
 
-        record.result = result
+    def update_boundary(self, session_id: str, boundary: SearchBoundary) -> IntakeSessionRecord:
+        """Deterministic. Re-applies the new boundary to the pinned reading; no model call is made."""
+        record = self._load(session_id)
+        if record is None:
+            raise KeyError(session_id)
+        if record.result is None:
+            raise ValueError("Intake session has no result to apply a boundary to.")
+        record.boundary = boundary
+        apply_search_boundary(record.result, boundary, resolved_conflicts=_resolved_conflicts(record.answers))
+        _assign_issue_ids(record.result)
+        _refresh_status(record.result)
         self._save(record)
         return record
 
@@ -175,12 +209,15 @@ def _record_to_dict(record: IntakeSessionRecord) -> Dict[str, Any]:
         "answers": [dataclasses.asdict(answer) for answer in record.answers],
         "result": dataclasses.asdict(record.result) if record.result else None,
         "boundary": dataclasses.asdict(record.boundary) if record.boundary else None,
+        "posted_title_input": record.posted_title_input,
     }
 
 
 def _record_from_dict(data: Dict[str, Any]) -> IntakeSessionRecord:
     from backend.models.intake import (
         CapabilityItem,
+        ConfirmedChange,
+        ContradictionFinding,
         ExplicitConstraints,
         FieldValue,
         FinalSearchIntentDraft,
@@ -196,16 +233,14 @@ def _record_from_dict(data: Dict[str, Any]) -> IntakeSessionRecord:
         ru = result_data["role_understanding"]
         decision_data = result_data["decision"]
         constraints_data = dict(ru["explicit_constraints"])
-        constraints_data["locations"] = [
-            LocationEntry(**entry) for entry in constraints_data.get("locations") or []
-        ]
+        constraints_data["locations"] = [LocationEntry(**entry) for entry in constraints_data.get("locations") or []]
         result = IntakeResult(
             raw_input=result_data.get("raw_input", ""),
             role_understanding=RoleUnderstanding(
                 posted_title=ru.get("posted_title"),
+                posted_title_source=ru.get("posted_title_source"),
                 primary_candidate_identity=FieldValue(**ru["primary_candidate_identity"]),
-                # .get(...) or {} (not bracket access): sessions persisted
-                # before this field existed won't have this key at all.
+                # .get(...) or {} (not bracket access): sessions persisted before this field existed won't have it.
                 hiring_company=FieldValue(**(ru.get("hiring_company") or {})),
                 candidate_archetype=FieldValue(**ru["candidate_archetype"]),
                 role_interpretation=FieldValue(**(ru.get("role_interpretation") or {})),
@@ -225,10 +260,12 @@ def _record_from_dict(data: Dict[str, Any]) -> IntakeSessionRecord:
                 stop_reasoning=decision_data.get("stop_reasoning"),
                 warnings=list(decision_data.get("warnings") or []),
                 search_consequence_summary=decision_data.get("search_consequence_summary"),
+                limitations=list(decision_data.get("limitations") or []),
                 final_search_intent=FinalSearchIntentDraft(**decision_data["final_search_intent"]),
             ),
-            contradictions=[],
+            contradictions=[ContradictionFinding(**item) for item in result_data.get("contradictions") or []],
             status=result_data.get("status", "ready"),
+            confirmed=[ConfirmedChange(**item) for item in result_data.get("confirmed") or []],
         )
 
     boundary_data = data.get("boundary")
@@ -240,4 +277,5 @@ def _record_from_dict(data: Dict[str, Any]) -> IntakeSessionRecord:
         answers=[RecordedAnswer(**answer) for answer in data.get("answers", [])],
         result=result,
         boundary=boundary,
+        posted_title_input=data.get("posted_title_input"),
     )

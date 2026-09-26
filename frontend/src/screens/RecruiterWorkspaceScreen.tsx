@@ -1,24 +1,21 @@
 import { useEffect, useRef, useState } from 'react'
-import { Pencil } from 'lucide-react'
 import {
   runCandidateSearch,
   loadPersistedSearch,
+  loadIntakeSession,
   logout,
   startIntake,
   answerIntake,
   confirmIntake,
+  createConfirmation,
+  updateIntakeBoundary,
 } from '../services/recruiterWorkflow'
-import {
-  briefToSearchIntent,
-  briefToLocationDetail,
-  createEmptySearchBrief,
-  searchIntentToBrief,
-  type SearchBrief,
-} from '../models/searchBrief'
+import { createEmptySearchBrief, searchIntentToBrief, type SearchBrief } from '../models/searchBrief'
+import { diffBriefEdits, formatBoundaryLocation } from '../models/livingBrief'
 import type { IntakeIssue, IntakeResult } from '../models/intake'
-import { SearchBriefReview } from './SearchBriefReview'
 import { CandidateReviewScreen } from './CandidateReviewScreen'
 import { DebugPanel } from './DebugPanel'
+import { LivingBrief } from './LivingBrief'
 import { SearchBoundaryForm } from './SearchBoundaryForm'
 import { createEmptySearchBoundary, isSearchBoundaryComplete, type SearchBoundary } from '../models/searchBoundary'
 import type { SearchResponse } from '../types'
@@ -27,22 +24,20 @@ import './RecruiterWorkspaceScreen.css'
 type ParseState = 'idle' | 'parsing' | 'success' | 'error'
 type Step = 'jd' | 'brief' | 'review'
 type SearchState = 'idle' | 'searching' | 'done' | 'error'
-type IntakeState = 'idle' | 'loading' | 'answering' | 'confirming' | 'ready' | 'error'
 
 const RECRUITER_NAME = 'Harsha'
 
 // A page refresh must reload the last search, not re-run OpenAI/CrustData.
 // The search RESULT lives on the backend (see backend/services/search_store.py);
-// this only remembers *which* search to reload, plus enough of the
-// recruiter's Search Brief editing state to make "Edit Brief" work
-// immediately after a reload without re-deriving it from scratch.
+// this only remembers *which* search to reload, which intake session it came
+// from, and the recruiter's working copy of the adjustable brief.
 const PERSISTED_SEARCH_KEY = 'recruiterai:lastSearch'
 
 type PersistedSearchPointer = {
   searchId: string
   jdText: string
   brief: SearchBrief
-  lockedFields: string[]
+  intakeSessionId?: string | null
 }
 
 function savePersistedSearchPointer(pointer: PersistedSearchPointer): void {
@@ -76,33 +71,38 @@ function getGreeting(hour: number): string {
   return 'Good evening'
 }
 
+function messagesOf(error: unknown, fallback: string): string[] {
+  const messages = (error as { messages?: string[] } | null)?.messages
+  return messages && messages.length ? messages : [fallback]
+}
+
+function sameTitle(a: string, b: string): boolean {
+  const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+  return normalize(a) === normalize(b)
+}
+
 export function RecruiterWorkspaceScreen() {
+  const [postedTitle, setPostedTitle] = useState('')
   const [jdText, setJdText] = useState('')
   const [boundary, setBoundary] = useState<SearchBoundary>(createEmptySearchBoundary)
+  // The recruiter's working copy of what can still be adjusted, and what the server proposed (to send only real edits).
   const [brief, setBrief] = useState<SearchBrief>(createEmptySearchBrief)
-  const [lockedFields, setLockedFields] = useState<ReadonlySet<string>>(new Set())
-  const [isEditingTitle, setIsEditingTitle] = useState(false)
+  const [baselineBrief, setBaselineBrief] = useState<SearchBrief | null>(null)
   const [parseState, setParseState] = useState<ParseState>('idle')
+  const [parseErrors, setParseErrors] = useState<string[]>([])
   const [step, setStep] = useState<Step>('jd')
   const [intakeSessionId, setIntakeSessionId] = useState<string | null>(null)
   const [intakeResult, setIntakeResult] = useState<IntakeResult | null>(null)
-  const [intakeState, setIntakeState] = useState<IntakeState>('idle')
-  const [hiringCompanyPrefilled, setHiringCompanyPrefilled] = useState(false)
+  const [isAnswering, setIsAnswering] = useState(false)
   const [searchState, setSearchState] = useState<SearchState>('idle')
+  const [searchErrors, setSearchErrors] = useState<string[]>([])
   const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null)
   const [searchId, setSearchId] = useState<string | null>(null)
-  // Bumped once per "Find Candidates"/"Run Search Again" click — lets
-  // CandidateReviewScreen reset its open-profile/compare/edit-brief UI
-  // state exactly once per NEW search, without resetting on every
-  // progressive poll tick of the SAME still-running search (search_id
-  // alone doesn't distinguish those: a "Run Search Again" reuses the same
-  // search_id).
+  // Bumped once per search start — lets CandidateReviewScreen reset its open-record/edit-brief UI state exactly once
+  // per NEW search, without resetting on every progressive poll tick of the SAME still-running search.
   const [searchGeneration, setSearchGeneration] = useState(0)
-  const titleInputRef = useRef<HTMLInputElement | null>(null)
-  // Progressive Candidate Workspace — the poll loop for a running search.
-  // Ref (not state) because it's plumbing, not something that should ever
-  // trigger a re-render on its own; cleared whenever a new search starts or
-  // the component unmounts, so at most one poll loop is ever active.
+  // Progressive Candidate Workspace — the poll loop for a running search. A ref because it is plumbing, cleared when a
+  // new search starts or the component unmounts, so at most one poll loop is ever active.
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const greeting = `${getGreeting(new Date().getHours())}, ${RECRUITER_NAME}.`
@@ -111,10 +111,20 @@ export function RecruiterWorkspaceScreen() {
   const canParse = hasJdText && isBoundaryComplete && parseState !== 'parsing'
   const isBusy = parseState === 'parsing'
 
-  // On mount: if a previous search was persisted, reload it from the
-  // backend store and restore straight to Candidate Review — a refresh
-  // must never re-run OpenAI or CrustData. Only an explicit "Find
-  // Candidates" / "Run Search Again" click (handleFindCandidates) does that.
+  // What the server proposed for this brief, shown in the adjustable panel and used as the baseline for real edits.
+  const refreshProposal = async (sessionId: string) => {
+    try {
+      const proposed = searchIntentToBrief(await confirmIntake(sessionId))
+      setBrief(proposed)
+      setBaselineBrief(proposed)
+    } catch {
+      // Only reachable while a question is open; the brief is not ready, so there is nothing to propose yet.
+    }
+  }
+
+  // On mount: if a previous search was persisted, reload it from the backend store and restore straight to Candidate
+  // Review — a refresh must never re-run OpenAI or CrustData. The intake session it came from is resumed read-only, so
+  // the boundary can still be edited and the brief re-confirmed.
   useEffect(() => {
     const pointer = readPersistedSearchPointer()
     if (!pointer) {
@@ -128,18 +138,30 @@ export function RecruiterWorkspaceScreen() {
       }
       setJdText(pointer.jdText)
       setBrief(pointer.brief)
-      setLockedFields(new Set(pointer.lockedFields))
       setSearchId(pointer.searchId)
       setSearchResponse(response)
       setParseState('success')
       setStep('review')
       if (response.status === 'running') {
-        // The search was still in progress when the browser was closed/
-        // refreshed — resume polling rather than treating it as finished.
         setSearchState('searching')
-        pollSearch(pointer.searchId, pointer.brief)
+        pollSearch(pointer.searchId, pointer.brief, pointer.intakeSessionId ?? null)
       } else {
         setSearchState(response.status === 'error' ? 'error' : 'done')
+      }
+
+      const sessionId = response.confirmed_brief?.session_id ?? pointer.intakeSessionId ?? null
+      if (sessionId) {
+        const session = await loadIntakeSession(sessionId).catch(() => null)
+        if (cancelled || !session) return
+        setIntakeSessionId(sessionId)
+        setIntakeResult(session.result)
+        if (session.boundary) setBoundary(session.boundary)
+        if (session.posted_title_input) setPostedTitle(session.posted_title_input)
+        try {
+          setBaselineBrief(searchIntentToBrief(await confirmIntake(sessionId)))
+        } catch {
+          // The baseline is only needed to send edits; without it the brief is re-confirmed as the server proposes it.
+        }
       }
     })()
     return () => {
@@ -148,103 +170,67 @@ export function RecruiterWorkspaceScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  useEffect(() => {
-    if (isEditingTitle) {
-      titleInputRef.current?.focus()
-      titleInputRef.current?.select()
-    }
-  }, [isEditingTitle])
-
-  const lockField = (path: string) => {
-    setLockedFields((current) => {
-      const next = new Set(current)
-      next.add(path)
-      return next
-    })
-  }
-
-  const updateBriefField: (path: string, updater: (current: SearchBrief) => SearchBrief) => void = (path, updater) => {
-    lockField(path)
-    setBrief((current) => updater(current))
-  }
-
-  const commitTitleEdit = () => {
-    setIsEditingTitle(false)
-  }
-
-  // Once intake reaches "ready" (no pending questions/contradictions), turn
-  // it into the executable SearchIntent server-side (build_confirmed_hiring_
-  // intent + to_search_intent — see backend/services/search_translator.py)
-  // and populate the editable Search Brief immediately, so the recruiter
-  // sees interpretation and the executable brief together on one screen
-  // rather than confirming only at the moment they click Search.
-  const confirmAndPopulateBrief = async (sessionId: string) => {
-    setIntakeState('confirming')
-    try {
-      const confirmedIntent = await confirmIntake(sessionId)
-      setBrief(searchIntentToBrief(confirmedIntent))
-      setHiringCompanyPrefilled(Boolean(confirmedIntent.company_preferences?.exclude_current_companies?.length))
-      setIntakeState('ready')
-    } catch {
-      setIntakeState('error')
-    }
-  }
-
-  // RecruiterAI understands the role before searching: submit the raw input
-  // to the backend intake reasoning layer (Task A / Task B / contradiction
-  // backstop — see backend/services/intake_reasoning.py) and show the
-  // Search Brief. No local heuristic decides what to ask any more; the
-  // backend is the sole authority on ambiguity/questions.
+  // RecruiterAI understands the role before searching: the title, the description and the Search Boundary go to the
+  // backend, which reads the role once and returns the brief. Nothing is searched yet.
   const handleParse = async () => {
-    if (!hasJdText || !isBoundaryComplete) {
+    if (!canParse) {
       return
     }
-
     setParseState('parsing')
-    setIntakeState('loading')
-    setHiringCompanyPrefilled(false)
+    setParseErrors([])
     try {
-      const { session_id, result } = await startIntake(jdText, boundary)
+      const { session_id, result, boundary: stored } = await startIntake(jdText, boundary, postedTitle)
       setIntakeSessionId(session_id)
       setIntakeResult(result)
+      if (stored) setBoundary(stored)
+      setBaselineBrief(null)
       setParseState('success')
       setStep('brief')
       if (result.status === 'ready') {
-        await confirmAndPopulateBrief(session_id)
-      } else {
-        setIntakeState('idle')
+        await refreshProposal(session_id)
       }
-    } catch {
+    } catch (error) {
       setParseState('error')
-      setIntakeState('error')
+      setParseErrors(messagesOf(error, 'Unable to understand this job description.'))
     }
   }
 
+  // An answer resolves ONE question. The role reading is pinned; only the fields the answer names change.
   const handleAnswerIntake = async (issue: IntakeIssue, value: string, label: string) => {
     if (!intakeSessionId || !issue.id) {
       return
     }
-    setIntakeState('answering')
+    setIsAnswering(true)
     try {
       const { result } = await answerIntake(intakeSessionId, issue.id, value, label)
       setIntakeResult(result)
       if (result.status === 'ready') {
-        await confirmAndPopulateBrief(intakeSessionId)
-      } else {
-        setIntakeState('idle')
+        await refreshProposal(intakeSessionId)
       }
     } catch {
-      setIntakeState('error')
+      setSearchErrors(['That answer could not be saved. Please try again.'])
+    } finally {
+      setIsAnswering(false)
     }
   }
 
-  // Progressive Candidate Workspace: POST /search now returns almost
-  // immediately with status="running" — the actual CrustData/Harvest
-  // pipeline runs on a backend background thread (see backend/services/
-  // search_pipeline.py). This polls GET /search/{id} every 1.5s and
-  // updates the on-screen candidate list as candidates move SURFACED ->
-  // BUILDING_CONTEXT -> REVIEW_READY, stopping once the search leaves
-  // "running" (complete/error/interrupted).
+  // Boundary edits are deterministic: validated and re-applied on the server with no model call. Rejects with plain
+  // messages, which the boundary editor shows.
+  const handleApplyBoundary = async (next: SearchBoundary) => {
+    if (!intakeSessionId) {
+      throw new Error('No brief to apply this to.')
+    }
+    const { result, boundary: stored } = await updateIntakeBoundary(intakeSessionId, next)
+    setBoundary(stored ?? next)
+    setIntakeResult(result)
+    if (result.status === 'ready') {
+      await refreshProposal(intakeSessionId)
+    }
+  }
+
+  // Progressive Candidate Workspace: POST /search returns almost immediately with status="running" — the actual
+  // pipeline runs on a backend background thread. This polls GET /search/{id} every 1.5s and updates the list as
+  // candidates move SURFACED -> BUILDING_CONTEXT -> REVIEW_READY, stopping once the search leaves "running".
   const POLL_INTERVAL_MS = 1500
 
   const stopPolling = () => {
@@ -254,11 +240,10 @@ export function RecruiterWorkspaceScreen() {
     }
   }
 
-  const pollSearch = (id: string, activeBrief: SearchBrief) => {
+  const pollSearch = (id: string, activeBrief: SearchBrief, sessionId: string | null) => {
     stopPolling()
-    // One failed or empty poll (a network blip, a deploy restart) must not end
-    // the loop: it would leave the workspace frozen mid-search with no error.
-    // Retry a few times, then surface the error state.
+    // One failed or empty poll (a network blip, a deploy restart) must not end the loop: it would leave the workspace
+    // frozen mid-search with no error. Retry a few times, then surface the error state.
     let consecutiveFailures = 0
     const tick = async () => {
       const response = await loadPersistedSearch(id).catch(() => null)
@@ -278,72 +263,71 @@ export function RecruiterWorkspaceScreen() {
         return
       }
       setSearchState(response.status === 'complete' ? 'done' : 'error')
-      savePersistedSearchPointer({
-        searchId: id,
-        jdText,
-        brief: activeBrief,
-        lockedFields: Array.from(lockedFields),
-      })
+      savePersistedSearchPointer({ searchId: id, jdText, brief: activeBrief, intakeSessionId: sessionId })
     }
     void tick()
   }
 
-  const handleFindCandidates = async (briefOverride?: SearchBrief) => {
+  // The recruiter presses Search. The server checks that the brief is ready, builds the executable search itself from
+  // what was confirmed (plus only the edits made here), and stores it. The browser never supplies the search.
+  const handleSearch = async (briefOverride?: SearchBrief) => {
+    if (!intakeSessionId) {
+      setSearchErrors(['This search has no brief to confirm. Start a new search.'])
+      return
+    }
     const activeBrief = briefOverride ?? brief
     setSearchState('searching')
-    setSearchGeneration((current) => current + 1)
+    setSearchErrors([])
     stopPolling()
 
     try {
-      const response = await runCandidateSearch(
-        jdText,
-        briefToSearchIntent(activeBrief),
-        briefToLocationDetail(activeBrief),
-        {
-          searchId: searchId ?? undefined,
-          debug: import.meta.env.DEV,
-        },
-      )
-      // The search has already started server-side — show the workspace
-      // immediately (0 candidates, "running") rather than waiting for the
-      // whole pipeline; polling fills it in progressively.
+      const confirmation = await createConfirmation(intakeSessionId, baselineBrief ? diffBriefEdits(baselineBrief, activeBrief) : {})
+      setSearchGeneration((current) => current + 1)
+      const response = await runCandidateSearch(confirmation.confirmation_id, { searchId: searchId ?? undefined, debug: import.meta.env.DEV })
+      // The search has already started server-side — show the workspace immediately (0 candidates, "running") rather
+      // than waiting for the whole pipeline; polling fills it in progressively.
       setSearchResponse(response)
       setStep('review')
       setSearchId(response.search_id)
-      pollSearch(response.search_id, activeBrief)
-    } catch {
-      setSearchState('error')
+      pollSearch(response.search_id, activeBrief, intakeSessionId)
+    } catch (error) {
+      // A refusal (open questions, an incomplete boundary) is explained in plain words; anything else is an error.
+      const explained = (error as { messages?: string[] } | null)?.messages
+      setSearchErrors(explained ?? ['The search could not be started. Please try again.'])
+      setSearchState(step === 'review' ? 'error' : 'idle')
     }
   }
 
   useEffect(() => stopPolling, [])
 
-  // Persistence means a page load always restores the last search — this is
-  // the only way back to a blank slate. Clears the pointer (not the backend
-  // record itself, which stays reloadable by its old URL/id) and resets to
-  // the JD step.
+  // Persistence means a page load always restores the last search — this is the only way back to a blank slate.
+  // Clears the pointer (not the backend record itself, which stays reloadable by its old id) and resets to the first step.
   const handleStartNewSearch = () => {
     clearPersistedSearchPointer()
+    stopPolling()
+    setPostedTitle('')
     setJdText('')
     setBoundary(createEmptySearchBoundary())
     setBrief(createEmptySearchBrief())
-    setLockedFields(new Set())
+    setBaselineBrief(null)
     setParseState('idle')
+    setParseErrors([])
     setStep('jd')
     setIntakeSessionId(null)
     setIntakeResult(null)
-    setIntakeState('idle')
-    setHiringCompanyPrefilled(false)
     setSearchState('idle')
+    setSearchErrors([])
     setSearchResponse(null)
     setSearchId(null)
   }
 
-  // Candidate Review is contextual to the active search, not a generic
-  // greeting — the recruiter is deep into one role by that point, and the
-  // header's job shifts from "what are you hiring for" to "how is this
-  // search going" (see backend's progress: admitted/surfaced/
-  // building_context/review_ready counts, populated progressively).
+  // Candidate Review is contextual to the active search: the header names the ROLE as it was posted, and shows what
+  // is actually being searched for separately, so the AI's reading never looks like the posted title.
+  const confirmed = searchResponse?.confirmed_brief
+  const posted = confirmed?.posted_title ?? intakeResult?.role_understanding.posted_title ?? (postedTitle.trim() || null)
+  const identity = confirmed?.candidate_identity ?? brief.role.primaryTitle ?? ''
+  const showIdentity = Boolean(posted && identity && !sameTitle(posted, identity))
+
   const progress = searchResponse?.progress
   const workspaceSubtitle = (() => {
     if (!progress || !progress.admitted) {
@@ -362,7 +346,12 @@ export function RecruiterWorkspaceScreen() {
         <header className="workspace__greeting">
           {step === 'review' ? (
             <div>
-              <h1>{brief.role.primaryTitle || 'Candidate Workspace'}</h1>
+              <h1>{posted || identity || 'Candidate Workspace'}</h1>
+              {showIdentity ? (
+                <p className="workspace__identity">
+                  <span className="workspace__identity-label">Searching for</span> {identity}
+                </p>
+              ) : null}
               <p>{workspaceSubtitle}</p>
             </div>
           ) : (
@@ -392,44 +381,21 @@ export function RecruiterWorkspaceScreen() {
         {step === 'jd' ? (
           <div className="workspace__grid workspace__grid--single">
             <section className="workspace__composer" aria-label="Job description composer">
-              <div className="workspace__title-row">
-                {isEditingTitle ? (
-                  <input
-                    ref={titleInputRef}
-                    className="workspace__title-input"
-                    type="text"
-                    value={brief.role.primaryTitle}
-                    onChange={(event) => updateBriefField('role.primaryTitle', (current) => ({ ...current, role: { ...current.role, primaryTitle: event.target.value } }))}
-                    onBlur={commitTitleEdit}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault()
-                        commitTitleEdit()
-                      }
-                    }}
-                    placeholder="Untitled role"
-                    aria-label="Role title"
-                  />
-                ) : (
-                  <button
-                    type="button"
-                    className="workspace__title-display"
-                    onClick={() => setIsEditingTitle(true)}
-                    aria-label="Edit role title"
-                  >
-                    <span className={brief.role.primaryTitle ? '' : 'workspace__title-display--placeholder'}>
-                      {brief.role.primaryTitle || 'Untitled role'}
-                    </span>
-                    <Pencil size={15} className="workspace__title-pencil" aria-hidden="true" />
-                  </button>
-                )}
+              <div className="brief-field workspace__title-field">
+                <label className="brief-field__label" htmlFor="posted-title">
+                  Role title <span className="workspace__optional">optional</span>
+                </label>
+                <input
+                  id="posted-title"
+                  type="text"
+                  className="brief-input"
+                  value={postedTitle}
+                  disabled={isBusy}
+                  placeholder="Exactly as the role is called, e.g. AI Engineer"
+                  onChange={(event) => setPostedTitle(event.target.value)}
+                />
+                <span className="boundary-form__caption">Kept exactly as you type it. Leave it blank and the title in the description is used.</span>
               </div>
-
-              <SearchBoundaryForm
-                boundary={boundary}
-                onChange={(updater) => setBoundary(updater)}
-                disabled={isBusy}
-              />
 
               <textarea
                 className="workspace__editor"
@@ -438,25 +404,21 @@ export function RecruiterWorkspaceScreen() {
                 placeholder="What are you hiring for? Paste the full job description, rough hiring-manager notes, or just describe the role in your own words."
                 disabled={isBusy}
                 aria-label="Job description"
-                rows={16}
+                rows={14}
               />
 
+              <SearchBoundaryForm boundary={boundary} onChange={(updater) => setBoundary(updater)} disabled={isBusy} />
+
               <div className="workspace__composer-foot">
-                <span className="workspace__char-count">
-                  {jdText.length > 0 ? `${jdText.length.toLocaleString()} characters` : ''}
-                </span>
+                <span className="workspace__char-count">{jdText.length > 0 ? `${jdText.length.toLocaleString()} characters` : ''}</span>
 
                 <div className="workspace__actions">
                   <div className="workspace__status-slot" aria-live="polite">
-                    {parseState === 'success' ? (
-                      <p className="workspace__status workspace__status--success">
-                        <span aria-hidden="true">✓</span> Job description understood successfully.
-                      </p>
-                    ) : null}
-
                     {parseState === 'error' ? (
                       <div className="workspace__status workspace__status--error" role="alert">
-                        <p>Unable to understand this job description.</p>
+                        {parseErrors.map((message) => (
+                          <p key={message}>{message}</p>
+                        ))}
                         <button type="button" className="workspace__retry" onClick={handleParse}>
                           Retry
                         </button>
@@ -464,19 +426,14 @@ export function RecruiterWorkspaceScreen() {
                     ) : null}
                   </div>
 
-                  <button
-                    type="button"
-                    className={`workspace__parse${isBusy ? ' workspace__parse--busy' : ''}`}
-                    onClick={handleParse}
-                    disabled={!canParse}
-                  >
+                  <button type="button" className={`workspace__parse${isBusy ? ' workspace__parse--busy' : ''}`} onClick={handleParse} disabled={!canParse}>
                     {isBusy ? (
                       <>
                         <span className="workspace__spinner" aria-hidden="true" />
                         <span>Understanding the role…</span>
                       </>
                     ) : (
-                      <span>Build Search Brief</span>
+                      <span>Build brief</span>
                     )}
                   </button>
                 </div>
@@ -486,32 +443,44 @@ export function RecruiterWorkspaceScreen() {
         ) : null}
 
         {step === 'brief' && intakeResult ? (
-          <SearchBriefReview
-            brief={brief}
-            onChange={updateBriefField}
-            onFindCandidates={() => handleFindCandidates()}
-            onBackToJd={() => setStep('jd')}
-            isSearching={searchState === 'searching'}
-            searchState={searchState}
-            intakeContext={{
-              result: intakeResult,
-              onAnswer: handleAnswerIntake,
-              isAnswering: intakeState === 'answering',
-              hiringCompanyPrefilled,
-              boundary,
-            }}
-          />
+          <div className="workspace__brief">
+            <div className="workspace__inputs-line">
+              <span>
+                <strong>{intakeResult.role_understanding.posted_title || postedTitle.trim() || 'Untitled role'}</strong> · {boundary.hiring_company} ·{' '}
+                {formatBoundaryLocation(boundary)}
+              </span>
+              <button type="button" className="workspace__link" onClick={() => setStep('jd')}>
+                Edit description
+              </button>
+            </div>
+            <LivingBrief
+              result={intakeResult}
+              boundary={boundary}
+              brief={brief}
+              onChangeBrief={(_path, updater) => setBrief((current) => updater(current))}
+              onAnswer={handleAnswerIntake}
+              isAnswering={isAnswering}
+              onApplyBoundary={handleApplyBoundary}
+              onSearch={() => void handleSearch()}
+              isSearching={searchState === 'searching'}
+              searchErrors={searchErrors}
+            />
+          </div>
         ) : null}
 
         {step === 'review' ? (
           <CandidateReviewScreen
             brief={brief}
-            onChangeBrief={updateBriefField}
+            onChangeBrief={(_path, updater) => setBrief((current) => updater(current))}
             searchResponse={searchResponse}
             searchState={searchState}
-            onRunSearch={() => handleFindCandidates()}
+            onRunSearch={() => void handleSearch()}
             searchId={searchId}
             searchGeneration={searchGeneration}
+            boundary={intakeSessionId ? boundary : null}
+            onApplyBoundary={handleApplyBoundary}
+            boundaryLimitation={intakeResult?.decision.limitations?.[0] ?? null}
+            searchErrors={searchErrors}
           />
         ) : null}
 

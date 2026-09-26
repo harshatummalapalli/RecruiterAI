@@ -1,6 +1,5 @@
 import type { SearchIntent, SearchResponse } from '../types'
-import type { LocationDetail } from '../models/searchBrief'
-import type { IntakeStartResponse } from '../models/intake'
+import type { ConfirmationEdits, ConfirmationResponse, IntakeSessionResponse, IntakeStartResponse } from '../models/intake'
 import type { SearchBoundary } from '../models/searchBoundary'
 
 // Empty string means "same origin as the page" — used in production where
@@ -81,10 +80,10 @@ export const parseJobDescription = async (jdText: string) => {
   return response.json() as Promise<SearchIntent>
 }
 
+/** Starts a search from a CONFIRMED brief. The server builds the executable search from the confirmation it stored;
+ * the browser sends no intent, no location and no requirements of its own. */
 export const runCandidateSearch = async (
-  jdText: string,
-  intent: SearchIntent,
-  location?: LocationDetail,
+  confirmationId: string,
   options?: { searchId?: string; debug?: boolean },
 ) => {
   const response = await fetch(`${API_BASE_URL}/search`, {
@@ -92,19 +91,12 @@ export const runCandidateSearch = async (
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      // jd_text is kept only as a human-readable record for display/storage.
-      // `intent` is the recruiter-edited Search Brief and is authoritative —
-      // the backend uses it directly and does not re-parse jd_text through
-      // the LLM when it's present.
-      jd_text: jdText.trim() ? jdText : serializeIntentForSearch(intent),
-      intent,
+      // Required by the request schema; the server runs the confirmed brief and ignores this.
+      jd_text: '',
+      confirmation_id: confirmationId,
       provider: 'crustdata',
-      // Retrieval sizing (page_size/max_pages) is backend-owned (Phase 3,
-      // DISCOVERY_PAGE_SIZE/DISCOVERY_MAX_PAGES in backend/config.py) — the
-      // recruiter just requests a search; the frontend deliberately never
-      // sends these.
+      // Retrieval sizing is backend-owned; the recruiter just requests a search.
       autocomplete: true,
-      location,
       search_id: options?.searchId,
       debug: options?.debug ?? false,
     }),
@@ -117,15 +109,41 @@ export const runCandidateSearch = async (
   return response.json() as Promise<SearchResponse>
 }
 
-export const startIntake = async (rawInput: string, boundary?: SearchBoundary): Promise<IntakeStartResponse> => {
+/** A request the server refused for reasons the recruiter can act on (an incomplete boundary, a brief that still has
+ * open questions). `messages` are plain sentences, safe to show as they are. */
+export class IntakeRequestError extends Error {
+  messages: string[]
+
+  constructor(fallback: string, messages: string[] = []) {
+    super(messages[0] ?? fallback)
+    this.messages = messages.length ? messages : [fallback]
+  }
+}
+
+async function readRefusal(response: Response, fallback: string): Promise<IntakeRequestError> {
+  try {
+    const body = (await response.json()) as { detail?: unknown }
+    const detail = body.detail as { errors?: string[]; reasons?: string[] } | string | undefined
+    if (detail && typeof detail === 'object') {
+      const messages = detail.errors ?? detail.reasons ?? []
+      if (messages.length) return new IntakeRequestError(fallback, messages)
+    }
+    if (typeof detail === 'string' && detail) return new IntakeRequestError(fallback, [detail])
+  } catch {
+    // fall through to the generic message
+  }
+  return new IntakeRequestError(fallback)
+}
+
+export const startIntake = async (rawInput: string, boundary: SearchBoundary, postedTitle?: string): Promise<IntakeStartResponse> => {
   const response = await fetch(`${API_BASE_URL}/intake/start`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ raw_input: rawInput, boundary: boundary ?? null }),
+    body: JSON.stringify({ raw_input: rawInput, boundary, posted_title: postedTitle?.trim() ? postedTitle.trim() : null }),
   })
   if (!response.ok) {
-    throw new Error('Failed to understand this role')
+    throw await readRefusal(response, 'Failed to understand this role')
   }
   return response.json() as Promise<IntakeStartResponse>
 }
@@ -146,6 +164,43 @@ export const answerIntake = async (
     throw new Error('Failed to update the brief')
   }
   return response.json() as Promise<IntakeStartResponse>
+}
+
+/** Resume a brief after a reload. Read only; no model call. */
+export const loadIntakeSession = async (sessionId: string): Promise<IntakeSessionResponse | null> => {
+  const response = await fetch(`${API_BASE_URL}/intake/${encodeURIComponent(sessionId)}`, { credentials: 'include' })
+  if (response.status === 404) return null
+  if (!response.ok) throw new Error('Failed to reload the brief')
+  return response.json() as Promise<IntakeSessionResponse>
+}
+
+/** Editing the Search Boundary is deterministic: validated and re-applied on the server with no model call. */
+export const updateIntakeBoundary = async (sessionId: string, boundary: SearchBoundary): Promise<IntakeStartResponse> => {
+  const response = await fetch(`${API_BASE_URL}/intake/${encodeURIComponent(sessionId)}/boundary`, {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(boundary),
+  })
+  if (!response.ok) {
+    throw await readRefusal(response, 'The search boundary could not be updated.')
+  }
+  return response.json() as Promise<IntakeStartResponse>
+}
+
+/** The recruiter presses Search: the server checks the gate, builds the executable intent, applies the edits and
+ * stores an immutable snapshot. The returned id is the ONLY thing /search accepts. */
+export const createConfirmation = async (sessionId: string, edits: ConfirmationEdits): Promise<ConfirmationResponse> => {
+  const response = await fetch(`${API_BASE_URL}/intake/${encodeURIComponent(sessionId)}/confirmations`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ edits }),
+  })
+  if (!response.ok) {
+    throw await readRefusal(response, 'This brief is not ready to search.')
+  }
+  return response.json() as Promise<ConfirmationResponse>
 }
 
 export const confirmIntake = async (sessionId: string): Promise<SearchIntent> => {

@@ -16,6 +16,16 @@ def _login(client: TestClient) -> None:
     client.cookies.set(SESSION_COOKIE_NAME, create_session_cookie_value())
 
 
+NYC_BOUNDARY = {
+    "hiring_company": "Acme Corp",
+    "country": "United States",
+    "work_mode": "hybrid",
+    "state": "New York",
+    "city": "New York",
+    "radius_miles": 25,
+}
+
+
 class _QueuedFakeClient:
     """Same shape as FakeOpenAIClient but supports queuing more than one
     Task A/Task B pair, for tests that answer a question (triggering a
@@ -54,7 +64,7 @@ def test_intake_start_returns_zero_questions_for_clear_role(tmp_path: Path) -> N
     client = TestClient(app)
     _login(client)
 
-    response = client.post("/intake/start", json={"raw_input": "Senior Backend Engineer, 5+ years Python, NYC."})
+    response = client.post("/intake/start", json={"raw_input": "Senior Backend Engineer, 5+ years Python, NYC.", "boundary": NYC_BOUNDARY})
     assert response.status_code == 200
     body = response.json()
     assert body["result"]["status"] == "ready"
@@ -66,7 +76,7 @@ def test_intake_confirm_maps_to_search_intent_when_ready(tmp_path: Path) -> None
     client = TestClient(app)
     _login(client)
 
-    start = client.post("/intake/start", json={"raw_input": "Senior Backend Engineer."}).json()
+    start = client.post("/intake/start", json={"raw_input": "Senior Backend Engineer.", "boundary": NYC_BOUNDARY}).json()
     session_id = start["session_id"]
 
     confirm = client.post(f"/intake/{session_id}/confirm")
@@ -95,7 +105,7 @@ def test_intake_confirm_refuses_while_contradiction_unresolved(tmp_path: Path) -
 
     start = client.post(
         "/intake/start",
-        json={"raw_input": "Entry-level Product Manager role, but 10+ years of experience required."},
+        json={"raw_input": "Entry-level Product Manager role, but 10+ years of experience required.", "boundary": NYC_BOUNDARY},
     ).json()
     assert start["result"]["status"] == "needs_clarification"
     session_id = start["session_id"]
@@ -126,11 +136,13 @@ def test_intake_answer_resolves_the_pending_issue(tmp_path: Path) -> None:
     task_b_round2 = dict(CLEAR_ROLE_TASK_B)
     task_b_round2["issues"] = []
 
-    app = _app_with_intake(tmp_path, [(task_a_round1, task_b_round1), (task_a_round2, task_b_round2)])
+    # One small patch call, not a second Task A/B round: the role reading is pinned.
+    patch = {"reasoning": "The recruiter chose senior.", "changes": [{"op": "set_seniority", "value": "Senior"}], "new_issues": []}
+    app = _app_with_intake(tmp_path, [(task_a_round1, task_b_round1), (patch, {})])
     client = TestClient(app)
     _login(client)
 
-    start = client.post("/intake/start", json={"raw_input": "Frontend Engineer, React."}).json()
+    start = client.post("/intake/start", json={"raw_input": "Frontend Engineer, React.", "boundary": NYC_BOUNDARY}).json()
     session_id = start["session_id"]
     issue_id = start["result"]["decision"]["issues"][0]["id"]
     assert start["result"]["status"] == "needs_clarification"
@@ -146,7 +158,7 @@ def test_intake_answer_resolves_the_pending_issue(tmp_path: Path) -> None:
 def test_intake_requires_session(tmp_path: Path) -> None:
     app = _app_with_intake(tmp_path, [(CLEAR_ROLE_TASK_A, CLEAR_ROLE_TASK_B)])
     client = TestClient(app)
-    response = client.post("/intake/start", json={"raw_input": "Some role."})
+    response = client.post("/intake/start", json={"raw_input": "Some role.", "boundary": NYC_BOUNDARY})
     assert response.status_code == 401
 
 
@@ -199,7 +211,9 @@ def test_intake_start_with_boundary_suppresses_missing_location_ask(tmp_path: Pa
     # The backstop-detected "missing location" ask must not survive — the
     # recruiter already answered it on the intake form itself.
     assert body["result"]["status"] == "ready"
-    assert body["result"]["decision"]["issues"] == []
+    # The JD says hybrid and the recruiter selected onsite: a visible notice, never a question.
+    assert [i["decision"] for i in body["result"]["decision"]["issues"]] == ["tell"]
+    assert body["result"]["decision"]["issues"][0]["backstop_category"] == "work_mode_precedence"
 
 
 def test_intake_confirm_uses_boundary_location_and_radius_not_task_as_own_extraction(tmp_path: Path) -> None:
@@ -293,11 +307,10 @@ def test_intake_confirm_remote_anywhere_boundary(tmp_path: Path) -> None:
     assert intent["location"]["work_mode"] == "remote"
 
 
-def test_intake_start_without_boundary_is_backward_compatible(tmp_path: Path) -> None:
+def test_intake_start_without_a_boundary_is_rejected_by_the_server(tmp_path: Path) -> None:
     app = _app_with_intake(tmp_path, [(CLEAR_ROLE_TASK_A, CLEAR_ROLE_TASK_B)])
     client = TestClient(app)
     _login(client)
 
     response = client.post("/intake/start", json={"raw_input": "Senior Backend Engineer, 5+ years Python, NYC."})
-    assert response.status_code == 200
-    assert response.json()["result"]["status"] == "ready"
+    assert response.status_code == 422  # the boundary is required, and validated by the server, not the browser

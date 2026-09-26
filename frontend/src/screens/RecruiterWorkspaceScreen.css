@@ -1987,3 +1987,73 @@
   color: var(--color-faint);
   font-style: italic;
 }
+
+
+/* Release 4: title field, inputs summary line, and the posted title / candidate identity pair in the header */
+
+.workspace__title-field {
+  margin-bottom: 14px;
+}
+
+.workspace__optional {
+  margin-left: 6px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-muted);
+}
+
+.workspace__identity {
+  margin: 2px 0 0;
+  font-size: 15px;
+  color: var(--color-secondary-text);
+}
+
+.workspace__identity-label {
+  margin-right: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted);
+}
+
+.workspace__brief {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.workspace__inputs-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 10px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+  font-size: 13.5px;
+  color: var(--color-secondary-text);
+}
+
+.workspace__link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-accent);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.workspace__link:hover {
+  text-decoration: underline;
+}
+
+.discovery-edit-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}

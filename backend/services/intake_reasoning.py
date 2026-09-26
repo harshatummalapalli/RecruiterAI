@@ -1,12 +1,14 @@
+import dataclasses
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
 
 from openai import OpenAI
 
 from backend.config import get_openai_api_key
 from backend.errors import ConfigurationError, ParsingError
+from backend.services.requirement_provenance import attach_requirement_evidence
 from backend.models.intake import (
     CapabilityItem,
     ContradictionFinding,
@@ -39,20 +41,76 @@ PROMPTS_DIR = Path(__file__).resolve().parents[2] / "prompts"
 # recruiter must.
 # ---------------------------------------------------------------------------
 
-JUNIOR_TERMS = ["entry level", "entry-level", "junior", "graduate", "new grad"]
-SENIOR_TERMS = ["senior", "lead", "principal", "staff", "architect", "head"]
-REMOTE_TERMS = ["fully remote", "work from anywhere", "remote", "anywhere"]
-ONSITE_TERMS = ["on-site", "onsite", "office-based", "must work from office", "required in office"]
+# Each signal is a PATTERN about the candidate or the work arrangement, not a bare word. Bare words produced
+# demonstrated false positives that blocked a search until the recruiter "resolved" a contradiction that was not
+# there: "graduate degree", "lead generation", "you will lead a project", "remote debugging tools", and "occasional
+# on-site meetups" all tripped the previous word lists.
+_JUNIOR_PATTERNS = {
+    "entry-level": r"\bentry[- ]level\b",
+    "junior": r"\bjunior\b",
+    "new grad": r"\bnew[- ]grad(?:uate)?s?\b|\brecent graduates?\b",
+    "graduate role": r"\bgraduate\s+(?:software\s+)?(?:engineer|developer|analyst|role|program(?:me)?|position|scheme|hire|trainee)\b",
+}
+_SENIOR_PATTERNS = {
+    "senior": r"\bsenior\b(?!\s+(?:leadership|management|stakeholders?|executives?|leaders?|members?|citizens?|team|staff))",
+    "principal": r"\bprincipal\s+(?:software|engineer|developer|architect|scientist|consultant|data|ml|ai|product|designer|analyst|sre)\b",
+    "staff": r"\bstaff\s+(?:(?:software|backend|frontend|front-end|back-end|full[- ]stack|data|ml|platform|infrastructure|security)\s+)?(?:engineer|developer|scientist|architect)\b",
+    "lead": (
+        r"\b(?:tech(?:nical)?|team|engineering)\s+lead\b"
+        r"|\blead\s+(?:(?:software|backend|frontend|data|ml|platform)\s+)?(?:engineer|developer|architect|scientist|analyst)\b"
+    ),
+    "architect": r"\b(?:software|solutions?|data|cloud|enterprise|technical|security)\s+architect\b",
+    "head": r"\bhead\s+of\b",
+}
+
+# Work ARRANGEMENT wording. "remote debugging", "remote teams" and the like describe a technology or a team, not
+# where the candidate works, so bare "remote" is not a signal.
+_REMOTE_ARRANGEMENT_PATTERNS = {
+    "fully remote": r"\bfully[- ]remote\b",
+    "100% remote": r"\b100%\s*remote\b",
+    "work from anywhere": r"\bwork(?:ing)?\s+from\s+anywhere\b",
+    "remote role": r"\bremote[- ](?:role|position|job|work|opportunity)\b",
+    "work remotely": r"\bwork\s+remotely\b",
+    "open to candidates anywhere": r"\bopen\s+to\s+candidates\s+anywhere\b",
+}
+_ONSITE_PATTERNS = {
+    "onsite": r"\bon-?site\b",
+    "office-based": r"\boffice[- ]based\b",
+    "must work from office": r"\bmust\s+work\s+from\s+(?:the|our)\s+office\b",
+    "required in office": r"\brequired\s+in\s+(?:the\s+)?office\b",
+}
+# An on-site mention that is clearly occasional is not an on-site requirement.
+_SOFTENED_ONSITE_RE = re.compile(
+    r"\b(?:occasional(?:ly)?|quarterly|annual(?:ly)?|twice a year|once a year|off-?sites?|meet-?ups?|team events?|"
+    r"company events?|as needed|from time to time|optional|periodic(?:ally)?|now and then)\b",
+    re.IGNORECASE,
+)
+
+_EXPERIENCE_YEARS_RE = re.compile(r"\b(\d{1,2})\s*\+?\s*(?:years?|yrs?)\b", re.IGNORECASE)
+# Years only count as an experience requirement when the wording says so, and not when they describe the company.
+_YEARS_ABOUT_CANDIDATE_AFTER_RE = re.compile(
+    r"^\s*(?:of\s+)?(?:[\w/&+#.-]+\s+){0,3}?(?:experience|exp)\b|^\s*(?:of|in|as|with|working|building|developing|using|hands-on)\b|"
+    r"^\s*(?:required|minimum|min)\b",
+    re.IGNORECASE,
+)
+_YEARS_ABOUT_CANDIDATE_BEFORE_RE = re.compile(r"(?:minimum|min\.?|at least|requires?|required|requirement|experience)[^.]{0,20}$", re.IGNORECASE)
+_YEARS_ABOUT_COMPANY_BEFORE_RE = re.compile(
+    r"(?:in business|for over|founded|established|since|over the (?:past|last)|history|operating|been (?:around|in))[^.]{0,25}$", re.IGNORECASE
+)
+_YEARS_ABOUT_COMPANY_AFTER_RE = re.compile(r"^\s*(?:of\s+)?(?:history|in business|of operation|old)\b", re.IGNORECASE)
 
 # A junior/entry signal alongside a stated experience requirement at or above
 # this many years is treated as an obvious contradiction (e.g. "entry-level...
 # 10+ years"), even without an explicit senior-title word present.
 _SENIOR_EXPERIENCE_YEARS_THRESHOLD = 5
-_EXPERIENCE_YEARS_RE = re.compile(r"\b(\d{1,2})\s*\+?\s*years?\b", re.IGNORECASE)
 
 
 def _find_terms(text_lower: str, terms: List[str]) -> List[str]:
     return [term for term in terms if re.search(rf"\b{re.escape(term)}\b", text_lower)]
+
+
+def _matching_labels(text: str, patterns: Dict[str, str]) -> List[str]:
+    return [label for label, pattern in patterns.items() if re.search(pattern, text, re.IGNORECASE)]
 
 
 # "mentor junior engineers"/"manage junior developers" describes people the
@@ -67,12 +125,37 @@ _JUNIOR_ABOUT_OTHERS_RE = re.compile(
 )
 
 
-def _junior_terms_about_the_candidate(text_lower: str) -> List[str]:
-    """Same as _find_terms(text_lower, JUNIOR_TERMS), but with any "mentor/
-    manage junior engineers"-style mention (about a third party the candidate
-    supervises, not the candidate) removed first."""
-    sanitized = _JUNIOR_ABOUT_OTHERS_RE.sub(" ", text_lower)
-    return _find_terms(sanitized, JUNIOR_TERMS)
+def _junior_terms_about_the_candidate(text: str) -> List[str]:
+    """Junior/entry signals about the candidate, with any "mentor/manage
+    junior engineers"-style mention (a third party the candidate supervises)
+    removed first."""
+    return _matching_labels(_JUNIOR_ABOUT_OTHERS_RE.sub(" ", text), _JUNIOR_PATTERNS)
+
+
+def _candidate_experience_years(text: str) -> List[int]:
+    """Year counts that are plausibly the candidate's required experience. "We have been in business for 6 years" is
+    about the company and never counts."""
+    years: List[int] = []
+    for match in _EXPERIENCE_YEARS_RE.finditer(text):
+        before = text[max(0, match.start() - 45) : match.start()]
+        after = text[match.end() : match.end() + 45]
+        if _YEARS_ABOUT_COMPANY_BEFORE_RE.search(before) or _YEARS_ABOUT_COMPANY_AFTER_RE.search(after):
+            continue
+        if _YEARS_ABOUT_CANDIDATE_AFTER_RE.search(after) or _YEARS_ABOUT_CANDIDATE_BEFORE_RE.search(before):
+            years.append(int(match.group(1)))
+    return years
+
+
+def _hard_onsite_terms(text: str) -> List[str]:
+    """On-site requirements, ignoring mentions softened by "occasional", "meetups", "quarterly" and the like."""
+    found: List[str] = []
+    for label, pattern in _ONSITE_PATTERNS.items():
+        for match in re.finditer(pattern, text, re.IGNORECASE):
+            window = text[max(0, match.start() - 45) : match.end() + 45]
+            if not _SOFTENED_ONSITE_RE.search(window):
+                found.append(label)
+                break
+    return found
 
 
 def detect_intake_contradictions(raw_input: str) -> List[ContradictionFinding]:
@@ -81,13 +164,11 @@ def detect_intake_contradictions(raw_input: str) -> List[ContradictionFinding]:
     smoothed the contradiction away. Detects exactly two shapes: an
     experience/seniority contradiction, and a location/work-mode
     contradiction. Never rewrites or resolves either side."""
-    text_lower = raw_input.lower()
     findings: List[ContradictionFinding] = []
 
-    junior_hits = _junior_terms_about_the_candidate(text_lower)
-    senior_hits = _find_terms(text_lower, SENIOR_TERMS)
-    year_numbers = [int(match) for match in _EXPERIENCE_YEARS_RE.findall(raw_input)]
-    high_experience = [n for n in year_numbers if n >= _SENIOR_EXPERIENCE_YEARS_THRESHOLD]
+    junior_hits = _junior_terms_about_the_candidate(raw_input)
+    senior_hits = _matching_labels(raw_input, _SENIOR_PATTERNS)
+    high_experience = [n for n in _candidate_experience_years(raw_input) if n >= _SENIOR_EXPERIENCE_YEARS_THRESHOLD]
 
     if junior_hits and (senior_hits or high_experience):
         senior_side = sorted(set(senior_hits)) or [f"{max(high_experience)}+ years"]
@@ -104,8 +185,8 @@ def detect_intake_contradictions(raw_input: str) -> List[ContradictionFinding]:
             )
         )
 
-    remote_hits = _find_terms(text_lower, REMOTE_TERMS)
-    onsite_hits = _find_terms(text_lower, ONSITE_TERMS)
+    remote_hits = _matching_labels(raw_input, _REMOTE_ARRANGEMENT_PATTERNS)
+    onsite_hits = _hard_onsite_terms(raw_input)
     if remote_hits and onsite_hits:
         findings.append(
             ContradictionFinding(
@@ -275,12 +356,11 @@ def _merge_findings(
                 )
             )
 
-    updated = IntakeDecision(
+    updated = dataclasses.replace(
+        decision,
         issues=new_issues,
         recommended_ask_count=sum(1 for issue in new_issues if issue.decision == "ask"),
-        stop_reasoning=decision.stop_reasoning,
         warnings=new_warnings,
-        final_search_intent=decision.final_search_intent,
     )
     return updated, findings
 
@@ -332,12 +412,59 @@ def _location_conflicts_with_boundary(role_understanding: RoleUnderstanding, bou
     return None
 
 
-def apply_search_boundary(result: IntakeResult, boundary: SearchBoundary) -> IntakeResult:
+WORK_MODE_LIMITATION = "Work mode ({mode}) is recorded for context. The search cannot filter candidates by work mode."
+
+_MODE_WORDS = {
+    "remote": r"\bremote\b",
+    "hybrid": r"\bhybrid\b",
+    "onsite": r"\bon[- ]?site\b|\bin[- ]office\b|\boffice[- ]based\b",
+}
+
+
+def _jd_work_modes(text: Optional[str]) -> List[str]:
+    return [mode for mode, pattern in _MODE_WORDS.items() if text and re.search(pattern, text, re.IGNORECASE)]
+
+
+def _work_mode_precedence_notice(result: IntakeResult, boundary: SearchBoundary, found_contradiction: bool) -> Optional[IntakeIssue]:
+    """The recruiter has already chosen a work mode in the boundary, so the job description's own wording about it
+    is not a question. It becomes a visible notice that the boundary takes precedence."""
+    jd_modes = _jd_work_modes(result.role_understanding.explicit_constraints.work_mode)
+    differs = bool(jd_modes) and boundary.work_mode not in jd_modes
+    if not (found_contradiction or differs):
+        return None
+    if found_contradiction:
+        said = "both remote and onsite wording"
+    else:
+        said = " / ".join(jd_modes)
+    return IntakeIssue(
+        issue="Work mode: your selection takes precedence",
+        decision="tell",
+        reasoning="The recruiter's Search Boundary is authoritative for work mode.",
+        insight_text=f"The job description has {said}. The search follows the work mode you selected ({boundary.work_mode}).",
+        injected_by_backstop=True,
+        backstop_category="work_mode_precedence",
+    )
+
+
+def boundary_fingerprint(boundary: SearchBoundary) -> str:
+    """Identifies WHAT a boundary says about where, so a conflict the recruiter already resolved stays resolved for
+    that boundary and comes back if the boundary changes."""
+    return "|".join((part or "").strip().lower() for part in (boundary.country, boundary.state, boundary.city))
+
+
+def apply_search_boundary(result: IntakeResult, boundary: SearchBoundary, resolved_conflicts: Optional[Iterable[str]] = None) -> IntakeResult:
     """Applies the recruiter's explicit search boundary as an already-
     resolved fact: strips any "missing location" ask (the recruiter already
     answered it), and surfaces — never silently drops — a conflict if Task
-    A's own, boundary-blind JD reading points somewhere different. Mutates
-    and returns `result`; never touches the boundary itself."""
+    A's own, boundary-blind JD reading points somewhere different. Deterministic:
+    it makes no LLM call, so it can be re-applied whenever the boundary is edited.
+    Mutates and returns `result`; never touches the boundary itself."""
+    # Idempotent: drop what an earlier application of a boundary added, so re-applying never stacks.
+    result.decision.issues = [
+        issue for issue in result.decision.issues if issue.backstop_category not in ("location_boundary_conflict", "work_mode_precedence")
+    ]
+    result.decision.limitations = []
+
     _strip_issues_in_category(result.decision, "missing_location")
     # The recruiter's own selection IS the location, so the "no location was
     # stated" notice is now false. Stripping only the ask (above) left this
@@ -345,7 +472,21 @@ def apply_search_boundary(result: IntakeResult, boundary: SearchBoundary) -> Int
     result.decision.warnings = [w for w in result.decision.warnings if w != MISSING_LOCATION_WARNING]
     result.contradictions = [c for c in result.contradictions if getattr(c, "category", None) != "missing_location"]
 
+    # Work mode: the boundary wins. A remote/onsite contradiction inside the JD is no longer a question.
+    work_mode_findings = [c for c in result.contradictions if getattr(c, "category", None) == "location_work_mode"]
+    if work_mode_findings:
+        finding_warnings = {c.warning for c in work_mode_findings}
+        result.decision.warnings = [w for w in result.decision.warnings if w not in finding_warnings]
+        result.contradictions = [c for c in result.contradictions if getattr(c, "category", None) != "location_work_mode"]
+    _strip_issues_in_category(result.decision, "location_work_mode")
+    notice = _work_mode_precedence_notice(result, boundary, found_contradiction=bool(work_mode_findings))
+    if notice is not None:
+        result.decision.issues.append(notice)
+    result.decision.limitations = [WORK_MODE_LIMITATION.format(mode=boundary.work_mode)]
+
     conflict = _location_conflicts_with_boundary(result.role_understanding, boundary)
+    if conflict and boundary_fingerprint(boundary) in set(resolved_conflicts or ()):
+        conflict = None  # the recruiter already chose to keep this boundary
     if conflict:
         result.decision.issues.append(
             IntakeIssue(
@@ -474,6 +615,29 @@ def parse_intake_decision(data: Dict[str, Any]) -> IntakeDecision:
     )
 
 
+def _match_form(text: str) -> str:
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", (text or "").lower()).split())
+
+
+def apply_posted_title(understanding: RoleUnderstanding, raw_input: str, recruiter_title: Optional[str]) -> None:
+    """The posted title is what the recruiter or company called the role. It is never overwritten by the candidate
+    identity, and it is never invented:
+      * a title the recruiter typed is kept verbatim (whitespace trimmed only);
+      * otherwise a title read from the job description is kept only if it actually appears in the text.
+    Anything else leaves no posted title, rather than a guess presented as fact."""
+    if recruiter_title and recruiter_title.strip():
+        understanding.posted_title = recruiter_title.strip()
+        understanding.posted_title_source = "recruiter"
+        return
+    extracted = _match_form(understanding.posted_title or "")
+    if extracted and extracted in _match_form(raw_input):
+        understanding.posted_title = (understanding.posted_title or "").strip()
+        understanding.posted_title_source = "jd"
+    else:
+        understanding.posted_title = None
+        understanding.posted_title_source = None
+
+
 class IntakeReasoner:
     """Orchestrates the two-task intake reasoning pipeline (Task A: Role
     Understanding, Task B: Intake Decision) plus the deterministic
@@ -484,7 +648,7 @@ class IntakeReasoner:
     def __init__(self, client: Optional[OpenAI] = None) -> None:
         self._client = client
 
-    def run(self, raw_input: str) -> IntakeResult:
+    def run(self, raw_input: str, posted_title: Optional[str] = None) -> IntakeResult:
         api_key = get_openai_api_key()
         if not api_key:
             raise ConfigurationError("The language model configuration is unavailable.")
@@ -493,9 +657,10 @@ class IntakeReasoner:
         task_a_raw = self._call_json(
             client,
             self._load_prompt("intake_task_a_understanding.txt"),
-            f"Raw hiring input:\n{raw_input}\n\nReturn the JSON now.",
+            self._task_a_user_prompt(raw_input, posted_title),
         )
         role_understanding = parse_role_understanding(task_a_raw)
+        apply_posted_title(role_understanding, raw_input, posted_title)
 
         task_b_template = self._load_prompt("intake_task_b_decision.txt")
         task_b_prompt = task_b_template.replace(
@@ -507,6 +672,7 @@ class IntakeReasoner:
             task_b_prompt,
         )
         decision = parse_intake_decision(task_b_raw)
+        attach_requirement_evidence(decision, raw_input)
 
         decision, contradictions = apply_intake_backstops(
             raw_input, bool(role_understanding.explicit_constraints.locations), decision
@@ -520,6 +686,24 @@ class IntakeReasoner:
             contradictions=contradictions,
             status=status,
         )
+
+    def call_json(self, system_prompt: str, user_prompt: str) -> Dict[str, Any]:
+        """One model call returning JSON, using the same client resolution as run()."""
+        api_key = get_openai_api_key()
+        if not api_key and self._client is None:
+            raise ConfigurationError("The language model configuration is unavailable.")
+        client = self._client or OpenAI(api_key=api_key)
+        return self._call_json(client, system_prompt, user_prompt)
+
+    @staticmethod
+    def _task_a_user_prompt(raw_input: str, posted_title: Optional[str]) -> str:
+        title_line = ""
+        if posted_title and posted_title.strip():
+            title_line = (
+                f'\n\nThe recruiter states the posted title is exactly: "{posted_title.strip()}". '
+                "Use it verbatim as posted_title."
+            )
+        return f"Raw hiring input:\n{raw_input}{title_line}\n\nReturn the JSON now."
 
     def _load_prompt(self, filename: str) -> str:
         return (PROMPTS_DIR / filename).read_text(encoding="utf-8")

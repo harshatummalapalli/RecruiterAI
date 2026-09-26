@@ -10,7 +10,8 @@ export type RemoteScope = 'anywhere' | 'states' | 'cities'
 export type SearchBoundary = {
   hiring_company: string
   country: string
-  work_mode: WorkMode
+  // Empty until the recruiter chooses: there is no default, so "mandatory" cannot be satisfied by accident.
+  work_mode: WorkMode | ''
   state?: string | null
   city?: string | null
   radius_miles?: number | null
@@ -23,7 +24,7 @@ export function createEmptySearchBoundary(): SearchBoundary {
   return {
     hiring_company: '',
     country: '',
-    work_mode: 'onsite',
+    work_mode: '',
     state: '',
     city: '',
     radius_miles: null,

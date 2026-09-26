@@ -416,3 +416,125 @@ def test_existing_experience_seniority_contradiction_is_unaffected_by_a_boundary
     assert result.status == "needs_clarification"  # still blocked, but by the OTHER contradiction
     assert any(i.backstop_category == "experience_seniority" for i in result.decision.issues)
     assert not any(i.backstop_category == "location_boundary_conflict" for i in result.decision.issues)
+
+
+# ---------------------------------------------------------------------------
+# Release 4: the 12 contradiction probes. Two are real contradictions that must keep firing, one is the existing
+# mentee case, five were demonstrated false positives that used to block a search, and two are documented
+# non-detections (detecting them is out of scope: this backstop recognises exactly two shapes).
+# ---------------------------------------------------------------------------
+
+CONTRADICTION_PROBES = [
+    ("real: entry-level with 10+ years", "Entry-level Software Engineer. Requires 10+ years of experience.", ["experience_seniority"]),
+    ("real: fully remote and onsite required", "Fully remote role. Must work from office 3 days a week (onsite).", ["location_work_mode"]),
+    ("mentoring junior engineers is not the candidate's level", "Senior Backend Engineer. 8+ years. You will mentor junior engineers.", []),
+    ("graduate DEGREE is not a graduate-level role", "Senior Data Engineer, 7+ years. Graduate degree in CS preferred.", []),
+    ("'lead generation' is not a lead title", "Sales Engineer for our lead generation platform, 3 years experience. Junior-friendly team.", []),
+    ("remote-first with occasional on-site meetups", "Remote-first company; occasional on-site team meetups twice a year.", []),
+    ("'you will lead a project' is not a lead title", "New grad program. You will lead a small project in your second year.", []),
+    ("'remote debugging' is a technology, not a work mode", "Backend engineer building remote debugging tools. Onsite in Austin required.", []),
+    ("company age is not a candidate experience requirement", "Junior Analyst. We have been in business for 6 years.", []),
+    ("documented non-detection: staff title with 1-2 years", "Staff Engineer. 1-2 years experience.", []),
+    ("documented non-detection: technology-age tenure", "Senior DevOps, 10+ years of Kubernetes experience", []),
+    ("real: junior title but must be senior", "We need a Junior Software Engineer, but must be Senior level.", ["experience_seniority"]),
+]
+
+
+@pytest.mark.parametrize("name,text,expected", CONTRADICTION_PROBES, ids=[p[0] for p in CONTRADICTION_PROBES])
+def test_contradiction_probe(name: str, text: str, expected: List[str]) -> None:
+    assert [finding.category for finding in detect_intake_contradictions(text)] == expected
+
+
+def test_a_softened_onsite_mention_does_not_hide_a_real_requirement_elsewhere() -> None:
+    findings = detect_intake_contradictions(
+        "Fully remote role with occasional on-site meetups. Candidates must also work from the office on Fridays (onsite)."
+    )
+    assert [f.category for f in findings] == ["location_work_mode"]
+
+
+# ---------------------------------------------------------------------------
+# Release 4: the recruiter's work mode boundary wins.
+# ---------------------------------------------------------------------------
+
+
+def _result_with_work_mode_contradiction(jd_work_mode: str = "hybrid") -> IntakeResult:
+    result = _result_with_locations([], has_missing_location_ask=False)
+    result.role_understanding.explicit_constraints.work_mode = jd_work_mode
+    result.decision.warnings = ["This input states both a remote/anywhere work-mode signal and a specific onsite requirement (...)."]
+    result.decision.issues.append(
+        IntakeIssue(
+            issue="Contradiction: location work mode",
+            decision="ask",
+            question="Remote or onsite?",
+            injected_by_backstop=True,
+            backstop_category="location_work_mode",
+            id="backstop-location_work_mode",
+        )
+    )
+    from backend.models.intake import ContradictionFinding
+
+    result.contradictions = [ContradictionFinding(category="location_work_mode", warning=result.decision.warnings[0])]
+    result.status = "needs_clarification"
+    return result
+
+
+def test_a_jd_remote_onsite_contradiction_is_not_asked_once_the_boundary_has_a_work_mode() -> None:
+    result = _result_with_work_mode_contradiction()
+    apply_search_boundary(result, _boundary(work_mode="hybrid"))
+
+    assert result.status == "ready"
+    assert not [i for i in result.decision.issues if i.decision == "ask"]
+    assert not any("both a remote/anywhere" in w for w in result.decision.warnings)
+    notice = [i for i in result.decision.issues if i.backstop_category == "work_mode_precedence"]
+    assert len(notice) == 1 and notice[0].decision == "tell"
+    assert "hybrid" in notice[0].insight_text and "you selected" in notice[0].insight_text
+
+
+def test_a_jd_work_mode_that_differs_from_the_boundary_is_a_visible_notice_not_a_question() -> None:
+    result = _result_with_locations([], has_missing_location_ask=False)
+    result.role_understanding.explicit_constraints.work_mode = "remote"
+    apply_search_boundary(result, _boundary(work_mode="onsite"))
+
+    assert result.status == "ready"
+    notice = [i for i in result.decision.issues if i.backstop_category == "work_mode_precedence"]
+    assert len(notice) == 1 and "remote" in notice[0].insight_text and "onsite" in notice[0].insight_text
+
+
+def test_no_notice_when_the_jd_agrees_with_the_boundary_work_mode() -> None:
+    result = _result_with_locations([], has_missing_location_ask=False)
+    result.role_understanding.explicit_constraints.work_mode = "hybrid, 3 days a week"
+    apply_search_boundary(result, _boundary(work_mode="hybrid"))
+    assert not [i for i in result.decision.issues if i.backstop_category == "work_mode_precedence"]
+
+
+def test_work_mode_is_always_reported_as_a_system_limitation_not_a_warning() -> None:
+    result = _result_with_locations([], has_missing_location_ask=False)
+    apply_search_boundary(result, _boundary(work_mode="remote", remote_scope="anywhere"))
+    assert result.decision.limitations == ["Work mode (remote) is recorded for context. The search cannot filter candidates by work mode."]
+    assert result.decision.warnings == []
+
+
+def test_a_country_conflict_is_still_asked_even_with_a_work_mode_selected() -> None:
+    result = _result_with_locations([{"city": "Toronto", "country": "Canada"}], has_missing_location_ask=False)
+    apply_search_boundary(result, _boundary(country="India", work_mode="hybrid"))
+    assert result.status == "needs_clarification"
+    assert [i for i in result.decision.issues if i.backstop_category == "location_boundary_conflict"]
+
+
+def test_applying_a_boundary_twice_does_not_stack_notices_or_conflicts() -> None:
+    result = _result_with_locations([{"city": "Toronto", "country": "Canada"}], has_missing_location_ask=False)
+    result.role_understanding.explicit_constraints.work_mode = "remote"
+    apply_search_boundary(result, _boundary(country="India", work_mode="onsite"))
+    apply_search_boundary(result, _boundary(country="India", work_mode="onsite"))
+    assert len([i for i in result.decision.issues if i.backstop_category == "location_boundary_conflict"]) == 1
+    assert len([i for i in result.decision.issues if i.backstop_category == "work_mode_precedence"]) == 1
+    assert len(result.decision.limitations) == 1
+
+
+def test_editing_the_boundary_to_agree_clears_an_earlier_conflict() -> None:
+    result = _result_with_locations([{"city": "Toronto", "country": "Canada"}], has_missing_location_ask=False)
+    apply_search_boundary(result, _boundary(country="India"))
+    assert result.status == "needs_clarification"
+    apply_search_boundary(result, _boundary(country="Canada", state="Ontario", city="Toronto"))
+    assert result.status == "ready"
+    assert not [i for i in result.decision.issues if i.backstop_category == "location_boundary_conflict"]
