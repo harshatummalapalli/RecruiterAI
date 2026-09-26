@@ -241,6 +241,14 @@ class SearchResponse(BaseModel):
     status: str = "complete"
     candidate_states: Dict[str, str] = Field(default_factory=dict)
     progress: Dict[str, int] = Field(default_factory=dict)
+    # True once the recruiter has accepted the one-time grouping of this
+    # search's candidates by evidence. Presentation state only: it never
+    # touches evidence, ranking or admission.
+    workspace_arranged: bool = False
+
+
+class WorkspaceUpdateRequest(BaseModel):
+    arranged: bool
 
 
 class CandidateUpdateRequest(BaseModel):
@@ -494,7 +502,21 @@ def create_app(
         response_data = dict(record["response"])
         response_data["recruiter_decisions"] = record.get("recruiter_decisions", {})
         response_data["notes"] = record.get("notes", {})
+        response_data["workspace_arranged"] = bool(record.get("workspace_arranged", False))
         return SearchResponse(**response_data)
+
+    @app.patch("/search/{search_id}/workspace", dependencies=[Depends(require_session)])
+    def update_workspace(search_id: str, update: WorkspaceUpdateRequest) -> Dict[str, Any]:
+        # The recruiter's one-time "group by evidence" choice. Atomic with the
+        # running pipeline's own saves, like the candidate PATCH below.
+        def apply(record: Dict[str, Any]) -> None:
+            record["workspace_arranged"] = update.arranged
+
+        record = search_store.update(search_id, apply)
+        if record is None:
+            raise HTTPException(status_code=404, detail="Search not found.")
+        logger.info("[SEARCH] Workspace arranged flag persisted | search_id=%s arranged=%s", search_id, update.arranged)
+        return {"workspace_arranged": bool(record.get("workspace_arranged", False))}
 
     @app.patch("/search/{search_id}/candidate", dependencies=[Depends(require_session)])
     def update_candidate(search_id: str, update: CandidateUpdateRequest) -> Dict[str, Any]:

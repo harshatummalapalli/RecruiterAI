@@ -417,6 +417,45 @@ def test_rerunning_the_same_search_id_carries_forward_existing_decisions(tmp_pat
     assert rerun["recruiter_decisions"] == {candidate_id: "maybe"}
 
 
+def test_the_arranged_flag_persists_across_reload_and_resets_for_a_new_run(tmp_path) -> None:
+    # Release 3: the recruiter's one-time "group by evidence" choice must survive a refresh, and a fresh run of the
+    # same search must start ungrouped so the announcement happens again for the new results.
+    from backend.services.search_store import SearchStore
+
+    client = build_test_app(search_store=SearchStore(storage_dir=tmp_path))
+    _login(client)
+
+    client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock", "search_id": "fixed-id"})
+    first = _wait_for_search(client, "fixed-id")
+    assert first["workspace_arranged"] is False
+
+    patched = client.patch("/search/fixed-id/workspace", json={"arranged": True})
+    assert patched.status_code == 200 and patched.json() == {"workspace_arranged": True}
+    assert client.get("/search/fixed-id").json()["workspace_arranged"] is True
+
+    client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock", "search_id": "fixed-id"})
+    rerun = _wait_for_search(client, "fixed-id")
+    assert rerun["workspace_arranged"] is False
+
+    assert client.patch("/search/missing/workspace", json={"arranged": True}).status_code == 404
+
+
+def test_a_decision_can_be_cleared_and_stays_cleared_after_reload(tmp_path) -> None:
+    # Undo in the workspace sends an empty decision; it must persist so a refresh does not bring the decision back.
+    from backend.services.search_store import SearchStore
+
+    client = build_test_app(search_store=SearchStore(storage_dir=tmp_path))
+    _login(client)
+    client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock", "search_id": "fixed-id"})
+    created = _wait_for_search(client, "fixed-id")
+    candidate_id = created["candidates"][0]["candidate_id"]
+
+    client.patch("/search/fixed-id/candidate", json={"candidate_id": candidate_id, "decision": "shortlist"})
+    client.patch("/search/fixed-id/candidate", json={"candidate_id": candidate_id, "decision": ""})
+
+    assert client.get("/search/fixed-id").json()["recruiter_decisions"].get(candidate_id) in ("", None)
+
+
 def test_search_endpoint_returns_real_empty_state_when_provider_finds_no_candidates() -> None:
     class EmptyResultsProvider(BaseProvider):
         def search(self, plan):

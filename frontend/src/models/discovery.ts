@@ -51,6 +51,10 @@ export type LedgerRow = {
   sourceLabel: string | null
   /** True for the years requirement: computed from role dates, not quoted from the profile. */
   derived: boolean
+  /** Short verified phrase inside the quote (the judge's `term`), when it gave one. */
+  term: string | null
+  /** True when the proof is in described work (a role description or project), not just a listed skill or title. */
+  described: boolean
 }
 export type LedgerGroup = {
   tier: 'core' | 'supporting' | 'differentiator'
@@ -111,6 +115,8 @@ export type DiscoveryCandidate = {
   experienceLine: string | null
   levelLine: string | null
   levelFit: 'aligned' | 'above' | 'below' | 'unclear' | null
+  /** false only when role dates show fewer years than the brief asks; null when it cannot be checked. */
+  experienceFloor: boolean | null
 
   /** Internal sort key only — never rendered as a score/percentage. */
   sortScore: number
@@ -217,6 +223,9 @@ export function buildLedger(judgments: RequirementJudgmentRaw[] | null | undefin
         quote: judgment.verdict === 'not_evidenced' ? null : readString(judgment.quote),
         sourceLabel: judgment.verdict === 'not_evidenced' ? null : sourceLabel(judgment),
         derived: (judgment.source ?? '').toLowerCase() === 'career dates',
+        term: readString(judgment.term),
+        described:
+          judgment.verdict === 'met' && (judgment.source ?? '').toLowerCase() !== 'career dates' && judgment.strength === 'strong',
       }))
     if (rows.length) {
       groups.push({ tier, label: TIER_LABEL[tier], total: rows.length, evidenced: rows.filter((row) => row.verdict === 'met').length, rows })
@@ -339,36 +348,15 @@ export function buildDiscoveryCandidates(response: SearchResponse): DiscoveryCan
       experienceLine: readString(evidence.role_alignment?.experience_floor_basis),
       levelLine: readString(evidence.role_alignment?.level_basis),
       levelFit: evidence.role_alignment?.level_fit ?? explanation.level_fit ?? null,
+      experienceFloor:
+        typeof evidence.role_alignment?.experience_floor === 'boolean'
+          ? evidence.role_alignment.experience_floor
+          : typeof explanation.experience_floor === 'boolean'
+            ? explanation.experience_floor
+            : null,
 
       sortScore: typeof explanation.final_score === 'number' ? explanation.final_score : 0,
     }
   })
 }
 
-export type SortKey = 'relevance' | 'updated' | 'name'
-
-export function sortDiscoveryCandidates(candidates: DiscoveryCandidate[], sortKey: SortKey): DiscoveryCandidate[] {
-  const sorted = [...candidates]
-  switch (sortKey) {
-    case 'relevance':
-      // The backend already returns candidates in relevance order; sorting
-      // here re-applies the same score so re-sorting after a client-side
-      // filter stays consistent, without recomputing anything.
-      sorted.sort((a, b) => b.sortScore - a.sortScore)
-      break
-    case 'updated':
-      // Candidates with no updated_at (the common case today — see the
-      // report) sort to the end rather than being treated as "oldest."
-      sorted.sort((a, b) => {
-        if (a.updatedAt && b.updatedAt) return b.updatedAt.localeCompare(a.updatedAt)
-        if (a.updatedAt) return -1
-        if (b.updatedAt) return 1
-        return 0
-      })
-      break
-    case 'name':
-      sorted.sort((a, b) => a.name.localeCompare(b.name))
-      break
-  }
-  return sorted
-}

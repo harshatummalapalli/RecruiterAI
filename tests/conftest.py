@@ -12,6 +12,26 @@ def _auth_env_vars(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _isolated_default_stores(monkeypatch, tmp_path):
+    """Tests that build the app without their own SearchStore used to share the real output/searches directory.
+    POST /search starts a background pipeline thread that outlives a test that does not wait for it, so leftover
+    threads from earlier tests kept writing there, each holding a different lock. On Windows os.replace is refused
+    while another handle has the target open, which showed up as an occasional PermissionError in an unrelated test
+    (and wrote test searches into the developer's real search folder). Every test now gets private default
+    directories, and no pipeline thread is allowed to outlive its test."""
+    import threading
+
+    from backend.services import intake_session, search_store
+
+    monkeypatch.setattr(search_store, "DEFAULT_STORAGE_DIR", tmp_path / "default_searches")
+    monkeypatch.setattr(intake_session, "DEFAULT_INTAKE_STORAGE_DIR", tmp_path / "default_intake_sessions")
+    yield
+    for thread in threading.enumerate():
+        if thread.name.startswith("search-") and thread is not threading.current_thread():
+            thread.join(timeout=15)
+
+
+@pytest.fixture(autouse=True)
 def _no_real_requirement_judge(monkeypatch):
     """RequirementJudge reads OPENAI_API_KEY from the environment/.env; on a
     developer machine that key exists, so without this every app-level test

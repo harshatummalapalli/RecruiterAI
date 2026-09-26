@@ -1,19 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, Pencil, Upload, X } from 'lucide-react'
+import { Pencil, Upload } from 'lucide-react'
 import type { SearchBrief } from '../models/searchBrief'
 import type { SearchResponse } from '../types'
+import { buildDiscoveryCandidates, emailStatusLine, phoneStatusLine } from '../models/discovery'
 import {
-  buildDiscoveryCandidates,
-  emailStatusLine,
-  phoneStatusLine,
-  relevanceLabel,
-  sortDiscoveryCandidates,
-  type DiscoveryCandidate,
-  type RelevanceTier,
-  type SortKey,
-} from '../models/discovery'
+  buildWorkspaceCandidates,
+  funnelCopy,
+  normalizeDecision,
+  readFunnel,
+  stableOrder,
+  type Decision,
+} from '../models/workspace'
 import { CandidateRecord } from '../components/CandidateRecord'
-import { updateCandidateRecord } from '../services/recruiterWorkflow'
+import { CandidateWorkspace } from '../components/CandidateWorkspace'
+import { setWorkspaceArranged, updateCandidateRecord } from '../services/recruiterWorkflow'
 import { SearchBriefReview, summarizeCompanies, summarizeExperience, summarizeLocations, summarizeSkills } from './SearchBriefReview'
 
 type FieldChange = (path: string, updater: (current: SearchBrief) => SearchBrief) => void
@@ -35,40 +35,14 @@ type CandidateReviewScreenProps = {
 
 type Note = { id: string; text: string; createdAt: string }
 type Resume = { name: string; uploadedAt: string }
-type Decision = 'shortlist' | 'maybe' | 'reject'
-
-const SORT_OPTIONS: Array<{ value: SortKey; label: string }> = [
-  { value: 'relevance', label: 'Relevance' },
-  { value: 'updated', label: 'Profile Updated' },
-  { value: 'name', label: 'Name' },
-]
-
-const MAX_COMPARE = 3
-
-function pipelineLabel(decision: Decision | undefined): string {
-  if (decision === 'shortlist') return 'Shortlisted'
-  if (decision === 'maybe') return 'Maybe'
-  if (decision === 'reject') return 'Rejected'
-  return 'Not reviewed'
-}
-
-function tierClassName(tier: RelevanceTier): string {
-  if (tier === 'direct') return 'assessment-verdict--excellent'
-  if (tier === 'adjacent') return 'assessment-verdict--good'
-  if (tier === 'tangential') return 'assessment-verdict--partial'
-  return 'assessment-verdict--weak'
-}
 
 function SkeletonRows() {
   return (
     <div className="discovery-list" aria-hidden="true">
-      {Array.from({ length: 6 }).map((_, index) => (
+      {Array.from({ length: 4 }).map((_, index) => (
         <div key={index} className="candidate-row candidate-row--skeleton">
           <div className="discovery-skeleton discovery-skeleton--wide" />
           <div className="discovery-skeleton" />
-          <div className="discovery-skeleton" />
-          <div className="discovery-skeleton discovery-skeleton--narrow" />
-          <div className="discovery-skeleton discovery-skeleton--narrow" />
           <div className="discovery-skeleton discovery-skeleton--narrow" />
         </div>
       ))}
@@ -76,100 +50,43 @@ function SkeletonRows() {
   )
 }
 
-function ComparisonPanel({ candidates, onClose }: { candidates: DiscoveryCandidate[]; onClose: () => void }) {
-  return (
-    <div className="comparison-panel">
-      <div className="comparison-panel__head">
-        <h2>Comparing {candidates.length} candidates</h2>
-        <button type="button" className="discovery-profile__close" onClick={onClose} aria-label="Close comparison">
-          <X size={16} />
-        </button>
-      </div>
-
-      <div className={`comparison-grid comparison-grid--${candidates.length}`}>
-        {candidates.map((candidate) => (
-          <div key={candidate.id} className="comparison-column">
-            <div className="comparison-column__head">
-              <h3>{candidate.name}</h3>
-              <p>{candidate.title}</p>
-            </div>
-
-            <div className="comparison-row">
-              <span className="comparison-row__label">Relevance</span>
-              <span className={`candidate-badge candidate-badge--verdict ${tierClassName(candidate.relevanceTier)}`}>
-                {relevanceLabel(candidate.relevanceTier)}
-              </span>
-            </div>
-
-            <div className="comparison-row">
-              <span className="comparison-row__label">Companies</span>
-              <span>{candidate.company}</span>
-            </div>
-
-            <div className="comparison-row comparison-row--block">
-              <span className="comparison-row__label">Strong Evidence</span>
-              <div className="discovery-chip-group">
-                {candidate.strongEvidence.length ? (
-                  candidate.strongEvidence.slice(0, 3).map((item) => (
-                    <span key={item} className="discovery-chip discovery-chip--matched">
-                      {item}
-                    </span>
-                  ))
-                ) : (
-                  <span className="discovery-chip-group__empty">No specific evidence found</span>
-                )}
-              </div>
-            </div>
-
-            <div className="comparison-row comparison-row--block">
-              <span className="comparison-row__label">Why Surfaced</span>
-              <p className="comparison-summary">{candidate.whyThisCandidate || 'Not enough information to assess.'}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, searchState, onRunSearch, searchId, searchGeneration }: CandidateReviewScreenProps) {
-  const [sortKey, setSortKey] = useState<SortKey>('relevance')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isEditingBrief, setIsEditingBrief] = useState(false)
-  const [decisions, setDecisions] = useState<Record<string, Decision>>({})
+  const [decisions, setDecisions] = useState<Record<string, Decision | undefined>>({})
   const [resumes, setResumes] = useState<Record<string, Resume>>({})
   const [notes, setNotes] = useState<Record<string, Note[]>>({})
   const [noteDraft, setNoteDraft] = useState('')
-  const [compareIds, setCompareIds] = useState<string[]>([])
-  const [isComparing, setIsComparing] = useState(false)
+  const [arrangedLocally, setArrangedLocally] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
+  // Choices made here that the server has not confirmed yet. A poll that lands between a click and its save must not
+  // flip the card back, so these are laid over whatever the server returns until it agrees.
+  const pendingDecisions = useRef<Record<string, Decision | null>>({})
+  // The order candidates first arrived in, kept for the whole search. The server re-orders its own list once when the
+  // search finishes; the workspace does not follow that until the recruiter chooses to group.
+  const arrivalOrder = useRef<{ generation: number; ids: string[] }>({ generation: searchGeneration, ids: [] })
 
-  // Progressive Candidate Workspace: searchResponse now updates repeatedly
-  // (once per poll tick) while the SAME search is still running, not just
-  // once when a new search starts. Resetting the open profile/compare/edit
-  // UI state on every one of those updates would involuntarily close
-  // whatever the recruiter is looking at every 1.5s — so that reset is
-  // keyed to the search actually CHANGING (a new search_id), not to every
-  // response update.
+  // Progressive Candidate Workspace: searchResponse updates repeatedly (once per poll tick) while the SAME search is
+  // still running, so the open-record/edit-brief reset is keyed to a NEW search (searchGeneration), not to every update.
   useEffect(() => {
     setSelectedId(null)
     setIsEditingBrief(false)
-    setCompareIds([])
-    setIsComparing(false)
+    setArrangedLocally(false)
+    pendingDecisions.current = {}
   }, [searchGeneration])
 
   useEffect(() => {
-    // Hydrate from whatever the backend already has persisted for this
-    // search, rather than starting empty — this is the actual fix for
-    // decisions/notes disappearing on refresh. Root cause was that neither
-    // POST /search nor GET /search/{id} returned recruiter_decisions/notes
-    // at all, so there was nothing here to read; the backend was already
-    // saving them correctly (see services/search_store.py) the whole time.
-    // Re-hydrating on every poll tick is harmless — decisions/notes are
-    // keyed by the same stable candidate_id and this just re-applies
-    // whatever the backend currently has.
-    const decisionsRecord = searchResponse?.recruiter_decisions
-    setDecisions((decisionsRecord as Record<string, Decision>) ?? {})
+    // Hydrate from whatever the backend already has persisted for this search (decisions and notes are keyed by the
+    // stable candidate_id), then lay unconfirmed local choices on top. Re-applying on every poll tick is harmless.
+    const hydrated: Record<string, Decision | undefined> = {}
+    for (const [candidateId, value] of Object.entries(searchResponse?.recruiter_decisions ?? {})) {
+      hydrated[candidateId] = normalizeDecision(value)
+    }
+    for (const [candidateId, pending] of Object.entries(pendingDecisions.current)) {
+      if ((hydrated[candidateId] ?? null) === pending) delete pendingDecisions.current[candidateId]
+      else hydrated[candidateId] = pending ?? undefined
+    }
+    setDecisions(hydrated)
 
     const notesRecord = searchResponse?.notes ?? {}
     const hydratedNotes: Record<string, Note[]> = {}
@@ -184,28 +101,40 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
   }, [searchResponse])
 
   const candidates = useMemo(() => (searchResponse ? buildDiscoveryCandidates(searchResponse) : []), [searchResponse])
-  const sortedCandidates = useMemo(() => sortDiscoveryCandidates(candidates, sortKey), [candidates, sortKey])
+  const arrangedItems = useMemo(() => buildWorkspaceCandidates(candidates), [candidates])
+  const flatItems = useMemo(() => {
+    if (arrivalOrder.current.generation !== searchGeneration) {
+      arrivalOrder.current = { generation: searchGeneration, ids: [] }
+    }
+    arrivalOrder.current.ids = stableOrder(arrivalOrder.current.ids, arrangedItems.map((item) => item.candidate.id))
+    const byId = new Map(arrangedItems.map((item) => [item.candidate.id, item]))
+    return arrivalOrder.current.ids.map((id) => byId.get(id)).filter((item): item is (typeof arrangedItems)[number] => Boolean(item))
+  }, [arrangedItems, searchGeneration])
   const selectedCandidate = candidates.find((candidate) => candidate.id === selectedId) ?? null
-  const compareCandidates = compareIds.map((id) => candidates.find((candidate) => candidate.id === id)).filter((c): c is DiscoveryCandidate => Boolean(c))
 
-  const setDecision = (id: string, decision: Decision) => {
-    const next = decisions[id] === decision ? undefined : decision
-    setDecisions((current) => ({ ...current, [id]: next } as Record<string, Decision>))
-    if (searchId && next) {
-      updateCandidateRecord(searchId, id, { decision: next }).catch(() => {})
+  const arranged = Boolean(searchResponse?.workspace_arranged) || arrangedLocally
+  const allRead = arrangedItems.length > 0 && arrangedItems.every((item) => item.facts.section !== 'preparing')
+  const canArrange = searchState === 'done' && !arranged && allRead
+  const progress = searchResponse?.progress
+  const running = searchState === 'searching' && progress?.admitted ? { read: progress.review_ready ?? 0, total: progress.admitted } : null
+  const funnel = !running && candidates.length > 0 ? funnelCopy(readFunnel(searchResponse?.diagnostics), candidates.length) : null
+
+  const decide = (id: string, next: Decision | undefined) => {
+    pendingDecisions.current[id] = next ?? null
+    setDecisions((current) => ({ ...current, [id]: next }))
+    if (searchId) {
+      // An empty decision clears it on the server.
+      updateCandidateRecord(searchId, id, { decision: next ?? '' }).catch(() => {})
     }
   }
 
-  const toggleCompare = (id: string) => {
-    setCompareIds((current) => {
-      if (current.includes(id)) {
-        return current.filter((candidateId) => candidateId !== id)
-      }
-      if (current.length >= MAX_COMPARE) {
-        return current
-      }
-      return [...current, id]
-    })
+  const toggleDecision = (id: string, choice: Decision) => decide(id, decisions[id] === choice ? undefined : choice)
+
+  const arrange = () => {
+    setArrangedLocally(true)
+    if (searchId) {
+      setWorkspaceArranged(searchId, true).catch(() => {})
+    }
   }
 
   const uploadResume = (id: string, file: File) => {
@@ -226,10 +155,7 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
   }
 
   const hasSearchedOnce = searchResponse !== null
-  // Progressive Candidate Workspace: the skeleton is only for the brief
-  // window before the FIRST candidates are admitted — once any candidate
-  // has surfaced, show the real (still-filling-in) list instead of a fake
-  // loading state, even while the search is still "searching" overall.
+  // The skeleton is only for the brief window before the FIRST candidates are admitted.
   const showSkeleton = searchState === 'searching' && candidates.length === 0
   const showZeroResults = searchState === 'done' && hasSearchedOnce && candidates.length === 0
   const showError = searchState === 'error' && !showSkeleton && candidates.length === 0
@@ -239,35 +165,8 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
       <h2 className="discovery-heading">Candidate Review</h2>
 
       <div className="discovery-toolbar">
-        <div className="brief-segmented" role="group" aria-label="Sort candidates">
-          {SORT_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className={`brief-segmented__option${sortKey === option.value ? ' is-active' : ''}`}
-              onClick={() => setSortKey(option.value)}
-              disabled={candidates.length === 0}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-
         <div className="discovery-toolbar__actions">
-          {compareIds.length >= 2 ? (
-            <button type="button" className="discovery-edit-brief" onClick={() => setIsComparing(true)}>
-              Compare ({compareIds.length})
-            </button>
-          ) : null}
-
-          <button
-            type="button"
-            className="discovery-edit-brief"
-            onClick={() => {
-              setIsComparing(false)
-              setIsEditingBrief((current) => !current)
-            }}
-          >
+          <button type="button" className="discovery-edit-brief" onClick={() => setIsEditingBrief((current) => !current)}>
             <Pencil size={14} aria-hidden="true" />
             {isEditingBrief ? 'Close Search Brief' : 'Edit Brief'}
           </button>
@@ -338,8 +237,6 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
             </div>
           </div>
         </div>
-      ) : isComparing ? (
-        <ComparisonPanel candidates={compareCandidates} onClose={() => setIsComparing(false)} />
       ) : (
         <div className="discovery-layout">
           <div className="discovery-main">
@@ -366,108 +263,28 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
             ) : null}
 
             {!showSkeleton && candidates.length > 0 ? (
-              <div className="discovery-list">
-                <div className="candidate-row candidate-row--head" aria-hidden="true">
-                  <span></span>
-                  <span>Candidate</span>
-                  <span>Company</span>
-                  <span>Location</span>
-                  <span>Relevance</span>
-                  <span>Why Surfaced</span>
-                  <span>Resume</span>
-                  <span>Pipeline</span>
-                </div>
-
-                {sortedCandidates.map((candidate) => {
-                  const isReviewReady = candidate.lifecycleState === 'review_ready'
-                  if (!isReviewReady) {
-                    // SURFACED / BUILDING_CONTEXT — intentionally lightweight
-                    // and not interactive: no profile, no compare, no
-                    // shortlist/reject. RecruiterAI is still preparing this
-                    // candidate; nothing here should look clickable.
-                    return (
-                      <div key={candidate.id} className="candidate-row candidate-row--pending">
-                        <span aria-hidden="true" />
-                        <span className="candidate-row__identity">
-                          <span className="candidate-row__name">{candidate.name}</span>
-                          <span className="candidate-row__title">{candidate.title}</span>
-                        </span>
-                        <span>{candidate.company}</span>
-                        <span>{candidate.location}</span>
-                        <span className="candidate-row__lifecycle" style={{ gridColumn: 'span 4' }}>
-                          <span className={`candidate-badge candidate-badge--lifecycle-${candidate.lifecycleState}`}>
-                            {candidate.lifecycleState === 'building_context' ? (
-                              <>
-                                <span className="candidate-row__lifecycle-pulse" aria-hidden="true" />
-                                Building context…
-                              </>
-                            ) : (
-                              'Recently surfaced'
-                            )}
-                          </span>
-                        </span>
-                      </div>
-                    )
-                  }
-                  return (
-                  <div key={candidate.id} className={`candidate-row${selectedId === candidate.id ? ' is-selected' : ''}`}>
-                    <span className="candidate-row__compare">
-                      <input
-                        type="checkbox"
-                        checked={compareIds.includes(candidate.id)}
-                        onChange={() => toggleCompare(candidate.id)}
-                        disabled={!compareIds.includes(candidate.id) && compareIds.length >= MAX_COMPARE}
-                        aria-label={`Select ${candidate.name} for comparison`}
-                        onClick={(event) => event.stopPropagation()}
-                      />
-                    </span>
-                    <button type="button" className="candidate-row__open" onClick={() => setSelectedId(candidate.id)}>
-                      <span className="candidate-row__identity">
-                        <span className="candidate-row__name">{candidate.name}</span>
-                        <span className="candidate-row__title">{candidate.title}</span>
-                      </span>
-                    </button>
-                    <button type="button" className="candidate-row__open" onClick={() => setSelectedId(candidate.id)}>
-                      {candidate.company}
-                    </button>
-                    <button type="button" className="candidate-row__open" onClick={() => setSelectedId(candidate.id)}>
-                      {candidate.location}
-                    </button>
-                    <button type="button" className="candidate-row__open" onClick={() => setSelectedId(candidate.id)}>
-                      <span className={`candidate-badge candidate-badge--verdict ${tierClassName(candidate.relevanceTier)}`}>
-                        {relevanceLabel(candidate.relevanceTier)}
-                      </span>
-                      {candidate.potentialConcerns.length ? (
-                        <AlertTriangle size={13} className="candidate-row__concern-flag" aria-label="Potential concern — see profile" />
-                      ) : null}
-                    </button>
-                    <button type="button" className="candidate-row__open candidate-row__why" onClick={() => setSelectedId(candidate.id)}>
-                      {candidate.strongEvidence[0] || candidate.whyThisCandidate || 'No specific evidence found in the available profile data'}
-                    </button>
-                    <button type="button" className="candidate-row__open" onClick={() => setSelectedId(candidate.id)}>
-                      <span className={`candidate-badge${resumes[candidate.id] ? ' candidate-badge--positive' : ''}`}>
-                        {resumes[candidate.id] ? 'Uploaded' : 'Missing'}
-                      </span>
-                    </button>
-                    <button type="button" className="candidate-row__open" onClick={() => setSelectedId(candidate.id)}>
-                      <span className={`candidate-badge${decisions[candidate.id] === 'shortlist' ? ' candidate-badge--positive' : ''}${decisions[candidate.id] === 'reject' ? ' candidate-badge--negative' : ''}`}>
-                        {pipelineLabel(decisions[candidate.id])}
-                      </span>
-                    </button>
-                  </div>
-                  )
-                })}
-              </div>
+              <CandidateWorkspace
+                flatItems={flatItems}
+                arrangedItems={arrangedItems}
+                decisions={decisions}
+                selectedId={selectedId}
+                onOpen={setSelectedId}
+                onDecide={decide}
+                arranged={arranged}
+                canArrange={canArrange}
+                onArrange={arrange}
+                running={running}
+                funnel={funnel}
+                warnings={searchResponse?.warnings ?? []}
+              />
             ) : null}
           </div>
 
           {selectedCandidate ? (
             <CandidateRecord
               candidate={selectedCandidate}
-              position={sortKey === 'relevance' ? sortedCandidates.findIndex((candidate) => candidate.id === selectedCandidate.id) + 1 : undefined}
-              total={sortKey === 'relevance' ? sortedCandidates.length : undefined}
               decision={decisions[selectedCandidate.id]}
-              onDecision={(decision) => setDecision(selectedCandidate.id, decision)}
+              onDecision={(decision) => toggleDecision(selectedCandidate.id, decision)}
               onClose={() => setSelectedId(null)}
             >
             <div className="brief-section">

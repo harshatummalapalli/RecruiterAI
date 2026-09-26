@@ -1,0 +1,590 @@
+/* Candidate workspace (Release 3): funnel header, decision filter, grouped candidate cards.
+   Two accents only: filled evidence dots (teal) and amber concern chips. Everything else is neutral. */
+
+.ws {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Funnel header */
+
+.ws-funnel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+
+.ws-funnel__headline {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--color-primary-text);
+}
+
+.ws-funnel__scope,
+.ws-funnel__counts {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--color-secondary-text);
+}
+
+.ws-funnel__counts strong {
+  color: var(--color-primary-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.ws-funnel__how {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.ws-funnel__how summary {
+  cursor: pointer;
+  color: var(--color-accent);
+  width: max-content;
+}
+
+.ws-funnel__how ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  line-height: 1.5;
+}
+
+/* One-time grouping banner */
+
+.ws-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border: 1px solid var(--color-focus-ring);
+  border-radius: 12px;
+  background: var(--color-preview-bg);
+}
+
+.ws-banner p {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-primary-text);
+}
+
+.ws-banner__button {
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--color-accent);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ws-banner__button:hover {
+  background: var(--color-accent-hover);
+}
+
+/* Decision filter */
+
+.ws-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ws-filter__option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-secondary-text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.ws-filter__option:hover {
+  border-color: var(--color-accent);
+}
+
+.ws-filter__option.is-active {
+  background: var(--color-primary-text);
+  border-color: var(--color-primary-text);
+  color: #ffffff;
+}
+
+.ws-filter__count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+/* List and sections */
+
+.ws-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ws-note,
+.ws-empty {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--color-muted);
+}
+
+.ws-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: ws-arrive 0.28s ease-out;
+}
+
+@keyframes ws-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ws-section {
+    animation: none;
+  }
+}
+
+.ws-section__head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 2px 6px;
+  background: var(--color-bg);
+}
+
+.ws-section__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--color-primary-text);
+}
+
+.ws-section__title {
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.ws-section__count {
+  font-size: 12.5px;
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.ws-section__basis {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--color-muted);
+}
+
+.ws-section__items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Candidate card */
+
+.ws-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  cursor: default;
+}
+
+.ws-card:hover {
+  border-color: #d6d3d1;
+}
+
+.ws-card:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.ws-card.is-selected {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
+}
+
+.ws-card.is-reject {
+  opacity: 0.72;
+}
+
+.ws-card__who {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.ws-avatar {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--color-preview-bg);
+  border: 1px solid var(--color-border);
+}
+
+.ws-avatar--initials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-secondary-text);
+}
+
+.ws-card__identity {
+  min-width: 0;
+  flex: 1;
+}
+
+.ws-card__nameline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ws-card__name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--color-primary-text);
+}
+
+.ws-card__role {
+  margin: 1px 0 0;
+  font-size: 13px;
+  color: var(--color-secondary-text);
+  overflow-wrap: anywhere;
+}
+
+.ws-card__headline {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ws-card__why {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--color-primary-text);
+}
+
+/* Evidence dots: one per core requirement other than total years. Filled = shown with a quote, ring = not shown. */
+
+.ws-dots {
+  display: inline-flex;
+  gap: 4px;
+  flex: none;
+}
+
+.ws-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-faint);
+  background: transparent;
+}
+
+.ws-dot.is-shown {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+}
+
+/* Roles with many core requirements: smaller dots and a tighter gap, wrapping rather than dropping any. */
+.ws-dots.is-dense {
+  flex-wrap: wrap;
+  gap: 3px;
+  max-width: 190px;
+}
+
+.ws-dots.is-dense .ws-dot {
+  width: 7px;
+  height: 7px;
+  border-width: 1px;
+}
+
+.ws-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ws-chip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-preview-bg);
+  color: var(--color-secondary-text);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ws-chip--proof {
+  background: var(--color-surface);
+}
+
+.ws-chip--neutral {
+  font-size: 11.5px;
+  color: var(--color-muted);
+}
+
+.ws-chip--watch {
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning-border);
+  color: var(--color-warning);
+}
+
+.ws-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.ws-decisions {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.ws-decision {
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: var(--color-secondary-text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.ws-decision:hover {
+  border-color: var(--color-accent);
+  color: var(--color-primary-text);
+}
+
+.ws-decision.is-active {
+  background: var(--color-primary-text);
+  border-color: var(--color-primary-text);
+  color: #ffffff;
+}
+
+.ws-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-accent);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.ws-link:hover {
+  text-decoration: underline;
+}
+
+.ws-link--quiet {
+  color: var(--color-muted);
+}
+
+/* Expanded proof */
+
+.ws-card__proof {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-border);
+}
+
+.ws-quotes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ws-quotes p {
+  margin: 0;
+}
+
+.ws-quotes__req {
+  font-size: 12.5px;
+  color: var(--color-muted);
+}
+
+.ws-quotes__quote {
+  margin-top: 1px !important;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--color-primary-text);
+  overflow-wrap: anywhere;
+}
+
+.ws-quotes__source {
+  margin-top: 1px !important;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.ws-notproven {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+.ws-notproven strong {
+  font-weight: 600;
+  color: var(--color-secondary-text);
+}
+
+.ws-concerns {
+  margin: 0;
+  padding: 8px 10px 8px 26px;
+  border-radius: 8px;
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
+  color: var(--color-warning);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Slim rows: a decided card that left the filter, a rejected card, and profiles still being read */
+
+.ws-slim,
+.ws-pending {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 8px 14px;
+  border: 1px dashed var(--color-border);
+  border-radius: 10px;
+  background: var(--color-preview-bg);
+  font-size: 13px;
+  color: var(--color-secondary-text);
+}
+
+.ws-slim:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.ws-slim__who {
+  display: flex;
+  gap: 8px;
+  flex: 1 1 200px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.ws-slim__who strong {
+  color: var(--color-primary-text);
+  font-weight: 600;
+}
+
+.ws-slim__who span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-muted);
+}
+
+.ws-slim__status {
+  font-weight: 600;
+  color: var(--color-secondary-text);
+}
+
+.ws-pending {
+  border-style: solid;
+}
+
+.ws-pending__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-muted);
+}
+
+.ws-pending__pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-faint);
+  animation: ws-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes ws-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ws-pending__pulse {
+    animation: none;
+  }
+}

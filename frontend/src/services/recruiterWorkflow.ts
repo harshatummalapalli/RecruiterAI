@@ -170,6 +170,18 @@ export const loadPersistedSearch = async (searchId: string): Promise<SearchRespo
   return response.json() as Promise<SearchResponse>
 }
 
+export const setWorkspaceArranged = async (searchId: string, arranged: boolean): Promise<void> => {
+  const response = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(searchId)}/workspace`, {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ arranged }),
+  })
+  if (!response.ok) {
+    throw new Error('Failed to save workspace state')
+  }
+}
+
 export const updateCandidateRecord = async (
   searchId: string,
   candidateId: string,

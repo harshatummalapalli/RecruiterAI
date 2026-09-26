@@ -225,11 +225,12 @@ def run_search_pipeline(
             latest = search_store.load(search_id) or {}
             live_decisions = latest.get("recruiter_decisions", recruiter_decisions)
             live_notes = latest.get("notes", notes)
+            live_arranged = bool(latest.get("workspace_arranged", False))
             _persist_locked(
                 status=status, candidates=candidates, explanations=explanations, evidence=evidence,
                 candidate_states=candidate_states, diagnostics=diagnostics, debug_payload=debug_payload,
                 internal_diagnostics=internal_diagnostics, error_message=error_message,
-                live_decisions=live_decisions, live_notes=live_notes,
+                live_decisions=live_decisions, live_notes=live_notes, live_arranged=live_arranged,
             )
 
     def _persist_locked(
@@ -245,6 +246,7 @@ def run_search_pipeline(
         error_message: Optional[str],
         live_decisions: Dict[str, Any],
         live_notes: Dict[str, Any],
+        live_arranged: bool,
     ) -> None:
         progress = {"admitted": len(candidates), "surfaced": 0, "building_context": 0, "review_ready": 0}
         for state in candidate_states.values():
@@ -278,6 +280,7 @@ def run_search_pipeline(
             "recruiter_decisions": live_decisions,
             "notes": live_notes,
             "candidate_states": dict(candidate_states),
+            "workspace_arranged": live_arranged,
             "harvest_evidence": {
                 **existing_harvest_raw,
                 **{candidate_id: dataclasses.asdict(ev) for candidate_id, ev in harvest_by_id.items()},

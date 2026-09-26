@@ -238,4 +238,6 @@ export interface SearchResponse {
   status?: 'running' | 'complete' | 'interrupted' | 'error'
   candidate_states?: Record<string, 'surfaced' | 'building_context' | 'review_ready'>
   progress?: { admitted?: number; surfaced?: number; building_context?: number; review_ready?: number }
+  // True once the recruiter accepted the one-time grouping of this search's candidates.
+  workspace_arranged?: boolean
 }

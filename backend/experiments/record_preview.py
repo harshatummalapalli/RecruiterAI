@@ -46,6 +46,8 @@ def build_response(record: Dict[str, Any], intent: SearchIntent | None) -> Dict[
     intent = intent or intent_from_judgments(candidates)
     harvest = {cid: HarvestEvidence(**payload) for cid, payload in (record.get("harvest_evidence") or {}).items()}
     explainer = MatchExplainer()
+    stored_response = record.get("response") or {}
+    funnel = (stored_response.get("diagnostics") or {}).get("funnel")
     response = {
         "provider": "platform",
         "search_id": record.get("search_id", "preview"),
@@ -53,7 +55,8 @@ def build_response(record: Dict[str, Any], intent: SearchIntent | None) -> Dict[
         "candidates": [c.model_dump() for c in candidates],
         "explanations": [explainer.explain(c, intent, harvest_evidence=harvest.get(c.candidate_id)).model_dump() for c in candidates],
         "evidence": [dataclasses.asdict(build_candidate_evidence(c, intent, harvest_evidence=harvest.get(c.candidate_id))) for c in candidates],
-        "diagnostics": {},
+        "diagnostics": {"funnel": funnel} if funnel else {},
+        "warnings": stored_response.get("warnings") or [],
         "status": "complete",
         "candidate_states": {c.candidate_id: "review_ready" for c in candidates},
     }

@@ -18,9 +18,6 @@ const EDUCATION_SHOWN = 2
 
 type CandidateRecordProps = {
   candidate: DiscoveryCandidate
-  /** 1-based place in the list as currently ordered, and the list size. Omitted when the list is not in the default order. */
-  position?: number
-  total?: number
   decision?: RecordDecision
   onDecision: (decision: RecordDecision) => void
   onClose: () => void
@@ -102,7 +99,7 @@ function LedgerSection({ group }: { group: LedgerGroup }) {
   )
 }
 
-export function CandidateRecord({ candidate, position, total, decision, onDecision, onClose, children }: CandidateRecordProps) {
+export function CandidateRecord({ candidate, decision, onDecision, onClose, children }: CandidateRecordProps) {
   const [showAllCareer, setShowAllCareer] = useState(false)
   const [showAllSkills, setShowAllSkills] = useState(false)
   const [showAllCerts, setShowAllCerts] = useState(false)
@@ -113,10 +110,6 @@ export function CandidateRecord({ candidate, position, total, decision, onDecisi
   const educationHead = candidate.education.slice(0, EDUCATION_SHOWN)
   const educationRest = candidate.education.slice(EDUCATION_SHOWN)
   const hasLedger = candidate.ledger.length > 0
-  // The provider sometimes returns an epoch placeholder (1970) for "unknown"; a date that old is not shown.
-  const parsedUpdated = candidate.updatedAt ? new Date(candidate.updatedAt) : null
-  const updated = parsedUpdated && !Number.isNaN(parsedUpdated.getTime()) && parsedUpdated.getFullYear() >= 2000 ? parsedUpdated : null
-
   const educationLine = (entry: DiscoveryCandidate['education'][number]) =>
     [[entry.degree, entry.fieldOfStudy].filter(Boolean).join(', ') || 'Degree not specified', entry.institution, entry.years].filter(Boolean).join(' · ')
 
@@ -131,9 +124,6 @@ export function CandidateRecord({ candidate, position, total, decision, onDecisi
             {[candidate.company !== 'Not specified' ? candidate.company : null, candidate.location !== 'Not specified' ? candidate.location : null]
               .filter(Boolean)
               .join(' · ')}
-            {updated
-              ? ` · updated ${updated.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`
-              : ''}
           </p>
           <div className="record-head__chips">
             {candidate.profileUrl ? (
@@ -182,10 +172,7 @@ export function CandidateRecord({ candidate, position, total, decision, onDecisi
         ) : (
           <p className="record-muted">{candidate.whyThisCandidate || 'Not enough information was returned to assess this candidate.'}</p>
         )}
-        <p className="record-position">
-          {relevanceLabel(candidate.relevanceTier)}
-          {position && total ? ` · listed ${position} of ${total} in this search` : ''}
-        </p>
+        <p className="record-position">{relevanceLabel(candidate.relevanceTier)}</p>
       </section>
 
       <section className="record-section" aria-labelledby="record-ledger">
