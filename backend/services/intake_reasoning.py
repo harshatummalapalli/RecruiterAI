@@ -8,7 +8,7 @@ from openai import OpenAI
 
 from backend.config import get_openai_api_key
 from backend.errors import ConfigurationError, ParsingError
-from backend.services.requirement_provenance import attach_requirement_evidence
+from backend.services.requirement_provenance import apply_field_provenance, attach_requirement_evidence
 from backend.models.intake import (
     CapabilityItem,
     ContradictionFinding,
@@ -661,6 +661,7 @@ class IntakeReasoner:
         )
         role_understanding = parse_role_understanding(task_a_raw)
         apply_posted_title(role_understanding, raw_input, posted_title)
+        apply_field_provenance(role_understanding, raw_input)
 
         task_b_template = self._load_prompt("intake_task_b_decision.txt")
         task_b_prompt = task_b_template.replace(

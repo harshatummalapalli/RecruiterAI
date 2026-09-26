@@ -57,6 +57,8 @@ describe('fields and their provenance', () => {
     expect(fieldProvenance({ value: 'Senior', evidence: null, source: 'inferred' })).toBe('inferred')
     expect(fieldProvenance({ value: 'Senior', evidence: null, source: 'recruiter' })).toBe('confirmed')
     expect(fieldProvenance({ value: null, evidence: null, source: 'explicit' })).toBeNull()
+    // seniority is separate from experience and is never presented as stated without a recognised source
+    expect(fieldProvenance({ value: 'mid-level', evidence: null, source: null })).toBe('inferred')
   })
 
   it('shows experience as stated until the recruiter answers a question about it', () => {

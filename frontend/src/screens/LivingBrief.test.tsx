@@ -230,3 +230,17 @@ describe('the boundary', () => {
     expect($('#boundary-hiring-company')).toBeTruthy()
   })
 })
+
+describe('seniority stays separate from experience', () => {
+  it('shows an inferred mid-level next to confirmed 8–10 years, each with its own tag', async () => {
+    const result = makeIntakeResult({ issues: [] })
+    result.role_understanding.seniority_scope = { value: 'mid-level', evidence: null, source: 'inferred' }
+    result.role_understanding.explicit_constraints.experience_minimum_years = 8
+    result.role_understanding.explicit_constraints.experience_maximum_years = 10
+    result.confirmed = [{ field: 'experience', description: 'Experience: 8-10 years', item: null, issue: 'x', answer: 'y' }]
+    await render(result)
+    const level = $('#lb-level')!.parentElement!.textContent ?? ''
+    expect(level).toMatch(/mid-level\s*Inferred/)
+    expect(level).toMatch(/8–10 years\s*Confirmed by you/)
+  })
+})

@@ -24,3 +24,7 @@ data). Experiment code lives under `backend/experiments/` and must never change 
 | Multi-query convergence: does a candidate found by two queries carry more evidence? | The current 0.5 convergence bonus is untested. | EXP-001 |
 | Harvest value: how much does the full profile change the verdict vs CrustData-only evidence? | Harvest is the largest per-search cost. | - |
 | Requirement stability: same JD, repeated intake. | Measured once in Release 1.1 (core 4-6 items before temperature 0). | Release 1.1 |
+
+## Release notes that touch evidence
+
+- Release 4 hardening (provenance, seniority, the 24 of 25 profile read diagnosed as a Harvest 404, cleanup): `release4-hardening.md`. No retrieval or retry change.

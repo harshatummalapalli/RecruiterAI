@@ -11,7 +11,7 @@ Deterministic, no model call, no role-specific rules.
 import re
 from typing import Dict, Iterable, List, Optional
 
-from backend.models.intake import IntakeDecision
+from backend.models.intake import IntakeDecision, RoleUnderstanding
 
 STATED_SHARE = 0.75  # share of a requirement's meaningful words that must appear in a single sentence
 MAX_EVIDENCE_CHARS = 220
@@ -62,7 +62,7 @@ def _present(word: str, sentence_tokens: Iterable[str]) -> bool:
     return any(token == stem or (len(stem) >= 4 and token.startswith(stem)) for token in tokens)
 
 
-def stated_evidence(requirement: str, sentences: List[str]) -> Optional[str]:
+def stated_evidence(requirement: str, sentences: List[str], min_share: float = STATED_SHARE) -> Optional[str]:
     """The sentence of the input that states this requirement, or None if it is inferred."""
     words = _meaningful(requirement)
     if not words:
@@ -74,9 +74,33 @@ def stated_evidence(requirement: str, sentences: List[str]) -> Optional[str]:
         share = sum(1 for word in words if _present(word, tokens)) / len(words)
         if share > best_share:
             best, best_share = sentence, share
-    if best is not None and best_share >= STATED_SHARE:
+    if best is not None and best_share >= min_share:
         return best if len(best) <= MAX_EVIDENCE_CHARS else best[: MAX_EVIDENCE_CHARS - 1].rstrip() + "…"
     return None
+
+
+def apply_field_provenance(understanding: RoleUnderstanding, raw_input: str) -> None:
+    """Code decides the provenance of the reading fields; the model's own `source` flag is never trusted.
+
+    A field is "explicit" (Stated in JD) only when its value is found in one sentence of the input by the same check
+    used for requirements, but every meaningful word must be present (a label is short, so a partial match is a
+    paraphrase). Everything else is "inferred". A value the recruiter set by answering a question keeps
+    source "recruiter" (Confirmed by you). The evidence quote is replaced by the real sentence when stated."""
+    sentences = _sentences(raw_input)
+    for field_value in (
+        understanding.primary_candidate_identity,
+        understanding.role_interpretation,
+        understanding.seniority_scope,
+        understanding.candidate_archetype,
+    ):
+        if not field_value.value or field_value.source == "recruiter":
+            continue
+        sentence = stated_evidence(field_value.value, sentences, min_share=1.0)
+        if sentence:
+            field_value.source = "explicit"
+            field_value.evidence = sentence
+        else:
+            field_value.source = "inferred"
 
 
 def attach_requirement_evidence(decision: IntakeDecision, raw_input: str) -> None:

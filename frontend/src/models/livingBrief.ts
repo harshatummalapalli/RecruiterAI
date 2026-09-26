@@ -65,8 +65,8 @@ export function fieldProvenance(value: FieldValue | null | undefined): 'stated' 
   if (!value || !value.value) return null
   if (value.source === 'recruiter') return 'confirmed'
   if (value.source === 'explicit') return 'stated'
-  if (value.source === 'inferred') return 'inferred'
-  return null
+  // The server decides provenance. A value with no recognised source is never presented as stated.
+  return 'inferred'
 }
 
 export function experienceView(result: IntakeResult): { text: string; provenance: 'stated' | 'confirmed' } | null {
