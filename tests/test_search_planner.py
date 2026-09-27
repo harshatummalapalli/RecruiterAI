@@ -122,3 +122,53 @@ def test_build_omits_title_expansion_query_when_no_titles_available():
 
     assert len(plan.searches) == 1
     assert plan.searches[0].query_name == "natural_language"
+
+
+def test_confirmed_core_supporting_differentiator_signals_survive_the_fallback_when_no_sentence_is_given():
+    # The real shape of the Senior AI Software Engineer (.NET + AI) confirmation this bugfix was diagnosed from:
+    # candidate_identity is generic ("Senior Backend Engineer"), skills.required/preferred are empty (the
+    # confirmed-intake path never populates them — search_translator.to_search_intent doesn't set SearchIntent.skills
+    # at all), and the only place the real requirements live is core/supporting/differentiator_signals. This is
+    # exactly the SearchIntent api._gate_search_request hands to the planner once
+    # RECRUITERAI_SEND_CONFIRMED_SEARCH_SENTENCE=false has blanked the model's own sentence.
+    intent = SearchIntent(
+        role=Role(title="Senior Backend Engineer", seniority="senior"),
+        location=Location(countries=["India"], work_mode="remote"),
+        experience=Experience(minimum_years=5),
+        core_signals=[
+            "5+ years of professional experience",
+            "Proficiency in C# .NET",
+            "Experience in AI Engineering",
+            "Experience deploying AI into production",
+        ],
+        supporting_signals=["Agentic AI frameworks"],
+        differentiator_signals=["LangChain or LangGraph"],
+        natural_language_search_query=None,
+    )
+
+    plan = SearchPlanner().build(intent)
+    query_text = plan.searches[0].natural_language_query
+
+    for requirement in ["C# .NET", "AI Engineering", "deploying AI into production", "Agentic AI frameworks", "LangChain or LangGraph"]:
+        assert requirement in query_text, query_text
+
+    # Not title/seniority-only: the pre-fix behavior for this exact shape was "senior Senior Backend Engineer" alone.
+    assert query_text != "senior Senior Backend Engineer"
+    assert len(query_text) > len("senior Senior Backend Engineer") + 40
+
+
+def test_required_and_preferred_skills_still_reach_the_fallback_for_the_legacy_non_intake_shape():
+    # The older /parse-jd path populates skills.required/preferred but never core/supporting/differentiator_signals —
+    # the combined fallback must keep serving that shape exactly as before.
+    intent = SearchIntent(
+        role=Role(title="Senior Backend Engineer", seniority="Senior"),
+        skills=Skills(required_skills=["Python"], preferred_skills=["Distributed Systems"]),
+    )
+
+    plan = SearchPlanner().build(intent)
+    query_text = plan.searches[0].natural_language_query
+
+    assert "Senior" in query_text
+    assert "Python" in query_text
+    assert "Distributed Systems" in query_text
+    assert "PySpark" not in query_text

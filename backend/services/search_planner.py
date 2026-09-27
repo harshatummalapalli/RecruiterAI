@@ -2,6 +2,7 @@ from typing import List
 
 from backend.models.search_intent import SearchIntent
 from backend.models.search_plan import SearchPlan, SearchQuery
+from backend.services.search_translator import _fallback_natural_language_query
 from backend.utils.text import deduplicate_preserve_order
 
 # Standing product policy (Part 7 of the V0.1 discovery architecture): current
@@ -119,14 +120,35 @@ class SearchPlanner:
         template built only from fields the recruiter/LLM actually populated,
         for non-LLM callers (tests, a missing/empty LLM field) — this
         fallback never invents a requirement that isn't already present on
-        the intent."""
+        the intent.
+
+        The confirmed-intake path's requirements live in
+        core_signals/supporting_signals/differentiator_signals, never in
+        skills.required_skills/preferred_skills (search_translator.py never
+        populates those for that path — see the audit that found this). This
+        used to build a query from role+seniority+skills only, so whenever the
+        caller had no sentence of its own (e.g. RECRUITERAI_SEND_CONFIRMED_
+        SEARCH_SENTENCE=false blanks it before this runs), every confirmed
+        core/supporting/differentiator requirement was silently dropped —
+        the query planner reused the SAME tier-weighted template
+        search_translator._fallback_natural_language_query already builds
+        from those fields at confirmation time, so nothing is lost just
+        because a different module ended up needing to build the sentence.
+        required_skills/preferred_skills (populated only by the older,
+        non-intake JD-parse path) are still appended after, unchanged."""
         if intent.natural_language_search_query:
             return intent.natural_language_search_query
 
         parts: List[str] = []
-        role_desc = " ".join(filter(None, [intent.role.seniority, intent.role.title])).strip()
-        if role_desc:
-            parts.append(role_desc)
+        base = _fallback_natural_language_query(
+            intent.role.title or "",
+            intent.role.seniority,
+            intent.core_signals,
+            intent.supporting_signals,
+            intent.differentiator_signals,
+        )
+        if base:
+            parts.append(base)
 
         required = [skill for skill in intent.skills.required_skills if skill]
         if required:
