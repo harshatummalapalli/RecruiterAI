@@ -13,7 +13,20 @@ import {
 } from '../models/workspace'
 import { CandidateRecord } from '../components/CandidateRecord'
 import { CandidateWorkspace } from '../components/CandidateWorkspace'
-import { setWorkspaceArranged, updateCandidateRecord } from '../services/recruiterWorkflow'
+import { AvailabilityNotice, CalibrationNote, NewCandidatesNotice, OtherReviewed, PausedPanel, RoleBar, ShowMoreBar } from '../components/RoleControls'
+import {
+  availabilityNotice,
+  calibrationNote,
+  isRoleSearch,
+  newCandidatesNotice,
+  orderPresented,
+  ROLE_ORDER_NOTE,
+  pauseCopy,
+  reviewHeading,
+  splitByPresentation,
+  type PauseAction,
+} from '../models/roleWorkspace'
+import { updateCandidateRecord } from '../services/recruiterWorkflow'
 import { BoundaryEditor } from '../components/BoundaryEditor'
 import { formatBoundaryLocation, workModeLabel } from '../models/livingBrief'
 import type { SearchBoundary } from '../models/searchBoundary'
@@ -41,6 +54,16 @@ type CandidateReviewScreenProps = {
   // RecruiterWorkspaceScreen.tsx. Drives the open-profile/compare/edit-brief
   // UI reset without resetting on every progressive poll tick.
   searchGeneration: number
+  // Roles (multiple searches). Optional so the screen still renders a search stored before roles existed.
+  onShowMore?: (onlyNew?: boolean) => Promise<void>
+  onRoleAction?: (action: 'pause' | 'resume') => Promise<void>
+  onCorrectCalibration?: (dismiss: string[]) => Promise<void>
+  // The server's answer to a saved decision or reason, so the role, feedback and calibration stay current.
+  onSearchResponse?: (response: SearchResponse) => void
+  // Why the last request to show more or change the role was refused, in plain words.
+  roleMessage?: string | null
+  // Set when a re-run changed nothing that is searched, so nothing was run.
+  searchNotice?: string | null
 }
 
 type Note = { id: string; text: string; createdAt: string }
@@ -60,14 +83,33 @@ function SkeletonRows() {
   )
 }
 
-export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, searchState, onRunSearch, searchId, searchGeneration, boundary, onApplyBoundary, boundaryLimitation = null, searchErrors = [] }: CandidateReviewScreenProps) {
+export function CandidateReviewScreen({
+  brief,
+  onChangeBrief,
+  searchResponse,
+  searchState,
+  onRunSearch,
+  searchId,
+  searchGeneration,
+  boundary,
+  onApplyBoundary,
+  boundaryLimitation = null,
+  searchErrors = [],
+  onShowMore,
+  onRoleAction,
+  onCorrectCalibration,
+  onSearchResponse,
+  roleMessage = null,
+  searchNotice = null,
+}: CandidateReviewScreenProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isEditingBrief, setIsEditingBrief] = useState(false)
   const [decisions, setDecisions] = useState<Record<string, Decision | undefined>>({})
   const [resumes, setResumes] = useState<Record<string, Resume>>({})
   const [notes, setNotes] = useState<Record<string, Note[]>>({})
   const [noteDraft, setNoteDraft] = useState('')
-  const [arrangedLocally, setArrangedLocally] = useState(false)
+  const [roleBusy, setRoleBusy] = useState(false)
+  const [pauseDismissed, setPauseDismissed] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   // Choices made here that the server has not confirmed yet. A poll that lands between a click and its save must not
   // flip the card back, so these are laid over whatever the server returns until it agrees.
@@ -81,9 +123,9 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
   useEffect(() => {
     setSelectedId(null)
     setIsEditingBrief(false)
-    setArrangedLocally(false)
+    setPauseDismissed(false)
     pendingDecisions.current = {}
-  }, [searchGeneration])
+  }, [searchGeneration, searchId])
 
   useEffect(() => {
     // Hydrate from whatever the backend already has persisted for this search (decisions and notes are keyed by the
@@ -111,41 +153,69 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
   }, [searchResponse])
 
   const candidates = useMemo(() => (searchResponse ? buildDiscoveryCandidates(searchResponse) : []), [searchResponse])
-  const arrangedItems = useMemo(() => buildWorkspaceCandidates(candidates), [candidates])
+  const allItems = useMemo(() => buildWorkspaceCandidates(candidates), [candidates])
+  // For a role only what the server presented is on screen; everything else it read is kept below. A search stored
+  // before roles existed presents everything, exactly as before.
+  const { presented: arrangedItems, reserve: reserveItems } = useMemo(() => splitByPresentation(allItems, searchResponse), [allItems, searchResponse])
   const flatItems = useMemo(() => {
+    if (isRoleSearch(searchResponse)) return orderPresented(arrangedItems, searchResponse)
     if (arrivalOrder.current.generation !== searchGeneration) {
       arrivalOrder.current = { generation: searchGeneration, ids: [] }
     }
     arrivalOrder.current.ids = stableOrder(arrivalOrder.current.ids, arrangedItems.map((item) => item.candidate.id))
     const byId = new Map(arrangedItems.map((item) => [item.candidate.id, item]))
     return arrivalOrder.current.ids.map((id) => byId.get(id)).filter((item): item is (typeof arrangedItems)[number] => Boolean(item))
-  }, [arrangedItems, searchGeneration])
+  }, [arrangedItems, searchGeneration, searchResponse])
   const selectedCandidate = candidates.find((candidate) => candidate.id === selectedId) ?? null
 
-  const arranged = Boolean(searchResponse?.workspace_arranged) || arrangedLocally
-  const allRead = arrangedItems.length > 0 && arrangedItems.every((item) => item.facts.section !== 'preparing')
-  const canArrange = searchState === 'done' && !arranged && allRead
   const progress = searchResponse?.progress
-  const running = searchState === 'searching' && progress?.admitted ? { read: progress.review_ready ?? 0, total: progress.admitted } : null
-  const funnel = !running && candidates.length > 0 ? funnelCopy(readFunnel(searchResponse?.diagnostics), candidates.length) : null
+  const isRole = isRoleSearch(searchResponse)
+  const role = searchResponse?.role ?? null
+  // While a later cycle runs, the candidates already on screen stay as they are; only the first read shows progress.
+  const running = searchState === 'searching' && progress?.admitted && !(isRole && arrangedItems.length > 0) ? { read: progress.review_ready ?? 0, total: progress.admitted } : null
+  const funnel = !running && arrangedItems.length > 0 ? funnelCopy(readFunnel(searchResponse?.diagnostics), isRole ? (searchResponse?.candidate_count ?? candidates.length) : candidates.length) : null
+
+  const saved = (response: SearchResponse | undefined) => {
+    // The server's answer keeps the role, feedback and the one-time summary current. Anything else is ignored.
+    if (response && typeof response === 'object' && 'search_id' in response) onSearchResponse?.(response)
+  }
 
   const decide = (id: string, next: Decision | undefined) => {
     pendingDecisions.current[id] = next ?? null
     setDecisions((current) => ({ ...current, [id]: next }))
     if (searchId) {
       // An empty decision clears it on the server.
-      updateCandidateRecord(searchId, id, { decision: next ?? '' }).catch(() => {})
+      updateCandidateRecord(searchId, id, { decision: next ?? '' })
+        .then(saved)
+        .catch(() => {})
     }
+  }
+
+  const giveFeedback = (id: string, update: { reason?: string; note?: string }) => {
+    if (!searchId) return
+    updateCandidateRecord(searchId, id, { feedback_reason: update.reason, feedback_note: update.note })
+      .then(saved)
+      .catch(() => {})
+  }
+
+  const runRoleAction = async (task: () => Promise<void> | undefined) => {
+    setRoleBusy(true)
+    try {
+      await task()
+    } finally {
+      setRoleBusy(false)
+    }
+  }
+
+  const onPauseAction = (action: PauseAction | 'keep_paused') => {
+    if (action === 'keep_paused') setPauseDismissed(true)
+    else if (action === 'criteria') setIsEditingBrief(true)
+    else if (action === 'resume') void runRoleAction(() => onRoleAction?.('resume'))
+    else if (action === 'more') void runRoleAction(() => onShowMore?.())
+    else document.getElementById('role-candidates')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   const toggleDecision = (id: string, choice: Decision) => decide(id, decisions[id] === choice ? undefined : choice)
-
-  const arrange = () => {
-    setArrangedLocally(true)
-    if (searchId) {
-      setWorkspaceArranged(searchId, true).catch(() => {})
-    }
-  }
 
   const uploadResume = (id: string, file: File) => {
     setResumes((current) => ({ ...current, [id]: { name: file.name, uploadedAt: new Date().toISOString() } }))
@@ -166,9 +236,19 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
 
   const hasSearchedOnce = searchResponse !== null
   // The skeleton is only for the brief window before the FIRST candidates are admitted.
-  const showSkeleton = searchState === 'searching' && candidates.length === 0
+  const showSkeleton = searchState === 'searching' && (isRole ? arrangedItems.length === 0 : candidates.length === 0)
   const showZeroResults = searchState === 'done' && hasSearchedOnce && candidates.length === 0
   const showError = searchState === 'error' && !showSkeleton && candidates.length === 0
+
+  const availability = availabilityNotice(searchResponse?.availability)
+  const paused = role ? pauseCopy(role) : null
+  const newNotice = newCandidatesNotice(searchResponse?.new_candidates ?? 0)
+  const note = calibrationNote(searchResponse?.calibration)
+  const undecided = arrangedItems.filter((item) => !decisions[item.candidate.id]).length
+  const heading = isRole ? reviewHeading(arrangedItems.length, undecided) : null
+  const cycleRunning = searchState === 'searching'
+  const nothingMore = isRole && reserveItems.length === 0 && Boolean(searchResponse?.retrieval_exhausted)
+  const moreMessage = roleMessage ?? (nothingMore ? "We haven't found additional candidates in the current search." : null)
 
   return (
     <div className="discovery">
@@ -265,8 +345,19 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
         </div>
       ) : (
         <div className="discovery-layout">
-          <div className="discovery-main">
+          <div className="discovery-main" id="role-candidates">
+            {role ? <RoleBar role={role} running={cycleRunning} busy={roleBusy} onPause={() => void runRoleAction(() => onRoleAction?.('pause'))} onResume={() => void runRoleAction(() => onRoleAction?.('resume'))} /> : null}
+
+            {availability && !(paused && !pauseDismissed && role?.pause_kind === 'narrow') ? <AvailabilityNotice notice={availability} onReview={() => setIsEditingBrief(true)} /> : null}
+
+            {paused && !pauseDismissed ? <PausedPanel copy={paused} busy={roleBusy} onAction={onPauseAction} /> : null}
+
+            {newNotice ? <NewCandidatesNotice text={newNotice} busy={roleBusy} onReview={() => void runRoleAction(() => onShowMore?.(true))} /> : null}
+
+            {searchNotice ? <p className="role-more__message">{searchNotice}</p> : null}
+
             {showSkeleton ? <SkeletonRows /> : null}
+            {showSkeleton && isRole && progress?.admitted ? <p className="role-more__message">Reading profiles: {progress.review_ready ?? 0} of {progress.admitted}</p> : null}
 
             {!showSkeleton && !hasSearchedOnce ? <p className="discovery-empty">No candidates yet.</p> : null}
 
@@ -279,7 +370,7 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
               </div>
             ) : null}
 
-            {!showSkeleton && showZeroResults ? (
+            {!showSkeleton && showZeroResults && !availability ? (
               <div className="discovery-empty">
                 <p>No candidates matched this search.</p>
                 <button type="button" className="workspace__retry" onClick={() => setIsEditingBrief(true)}>
@@ -288,21 +379,52 @@ export function CandidateReviewScreen({ brief, onChangeBrief, searchResponse, se
               </div>
             ) : null}
 
-            {!showSkeleton && candidates.length > 0 ? (
+            {heading && !showSkeleton ? <h3 className="role-heading">{heading}</h3> : null}
+
+            {!showSkeleton && arrangedItems.length > 0 ? (
               <CandidateWorkspace
                 flatItems={flatItems}
-                arrangedItems={arrangedItems}
                 decisions={decisions}
                 selectedId={selectedId}
                 onOpen={setSelectedId}
                 onDecide={decide}
-                arranged={arranged}
-                canArrange={canArrange}
-                onArrange={arrange}
                 running={running}
                 funnel={funnel}
                 warnings={searchResponse?.warnings ?? []}
+                orderNote={isRole ? ROLE_ORDER_NOTE : undefined}
+                feedback={isRole ? (searchResponse?.feedback ?? {}) : undefined}
+                onFeedback={isRole ? giveFeedback : undefined}
               />
+            ) : null}
+
+            {note ? (
+              <CalibrationNote
+                text={note.text}
+                dimensions={note.dimensions}
+                onRemove={(dimension) => void onCorrectCalibration?.([...(searchResponse?.calibration?.dismissed ?? []), dimension])}
+              />
+            ) : null}
+
+            {isRole && !showSkeleton && (arrangedItems.length > 0 || reserveItems.length > 0) && onShowMore ? (
+              <ShowMoreBar busy={cycleRunning || roleBusy} message={moreMessage} onMore={() => void runRoleAction(() => onShowMore())} />
+            ) : null}
+
+            {isRole && !showSkeleton && reserveItems.length > 0 ? (
+              <OtherReviewed count={reserveItems.length}>
+                <CandidateWorkspace
+                  compact
+                  flatItems={reserveItems}
+                  decisions={decisions}
+                  selectedId={selectedId}
+                  onOpen={setSelectedId}
+                  onDecide={decide}
+                  running={null}
+                  funnel={null}
+                  warnings={[]}
+                  feedback={searchResponse?.feedback ?? {}}
+                  onFeedback={giveFeedback}
+                />
+              </OtherReviewed>
             ) : null}
           </div>
 

@@ -405,3 +405,37 @@ def test_search_leaves_contact_fields_none_when_not_returned(monkeypatch) -> Non
 
     assert candidates[0].email is None
     assert candidates[0].phone is None
+
+
+def test_a_stored_cursor_resumes_retrieval_one_page_at_a_time_and_surfaces_the_next_cursor(monkeypatch) -> None:
+    """Roles keep the cursor between requests (possibly across restarts): a fresh provider given only that cursor must
+    fetch exactly the next page, send it unchanged, and hand back the following cursor."""
+    monkeypatch.setenv("CRUSTDATA_API_KEY", "test-key")
+    pages = {
+        None: ({"profiles": [{"crustdata_person_id": "a"}, {"crustdata_person_id": "b"}], "next_cursor": "c1", "total_count": 90}),
+        "c1": ({"profiles": [{"crustdata_person_id": "c"}, {"crustdata_person_id": "d"}], "next_cursor": "c2", "total_count": 90}),
+        "c2": ({"profiles": [{"crustdata_person_id": "e"}], "total_count": 90}),
+    }
+    seen: list[object] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        payload = json.loads(request.read().decode("utf-8"))
+        seen.append(payload.get("cursor"))
+        return httpx.Response(200, json=pages[payload.get("cursor")])
+
+    plan = SearchPlan(searches=[SearchQuery(query_name="natural_language", natural_language_query="backend engineer")])
+
+    def fetch(cursor):
+        provider = CrustDataProvider(client=httpx.Client(transport=httpx.MockTransport(handler)))  # a new object every time
+        options = {"page_size": 2, "max_pages": 1, **({"cursor": cursor} if cursor else {})}
+        candidates = provider.search_with_options(plan, options=options)
+        metadata = candidates[0].raw_data["__response_metadata"]
+        return [c.candidate_id for c in candidates], metadata.get("next_cursor")
+
+    first, cursor = fetch(None)
+    second, cursor = fetch(cursor)
+    third, cursor = fetch(cursor)
+    assert (first, second, third) == (["a", "b"], ["c", "d"], ["e"])
+    assert cursor is None  # the last page carries no cursor: the retrieval is exhausted
+    assert seen == [None, "c1", "c2"]
+    assert len(set(first + second + third)) == 5  # no overlap between pages

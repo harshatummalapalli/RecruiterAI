@@ -249,4 +249,66 @@ export interface SearchResponse {
     candidate_identity: string | null
     content_hash: string
   } | null
+  // Roles (multiple searches). All absent for a search stored before roles existed: every candidate is then shown.
+  role?: RoleState | null
+  presentation?: Record<string, PresentationEntry> | null
+  availability?: SearchAvailability | null
+  calibration?: CalibrationState | null
+  feedback?: Record<string, CandidateFeedback>
+  new_candidates?: number
+  retrieval_exhausted?: boolean
+}
+
+export type PauseKind = 'no_engagement' | 'feedback' | 'narrow' | 'exhausted'
+
+export interface RoleState {
+  status: 'searching' | 'paused'
+  pause_reason: 'window_ended' | 'manual' | null
+  pause_kind: PauseKind | null
+  can_resume: boolean
+  has_feedback: boolean
+  exhausted: boolean
+  label: { title?: string; company?: string; place?: string }
+}
+
+export interface PresentationEntry {
+  state: 'presented' | 'reserve'
+  source: string | null
+  seen: boolean
+  stale: boolean
+  /** Which set of candidates this one was shown in (1 = the first five). Absent while in reserve. */
+  batch?: number | null
+}
+
+export interface SearchAvailability {
+  kind: 'zero' | 'narrow' | 'ok'
+  profiles_returned: number
+  retrieved: number
+}
+
+export interface CalibrationState {
+  state: 'pending' | 'ready' | 'closed'
+  summary: { text: string; dimensions: string[]; requirements: string[] } | null
+  dismissed: string[]
+}
+
+export interface CandidateFeedback {
+  decision: string | null
+  reason: string | null
+  note: string | null
+}
+
+/** One line of the workspace sidebar: a role (a search) or a brief that has not been searched yet. */
+export interface SearchListItem {
+  id: string
+  kind: 'search' | 'draft'
+  title: string
+  company: string
+  place: string
+  status: string | null
+  role_status: 'searching' | 'paused' | null
+  pause_kind: PauseKind | null
+  new_count: number
+  to_review_count: number | null
+  updated_at: string | null
 }

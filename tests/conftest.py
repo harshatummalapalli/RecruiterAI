@@ -48,3 +48,10 @@ def _no_real_requirement_judge(monkeypatch):
     from backend.services.requirement_judge import RequirementJudge
 
     monkeypatch.setattr(RequirementJudge, "is_available", lambda self: self._client is not None)
+
+
+@pytest.fixture(autouse=True)
+def _no_background_role_scheduler(monkeypatch):
+    """The role scheduler starts real retrievals for due roles. Tests never start it; the ones that exercise the
+    lifecycle call the runtime directly with a controlled clock."""
+    monkeypatch.setenv("RECRUITERAI_ROLE_SCHEDULER", "false")

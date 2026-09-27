@@ -41,6 +41,7 @@ from backend.models.search_plan import SearchPlan
 from backend.providers.base import BaseProvider
 from backend.providers.harvest import HarvestEnrichmentService
 from backend.services.candidate_evidence_builder import build_candidate_evidence
+from backend.services import candidate_presentation as presentation_rules
 from backend.services.candidate_merger import CandidateMerger
 from backend.services.candidate_ranker import CandidateRanker
 from backend.services.match_explainer import MatchExplainer
@@ -49,6 +50,8 @@ from backend.services.requirement_judge import (
     OUTPUT_USD_PER_MILLION_TOKENS,
     RequirementJudge,
 )
+from backend.services.role_feedback import Guidance, apply_admission_tie_break, evidence_guidance_score
+from backend.services.search_availability import availability as build_availability
 from backend.services.search_diagnostics import SearchDiagnostics
 from backend.services.search_store import SearchStore
 
@@ -157,11 +160,15 @@ def reconcile_interrupted_searches(search_store: SearchStore) -> int:
         record = search_store.load(path.stem)
         if not record or record.get("status") != STATUS_RUNNING:
             continue
-        record["status"] = STATUS_INTERRUPTED
-        record["updated_at"] = _now_iso()
         response = record.get("response")
+        # A role that already holds candidates lost only the cycle that was running when the process stopped. Its
+        # inventory is intact, so it goes back to a usable state instead of looking like a failed search.
+        keeps_inventory = bool(record.get("role")) and isinstance(response, dict) and bool(response.get("candidates"))
+        terminal = STATUS_COMPLETE if keeps_inventory else STATUS_INTERRUPTED
+        record["status"] = terminal
+        record["updated_at"] = _now_iso()
         if isinstance(response, dict):
-            response["status"] = STATUS_INTERRUPTED
+            response["status"] = terminal
         search_store.save(path.stem, record)
         reconciled += 1
         logger.warning("Marked orphaned running search as interrupted | search_id=%s", path.stem)
@@ -188,11 +195,24 @@ def run_search_pipeline(
     existing_record: Dict[str, Any],
     target_pool_size: int = MAX_WORKSPACE_CANDIDATES,
     requirement_judge: Optional[RequirementJudge] = None,
+    cycle: Optional[Dict[str, Any]] = None,
+    guidance: Optional[Guidance] = None,
 ) -> None:
     """The slow half of a search — CrustData discovery through final rerank —
     designed to run on a background thread. Persists progressively via
     search_store so GET /search/{search_id} can reflect a running search at
-    any point (see module docstring for the exact milestones)."""
+    any point (see module docstring for the exact milestones).
+
+    `cycle` is set for a role's retrieval cycles (see role_runtime.py); it is None for the legacy single-shot search,
+    which behaves exactly as before. A cycle is still ONE run of this same N -> 50 -> 25 pipeline:
+      kind        "initial" | "change" (fresh retrieval, new brief) | "more" (next page, recruiter asked)
+                | "resume" (next page, on resuming a paused role) | "daily" (fresh retrieval, in the background)
+      n           the cycle number, 1 for the first
+      cursor      the provider cursor to continue from ("more" only)
+      dedupe      "all" (skip anyone already in the role's inventory) or "presented" (only the recruiter's review set)
+      present     how many candidates to show the recruiter when the cycle completes (0 = none, stay in reserve)
+      confirmation_id  the confirmed brief this cycle ran from
+    Candidates from earlier cycles are kept; this cycle's are appended (index-aligned arrays)."""
     started_at = time.perf_counter()
     created_at = existing_record.get("created_at") or _now_iso()
     existing_harvest_raw = existing_record.get("harvest_evidence", {})
@@ -202,6 +222,90 @@ def run_search_pipeline(
     recruiter_decisions = existing_record.get("recruiter_decisions", {})
     notes = existing_record.get("notes", {})
     harvest_by_id: Dict[str, HarvestEvidence] = {}
+
+    # The role's inventory from earlier cycles. An "initial" cycle starts from nothing.
+    prior_response = (existing_record.get("response") or {}) if cycle and cycle.get("kind") != "initial" else {}
+    prior_candidates: List[Dict[str, Any]] = list(prior_response.get("candidates") or [])
+    prior_explanations: List[Dict[str, Any]] = list(prior_response.get("explanations") or [])
+    prior_evidence: List[Dict[str, Any]] = list(prior_response.get("evidence") or [])
+    prior_states: Dict[str, str] = dict((existing_record.get("candidate_states") or {}) if prior_candidates else {})
+    guidance = guidance or Guidance()
+    # Retrieval history is its own thing: every profile the provider has returned for this role, admitted or not. It is
+    # kept apart from the role's inventory (who was read and can be shown) and from presentation (who is on screen).
+    prior_retrieved: set = set(existing_record.get("retrieved_ids") or []) if cycle and cycle.get("kind") != "initial" else set()
+    cycle_retrieved_ids: List[str] = []
+
+    # Inventory arrays, exactly as the frontend reads them: index-aligned candidates / explanations / evidence. In a
+    # cycle they are the earlier cycles' entries plus this cycle's. A candidate already in the inventory as RESERVE
+    # (found again by a "change" cycle) is refreshed in place rather than duplicated.
+    def _combined(
+        candidates: List[Candidate],
+        explanations: List[Optional[Dict[str, Any]]],
+        evidence: List[Optional[Dict[str, Any]]],
+        candidate_states: Dict[str, str],
+    ) -> tuple:
+        if not prior_candidates:
+            return (
+                [candidate.model_dump() for candidate in candidates],
+                [entry or {} for entry in explanations],
+                [entry or {} for entry in evidence],
+                dict(candidate_states),
+            )
+        merged_candidates = list(prior_candidates)
+        merged_explanations = list(prior_explanations)
+        merged_evidence = list(prior_evidence)
+        position = {entry.get("candidate_id"): index for index, entry in enumerate(merged_candidates)}
+        for index, candidate in enumerate(candidates):
+            row = (candidate.model_dump(), (explanations[index] if index < len(explanations) else None) or {}, (evidence[index] if index < len(evidence) else None) or {})
+            at = position.get(candidate.candidate_id)
+            if at is None:
+                position[candidate.candidate_id] = len(merged_candidates)
+                merged_candidates.append(row[0])
+                merged_explanations.append(row[1])
+                merged_evidence.append(row[2])
+            else:
+                merged_candidates[at], merged_explanations[at], merged_evidence[at] = row
+        return merged_candidates, merged_explanations, merged_evidence, {**prior_states, **candidate_states}
+
+    def _update_role_state(record: Dict[str, Any], candidates: List[Candidate], status: str) -> None:
+        """Presentation, retrieval and cycle bookkeeping for a role's cycle. Runs under the store lock, inside the same
+        save as the candidates, so the recruiter never sees a half-updated role."""
+        kind, number = cycle["kind"], cycle["n"]
+        presentation = record.setdefault("presentation", {})
+        for candidate in candidates:
+            candidate_id = candidate.candidate_id
+            entry = presentation.get(candidate_id)
+            if entry is None:
+                presentation[candidate_id] = {"state": presentation_rules.RESERVE, "cycle": number, "source": kind, "seen": False, "confirmation_id": cycle.get("confirmation_id")}
+            elif entry.get("state") == presentation_rules.RESERVE:
+                entry.update({"cycle": number, "source": kind, "confirmation_id": cycle.get("confirmation_id")})
+                entry.pop("stale", None)
+        record["retrieved_ids"] = sorted(prior_retrieved | set(cycle_retrieved_ids))
+        if status != STATUS_COMPLETE:
+            return
+
+        # Completion: the cycle's facts, then what the recruiter is shown.
+        provider_total = funnel.get("in_scope")
+        retrieved = funnel.get("retrieved") or 0
+        new_count = len(candidates)
+        record.setdefault("cycles", []).append(
+            {"n": number, "kind": kind, "at": _now_iso(), "retrieved": retrieved, "new_candidates": new_count, "cursor_used": bool(cycle.get("cursor")), "provider_total": provider_total, "confirmation_id": cycle.get("confirmation_id")}
+        )
+        if kind in ("initial", "change"):
+            record["availability"] = build_availability(provider_total, retrieved)
+        if kind != "daily":
+            next_cursor = funnel.get("next_cursor")
+            record["retrieval"] = {"next_cursor": next_cursor, "exhausted": (not next_cursor) or retrieved == 0, "cycle": number}
+        record["last_cycle"] = {"n": number, "kind": kind, "new_candidates": new_count, "at": _now_iso()}
+
+        to_present = int(cycle.get("present") or 0)
+        if to_present > 0:
+            score = evidence_guidance_score(guidance)
+            rows = presentation_rules.reserve_rows(record, score)
+            chosen = presentation_rules.pick_batch(rows, to_present, initial=(kind == "initial"))
+            presentation_rules.present(record, chosen, batch=presentation_rules.next_batch_number(record))
+            if kind == "initial" and "calibration" not in record:
+                record["calibration"] = {"state": "pending", "initial_ids": list(chosen), "dismissed": [], "summary": None}
 
     def _persist(
         *,
@@ -215,84 +319,69 @@ def run_search_pipeline(
         internal_diagnostics: Optional[Dict[str, Any]] = None,
         error_message: Optional[str] = None,
     ) -> None:
-        # The recruiter may shortlist/reject/annotate a Review Ready candidate
-        # WHILE this search is still running (PATCH /search/{id}/candidate). This
-        # save must therefore start from what is on disk NOW, not from the copy
-        # captured when the search began, or it would silently erase those
-        # decisions. Held under the store lock so the read and the write are one
-        # atomic step relative to any PATCH.
+        # The recruiter may shortlist/reject/annotate a Review Ready candidate WHILE this search is still running
+        # (PATCH /search/{id}/candidate). This save must therefore start from what is on disk NOW, not from the copy
+        # captured when the search began, or it would silently erase those decisions (or feedback, presentation, role
+        # state). Held under the store lock so the read and the write are one atomic step relative to any PATCH.
+        # Everything this pipeline does not own is carried over from `latest` untouched.
         with search_store.lock:
             latest = search_store.load(search_id) or {}
             live_decisions = latest.get("recruiter_decisions", recruiter_decisions)
             live_notes = latest.get("notes", notes)
-            live_arranged = bool(latest.get("workspace_arranged", False))
-            live_confirmed_brief = latest.get("confirmed_brief")
-            _persist_locked(
-                status=status, candidates=candidates, explanations=explanations, evidence=evidence,
-                candidate_states=candidate_states, diagnostics=diagnostics, debug_payload=debug_payload,
-                internal_diagnostics=internal_diagnostics, error_message=error_message,
-                live_decisions=live_decisions, live_notes=live_notes, live_arranged=live_arranged, live_confirmed_brief=live_confirmed_brief,
+
+            all_candidates, all_explanations, all_evidence, all_states = _combined(candidates, explanations, evidence, candidate_states)
+            progress = {"admitted": len(candidates), "surfaced": 0, "building_context": 0, "review_ready": 0}
+            for state in candidate_states.values():
+                if state in progress:
+                    progress[state] += 1
+
+            keeps_prior_diagnostics = bool(cycle) and cycle["kind"] in ("more", "daily", "resume") and bool(prior_response.get("diagnostics"))
+            response: Dict[str, Any] = {
+                "provider": "platform",
+                "search_id": search_id,
+                "candidate_count": len(all_candidates),
+                "candidates": all_candidates,
+                "explanations": all_explanations,
+                "evidence": all_evidence,
+                "diagnostics": prior_response["diagnostics"] if keeps_prior_diagnostics else {**(diagnostics or {}), "funnel": dict(funnel)},
+                "warnings": friendly_warnings,
+                "debug": debug_payload,
+                "recruiter_decisions": live_decisions,
+                "notes": live_notes,
+                "status": status,
+                "candidate_states": all_states,
+                "progress": progress,
+            }
+            # Start from the record on disk so every field this pipeline does not own survives (workspace_arranged,
+            # confirmed_brief, role, presentation, feedback, calibration, cycles, ...).
+            record: Dict[str, Any] = dict(latest)
+            record.update(
+                {
+                    "search_id": search_id,
+                    "status": status,
+                    "created_at": created_at,
+                    "updated_at": _now_iso(),
+                    "jd_text": jd_text,
+                    "location_override": location_override,
+                    "response": response,
+                    "recruiter_decisions": live_decisions,
+                    "notes": live_notes,
+                    "candidate_states": all_states,
+                    "workspace_arranged": bool(latest.get("workspace_arranged", False)),
+                    "confirmed_brief": latest.get("confirmed_brief"),
+                    "harvest_evidence": {
+                        **existing_harvest_raw,
+                        **{candidate_id: dataclasses.asdict(ev) for candidate_id, ev in harvest_by_id.items()},
+                    },
+                    "internal_diagnostics": internal_diagnostics or {},
+                }
             )
-
-    def _persist_locked(
-        *,
-        status: str,
-        candidates: List[Candidate],
-        explanations: List[Optional[Dict[str, Any]]],
-        evidence: List[Optional[Dict[str, Any]]],
-        candidate_states: Dict[str, str],
-        diagnostics: Optional[Dict[str, Any]],
-        debug_payload: Optional[Dict[str, Any]],
-        internal_diagnostics: Optional[Dict[str, Any]],
-        error_message: Optional[str],
-        live_decisions: Dict[str, Any],
-        live_notes: Dict[str, Any],
-        live_arranged: bool,
-        live_confirmed_brief: Optional[Dict[str, Any]] = None,
-    ) -> None:
-        progress = {"admitted": len(candidates), "surfaced": 0, "building_context": 0, "review_ready": 0}
-        for state in candidate_states.values():
-            if state in progress:
-                progress[state] += 1
-
-        response: Dict[str, Any] = {
-            "provider": "platform",
-            "search_id": search_id,
-            "candidate_count": len(candidates),
-            "candidates": [candidate.model_dump() for candidate in candidates],
-            "explanations": [entry or {} for entry in explanations],
-            "evidence": [entry or {} for entry in evidence],
-            "diagnostics": {**(diagnostics or {}), "funnel": dict(funnel)},
-            "warnings": friendly_warnings,
-            "debug": debug_payload,
-            "recruiter_decisions": live_decisions,
-            "notes": live_notes,
-            "status": status,
-            "candidate_states": dict(candidate_states),
-            "progress": progress,
-        }
-        record: Dict[str, Any] = {
-            "search_id": search_id,
-            "status": status,
-            "created_at": created_at,
-            "updated_at": _now_iso(),
-            "jd_text": jd_text,
-            "location_override": location_override,
-            "response": response,
-            "recruiter_decisions": live_decisions,
-            "notes": live_notes,
-            "candidate_states": dict(candidate_states),
-            "workspace_arranged": live_arranged,
-            "confirmed_brief": live_confirmed_brief,
-            "harvest_evidence": {
-                **existing_harvest_raw,
-                **{candidate_id: dataclasses.asdict(ev) for candidate_id, ev in harvest_by_id.items()},
-            },
-            "internal_diagnostics": internal_diagnostics or {},
-        }
-        if error_message:
-            record["error_message"] = error_message
-        search_store.save(search_id, record)
+            record.pop("error_message", None)
+            if error_message:
+                record["error_message"] = error_message
+            if cycle:
+                _update_role_state(record, candidates, status)
+            search_store.save(search_id, record)
 
     funnel: Dict[str, Any] = {}
     admitted: List[Candidate] = []
@@ -332,8 +421,49 @@ def run_search_pipeline(
             }
         )
 
+        # A role's later cycles skip anyone already in its inventory, so every cycle admits people the recruiter has not
+        # had before. "change" cycles (a new brief) skip only what the recruiter is already reviewing: a profile that
+        # was held in reserve under the old brief is re-read against the new one instead.
+        if cycle:
+            first_metadata = ((raw_candidates[0].raw_data or {}).get("__response_metadata") or {}) if raw_candidates else {}
+            next_cursor = first_metadata.get("next_cursor")
+            funnel["next_cursor"] = next_cursor if isinstance(next_cursor, str) and next_cursor and first_metadata.get("has_more", True) is not False else None
+            presentation_now = (existing_record.get("presentation") or {})
+            if cycle.get("dedupe") == "presented":
+                known = {cid for cid, entry in presentation_now.items() if entry.get("state") == presentation_rules.PRESENTED}
+            else:
+                known = {entry.get("candidate_id") for entry in prior_candidates}
+            cycle_retrieved_ids.extend(c.candidate_id for c in merged_candidates if c.candidate_id)
+            if cycle["kind"] == "daily":
+                # A fresh background retrieval starts from the first page again. Anyone the role has already been shown
+                # by the provider, admitted or not, is not read a second time: nothing is enriched or judged for them.
+                known = known | prior_retrieved
+            before = len(merged_candidates)
+            merged_candidates = [candidate for candidate in merged_candidates if candidate.candidate_id not in known]
+            funnel["already_known"] = before - len(merged_candidates)
+            logger.info("[SEARCH] Cycle dedupe | search_id=%s kind=%s retrieved=%s already_known=%s", search_id, cycle["kind"], before, funnel["already_known"])
+
         # --- Baseline ranking (existing formula, unchanged) ---
         ranked_candidates = candidate_ranker.rank(merged_candidates, intent)
+        # Recruiter feedback, conservatively: only candidates whose baseline scores are exactly equal are re-ordered,
+        # by how much they show of what the recruiter said was missing. Empty guidance changes nothing.
+        if cycle and not guidance.empty:
+            def _admission_value(candidate: Candidate, dimension: str) -> float:
+                evidence_obj = build_candidate_evidence(candidate, intent)
+                alignment = evidence_obj.role_alignment
+                if dimension == "technology":
+                    parts = candidate_ranker.score_components(evidence_obj, candidate.provider_score)
+                    return parts["core_coverage"] + parts["supporting_coverage"]
+                if dimension == "experience":
+                    return 1.0 if alignment.experience_floor is True else -1.0 if alignment.experience_floor is False else 0.0
+                if dimension == "seniority":
+                    return 1.0 if alignment.level_fit == "aligned" else -1.0 if alignment.level_fit in ("above", "below") else 0.0
+                if dimension == "work_type":
+                    return {"direct": 1.0, "adjacent": 0.5, "tangential": -1.0}.get(alignment.title_relevance, 0.0)
+                return 0.0
+
+            ranked_candidates = apply_admission_tie_break(ranked_candidates, guidance, _admission_value)
+            logger.info("[SEARCH] Feedback tie-break applied | search_id=%s dimensions=%s", search_id, guidance.dimensions)
         logger.info("[SEARCH] Baseline ranking complete | search_id=%s count=%s", search_id, len(ranked_candidates))
 
         # --- Admission: top N by the EXISTING baseline rank. No new score

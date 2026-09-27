@@ -10,10 +10,9 @@ import type { SearchResponse } from '../types'
 
 vi.mock('../services/recruiterWorkflow', () => ({
   updateCandidateRecord: vi.fn(() => Promise.resolve({})),
-  setWorkspaceArranged: vi.fn(() => Promise.resolve()),
 }))
 
-import { setWorkspaceArranged, updateCandidateRecord } from '../services/recruiterWorkflow'
+import { updateCandidateRecord } from '../services/recruiterWorkflow'
 import { CandidateReviewScreen } from './CandidateReviewScreen'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -99,7 +98,6 @@ describe('cards', () => {
     expect(card('Partial Evidence').querySelectorAll('.ws-dot')).toHaveLength(6)
     expect(card('Partial Evidence').querySelectorAll('.ws-dot.is-shown')).toHaveLength(1)
     expect(card('Under The Years').querySelectorAll('.ws-dot')).toHaveLength(3)
-    await click(button(/Not much shown yet/))
     expect(card('Zero Evidence').querySelectorAll('.ws-dot')).toHaveLength(5)
     expect(card('Zero Evidence').querySelectorAll('.ws-dot.is-shown')).toHaveLength(0)
   })
@@ -112,7 +110,6 @@ describe('cards', () => {
 
   it('say zero evidence plainly', async () => {
     await render(makeResponse(SPECS, { workspace_arranged: true }))
-    await click(button(/Not much shown yet/))
     expect(card('Zero Evidence').querySelector('.ws-card__why')?.textContent).toBe('Nothing beyond total years is shown on the profile.')
     expect(card('Zero Evidence').querySelector('.ws-chip--watch')).toBeNull()
   })
@@ -126,7 +123,6 @@ describe('cards', () => {
 
   it('show Open to work only where the profile says so, and no date anywhere', async () => {
     await render(makeResponse(SPECS.map((spec) => ({ ...spec, updatedAt: '2026-03-04' })), { workspace_arranged: true }))
-    await click(button(/Not much shown yet/))
     expect($$('.ws-chip--neutral').map((chip) => chip.closest('article')?.querySelector('.ws-card__name')?.textContent)).toEqual(['Heavy Evidence'])
     expect($$('article.ws-card').map((element) => element.textContent).join(' ')).not.toMatch(/updated|2026|Mar/i)
   })
@@ -151,50 +147,35 @@ describe('cards', () => {
   })
 })
 
-describe('sections and grouping', () => {
-  it('stay flat in arrival order while reading, with progress', async () => {
+describe('a flat list, never grouped', () => {
+  it('stays in arrival order while reading, with progress', async () => {
     await render(
       makeResponse(SPECS, { status: 'running', progress: { admitted: 6, review_ready: 5, building_context: 1, surfaced: 0 } }),
       'searching',
     )
     expect($('.ws-funnel__headline')?.textContent).toBe('Reading profiles: 5 of 6')
-    expect($$('.ws-section')).toHaveLength(0)
     expect(cardIds()).toEqual(['c1', 'c2', 'c3', 'c4', 'c5', 'c6'])
   })
 
-  it('announce grouping once, then group by evidence and persist the choice', async () => {
+  it('never offers grouping, sorting or comparing, even for a search that was grouped before', async () => {
     await render(makeResponse(SPECS.slice(0, 5)))
-    expect($('.ws-banner')?.textContent).toContain('All 5 profiles are read. Group them by how much of the brief each one shows?')
+    expect($('.ws-banner')).toBeNull()
+    expect(container.textContent).not.toMatch(/Group them|Grouped by|Start here|Worth a look|Not much shown yet/)
     expect($$('.ws-section')).toHaveLength(0)
-    const before = cardIds()
-
-    await click(button(/Group them/))
-    expect(setWorkspaceArranged).toHaveBeenCalledWith('test', true)
-    expect($('.ws-banner')).toBeNull()
-    expect($$('.ws-section__title').map((title) => title.textContent)).toEqual(['Start here', 'Worth a look', 'Not much shown yet'])
-    expect($('.ws-note')?.textContent).toMatch(/not a ranking/)
-    // "Not much shown yet" starts collapsed; once opened, every candidate is still there.
-    await click(button(/Not much shown yet/))
-    expect(new Set(cardIds())).toEqual(new Set(before))
-  })
-
-  it('open already grouped when the search record says so, with no banner', async () => {
     await render(makeResponse(SPECS.slice(0, 5), { workspace_arranged: true }))
+    expect($$('.ws-section')).toHaveLength(0)
     expect($('.ws-banner')).toBeNull()
-    expect($$('.ws-section')).toHaveLength(3)
+    expect(cardIds()).toEqual(['c1', 'c2', 'c3', 'c4', 'c5'])
   })
 
-  it('offer no grouping while a profile is still being read', async () => {
-    await render(makeResponse(SPECS))
-    expect($('.ws-banner')).toBeNull()
-  })
-
-  it('show the honest funnel and keep methodology under "How this list was made"', async () => {
-    await render(makeResponse(SPECS.slice(0, 5), { workspace_arranged: true, warnings: ['This search cannot filter by work mode (remote/hybrid/onsite), so results may include other arrangements.'] }))
+  it('shows the honest funnel and keeps methodology under "How this list was made"', async () => {
+    await render(makeResponse(SPECS.slice(0, 5), { warnings: ['This search cannot filter by work mode (remote/hybrid/onsite), so results may include other arrangements.'] }))
     expect($('.ws-funnel__headline')?.textContent).toBe('25 profiles were selected from the 50 retrieved and read in full.'.replace('25', '5'))
     expect($('.ws-funnel__scope')?.textContent).toMatch(/size of the area, not the number of matches/)
     expect($('.ws-funnel__how')?.textContent).toMatch(/cannot filter by work mode/)
-    expect($('.ws-funnel__counts')?.textContent).toMatch(/start here/)
+    expect($('.ws-funnel__how')?.textContent).toMatch(/not a ranking/)
+    expect($('.ws-funnel__how')?.textContent).not.toMatch(/Start here|group/i)
+    expect($('.ws-funnel__counts')).toBeNull()
   })
 })
 
@@ -233,7 +214,6 @@ describe('decisions and filter', () => {
 
   it('filters to the decided candidates', async () => {
     await render(makeResponse(SPECS.slice(0, 5), { workspace_arranged: true, recruiter_decisions: { c2: 'shortlist', c4: 'maybe' } }))
-    await click(button(/Not much shown yet/))
     await click(button(/^Shortlisted/))
     expect(cardIds()).toEqual(['c2'])
     await click(button(/^Maybe/))

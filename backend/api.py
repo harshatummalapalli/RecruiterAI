@@ -7,7 +7,7 @@ import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -41,7 +41,21 @@ from backend.services.candidate_merger import CandidateMerger
 from backend.services.candidate_ranker import CandidateRanker
 from backend.services.capability_mapper import CapabilityMapper
 from backend.providers.harvest import HarvestEnrichmentService
-from backend.services.intake_session import IntakeSessionManager
+from backend.services import candidate_presentation as presentation_rules
+from backend.services import role_lifecycle
+from backend.services.intake_session import IntakeSessionManager, list_draft_summaries
+from backend.services.intent_change import meaningful_changes
+from backend.services.role_feedback import Guidance, build_guidance
+from backend.services.role_runtime import (
+    RoleError,
+    RoleRuntime,
+    RoleScheduler,
+    apply_candidate_update,
+    derived_fields,
+    draft_summary,
+    search_summary,
+    sidebar_label,
+)
 from backend.services.search_boundary import BoundaryValidationError, validate_search_boundary
 from backend.services.confirmation import (
     ConfirmationEdits,
@@ -262,6 +276,15 @@ class SearchResponse(BaseModel):
     # Which confirmed brief this search ran from (posted title, candidate identity). Lets the workspace name the
     # role correctly after a reload without any browser state.
     confirmed_brief: Optional[Dict[str, Any]] = None
+    # Multi-search roles. All absent (None / empty) for a search stored before roles existed, which keeps behaving as
+    # it always did: every candidate is shown.
+    role: Optional[Dict[str, Any]] = None
+    presentation: Optional[Dict[str, Dict[str, Any]]] = None
+    availability: Optional[Dict[str, Any]] = None
+    calibration: Optional[Dict[str, Any]] = None
+    feedback: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+    new_candidates: int = 0
+    retrieval_exhausted: bool = False
 
 
 class WorkspaceUpdateRequest(BaseModel):
@@ -272,6 +295,22 @@ class CandidateUpdateRequest(BaseModel):
     candidate_id: str
     decision: Optional[str] = None
     note: Optional[str] = None
+    # Optional, for Maybe and Reject only: a structured reason and a short note. See backend/services/role_feedback.py.
+    feedback_reason: Optional[str] = None
+    feedback_note: Optional[str] = None
+
+
+class ShowMoreRequest(BaseModel):
+    # True for the quiet "N new candidates" notice: show only what the background search found.
+    only_new: bool = False
+
+
+class RoleActionRequest(BaseModel):
+    action: str  # "pause" | "resume"
+
+
+class CalibrationRequest(BaseModel):
+    dismiss: List[str] = Field(default_factory=list)
 
 
 class ExportResponse(BaseModel):
@@ -319,6 +358,35 @@ class IntakeAnswerRequest(BaseModel):
     label: str
 
 
+# The sidebar lists at most this many roles, and an unsearched brief only while it is recent.
+SIDEBAR_LIMIT = 50
+DRAFT_VISIBLE_SECONDS = 14 * 24 * 3600
+
+
+class _SummaryCache:
+    """Sidebar summaries keyed by file version, so listing many large search records only re-reads the ones that
+    changed."""
+
+    def __init__(self) -> None:
+        self._items: Dict[Path, tuple] = {}
+
+    def get(self, store: SearchStore, path: Path) -> Optional[Dict[str, Any]]:
+        try:
+            stat = path.stat()
+        except OSError:
+            return None
+        version = (stat.st_mtime_ns, stat.st_size)
+        cached = self._items.get(path)
+        if cached and cached[0] == version:
+            return cached[1]
+        record = store.load(path.stem)
+        if not record:
+            return None
+        entry = {"summary": search_summary(record), "session_id": (record.get("confirmed_brief") or {}).get("session_id")}
+        self._items[path] = (version, entry)
+        return entry
+
+
 def create_app(
     jd_parser: Optional[JDParser] = None,
     search_planner: Optional[SearchPlanner] = None,
@@ -336,6 +404,7 @@ def create_app(
     requirement_judge: Optional[RequirementJudge] = None,
     confirmation_store: Optional[ConfirmationStore] = None,
     require_confirmation: Optional[bool] = None,
+    role_clock: Optional[Callable[[], datetime]] = None,
 ) -> FastAPI:
     app = FastAPI(title="RecruiterAI API")
     app.add_middleware(
@@ -374,6 +443,137 @@ def create_app(
     send_confirmed_sentence = os.environ.get("RECRUITERAI_SEND_CONFIRMED_SEARCH_SENTENCE", "false").strip().lower() in ("1", "true", "yes")
     harvest_enrichment_service = harvest_enrichment_service or HarvestEnrichmentService()
     requirement_judge = requirement_judge or RequirementJudge()
+    search_summary_cache = _SummaryCache()
+    clock = role_clock or (lambda: datetime.now(timezone.utc))
+
+    def _build_plan(intent: SearchIntent, location: Optional[LocationOverride]) -> tuple:
+        """Location override, radius handling, search plan, query expansion and provider capability mapping: everything
+        between "the confirmed intent" and "queries the provider can run". Shared by every way a search starts."""
+        # Location fidelity fix: the recruiter's Search Brief has already resolved location (search geography, exact
+        # cities, zip, radius) with far more care than a second OpenAI pass over serialized prose ever could. When it
+        # is given, it is authoritative: it REPLACES whatever the JD parse guessed, rather than only filling gaps, so
+        # an intentional "Global" (no constraint) choice isn't silently overridden by a stray guess.
+        if location is not None:
+            intent.location.countries = list(location.countries)
+            intent.location.states = list(location.states)
+            intent.location.cities = list(location.cities)
+            intent.location.zip_codes = list(location.zip_codes)
+            intent.location.radius_miles = location.radius_miles
+            intent.location.radius_place = location.radius_place
+            intent.location.radius_unit = location.radius_unit or "mi"
+            intent.location.work_mode = location.work_mode
+            if location.employment_type:
+                intent.role.employment_type = location.employment_type
+            logger.info(
+                "[SEARCH] Location override applied from Search Brief | countries=%s states=%s cities=%s zip_codes=%s radius_place=%s radius_miles=%s work_mode=%s",
+                intent.location.countries,
+                intent.location.states,
+                intent.location.cities,
+                intent.location.zip_codes,
+                intent.location.radius_place,
+                intent.location.radius_miles,
+                intent.location.work_mode,
+            )
+
+        radius_degradation_warning = _apply_radius_degradation(intent)
+
+        logger.info("Building search plan")
+        plan = search_planner.build(intent)
+        if not isinstance(plan, SearchPlan):
+            raise RankingError("Search planner returned an invalid plan")
+        logger.info("Search plan created (%s queries)", len(plan.searches))
+
+        logger.info("Expanding search queries")
+        expanded_plan = query_expander.expand(plan)
+        if not isinstance(expanded_plan, SearchPlan):
+            raise RankingError("Query expansion returned an invalid plan")
+        logger.info("Query expansion complete (%s searches)", len(expanded_plan.searches))
+
+        logger.info("Mapping provider capabilities")
+        capabilities = ProviderCapabilities(supported_filters=CRUSTDATA_SUPPORTED_FILTERS)
+        mapped_plan, capability_warnings = capability_mapper.map(expanded_plan, capabilities)
+        if not isinstance(mapped_plan, SearchPlan):
+            raise RankingError("Capability mapping returned an invalid plan")
+        friendly_warnings = _friendly_capability_warnings(capability_warnings)
+        if radius_degradation_warning:
+            friendly_warnings.append(radius_degradation_warning)
+        for raw_warning in capability_warnings:
+            logger.warning("[SEARCH] Constraint dropped for this provider | %s", raw_warning)
+        logger.info("Capability mapping complete (%s constraint(s) dropped)", len(capability_warnings))
+        return intent, mapped_plan, friendly_warnings
+
+    def _confirmed_intent(snapshot: Dict[str, Any]) -> tuple:
+        intent = search_intent_from_snapshot(snapshot)
+        if not send_confirmed_sentence:
+            intent.natural_language_search_query = None
+        return intent, LocationOverride(**location_override_for_search(intent, snapshot["boundary"]))
+
+    def start_cycle(search_id: str, snapshot: Dict[str, Any], cycle: Dict[str, Any], guidance: Guidance, provider_name: Optional[str] = None) -> None:
+        """Runs ONE retrieval cycle for a role, on the same background pipeline as any search. The role's record must
+        already exist. Retrieval sizing is backend-owned and unchanged: up to 50 retrieved, up to 25 admitted."""
+        # Every cycle of a role searches with the provider the role was started with.
+        provider_name = provider_name or (search_store.load(search_id) or {}).get("provider") or "crustdata"
+        provider = provider_registry.get(provider_name)
+        intent, location = _confirmed_intent(snapshot)
+        intent, mapped_plan, friendly_warnings = _build_plan(intent, location)
+        if cycle["kind"] in ("more", "resume"):
+            # A cursor belongs to the query that produced it: continue the primary natural-language query only.
+            primary = [query for query in mapped_plan.searches if query.query_name == "natural_language"]
+            if primary:
+                mapped_plan = SearchPlan(searches=primary, strategy=mapped_plan.strategy, reasoning=mapped_plan.reasoning, confidence_score=mapped_plan.confidence_score)
+        options = {
+            "page_size": get_discovery_page_size(),
+            "max_pages": get_discovery_max_pages(),
+            "autocomplete": True,
+            "cursor": cycle.get("cursor"),
+        }
+        options = {key: value for key, value in options.items() if value is not None}
+
+        def mark_running(record: Dict[str, Any]) -> None:
+            record["status"] = STATUS_RUNNING
+            record["updated_at"] = datetime.now(timezone.utc).isoformat()
+            record.pop("error_message", None)
+            record.setdefault("response", {})["status"] = STATUS_RUNNING
+
+        existing_record = search_store.update(search_id, mark_running)
+        if existing_record is None:
+            raise KeyError(search_id)
+        threading.Thread(
+            target=run_search_pipeline,
+            kwargs=dict(
+                search_id=search_id,
+                intent=intent,
+                mapped_plan=mapped_plan,
+                options=options,
+                provider=provider,
+                candidate_merger=candidate_merger,
+                candidate_ranker=candidate_ranker,
+                harvest_enrichment_service=harvest_enrichment_service,
+                requirement_judge=requirement_judge,
+                match_explainer=match_explainer,
+                search_diagnostics=search_diagnostics,
+                search_store=search_store,
+                jd_text=snapshot["raw_input"],
+                location_override=location.model_dump(),
+                friendly_warnings=friendly_warnings,
+                debug=False,
+                existing_record=existing_record,
+                target_pool_size=MAX_WORKSPACE_CANDIDATES,
+                cycle=cycle,
+                guidance=guidance,
+            ),
+            daemon=True,
+            name=f"search-{search_id}",
+        ).start()
+        logger.info("[SEARCH] Cycle started | search_id=%s kind=%s n=%s cursor=%s", search_id, cycle["kind"], cycle["n"], bool(cycle.get("cursor")))
+
+    role_runtime = RoleRuntime(search_store, confirmation_store, start_cycle, clock)
+    app.state.role_runtime = role_runtime
+    if os.environ.get("RECRUITERAI_ROLE_SCHEDULER", "true").strip().lower() not in ("0", "false", "no"):
+        role_scheduler = RoleScheduler(role_runtime)
+        # Started with the server, not at import, so building the app (tests, tools) never starts background work.
+        app.router.on_startup.append(role_scheduler.start)
+        app.router.on_shutdown.append(role_scheduler.stop)
 
     # A background search thread cannot survive a process restart — any
     # record still marked "running" from a previous process instance is
@@ -584,23 +784,49 @@ def create_app(
             "capability_warnings": capability_warnings,
         }
 
-    @app.get("/search/{search_id}", response_model=SearchResponse, dependencies=[Depends(require_session)])
-    def get_search(search_id: str) -> SearchResponse:
-        record = search_store.load(search_id)
-        if record is None:
-            raise HTTPException(status_code=404, detail="Search not found.")
-        logger.info("[SEARCH] Reloaded persisted search | search_id=%s — no OpenAI or CrustData calls made", search_id)
-        # record["response"] is the snapshot from whenever the search last
-        # ran — recruiter_decisions/notes are updated separately (PATCH,
-        # below) and live at the top level of the record, not inside that
-        # snapshot, so they must be merged in here rather than trusted to
-        # already be present on it.
+    def _search_response(record: Dict[str, Any]) -> SearchResponse:
+        # record["response"] is the snapshot from whenever the search last ran — recruiter_decisions/notes are updated
+        # separately (PATCH, below) and live at the top level of the record, not inside that snapshot, so they must be
+        # merged in here rather than trusted to already be present on it.
         response_data = dict(record["response"])
         response_data["recruiter_decisions"] = record.get("recruiter_decisions", {})
         response_data["notes"] = record.get("notes", {})
         response_data["workspace_arranged"] = bool(record.get("workspace_arranged", False))
         response_data["confirmed_brief"] = record.get("confirmed_brief")
+        response_data["status"] = record.get("status", response_data.get("status", "complete"))
+        response_data.update(derived_fields(record, clock()))
         return SearchResponse(**response_data)
+
+    @app.get("/searches", dependencies=[Depends(require_session)])
+    def list_searches() -> Dict[str, Any]:
+        """The workspace sidebar: every role, plus briefs that have not been searched yet. Newest activity first."""
+        items: List[Dict[str, Any]] = []
+        used_sessions: set = set()
+        for path in Path(search_store.storage_dir).glob("*.json"):
+            summary = search_summary_cache.get(search_store, path)
+            if summary is None:
+                continue
+            items.append(summary["summary"])
+            if summary["session_id"]:
+                used_sessions.add(summary["session_id"])
+        cutoff = datetime.now(timezone.utc).timestamp() - DRAFT_VISIBLE_SECONDS
+        for draft in list_draft_summaries(intake_session_manager):
+            if draft["session_id"] in used_sessions or not draft.get("boundary"):
+                continue
+            updated = datetime.fromisoformat(draft["updated_at"]).timestamp()
+            if updated >= cutoff:
+                items.append(draft_summary(draft))
+        items.sort(key=lambda item: item.get("updated_at") or "", reverse=True)
+        return {"searches": items[:SIDEBAR_LIMIT]}
+
+    @app.get("/search/{search_id}", response_model=SearchResponse, dependencies=[Depends(require_session)])
+    def get_search(search_id: str) -> SearchResponse:
+        role_runtime.tick_record(search_id)
+        record = search_store.load(search_id)
+        if record is None:
+            raise HTTPException(status_code=404, detail="Search not found.")
+        logger.info("[SEARCH] Reloaded persisted search | search_id=%s — no OpenAI or CrustData calls made", search_id)
+        return _search_response(record)
 
     @app.patch("/search/{search_id}/workspace", dependencies=[Depends(require_session)])
     def update_workspace(search_id: str, update: WorkspaceUpdateRequest) -> Dict[str, Any]:
@@ -616,23 +842,134 @@ def create_app(
         return {"workspace_arranged": bool(record.get("workspace_arranged", False))}
 
     @app.patch("/search/{search_id}/candidate", dependencies=[Depends(require_session)])
-    def update_candidate(search_id: str, update: CandidateUpdateRequest) -> Dict[str, Any]:
-        def apply(record: Dict[str, Any]) -> None:
-            if update.decision is not None:
-                record.setdefault("recruiter_decisions", {})[update.candidate_id] = update.decision
-            if update.note:
-                record.setdefault("notes", {}).setdefault(update.candidate_id, []).append(
-                    {"text": update.note, "created_at": datetime.now(timezone.utc).isoformat()}
-                )
+    def update_candidate(search_id: str, update: CandidateUpdateRequest) -> SearchResponse:
+        failure: List[RoleError] = []
 
-        # update() is atomic with respect to the running search's own progress
-        # saves, so a shortlist recorded mid-search is never overwritten by the
-        # pipeline's next write (and vice versa).
+        def apply(record: Dict[str, Any]) -> None:
+            try:
+                apply_candidate_update(
+                    record,
+                    search_id=search_id,
+                    candidate_id=update.candidate_id,
+                    decision=update.decision,
+                    note=update.note,
+                    feedback_reason=update.feedback_reason,
+                    feedback_note=update.feedback_note,
+                    now=clock(),
+                )
+            except RoleError as error:
+                failure.append(error)
+
+        # update() is atomic with respect to the running search's own progress saves, so a decision recorded
+        # mid-search is never overwritten by the pipeline's next write (and vice versa).
         record = search_store.update(search_id, apply)
         if record is None:
             raise HTTPException(status_code=404, detail="Search not found.")
+        if failure:
+            raise HTTPException(status_code=failure[0].status_code, detail=failure[0].message)
         logger.info("[SEARCH] Recruiter decision/note persisted | search_id=%s candidate_id=%s", search_id, update.candidate_id)
-        return {"recruiter_decisions": record.get("recruiter_decisions", {}), "notes": record.get("notes", {})}
+        return _search_response(record)
+
+    @app.post("/search/{search_id}/more", dependencies=[Depends(require_session)])
+    def show_more(search_id: str, request: Optional[ShowMoreRequest] = None) -> Dict[str, Any]:
+        """"Show me more": shows candidates already read, then continues the current retrieval when none are left."""
+        try:
+            outcome = role_runtime.show_more(search_id, only_new=bool(request and request.only_new))
+        except RoleError as error:
+            raise HTTPException(status_code=error.status_code, detail=error.message)
+        return outcome
+
+    @app.post("/search/{search_id}/role", dependencies=[Depends(require_session)])
+    def role_action(search_id: str, request: RoleActionRequest) -> SearchResponse:
+        try:
+            record = role_runtime.set_role_action(search_id, request.action)
+        except RoleError as error:
+            raise HTTPException(status_code=error.status_code, detail=error.message)
+        return _search_response(record)
+
+    @app.post("/search/{search_id}/calibration", dependencies=[Depends(require_session)])
+    def calibration_correction(search_id: str, request: CalibrationRequest) -> SearchResponse:
+        try:
+            record = role_runtime.calibrate(search_id, request.dismiss)
+        except RoleError as error:
+            raise HTTPException(status_code=error.status_code, detail=error.message)
+        return _search_response(record)
+
+    def _search_role(request: SearchRequest, snapshot: Dict[str, Any], confirmed_brief: Dict[str, Any], search_id: str) -> SearchResponse:
+        """A search from a confirmed brief is a ROLE. The first time it is confirmed it starts (Day 0). Confirming a
+        changed brief on the same role is a meaningful change when it alters what is searched: the role is extended
+        by a day (within its limit) and a fresh retrieval runs. A confirmation that changes nothing searched re-runs
+        nothing."""
+        now = clock()
+        with search_store.lock:
+            existing = search_store.load(search_id) or {}
+            existing_role = existing.get("role")
+            if existing_role and existing.get("status") == STATUS_RUNNING:
+                raise HTTPException(status_code=409, detail="RecruiterAI is still working on this search.")
+
+            has_inventory = bool((existing.get("response") or {}).get("candidates"))
+            restart = not existing_role or existing.get("status") in ("error", "interrupted") or not has_inventory
+            changed: List[str] = []
+            if not restart:
+                previous = confirmation_store.load((existing.get("confirmed_brief") or {}).get("confirmation_id") or "")
+                changed = meaningful_changes(previous["search_intent"], snapshot["search_intent"]) if previous else ["the brief"]
+                if not changed:
+                    existing["confirmed_brief"] = confirmed_brief
+                    existing["updated_at"] = now.isoformat()
+                    search_store.save(search_id, existing)
+                    logger.info("[SEARCH] Confirmation changes nothing that is searched; no new retrieval | search_id=%s", search_id)
+                    return _search_response(existing)
+
+            record = dict(existing)
+            record.update(
+                {
+                    "search_id": search_id,
+                    "status": STATUS_RUNNING,
+                    "created_at": existing.get("created_at", now.isoformat()),
+                    "updated_at": now.isoformat(),
+                    "jd_text": snapshot["raw_input"],
+                    "confirmed_brief": confirmed_brief,
+                    "recruiter_decisions": existing.get("recruiter_decisions", {}),
+                    "notes": existing.get("notes", {}),
+                    "harvest_evidence": existing.get("harvest_evidence", {}),
+                    "internal_diagnostics": existing.get("internal_diagnostics", {}) if not restart else {},
+                    "feedback_events": existing.get("feedback_events", []),
+                    "provider": request.provider,
+                }
+            )
+            if restart:
+                role = existing_role or role_lifecycle.new_role(now, label=sidebar_label(snapshot))
+                role["label"] = sidebar_label(snapshot)
+                record.update(
+                    {
+                        "role": role,
+                        "presentation": {},
+                        "cycles": [],
+                        "retrieval": None,
+                        "availability": None,
+                        "candidate_states": {},
+                        "response": {
+                            "provider": "platform", "search_id": search_id, "candidate_count": 0, "candidates": [], "explanations": [],
+                            "evidence": [], "diagnostics": {}, "warnings": [], "debug": None, "status": STATUS_RUNNING,
+                            "candidate_states": {}, "progress": {"admitted": 0, "surfaced": 0, "building_context": 0, "review_ready": 0},
+                        },
+                    }
+                )
+                record.pop("calibration", None)
+                cycle = {"kind": "initial", "n": 1, "cursor": None, "dedupe": "all", "present": presentation_rules.INITIAL_BATCH, "confirmation_id": snapshot["confirmation_id"]}
+            else:
+                role = record["role"]
+                role["label"] = sidebar_label(snapshot)
+                role_lifecycle.extend_for_change(role, now, changed)
+                # Candidates held in reserve under the old brief are not offered as if they were found under the new one;
+                # any that the new retrieval finds again are refreshed and offered again.
+                for entry in (record.get("presentation") or {}).values():
+                    if entry.get("state") == presentation_rules.RESERVE:
+                        entry["stale"] = True
+                cycle = {"kind": "change", "n": len(record.get("cycles") or []) + 1, "cursor": None, "dedupe": "presented", "present": presentation_rules.MORE_BATCH, "confirmation_id": snapshot["confirmation_id"]}
+            search_store.save(search_id, record)
+            start_cycle(search_id, snapshot, cycle, build_guidance(record) if not restart else Guidance(), provider_name=request.provider)
+            return _search_response(search_store.load(search_id) or record)
 
     @app.post("/search", response_model=SearchResponse, dependencies=[Depends(require_session)])
     def search(request: SearchRequest) -> SearchResponse:
@@ -655,64 +992,14 @@ def create_app(
             _raise_recruiter_friendly_error("No sourcing provider is currently configured.")
 
         try:
+            if confirmed_snapshot is not None:
+                return _search_role(request, confirmed_snapshot, confirmed_brief, search_id)
+
             intent = _resolve_search_intent(request, jd_parser)
             if not isinstance(intent, SearchIntent):
                 raise ParsingError("JD parser returned an invalid SearchIntent")
 
-            # Location fidelity fix: the recruiter's Search Brief has already
-            # resolved location (search geography, exact cities, zip, radius)
-            # with far more care than a second OpenAI pass over serialized
-            # prose ever could. When the frontend sends it, it is
-            # authoritative — it REPLACES whatever the JD parse guessed,
-            # rather than only filling gaps, so an intentional "Global" (no
-            # constraint) choice isn't silently overridden by a stray guess.
-            if request.location is not None:
-                intent.location.countries = list(request.location.countries)
-                intent.location.states = list(request.location.states)
-                intent.location.cities = list(request.location.cities)
-                intent.location.zip_codes = list(request.location.zip_codes)
-                intent.location.radius_miles = request.location.radius_miles
-                intent.location.radius_place = request.location.radius_place
-                intent.location.radius_unit = request.location.radius_unit or "mi"
-                intent.location.work_mode = request.location.work_mode
-                if request.location.employment_type:
-                    intent.role.employment_type = request.location.employment_type
-                logger.info(
-                    "[SEARCH] Location override applied from Search Brief | countries=%s states=%s cities=%s zip_codes=%s radius_place=%s radius_miles=%s work_mode=%s",
-                    intent.location.countries,
-                    intent.location.states,
-                    intent.location.cities,
-                    intent.location.zip_codes,
-                    intent.location.radius_place,
-                    intent.location.radius_miles,
-                    intent.location.work_mode,
-                )
-
-            radius_degradation_warning = _apply_radius_degradation(intent)
-
-            logger.info("Building search plan")
-            plan = search_planner.build(intent)
-            if not isinstance(plan, SearchPlan):
-                raise RankingError("Search planner returned an invalid plan")
-            logger.info("Search plan created (%s queries)", len(plan.searches))
-
-            logger.info("Expanding search queries")
-            expanded_plan = query_expander.expand(plan)
-            if not isinstance(expanded_plan, SearchPlan):
-                raise RankingError("Query expansion returned an invalid plan")
-            logger.info("Query expansion complete (%s searches)", len(expanded_plan.searches))
-
-            logger.info("Mapping provider capabilities")
-            capabilities = ProviderCapabilities(supported_filters=CRUSTDATA_SUPPORTED_FILTERS)
-            mapped_plan, capability_warnings = capability_mapper.map(expanded_plan, capabilities)
-            if not isinstance(mapped_plan, SearchPlan):
-                raise RankingError("Capability mapping returned an invalid plan")
-            friendly_warnings = _friendly_capability_warnings(capability_warnings)
-            if radius_degradation_warning:
-                friendly_warnings.append(radius_degradation_warning)
-            for raw_warning in capability_warnings:
-                logger.warning("[SEARCH] Constraint dropped for this provider | %s", raw_warning)
-            logger.info("Capability mapping complete (%s constraint(s) dropped)", len(capability_warnings))
+            intent, mapped_plan, friendly_warnings = _build_plan(intent, request.location)
 
             # Retrieval sizing is backend-owned (Phase 3) — the frontend no
             # longer sends page_size/max_pages at all; a caller MAY still

@@ -1,19 +1,18 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
 import { ChevronDown, ChevronUp, RotateCcw } from 'lucide-react'
 import { initialsOf } from '../models/discovery'
 import {
   FILTERS,
-  SECTION_COPY,
   filterCounts,
-  groupBySection,
   matchesFilter,
   type CardFacts,
   type Decision,
   type FilterKey,
   type FunnelCopy,
-  type SectionKey,
   type WorkspaceCandidate,
 } from '../models/workspace'
+import { FeedbackPrompt } from './RoleControls'
+import { reasonLabel } from '../models/roleWorkspace'
 import './CandidateWorkspace.css'
 
 const DECISIONS: Array<{ value: Decision; label: string; key: string }> = [
@@ -24,28 +23,27 @@ const DECISIONS: Array<{ value: Decision; label: string; key: string }> = [
 
 const DECISION_LABEL: Record<Decision, string> = { shortlist: 'Shortlisted', maybe: 'Maybe', reject: 'Rejected' }
 
-// The thin group is collapsed until asked for; its count stays visible.
-const COLLAPSED_BY_DEFAULT: SectionKey[] = ['thin']
-
 type Decisions = Record<string, Decision | undefined>
 
 type Props = {
   /** Every candidate in the order they arrived (stable while the search fills in). */
   flatItems: WorkspaceCandidate[]
-  /** The same candidates in the order the search returned them, used inside each group once arranged. */
-  arrangedItems: WorkspaceCandidate[]
   decisions: Decisions
   selectedId: string | null
   onOpen: (id: string | null) => void
   onDecide: (id: string, decision: Decision | undefined) => void
 
-  arranged: boolean
-  canArrange: boolean
-  onArrange: () => void
-
   running: { read: number; total: number } | null
   funnel: FunnelCopy | null
   warnings: string[]
+
+  /** Recorded reasons for Maybe and Reject, by candidate. When `onFeedback` is given, Maybe and Reject ask for one. */
+  feedback?: Record<string, { decision?: string | null; reason?: string | null; note?: string | null }>
+  onFeedback?: (id: string, update: { reason?: string; note?: string }) => void
+  /** The plain list only: no funnel, no grouping banner, no filter. Used for the reviewed-but-not-shown section. */
+  compact?: boolean
+  /** What the order of the list means, when it is not simply the order the profiles were read. */
+  orderNote?: string
 }
 
 function Avatar({ name, url }: { name: string; url: string | null }) {
@@ -88,9 +86,12 @@ type CardProps = {
   onOpen: () => void
   onDecide: (decision: Decision) => void
   register: (element: HTMLElement | null) => void
+  /** The reason prompt, when one is open, and the recorded reason line when one is not. */
+  prompt?: ReactNode
+  reason?: string | null
 }
 
-function CandidateCard({ item, decision, selected, expanded, onToggleExpand, onOpen, onDecide, register }: CardProps) {
+function CandidateCard({ item, decision, selected, expanded, onToggleExpand, onOpen, onDecide, register, prompt, reason }: CardProps) {
   const { candidate, facts } = item
   const place = [candidate.title, candidate.company !== 'Not specified' ? candidate.company : null, candidate.location !== 'Not specified' ? candidate.location : null]
     .filter(Boolean)
@@ -175,6 +176,9 @@ function CandidateCard({ item, decision, selected, expanded, onToggleExpand, onO
         ) : null}
       </div>
 
+      {prompt}
+      {!prompt && reason ? <p className="ws-reason">{reason}</p> : null}
+
       {expanded ? (
         <div className="ws-card__proof">
           {facts.chips.length > 0 ? (
@@ -256,37 +260,22 @@ function PendingRow({ item }: { item: WorkspaceCandidate }) {
 export function FunnelHeader({
   funnel,
   running,
-  sectionCounts,
   warnings,
 }: {
   funnel: FunnelCopy | null
   running: { read: number; total: number } | null
-  sectionCounts: Array<{ key: SectionKey; count: number }> | null
   warnings: string[]
 }) {
   return (
     <section className="ws-funnel" aria-label="How this list was made">
       <h3 className="ws-funnel__headline">{running ? `Reading profiles: ${running.read} of ${running.total}` : (funnel?.headline ?? '')}</h3>
       {!running && funnel?.scope ? <p className="ws-funnel__scope">{funnel.scope}</p> : null}
-      {sectionCounts && sectionCounts.length > 0 ? (
-        <p className="ws-funnel__counts">
-          {sectionCounts.map((entry, index) => (
-            <span key={entry.key}>
-              {index > 0 ? ' · ' : ''}
-              <strong>{entry.count}</strong> {SECTION_COPY[entry.key].title.toLowerCase()}
-            </span>
-          ))}
-        </p>
-      ) : null}
       {!running ? (
         <details className="ws-funnel__how">
           <summary>How this list was made</summary>
           <ul>
             <li>Each profile was read and each core requirement was checked against what it says. A requirement counts as shown only with a quote from the profile.</li>
-            <li>
-              Start here: at least 60% of the core requirements (not counting total years) are shown. Worth a look: at least one is. Not much shown yet: none is.
-            </li>
-            <li>The order inside a group is not a ranking, and no group says one person is better than another. It says how much of the brief their profile shows.</li>
+            <li>The list is in the order the profiles were read. It is not a ranking, and nothing here says one person is better than another. It shows how much of the brief each profile shows.</li>
             {funnel?.notRead ? <li>{funnel.notRead}</li> : null}
             {warnings.map((warning) => (
               <li key={warning}>{warning}</li>
@@ -300,49 +289,39 @@ export function FunnelHeader({
 
 export function CandidateWorkspace({
   flatItems,
-  arrangedItems,
   decisions,
   selectedId,
   onOpen,
   onDecide,
-  arranged,
-  canArrange,
-  onArrange,
   running,
   funnel,
   warnings,
+  feedback = {},
+  onFeedback,
+  compact = false,
+  orderNote,
 }: Props) {
   const [filter, setFilter] = useState<FilterKey>('all')
   // Cards whose decision no longer matches the filter stay in place as a slim row (with Undo) until the filter
   // changes, so nothing moves under the cursor. Maps to the decision they had before, for Undo.
   const [lingering, setLingering] = useState<Record<string, Decision | undefined>>({})
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
-  const [openSections, setOpenSections] = useState<Set<SectionKey>>(new Set())
-  const [closedSections, setClosedSections] = useState<Set<SectionKey>>(new Set())
   const [focusId, setFocusId] = useState<string | null>(null)
   const cards = useRef(new Map<string, HTMLElement>())
+  // Prompts the recruiter answered or skipped, and the reason they just chose (shown before the server confirms it).
+  const [resolved, setResolved] = useState<Set<string>>(new Set())
+  const [localReasons, setLocalReasons] = useState<Record<string, string>>({})
 
-  const items = arranged ? arrangedItems : flatItems
+  const items = flatItems
   const ids = useMemo(() => items.map((item) => item.candidate.id), [items])
   const counts = useMemo(() => filterCounts(ids, decisions), [ids, decisions])
 
-  const isCollapsed = (key: SectionKey) => (COLLAPSED_BY_DEFAULT.includes(key) ? !openSections.has(key) : closedSections.has(key))
-  const toggleSection = (key: SectionKey) => {
-    if (COLLAPSED_BY_DEFAULT.includes(key)) {
-      setOpenSections((current) => {
-        const next = new Set(current)
-        if (next.has(key)) next.delete(key)
-        else next.add(key)
-        return next
-      })
-    } else {
-      setClosedSections((current) => {
-        const next = new Set(current)
-        if (next.has(key)) next.delete(key)
-        else next.add(key)
-        return next
-      })
-    }
+  // A Maybe or Reject asks for its reason until the recruiter gives one, adds a note, or skips. Never for a Shortlist.
+  const promptOpen = (id: string): boolean => {
+    const decision = decisions[id]
+    if (!onFeedback || (decision !== 'maybe' && decision !== 'reject')) return false
+    if (resolved.has(id) || feedback[id]?.reason || feedback[id]?.note) return false
+    return true
   }
 
   const visibleItems = items.filter((item) => item.facts.section === 'preparing' || matchesFilter(filter, decisions[item.candidate.id]) || item.candidate.id in lingering)
@@ -352,15 +331,11 @@ export function CandidateWorkspace({
     const id = item.candidate.id
     if (item.facts.section === 'preparing') return 'pending'
     if (id in lingering) return 'slim'
-    if (filter === 'all' && decisions[id] === 'reject') return 'slim'
+    if (filter === 'all' && decisions[id] === 'reject' && !promptOpen(id)) return 'slim'
     return 'card'
   }
 
-  const groups = arranged ? groupBySection(visibleItems) : null
-  const shownIds = groups
-    ? groups.flatMap((group) => (isCollapsed(group.key) ? [] : group.items.map((item) => item.candidate.id)))
-    : visibleItems.map((item) => item.candidate.id)
-  const navIds = shownIds.filter((id) => {
+  const navIds = visibleItems.map((item) => item.candidate.id).filter((id) => {
     const item = items.find((entry) => entry.candidate.id === id)
     return item ? modeOf(item) === 'card' : false
   })
@@ -392,10 +367,40 @@ export function CandidateWorkspace({
     const position = navIds.indexOf(id)
     const after = position >= 0 ? (navIds[position + 1] ?? navIds[position - 1] ?? null) : null
     const leavesFilter = !matchesFilter(filter, next)
-    const collapsesInAll = filter === 'all' && next === 'reject'
+    // A reject collapses straight away unless it is about to ask why; then it collapses once that is answered.
+    const asksWhy = Boolean(onFeedback) && (next === 'maybe' || next === 'reject')
+    const collapsesInAll = filter === 'all' && next === 'reject' && !asksWhy
+    setResolved((current) => {
+      const rest = new Set(current)
+      rest.delete(id)
+      return rest
+    })
+    setLocalReasons((current) => {
+      const { [id]: _gone, ...rest } = current
+      return rest
+    })
     if (leavesFilter) setLingering((current) => ({ ...current, [id]: previous }))
     onDecide(id, next)
     if (leavesFilter || collapsesInAll) setFocusId(after)
+  }
+
+  // The recruiter answered (a reason or a note) or skipped. The card stays where it is; a reject then collapses.
+  const closePrompt = (id: string) => {
+    const position = navIds.indexOf(id)
+    const after = position >= 0 ? (navIds[position + 1] ?? navIds[position - 1] ?? null) : null
+    setResolved((current) => new Set(current).add(id))
+    if (filter === 'all' && decisions[id] === 'reject') setFocusId(after)
+  }
+
+  const giveReason = (id: string, reason: string) => {
+    setLocalReasons((current) => ({ ...current, [id]: reason }))
+    onFeedback?.(id, { reason })
+    closePrompt(id)
+  }
+
+  const giveNote = (id: string, note: string) => {
+    onFeedback?.(id, { note })
+    closePrompt(id)
   }
 
   const undo = (id: string) => {
@@ -466,11 +471,20 @@ export function CandidateWorkspace({
     if (mode === 'slim') {
       return <SlimRow key={id} item={item} decision={decisions[id]} onUndo={() => undo(id)} onOpen={() => onOpen(id)} register={register(id)} />
     }
+    const decision = decisions[id]
+    const open = promptOpen(id)
+    const recorded = reasonLabel(decision, localReasons[id] ?? feedback[id]?.reason)
     return (
       <CandidateCard
         key={id}
         item={item}
-        decision={decisions[id]}
+        decision={decision}
+        prompt={
+          open && (decision === 'maybe' || decision === 'reject') ? (
+            <FeedbackPrompt decision={decision} onReason={(reason) => giveReason(id, reason)} onNote={(note) => giveNote(id, note)} onSkip={() => closePrompt(id)} />
+          ) : undefined
+        }
+        reason={recorded ? `Reason: ${recorded}` : undefined}
         selected={selectedId === id}
         expanded={expanded.has(id)}
         onToggleExpand={() => toggleExpand(id)}
@@ -481,21 +495,11 @@ export function CandidateWorkspace({
     )
   }
 
-  const sectionCounts = arranged ? groupBySection(items).map((group) => ({ key: group.key, count: group.items.length })) : null
-
   return (
-    <div className="ws">
-      <FunnelHeader funnel={funnel} running={running} sectionCounts={sectionCounts} warnings={warnings} />
+    <div className={`ws${compact ? ' ws--compact' : ''}`}>
+      {compact ? null : <FunnelHeader funnel={funnel} running={running} warnings={warnings} />}
 
-      {canArrange ? (
-        <div className="ws-banner" role="status">
-          <p>All {items.length} profiles are read. Group them by how much of the brief each one shows?</p>
-          <button type="button" className="ws-banner__button" onClick={onArrange}>
-            Group them
-          </button>
-        </div>
-      ) : null}
-
+      {compact ? null : (
       <div className="ws-filter" role="group" aria-label="Filter by decision">
         {FILTERS.map((option) => (
           <button
@@ -509,6 +513,7 @@ export function CandidateWorkspace({
           </button>
         ))}
       </div>
+      )}
 
       <div className="ws-list" onKeyDown={onKeyDown}>
         {visibleItems.length === 0 ? (
@@ -517,34 +522,8 @@ export function CandidateWorkspace({
           </p>
         ) : null}
 
-        {groups ? (
-          <>
-            <p className="ws-note">Grouped by how much of the brief each profile shows. The order inside a group is not a ranking.</p>
-            {groups.map((group) => {
-              const key = group.key
-              const total = items.filter((item) => item.facts.section === key).length
-              const collapsed = isCollapsed(key)
-              return (
-                <section key={key} className="ws-section" aria-label={SECTION_COPY[key].title}>
-                  <header className="ws-section__head">
-                    <button type="button" className="ws-section__toggle" aria-expanded={!collapsed} onClick={() => toggleSection(key)}>
-                      {collapsed ? <ChevronDown size={15} aria-hidden="true" /> : <ChevronUp size={15} aria-hidden="true" />}
-                      <span className="ws-section__title">{SECTION_COPY[key].title}</span>
-                      <span className="ws-section__count">{filter === 'all' || group.items.length === total ? total : `${group.items.length} of ${total}`}</span>
-                    </button>
-                    <p className="ws-section__basis">{SECTION_COPY[key].basis}</p>
-                  </header>
-                  {collapsed ? null : <div className="ws-section__items">{group.items.map(renderEntry)}</div>}
-                </section>
-              )
-            })}
-          </>
-        ) : (
-          <>
-            {visibleItems.length > 0 ? <p className="ws-note">In the order they were read.</p> : null}
-            <div className="ws-section__items">{visibleItems.map(renderEntry)}</div>
-          </>
-        )}
+        {visibleItems.length > 0 ? <p className="ws-note">{orderNote ?? 'In the order they were read.'}</p> : null}
+        <div className="ws-section__items">{visibleItems.map(renderEntry)}</div>
       </div>
     </div>
   )

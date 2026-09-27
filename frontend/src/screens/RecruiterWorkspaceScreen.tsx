@@ -9,16 +9,22 @@ import {
   confirmIntake,
   createConfirmation,
   updateIntakeBoundary,
+  listSearches,
+  showMoreCandidates,
+  setRoleAction,
+  correctCalibration,
 } from '../services/recruiterWorkflow'
 import { createEmptySearchBrief, searchIntentToBrief, type SearchBrief } from '../models/searchBrief'
 import { diffBriefEdits, formatBoundaryLocation } from '../models/livingBrief'
 import type { IntakeIssue, IntakeResult } from '../models/intake'
+import type { ActiveSearch } from '../models/roleWorkspace'
 import { CandidateReviewScreen } from './CandidateReviewScreen'
 import { DebugPanel } from './DebugPanel'
 import { LivingBrief } from './LivingBrief'
 import { SearchBoundaryForm } from './SearchBoundaryForm'
+import { SearchSidebar } from '../components/SearchSidebar'
 import { createEmptySearchBoundary, isSearchBoundaryComplete, type SearchBoundary } from '../models/searchBoundary'
-import type { SearchResponse } from '../types'
+import type { SearchListItem, SearchResponse } from '../types'
 import './RecruiterWorkspaceScreen.css'
 
 type ParseState = 'idle' | 'parsing' | 'success' | 'error'
@@ -27,42 +33,49 @@ type SearchState = 'idle' | 'searching' | 'done' | 'error'
 
 const RECRUITER_NAME = 'Harsha'
 
-// A page refresh must reload the last search, not re-run OpenAI/CrustData.
-// The search RESULT lives on the backend (see backend/services/search_store.py);
-// this only remembers *which* search to reload, which intake session it came
-// from, and the recruiter's working copy of the adjustable brief.
-const PERSISTED_SEARCH_KEY = 'recruiterai:lastSearch'
+// The search RESULT lives on the backend (see backend/services/search_store.py); a refresh must never re-run
+// OpenAI/CrustData. The browser only remembers which search was open, the working copy of each brief, and the one
+// new-search form that has been typed but not built yet.
+const ACTIVE_KEY = 'recruiterai:activeSearch'
+const LEGACY_POINTER_KEY = 'recruiterai:lastSearch'
+const BRIEFS_KEY = 'recruiterai:briefs'
+const COMPOSE_KEY = 'recruiterai:composeDraft'
+const SIDEBAR_REFRESH_MS = 30000
 
-type PersistedSearchPointer = {
-  searchId: string
-  jdText: string
-  brief: SearchBrief
-  intakeSessionId?: string | null
-}
+type ComposeDraft = { postedTitle: string; jdText: string; boundary: SearchBoundary }
 
-function savePersistedSearchPointer(pointer: PersistedSearchPointer): void {
+function readJson<T>(key: string): T | null {
   try {
-    window.localStorage.setItem(PERSISTED_SEARCH_KEY, JSON.stringify(pointer))
-  } catch {
-    // Best-effort only — persistence is a convenience, not a correctness requirement.
-  }
-}
-
-function readPersistedSearchPointer(): PersistedSearchPointer | null {
-  try {
-    const raw = window.localStorage.getItem(PERSISTED_SEARCH_KEY)
-    return raw ? (JSON.parse(raw) as PersistedSearchPointer) : null
+    const raw = window.localStorage.getItem(key)
+    return raw ? (JSON.parse(raw) as T) : null
   } catch {
     return null
   }
 }
 
-function clearPersistedSearchPointer(): void {
+function writeJson(key: string, value: unknown): void {
   try {
-    window.localStorage.removeItem(PERSISTED_SEARCH_KEY)
+    window.localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    // Best-effort only: persistence is a convenience, not a correctness requirement.
+  }
+}
+
+function removeKey(key: string): void {
+  try {
+    window.localStorage.removeItem(key)
   } catch {
     // Best-effort only.
   }
+}
+
+function saveWorkingBrief(searchId: string, brief: SearchBrief): void {
+  const all = readJson<Record<string, SearchBrief>>(BRIEFS_KEY) ?? {}
+  writeJson(BRIEFS_KEY, { ...all, [searchId]: brief })
+}
+
+function readWorkingBrief(searchId: string): SearchBrief | null {
+  return (readJson<Record<string, SearchBrief>>(BRIEFS_KEY) ?? {})[searchId] ?? null
 }
 
 function getGreeting(hour: number): string {
@@ -98,12 +111,21 @@ export function RecruiterWorkspaceScreen() {
   const [searchErrors, setSearchErrors] = useState<string[]>([])
   const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null)
   const [searchId, setSearchId] = useState<string | null>(null)
-  // Bumped once per search start — lets CandidateReviewScreen reset its open-record/edit-brief UI state exactly once
-  // per NEW search, without resetting on every progressive poll tick of the SAME still-running search.
+  // Bumped once per search start or switch: lets CandidateReviewScreen reset its open-record/edit-brief UI state
+  // exactly once per NEW search, without resetting on every progressive poll tick of the SAME still-running search.
   const [searchGeneration, setSearchGeneration] = useState(0)
-  // Progressive Candidate Workspace — the poll loop for a running search. A ref because it is plumbing, cleared when a
-  // new search starts or the component unmounts, so at most one poll loop is ever active.
+  // Multiple searches: the sidebar's list and which one is open. `active === null` is the new-search form.
+  const [searches, setSearches] = useState<SearchListItem[]>([])
+  const [active, setActive] = useState<ActiveSearch | null>(null)
+  const [roleMessage, setRoleMessage] = useState<string | null>(null)
+  const [searchNotice, setSearchNotice] = useState<string | null>(null)
+  // The poll loop for a running search. A ref because it is plumbing, cleared when a search is opened or started or the
+  // component unmounts, so at most one poll loop is ever active.
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Guards against a slow load finishing after the recruiter has already switched to another search.
+  const loadToken = useRef(0)
+  const stateRef = useRef({ active, searchState, searchResponse })
+  stateRef.current = { active, searchState, searchResponse }
 
   const greeting = `${getGreeting(new Date().getHours())}, ${RECRUITER_NAME}.`
   const hasJdText = jdText.trim().length > 0
@@ -111,64 +133,238 @@ export function RecruiterWorkspaceScreen() {
   const canParse = hasJdText && isBoundaryComplete && parseState !== 'parsing'
   const isBusy = parseState === 'parsing'
 
+  const refreshSearches = () => {
+    void listSearches()
+      .then(setSearches)
+      .catch(() => {
+        // The sidebar is a convenience; the open search keeps working without it.
+      })
+  }
+
+  const setActiveSearch = (next: ActiveSearch | null) => {
+    setActive(next)
+    if (next) writeJson(ACTIVE_KEY, next)
+    else removeKey(ACTIVE_KEY)
+  }
+
   // What the server proposed for this brief, shown in the adjustable panel and used as the baseline for real edits.
-  const refreshProposal = async (sessionId: string) => {
+  const refreshProposal = async (sessionId: string, keepWorkingCopy: SearchBrief | null = null) => {
     try {
       const proposed = searchIntentToBrief(await confirmIntake(sessionId))
-      setBrief(proposed)
+      setBrief(keepWorkingCopy ?? proposed)
       setBaselineBrief(proposed)
     } catch {
       // Only reachable while a question is open; the brief is not ready, so there is nothing to propose yet.
     }
   }
 
-  // On mount: if a previous search was persisted, reload it from the backend store and restore straight to Candidate
-  // Review — a refresh must never re-run OpenAI or CrustData. The intake session it came from is resumed read-only, so
-  // the boundary can still be edited and the brief re-confirmed.
-  useEffect(() => {
-    const pointer = readPersistedSearchPointer()
-    if (!pointer) {
-      return
+  const stopPolling = () => {
+    if (pollTimeoutRef.current !== null) {
+      clearTimeout(pollTimeoutRef.current)
+      pollTimeoutRef.current = null
     }
-    let cancelled = false
-    void (async () => {
-      const response = await loadPersistedSearch(pointer.searchId).catch(() => null)
-      if (cancelled || !response) {
+  }
+
+  // Progressive Candidate Workspace: POST /search returns almost immediately with status="running" — the actual
+  // pipeline runs on a backend background thread. This polls GET /search/{id} every 1.5s and updates the list as
+  // candidates move SURFACED -> BUILDING_CONTEXT -> REVIEW_READY, stopping once the search leaves "running".
+  const POLL_INTERVAL_MS = 1500
+
+  const pollSearch = (id: string, activeBrief: SearchBrief | null) => {
+    stopPolling()
+    // One failed or empty poll (a network blip, a deploy restart) must not end the loop: it would leave the workspace
+    // frozen mid-search with no error. Retry a few times, then surface the error state.
+    let consecutiveFailures = 0
+    const tick = async () => {
+      const response = await loadPersistedSearch(id).catch(() => null)
+      if (stateRef.current.active?.id !== id) return // the recruiter opened another search
+      if (!response) {
+        consecutiveFailures += 1
+        if (consecutiveFailures >= 5) {
+          setSearchState('error')
+          return
+        }
+        pollTimeoutRef.current = setTimeout(tick, POLL_INTERVAL_MS)
         return
       }
-      setJdText(pointer.jdText)
-      setBrief(pointer.brief)
-      setSearchId(pointer.searchId)
+      consecutiveFailures = 0
       setSearchResponse(response)
-      setParseState('success')
-      setStep('review')
       if (response.status === 'running') {
-        setSearchState('searching')
-        pollSearch(pointer.searchId, pointer.brief, pointer.intakeSessionId ?? null)
-      } else {
-        setSearchState(response.status === 'error' ? 'error' : 'done')
+        pollTimeoutRef.current = setTimeout(tick, POLL_INTERVAL_MS)
+        return
       }
+      setSearchState(response.status === 'complete' ? 'done' : 'error')
+      if (activeBrief) saveWorkingBrief(id, activeBrief)
+      refreshSearches()
+    }
+    void tick()
+  }
 
-      const sessionId = response.confirmed_brief?.session_id ?? pointer.intakeSessionId ?? null
-      if (sessionId) {
-        const session = await loadIntakeSession(sessionId).catch(() => null)
-        if (cancelled || !session) return
-        setIntakeSessionId(sessionId)
-        setIntakeResult(session.result)
-        if (session.boundary) setBoundary(session.boundary)
-        if (session.posted_title_input) setPostedTitle(session.posted_title_input)
-        try {
-          setBaselineBrief(searchIntentToBrief(await confirmIntake(sessionId)))
-        } catch {
-          // The baseline is only needed to send edits; without it the brief is re-confirmed as the server proposes it.
-        }
+  // Everything that belongs to ONE search goes back to a blank slate. The sidebar list and the recruiter's other
+  // searches are untouched: each one is stored on the server.
+  const clearWorkingState = () => {
+    stopPolling()
+    setPostedTitle('')
+    setJdText('')
+    setBoundary(createEmptySearchBoundary())
+    setBrief(createEmptySearchBrief())
+    setBaselineBrief(null)
+    setParseState('idle')
+    setParseErrors([])
+    setStep('jd')
+    setIntakeSessionId(null)
+    setIntakeResult(null)
+    setSearchState('idle')
+    setSearchErrors([])
+    setSearchResponse(null)
+    setSearchId(null)
+    setRoleMessage(null)
+    setSearchNotice(null)
+  }
+
+  // The brief and boundary a search came from, resumed read only so the boundary can still be edited and re-confirmed.
+  const resumeSession = async (sessionId: string, token: number, workingCopy: SearchBrief | null) => {
+    const session = await loadIntakeSession(sessionId).catch(() => null)
+    if (token !== loadToken.current || !session) return false
+    setIntakeSessionId(sessionId)
+    setIntakeResult(session.result)
+    if (session.boundary) setBoundary(session.boundary)
+    if (session.posted_title_input) setPostedTitle(session.posted_title_input)
+    setJdText(session.result.raw_input ?? '')
+    await refreshProposal(sessionId, workingCopy)
+    return true
+  }
+
+  const openRole = async (id: string, token: number) => {
+    const response = await loadPersistedSearch(id).catch(() => null)
+    if (token !== loadToken.current) return
+    if (!response) {
+      // The record is gone (or unreadable): fall back to the new-search form rather than showing a blank page.
+      clearWorkingState()
+      setActiveSearch(null)
+      refreshSearches()
+      return
+    }
+    const workingCopy = readWorkingBrief(id)
+    if (workingCopy) setBrief(workingCopy)
+    setSearchId(id)
+    setSearchResponse(response)
+    setParseState('success')
+    setStep('review')
+    setSearchGeneration((current) => current + 1)
+    if (response.status === 'running') {
+      setSearchState('searching')
+      pollSearch(id, workingCopy)
+    } else {
+      setSearchState(response.status === 'error' ? 'error' : 'done')
+    }
+    const sessionId = response.confirmed_brief?.session_id ?? null
+    if (sessionId) await resumeSession(sessionId, token, workingCopy)
+  }
+
+  const openDraft = async (sessionId: string, token: number) => {
+    const opened = await resumeSession(sessionId, token, null)
+    if (token !== loadToken.current) return
+    if (!opened) {
+      clearWorkingState()
+      setActiveSearch(null)
+      refreshSearches()
+      return
+    }
+    setParseState('success')
+    setStep('brief')
+  }
+
+  const openSearch = async (item: Pick<SearchListItem, 'kind' | 'id'>) => {
+    loadToken.current += 1
+    const token = loadToken.current
+    saveComposeDraft()
+    clearWorkingState()
+    setActiveSearch({ kind: item.kind, id: item.id })
+    if (item.kind === 'draft') await openDraft(item.id, token)
+    else await openRole(item.id, token)
+  }
+
+  // Typed but not built yet: kept so switching to another search and back never loses it.
+  const saveComposeDraft = () => {
+    if (stateRef.current.active !== null) return
+    if (postedTitle.trim() || jdText.trim()) writeJson(COMPOSE_KEY, { postedTitle, jdText, boundary } satisfies ComposeDraft)
+  }
+
+  const handleStartNewSearch = () => {
+    loadToken.current += 1
+    saveComposeDraft()
+    clearWorkingState()
+    setActiveSearch(null)
+    const draft = readJson<ComposeDraft>(COMPOSE_KEY)
+    if (draft) {
+      setPostedTitle(draft.postedTitle ?? '')
+      setJdText(draft.jdText ?? '')
+      if (draft.boundary) setBoundary(draft.boundary)
+    }
+  }
+
+  // On mount: list every search, then reopen the one that was open. A refresh must never re-run OpenAI or CrustData.
+  useEffect(() => {
+    refreshSearches()
+    const remembered = readJson<ActiveSearch>(ACTIVE_KEY)
+    const legacy = readJson<{ searchId?: string }>(LEGACY_POINTER_KEY)
+    const target: ActiveSearch | null = remembered ?? (legacy?.searchId ? { kind: 'search', id: legacy.searchId } : null)
+    if (target) {
+      void openSearch(target)
+    } else {
+      const draft = readJson<ComposeDraft>(COMPOSE_KEY)
+      if (draft) {
+        setPostedTitle(draft.postedTitle ?? '')
+        setJdText(draft.jdText ?? '')
+        if (draft.boundary) setBoundary(draft.boundary)
       }
-    })()
-    return () => {
-      cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // The new-search form is remembered as it is typed.
+  useEffect(() => {
+    if (step === 'jd' && active === null && (postedTitle.trim() || jdText.trim())) {
+      writeJson(COMPOSE_KEY, { postedTitle, jdText, boundary } satisfies ComposeDraft)
+    }
+  }, [step, active, postedTitle, jdText, boundary])
+
+  // Quiet background refresh: the sidebar, and the open role when the server has news (candidates found in the
+  // background, a role that paused). Never while a search is being watched, and never moves anything the recruiter is
+  // looking at: the workspace keeps the order it has.
+  useEffect(() => {
+    const sync = () => {
+      refreshSearches()
+      const { active: current, searchState: state, searchResponse: response } = stateRef.current
+      if (current?.kind !== 'search' || state === 'searching') return
+      void loadPersistedSearch(current.id)
+        .then((fresh) => {
+          if (!fresh || stateRef.current.active?.id !== current.id || stateRef.current.searchState === 'searching') return
+          const changed =
+            fresh.status !== response?.status ||
+            fresh.new_candidates !== response?.new_candidates ||
+            fresh.role?.status !== response?.role?.status ||
+            fresh.candidate_count !== response?.candidate_count
+          if (!changed) return
+          setSearchResponse(fresh)
+          if (fresh.status === 'running') {
+            setSearchState('searching')
+            pollSearch(current.id, null)
+          }
+        })
+        .catch(() => {})
+    }
+    const interval = window.setInterval(sync, SIDEBAR_REFRESH_MS)
+    window.addEventListener('focus', sync)
+    return () => {
+      window.clearInterval(interval)
+      window.removeEventListener('focus', sync)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => stopPolling, [])
 
   // RecruiterAI understands the role before searching: the title, the description and the Search Boundary go to the
   // backend, which reads the role once and returns the brief. Nothing is searched yet.
@@ -186,6 +382,9 @@ export function RecruiterWorkspaceScreen() {
       setBaselineBrief(null)
       setParseState('success')
       setStep('brief')
+      setActiveSearch({ kind: 'draft', id: session_id })
+      removeKey(COMPOSE_KEY)
+      refreshSearches()
       if (result.status === 'ready') {
         await refreshProposal(session_id)
       }
@@ -228,68 +427,39 @@ export function RecruiterWorkspaceScreen() {
     }
   }
 
-  // Progressive Candidate Workspace: POST /search returns almost immediately with status="running" — the actual
-  // pipeline runs on a backend background thread. This polls GET /search/{id} every 1.5s and updates the list as
-  // candidates move SURFACED -> BUILDING_CONTEXT -> REVIEW_READY, stopping once the search leaves "running".
-  const POLL_INTERVAL_MS = 1500
-
-  const stopPolling = () => {
-    if (pollTimeoutRef.current !== null) {
-      clearTimeout(pollTimeoutRef.current)
-      pollTimeoutRef.current = null
-    }
-  }
-
-  const pollSearch = (id: string, activeBrief: SearchBrief, sessionId: string | null) => {
-    stopPolling()
-    // One failed or empty poll (a network blip, a deploy restart) must not end the loop: it would leave the workspace
-    // frozen mid-search with no error. Retry a few times, then surface the error state.
-    let consecutiveFailures = 0
-    const tick = async () => {
-      const response = await loadPersistedSearch(id).catch(() => null)
-      if (!response) {
-        consecutiveFailures += 1
-        if (consecutiveFailures >= 5) {
-          setSearchState('error')
-          return
-        }
-        pollTimeoutRef.current = setTimeout(tick, POLL_INTERVAL_MS)
-        return
-      }
-      consecutiveFailures = 0
-      setSearchResponse(response)
-      if (response.status === 'running') {
-        pollTimeoutRef.current = setTimeout(tick, POLL_INTERVAL_MS)
-        return
-      }
-      setSearchState(response.status === 'complete' ? 'done' : 'error')
-      savePersistedSearchPointer({ searchId: id, jdText, brief: activeBrief, intakeSessionId: sessionId })
-    }
-    void tick()
-  }
-
   // The recruiter presses Search. The server checks that the brief is ready, builds the executable search itself from
-  // what was confirmed (plus only the edits made here), and stores it. The browser never supplies the search.
+  // what was confirmed (plus only the edits made here), and stores it. The browser never supplies the search. On a role
+  // that is already searching, the server decides whether the change matters to what is searched.
   const handleSearch = async (briefOverride?: SearchBrief) => {
     if (!intakeSessionId) {
       setSearchErrors(['This search has no brief to confirm. Start a new search.'])
       return
     }
     const activeBrief = briefOverride ?? brief
+    const rerun = searchId !== null
     setSearchState('searching')
     setSearchErrors([])
+    setSearchNotice(null)
     stopPolling()
 
     try {
       const confirmation = await createConfirmation(intakeSessionId, baselineBrief ? diffBriefEdits(baselineBrief, activeBrief) : {})
       setSearchGeneration((current) => current + 1)
       const response = await runCandidateSearch(confirmation.confirmation_id, { searchId: searchId ?? undefined, debug: import.meta.env.DEV })
-      // The search has already started server-side — show the workspace immediately (0 candidates, "running") rather
-      // than waiting for the whole pipeline; polling fills it in progressively.
+      // The search has already started server-side — show the workspace immediately rather than waiting for the
+      // whole pipeline; polling fills it in progressively.
       setSearchResponse(response)
       setStep('review')
       setSearchId(response.search_id)
-      pollSearch(response.search_id, activeBrief, intakeSessionId)
+      setActiveSearch({ kind: 'search', id: response.search_id })
+      saveWorkingBrief(response.search_id, activeBrief)
+      refreshSearches()
+      if (response.status === 'running') {
+        pollSearch(response.search_id, activeBrief)
+      } else {
+        setSearchState(response.status === 'error' ? 'error' : 'done')
+        if (rerun) setSearchNotice('Nothing that changes the search was edited, so no new search was run.')
+      }
     } catch (error) {
       // A refusal (open questions, an incomplete boundary) is explained in plain words; anything else is an error.
       const explained = (error as { messages?: string[] } | null)?.messages
@@ -298,27 +468,57 @@ export function RecruiterWorkspaceScreen() {
     }
   }
 
-  useEffect(() => stopPolling, [])
+  // "Show me more": what is already read comes first; when it is used up the server runs the next retrieval and this
+  // watches it, exactly like the first one.
+  const handleShowMore = async (onlyNew = false) => {
+    if (!searchId) return
+    setRoleMessage(null)
+    try {
+      const outcome = await showMoreCandidates(searchId, onlyNew)
+      const response = await loadPersistedSearch(searchId)
+      if (response && stateRef.current.active?.id === searchId) setSearchResponse(response)
+      if (outcome.cycle_started) {
+        setSearchState('searching')
+        pollSearch(searchId, null)
+      } else if (outcome.exhausted) {
+        setRoleMessage("We haven't found additional candidates in the current search.")
+      }
+      refreshSearches()
+    } catch (error) {
+      setRoleMessage(messagesOf(error, 'More candidates could not be shown right now.')[0])
+    }
+  }
 
-  // Persistence means a page load always restores the last search — this is the only way back to a blank slate.
-  // Clears the pointer (not the backend record itself, which stays reloadable by its old id) and resets to the first step.
-  const handleStartNewSearch = () => {
-    clearPersistedSearchPointer()
-    stopPolling()
-    setPostedTitle('')
-    setJdText('')
-    setBoundary(createEmptySearchBoundary())
-    setBrief(createEmptySearchBrief())
-    setBaselineBrief(null)
-    setParseState('idle')
-    setParseErrors([])
-    setStep('jd')
-    setIntakeSessionId(null)
-    setIntakeResult(null)
-    setSearchState('idle')
-    setSearchErrors([])
-    setSearchResponse(null)
-    setSearchId(null)
+  const handleRoleAction = async (action: 'pause' | 'resume') => {
+    if (!searchId) return
+    setRoleMessage(null)
+    try {
+      const response = await setRoleAction(searchId, action)
+      setSearchResponse(response)
+      if (response.status === 'running') {
+        setSearchState('searching')
+        pollSearch(searchId, null)
+      }
+      refreshSearches()
+    } catch (error) {
+      setRoleMessage(messagesOf(error, 'The role could not be changed right now.')[0])
+    }
+  }
+
+  const handleCorrectCalibration = async (dismiss: string[]) => {
+    if (!searchId) return
+    try {
+      setSearchResponse(await correctCalibration(searchId, dismiss))
+    } catch {
+      // The summary stays as it was; nothing else depends on it.
+    }
+  }
+
+  const handleSearchResponse = (response: SearchResponse) => {
+    if (response.search_id === stateRef.current.active?.id) {
+      setSearchResponse(response)
+      refreshSearches()
+    }
   }
 
   // Candidate Review is contextual to the active search: the header names the ROLE as it was posted, and shows what
@@ -329,7 +529,13 @@ export function RecruiterWorkspaceScreen() {
   const showIdentity = Boolean(posted && identity && !sameTitle(posted, identity))
 
   const progress = searchResponse?.progress
+  const isRole = Boolean(searchResponse?.role)
+  const presentedCount = isRole ? Object.values(searchResponse?.presentation ?? {}).filter((entry) => entry.state === 'presented').length : null
   const workspaceSubtitle = (() => {
+    if (isRole) {
+      if (searchState === 'searching' && !presentedCount) return 'Finding candidates…'
+      return [searchResponse?.role?.label?.company, searchResponse?.role?.label?.place].filter(Boolean).join(' · ') || 'Candidate review'
+    }
     if (!progress || !progress.admitted) {
       return searchState === 'searching' ? 'Finding candidates…' : 'What are you hiring for today?'
     }
@@ -341,151 +547,155 @@ export function RecruiterWorkspaceScreen() {
   })()
 
   return (
-    <main className="workspace">
-      <div className="workspace__content">
-        <header className="workspace__greeting">
-          {step === 'review' ? (
-            <div>
-              <h1>{posted || identity || 'Candidate Workspace'}</h1>
-              {showIdentity ? (
-                <p className="workspace__identity">
-                  <span className="workspace__identity-label">Searching for</span> {identity}
-                </p>
-              ) : null}
-              <p>{workspaceSubtitle}</p>
-            </div>
-          ) : (
-            <div>
-              <h1>{greeting}</h1>
-              <p>What are you hiring for today?</p>
-            </div>
-          )}
-          <div style={{ display: 'flex', gap: 8 }}>
-            {step !== 'jd' ? (
-              <button type="button" className="workspace__new-search" onClick={handleStartNewSearch}>
-                Start New Search
-              </button>
-            ) : null}
-            <button
-              type="button"
-              className="workspace__new-search"
-              onClick={() => {
-                logout().finally(() => window.location.reload())
-              }}
-            >
-              Sign out
-            </button>
-          </div>
-        </header>
-
-        {step === 'jd' ? (
-          <div className="workspace__grid workspace__grid--single">
-            <section className="workspace__composer" aria-label="Job description composer">
-              <div className="brief-field workspace__title-field">
-                <label className="brief-field__label" htmlFor="posted-title">
-                  Role title <span className="workspace__optional">optional</span>
-                </label>
-                <input
-                  id="posted-title"
-                  type="text"
-                  className="brief-input"
-                  value={postedTitle}
-                  disabled={isBusy}
-                  placeholder="Exactly as the role is called, e.g. AI Engineer"
-                  onChange={(event) => setPostedTitle(event.target.value)}
-                />
-                <span className="boundary-form__caption">Kept exactly as you type it. Leave it blank and the title in the description is used.</span>
+    <div className="app-shell">
+      <SearchSidebar items={searches} active={active} onSelect={(item) => void openSearch(item)} onNew={handleStartNewSearch} isNewActive={active === null} />
+      <main className="workspace">
+        <div className="workspace__content">
+          <header className="workspace__greeting">
+            {step === 'review' ? (
+              <div>
+                <h1>{posted || identity || 'Candidate Workspace'}</h1>
+                {showIdentity ? (
+                  <p className="workspace__identity">
+                    <span className="workspace__identity-label">Searching for</span> {identity}
+                  </p>
+                ) : null}
+                <p>{workspaceSubtitle}</p>
               </div>
+            ) : (
+              <div>
+                <h1>{greeting}</h1>
+                <p>What are you hiring for today?</p>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                className="workspace__new-search"
+                onClick={() => {
+                  logout().finally(() => window.location.reload())
+                }}
+              >
+                Sign out
+              </button>
+            </div>
+          </header>
 
-              <textarea
-                className="workspace__editor"
-                value={jdText}
-                onChange={(event) => setJdText(event.target.value)}
-                placeholder="What are you hiring for? Paste the full job description, rough hiring-manager notes, or just describe the role in your own words."
-                disabled={isBusy}
-                aria-label="Job description"
-                rows={14}
-              />
-
-              <SearchBoundaryForm boundary={boundary} onChange={(updater) => setBoundary(updater)} disabled={isBusy} />
-
-              <div className="workspace__composer-foot">
-                <span className="workspace__char-count">{jdText.length > 0 ? `${jdText.length.toLocaleString()} characters` : ''}</span>
-
-                <div className="workspace__actions">
-                  <div className="workspace__status-slot" aria-live="polite">
-                    {parseState === 'error' ? (
-                      <div className="workspace__status workspace__status--error" role="alert">
-                        {parseErrors.map((message) => (
-                          <p key={message}>{message}</p>
-                        ))}
-                        <button type="button" className="workspace__retry" onClick={handleParse}>
-                          Retry
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
-
-                  <button type="button" className={`workspace__parse${isBusy ? ' workspace__parse--busy' : ''}`} onClick={handleParse} disabled={!canParse}>
-                    {isBusy ? (
-                      <>
-                        <span className="workspace__spinner" aria-hidden="true" />
-                        <span>Understanding the role…</span>
-                      </>
-                    ) : (
-                      <span>Build brief</span>
-                    )}
-                  </button>
+          {step === 'jd' ? (
+            <div className="workspace__grid workspace__grid--single">
+              <section className="workspace__composer" aria-label="Job description composer">
+                <div className="brief-field workspace__title-field">
+                  <label className="brief-field__label" htmlFor="posted-title">
+                    Job Title
+                  </label>
+                  <input
+                    id="posted-title"
+                    type="text"
+                    className="brief-input"
+                    value={postedTitle}
+                    disabled={isBusy}
+                    placeholder="e.g. AI Engineer"
+                    onChange={(event) => setPostedTitle(event.target.value)}
+                  />
+                  <span className="boundary-form__caption">The title you're hiring for.</span>
                 </div>
-              </div>
-            </section>
-          </div>
-        ) : null}
 
-        {step === 'brief' && intakeResult ? (
-          <div className="workspace__brief">
-            <div className="workspace__inputs-line">
-              <span>
-                <strong>{intakeResult.role_understanding.posted_title || postedTitle.trim() || 'Untitled role'}</strong> · {boundary.hiring_company} ·{' '}
-                {formatBoundaryLocation(boundary)}
-              </span>
-              <button type="button" className="workspace__link" onClick={() => setStep('jd')}>
-                Edit description
-              </button>
+                <textarea
+                  className="workspace__editor"
+                  value={jdText}
+                  onChange={(event) => setJdText(event.target.value)}
+                  placeholder="What are you hiring for? Paste the full job description, rough hiring-manager notes, or just describe the role in your own words."
+                  disabled={isBusy}
+                  aria-label="Job description"
+                  rows={14}
+                />
+
+                <SearchBoundaryForm boundary={boundary} onChange={(updater) => setBoundary(updater)} disabled={isBusy} />
+
+                <div className="workspace__composer-foot">
+                  <span className="workspace__char-count">{jdText.length > 0 ? `${jdText.length.toLocaleString()} characters` : ''}</span>
+
+                  <div className="workspace__actions">
+                    <div className="workspace__status-slot" aria-live="polite">
+                      {parseState === 'error' ? (
+                        <div className="workspace__status workspace__status--error" role="alert">
+                          {parseErrors.map((message) => (
+                            <p key={message}>{message}</p>
+                          ))}
+                          <button type="button" className="workspace__retry" onClick={handleParse}>
+                            Retry
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <button type="button" className={`workspace__parse${isBusy ? ' workspace__parse--busy' : ''}`} onClick={handleParse} disabled={!canParse}>
+                      {isBusy ? (
+                        <>
+                          <span className="workspace__spinner" aria-hidden="true" />
+                          <span>Understanding the role…</span>
+                        </>
+                      ) : (
+                        <span>Build brief</span>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </section>
             </div>
-            <LivingBrief
-              result={intakeResult}
-              boundary={boundary}
+          ) : null}
+
+          {step === 'brief' && intakeResult ? (
+            <div className="workspace__brief">
+              <div className="workspace__inputs-line">
+                <span>
+                  <strong>{intakeResult.role_understanding.posted_title || postedTitle.trim() || 'Untitled role'}</strong> · {boundary.hiring_company} ·{' '}
+                  {formatBoundaryLocation(boundary)}
+                </span>
+                <button type="button" className="workspace__link" onClick={() => setStep('jd')}>
+                  Edit description
+                </button>
+              </div>
+              <LivingBrief
+                result={intakeResult}
+                boundary={boundary}
+                brief={brief}
+                onChangeBrief={(_path, updater) => setBrief((current) => updater(current))}
+                onAnswer={handleAnswerIntake}
+                isAnswering={isAnswering}
+                onApplyBoundary={handleApplyBoundary}
+                onSearch={() => void handleSearch()}
+                isSearching={searchState === 'searching'}
+                searchErrors={searchErrors}
+              />
+            </div>
+          ) : null}
+
+          {step === 'review' ? (
+            <CandidateReviewScreen
               brief={brief}
               onChangeBrief={(_path, updater) => setBrief((current) => updater(current))}
-              onAnswer={handleAnswerIntake}
-              isAnswering={isAnswering}
+              searchResponse={searchResponse}
+              searchState={searchState}
+              onRunSearch={() => void handleSearch()}
+              searchId={searchId}
+              searchGeneration={searchGeneration}
+              boundary={intakeSessionId ? boundary : null}
               onApplyBoundary={handleApplyBoundary}
-              onSearch={() => void handleSearch()}
-              isSearching={searchState === 'searching'}
+              boundaryLimitation={intakeResult?.decision.limitations?.[0] ?? null}
               searchErrors={searchErrors}
+              onShowMore={handleShowMore}
+              onRoleAction={handleRoleAction}
+              onCorrectCalibration={handleCorrectCalibration}
+              onSearchResponse={handleSearchResponse}
+              roleMessage={roleMessage}
+              searchNotice={searchNotice}
             />
-          </div>
-        ) : null}
+          ) : null}
 
-        {step === 'review' ? (
-          <CandidateReviewScreen
-            brief={brief}
-            onChangeBrief={(_path, updater) => setBrief((current) => updater(current))}
-            searchResponse={searchResponse}
-            searchState={searchState}
-            onRunSearch={() => void handleSearch()}
-            searchId={searchId}
-            searchGeneration={searchGeneration}
-            boundary={intakeSessionId ? boundary : null}
-            onApplyBoundary={handleApplyBoundary}
-            boundaryLimitation={intakeResult?.decision.limitations?.[0] ?? null}
-            searchErrors={searchErrors}
-          />
-        ) : null}
-
-        <DebugPanel jdText={jdText} brief={brief} searchResponse={searchResponse} />
-      </div>
-    </main>
+          <DebugPanel jdText={jdText} brief={brief} searchResponse={searchResponse} />
+        </div>
+      </main>
+    </div>
   )
 }

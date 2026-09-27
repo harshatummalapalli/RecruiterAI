@@ -17,6 +17,7 @@ recruiter confirmed.
 """
 
 import uuid
+from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -279,3 +280,26 @@ def _record_from_dict(data: Dict[str, Any]) -> IntakeSessionRecord:
         boundary=boundary,
         posted_title_input=data.get("posted_title_input"),
     )
+
+
+def list_draft_summaries(manager: "IntakeSessionManager") -> List[Dict[str, Any]]:
+    """One line per stored intake session, for the workspace sidebar. Read only; no model call."""
+    store = manager._store
+    summaries: List[Dict[str, Any]] = []
+    for path in Path(store.storage_dir).glob("*.json"):
+        raw = store.load(path.stem)
+        if not raw or not raw.get("result"):
+            continue
+        boundary = raw.get("boundary") or {}
+        role = (raw["result"].get("role_understanding") or {})
+        summaries.append(
+            {
+                "session_id": raw.get("session_id") or path.stem,
+                "posted_title": raw.get("posted_title_input") or role.get("posted_title"),
+                "identity": ((role.get("primary_candidate_identity") or {}).get("value")),
+                "boundary": boundary,
+                "status": raw["result"].get("status"),
+                "updated_at": datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).isoformat(),
+            }
+        )
+    return summaries

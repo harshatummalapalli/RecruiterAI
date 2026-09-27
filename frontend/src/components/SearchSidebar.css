@@ -1,0 +1,186 @@
+/* Product shell: a quiet left column and the workspace beside it. Tokens come from .app-shell (see
+   RecruiterWorkspaceScreen.css). No shadows, no gradients: a hairline border and a little whitespace do the work. */
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background: var(--color-bg);
+}
+
+.app-shell > .workspace {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+
+.app-sidebar {
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  flex: 0 0 272px;
+  width: 272px;
+  height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 14px 18px;
+  background: var(--color-sidebar-bg);
+  border-right: 1px solid var(--color-border);
+  overflow-y: auto;
+}
+
+.app-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 8px 22px;
+}
+
+.app-sidebar__name {
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--color-primary-text);
+}
+
+.app-sidebar__new {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 9px;
+  background: var(--color-surface);
+  color: var(--color-primary-text);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.app-sidebar__new:hover,
+.app-sidebar__new.is-active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.app-sidebar__label {
+  margin: 26px 8px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--color-muted);
+}
+
+.app-sidebar__empty {
+  margin: 4px 8px;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.app-sidebar__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.app-sidebar__item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 8px;
+  width: 100%;
+  padding: 9px 10px 9px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  color: var(--color-secondary-text);
+}
+
+.app-sidebar__item:hover {
+  background: rgba(24, 24, 27, 0.04);
+}
+
+.app-sidebar__item.is-active {
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.app-sidebar__item.is-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--color-accent);
+}
+
+.app-sidebar__title {
+  grid-column: 1;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-primary-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-sidebar__subtitle {
+  grid-column: 1 / -1;
+  font-size: 12.5px;
+  color: var(--color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-sidebar__badge {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+  background: transparent;
+}
+
+.app-sidebar__badge.is-new {
+  color: var(--color-accent);
+  border-color: rgba(15, 118, 110, 0.35);
+}
+
+.app-sidebar__badge.is-paused {
+  color: var(--color-warning);
+  border-color: var(--color-warning-border);
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .app-sidebar {
+    position: static;
+    flex: none;
+    width: 100%;
+    height: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border);
+    max-height: 320px;
+  }
+}

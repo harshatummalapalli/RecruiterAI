@@ -18,6 +18,10 @@ const service = vi.hoisted(() => ({
   updateIntakeBoundary: vi.fn(),
   setWorkspaceArranged: vi.fn(() => Promise.resolve()),
   updateCandidateRecord: vi.fn(() => Promise.resolve({})),
+  listSearches: vi.fn(() => Promise.resolve([])),
+  showMoreCandidates: vi.fn(),
+  setRoleAction: vi.fn(),
+  correctCalibration: vi.fn(),
 }))
 vi.mock('../services/recruiterWorkflow', () => service)
 

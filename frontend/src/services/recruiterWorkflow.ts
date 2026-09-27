@@ -1,4 +1,4 @@
-import type { SearchIntent, SearchResponse } from '../types'
+import type { SearchIntent, SearchListItem, SearchResponse } from '../types'
 import type { ConfirmationEdits, ConfirmationResponse, IntakeSessionResponse, IntakeStartResponse } from '../models/intake'
 import type { SearchBoundary } from '../models/searchBoundary'
 
@@ -240,8 +240,8 @@ export const setWorkspaceArranged = async (searchId: string, arranged: boolean):
 export const updateCandidateRecord = async (
   searchId: string,
   candidateId: string,
-  update: { decision?: string; note?: string },
-): Promise<{ recruiter_decisions: Record<string, string>; notes: Record<string, Array<{ text: string; created_at: string }>> }> => {
+  update: { decision?: string; note?: string; feedback_reason?: string; feedback_note?: string },
+): Promise<SearchResponse> => {
   const response = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(searchId)}/candidate`, {
     method: 'PATCH',
     credentials: 'include',
@@ -251,6 +251,58 @@ export const updateCandidateRecord = async (
   if (!response.ok) {
     throw new Error('Failed to save candidate update')
   }
-  return response.json()
+  return response.json() as Promise<SearchResponse>
 }
 
+/** Every role and every unsearched brief, for the sidebar. Newest activity first. */
+export const listSearches = async (): Promise<SearchListItem[]> => {
+  const response = await fetch(`${API_BASE_URL}/searches`, { credentials: 'include' })
+  if (!response.ok) {
+    throw new Error('Failed to list searches')
+  }
+  return ((await response.json()) as { searches: SearchListItem[] }).searches
+}
+
+export type ShowMoreOutcome = { presented: number; cycle_started: boolean; exhausted: boolean }
+
+/** "Show me more": what is already read comes first, then the next retrieval. `onlyNew` shows just what the
+ * background search found. */
+export const showMoreCandidates = async (searchId: string, onlyNew = false): Promise<ShowMoreOutcome> => {
+  const response = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(searchId)}/more`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ only_new: onlyNew }),
+  })
+  if (!response.ok) {
+    throw await readRefusal(response, 'More candidates could not be shown right now.')
+  }
+  return response.json() as Promise<ShowMoreOutcome>
+}
+
+export const setRoleAction = async (searchId: string, action: 'pause' | 'resume'): Promise<SearchResponse> => {
+  const response = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(searchId)}/role`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action }),
+  })
+  if (!response.ok) {
+    throw await readRefusal(response, action === 'pause' ? 'The role could not be paused.' : 'The role could not be resumed.')
+  }
+  return response.json() as Promise<SearchResponse>
+}
+
+/** The recruiter removes what the one-time summary got wrong. */
+export const correctCalibration = async (searchId: string, dismiss: string[]): Promise<SearchResponse> => {
+  const response = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(searchId)}/calibration`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dismiss }),
+  })
+  if (!response.ok) {
+    throw new Error('Failed to correct the summary')
+  }
+  return response.json() as Promise<SearchResponse>
+}
