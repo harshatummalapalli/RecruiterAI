@@ -14,6 +14,9 @@ def test_explainer_builds_grounded_explanation_for_a_direct_match() -> None:
             "basic_profile": {"headline": "Senior Python Data Engineer"},
             "experience": {"employment_details": {"current": [{"seniority_level": "Senior"}]}},
             "matched_queries": ["natural_language"],
+            "__requirement_judgments": [
+                {"tier": "core", "signal_text": "Proficiency in Python", "verdict": "met", "quote": "Senior Python Data Engineer", "term": "Python", "source": "headline", "strength": "strong"}
+            ],
         },
     )
     intent = SearchIntent(role=Role(title="Senior Data Engineer", seniority="Senior"), core_signals=["Proficiency in Python"])
@@ -149,6 +152,9 @@ def test_strong_evidence_and_concern_are_both_populated_together() -> None:
         raw_data={
             "basic_profile": {"headline": "Senior Backend Engineer building Kafka pipelines"},
             "experience": {"employment_details": {"current": [{"seniority_level": "Entry Level"}]}},
+            "__requirement_judgments": [
+                {"tier": "core", "signal_text": "Experience with Kafka.", "verdict": "met", "quote": "Senior Backend Engineer building Kafka pipelines", "term": "Kafka", "source": "headline", "strength": "strong"}
+            ],
         },
     )
     intent = SearchIntent(role=Role(title="Senior Backend Engineer", seniority="Lead"), core_signals=["Experience with Kafka."])
@@ -172,6 +178,9 @@ def test_strong_evidence_with_no_concern_produces_an_empty_concerns_list() -> No
         raw_data={
             "basic_profile": {"headline": "Senior Backend Engineer building Kafka pipelines"},
             "experience": {"employment_details": {"current": [{"seniority_level": "Senior"}]}},
+            "__requirement_judgments": [
+                {"tier": "core", "signal_text": "Experience with Kafka.", "verdict": "met", "quote": "Senior Backend Engineer building Kafka pipelines", "term": "Kafka", "source": "headline", "strength": "strong"}
+            ],
         },
     )
     intent = SearchIntent(role=Role(title="Senior Backend Engineer", seniority="Senior"), core_signals=["Experience with Kafka."])

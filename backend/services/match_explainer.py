@@ -170,6 +170,10 @@ class MatchExplainer:
         # fact.
         items: List[str] = []
         alignment = evidence.role_alignment
+        # An unverified fallback match (the requirement judge was unavailable or failed for this candidate) is never
+        # shown as Strong Evidence — a recruiter reading this bullet should be able to trust it was actually checked.
+        if not alignment.alignment_verified:
+            return items
 
         for signal in alignment.matched_signals:
             phrasing = _HARVEST_SOURCE_PHRASING.get(signal.source)

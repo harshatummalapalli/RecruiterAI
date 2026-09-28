@@ -308,6 +308,126 @@ def test_translate_maps_a_ready_result_from_the_full_intake_reasoner_pipeline() 
 
 
 # ---------------------------------------------------------------------------
+# Named-technology preservation (EXP-010 finding, prompts/intake_task_a_understanding.txt
+# fix): a technology explicitly named as required/preferred must survive into
+# core/supporting/differentiator_search_signals and the NL query — it must never be
+# silently compressed into only a broader category label ("Full Stack Software
+# Development" swallowing "Python" and "Java"). This locks in the DOWNSTREAM
+# preservation contract in code; the prompt's own LLM behavior was separately
+# verified live against the real Epiq JD (see EXP-010/post-EXP-010 report) since an
+# LLM's actual output can't be asserted by a fake-client unit test.
+# ---------------------------------------------------------------------------
+
+NAMED_TECH_STAFF_ARCHITECT_TASK_A = {
+    "primary_candidate_identity": {"value": "Staff Software Engineer/Solution Architect", "source": "explicit"},
+    "candidate_archetype": {"value": "Full stack engineer with AI/ML delivery experience", "source": "explicit"},
+    "seniority_scope": {"value": "Staff", "source": "explicit"},
+    "leadership_type": {"value": "none", "evidence": "no leadership mentioned"},
+    "core_capabilities": [
+        {"value": "Full Stack Software Development", "tier_signal": "required", "evidence": "12+ years in Full Stack Software Development"},
+        {"value": "Python", "tier_signal": "required", "evidence": "Advanced proficiency in Python and Java"},
+        {"value": "Java", "tier_signal": "required", "evidence": "Advanced proficiency in Python and Java"},
+        {"value": "AI/ML implementation", "tier_signal": "required", "evidence": "Hands-on experience implementing Generative AI solutions"},
+    ],
+    "supporting_capabilities": [],
+    "differentiators": [],
+    "technologies_mentioned": [{"category": "Languages", "items": ["Python", "Java"]}],
+    "domain": ["AI/ML"],
+    "explicit_constraints": {
+        "locations": [{"city": "Hyderabad", "state": "Telangana", "country": "India"}],
+        "work_mode": "hybrid",
+        "experience_minimum_years": 12,
+        "experience_maximum_years": None,
+        "employment_type": None,
+        "exclusions": [],
+    },
+    "open_questions_the_text_leaves_genuinely_unresolved": [],
+}
+
+NAMED_TECH_STAFF_ARCHITECT_TASK_B = {
+    "issues": [],
+    "recommended_ask_count": 0,
+    "stop_reasoning": "Everything is resolved.",
+    "warnings": [],
+    "final_search_intent": {
+        "hard_requirements": ["Full Stack Software Development", "Python", "Java", "AI/ML implementation"],
+        "strong_signals": [],
+        "preferred_differentiators": [],
+        "natural_language_search_query": "Staff Software Engineer/Solution Architect with Full Stack Software Development, Python, Java, and AI/ML implementation experience.",
+        "exclusions": [],
+    },
+}
+
+
+def test_named_technologies_survive_into_confirmed_search_signals() -> None:
+    """The EXP-010 regression: when Task A correctly names an explicitly-required
+    technology (not just a category label), it must reach core_search_signals and
+    the natural-language query — never be discoverable only in technologies_mentioned,
+    which the search pipeline does not treat as a requirement."""
+    client = FakeOpenAIClient(NAMED_TECH_STAFF_ARCHITECT_TASK_A, NAMED_TECH_STAFF_ARCHITECT_TASK_B)
+    result = IntakeReasoner(client=client).run("Staff Software Engineer/Solution Architect JD naming Python and Java explicitly.")
+    intent = translate(result)
+    assert "Python" in intent.core_signals
+    assert "Java" in intent.core_signals
+    assert "python" in intent.natural_language_search_query.lower()
+    assert "java" in intent.natural_language_search_query.lower()
+
+
+NAMED_TECH_DOTNET_AI_TASK_A = {
+    "primary_candidate_identity": {"value": "Senior AI Software Engineer (.NET + AI)", "source": "explicit"},
+    "candidate_archetype": {"value": "C#/.NET engineer applying AI in production", "source": "explicit"},
+    "seniority_scope": {"value": "Senior", "source": "explicit"},
+    "leadership_type": {"value": "none", "evidence": "no leadership mentioned"},
+    "core_capabilities": [
+        {"value": "C#/.NET and ASP.NET Core development", "tier_signal": "required", "evidence": "Strong hands-on experience with C#/.NET and ASP.NET Core"},
+        {"value": "Python", "tier_signal": "required", "evidence": "AI application development using Python"},
+        {"value": "LLMs", "tier_signal": "required", "evidence": "Practical experience building AI-enabled applications using LLMs"},
+    ],
+    "supporting_capabilities": [],
+    "differentiators": [],
+    "technologies_mentioned": [{"category": "Languages", "items": ["C#", ".NET", "Python"]}, {"category": "AI", "items": ["LLM"]}],
+    "domain": ["AI"],
+    "explicit_constraints": {
+        "locations": [{"city": "Hyderabad", "state": "Telangana", "country": "India"}],
+        "work_mode": "hybrid",
+        "experience_minimum_years": 5,
+        "experience_maximum_years": None,
+        "employment_type": None,
+        "exclusions": [],
+    },
+    "open_questions_the_text_leaves_genuinely_unresolved": [],
+}
+
+NAMED_TECH_DOTNET_AI_TASK_B = {
+    "issues": [],
+    "recommended_ask_count": 0,
+    "stop_reasoning": "Everything is resolved.",
+    "warnings": [],
+    "final_search_intent": {
+        "hard_requirements": ["C#/.NET and ASP.NET Core development", "Python", "LLMs"],
+        "strong_signals": [],
+        "preferred_differentiators": [],
+        "natural_language_search_query": "Senior AI Software Engineer with C#/.NET, Python, and LLM experience.",
+        "exclusions": [],
+    },
+}
+
+
+def test_dotnet_ai_named_technologies_survive_confirmation() -> None:
+    """Same regression for the .NET+AI role: C#/.NET, Python and LLM must survive
+    into core_search_signals per their confirmed tier. This is about intent
+    preservation only — it does NOT add C# to any CrustData structured predicate
+    (see backend/providers/crustdata.py; EXP-008/009 found raw C# unreliable there)."""
+    client = FakeOpenAIClient(NAMED_TECH_DOTNET_AI_TASK_A, NAMED_TECH_DOTNET_AI_TASK_B)
+    result = IntakeReasoner(client=client).run("Senior AI Software Engineer (.NET + AI) JD naming C#/.NET, Python and LLMs explicitly.")
+    intent = translate(result)
+    core_text = " ".join(intent.core_signals).lower()
+    assert "c#" in core_text or ".net" in core_text
+    assert "python" in core_text
+    assert "llm" in core_text
+
+
+# ---------------------------------------------------------------------------
 # apply_search_boundary — final intake-form pass. Pure function against
 # directly-constructed IntakeResult objects, mirroring this file's existing
 # pattern for the contradiction backstop above.

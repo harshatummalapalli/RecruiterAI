@@ -65,3 +65,29 @@ def test_mapper_leaves_supported_filters_unchanged() -> None:
 
     assert mapped_plan.searches[0].include_titles == ["Data Scientist"]
     assert warnings == []
+
+
+def test_production_contract_declares_skills_unsupported_so_they_warn_instead_of_vanishing() -> None:
+    """required_skills/preferred_skills must never be silently dropped: the CrustData payload builder has never
+    actually turned either into a filter condition (skill requirements reach CrustData only through the
+    natural-language query), so the production capability list must say so, and the mapper must warn if either is
+    ever populated — not just clear it in silence."""
+    from backend.api import CRUSTDATA_SUPPORTED_FILTERS
+
+    assert "required_skills" not in CRUSTDATA_SUPPORTED_FILTERS
+    assert "preferred_skills" not in CRUSTDATA_SUPPORTED_FILTERS
+
+    plan = SearchPlan(
+        searches=[SearchQuery(query_name="Primary", required_skills=["Python"], preferred_skills=["Go"], countries=["US"])],
+        strategy="multi_query",
+    )
+    capabilities = ProviderCapabilities(supported_filters=CRUSTDATA_SUPPORTED_FILTERS)
+
+    mapped_plan, warnings = CapabilityMapper().map(plan, capabilities)
+
+    assert mapped_plan.searches[0].required_skills == []
+    assert mapped_plan.searches[0].preferred_skills == []
+    assert any("required_skills" in warning for warning in warnings)
+    assert any("preferred_skills" in warning for warning in warnings)
+    # Everything actually supported is untouched.
+    assert mapped_plan.searches[0].countries == ["US"]

@@ -47,6 +47,8 @@ def _demonstrated_weight(evidence) -> float:
     a headline or the career-dates line. Same tier weights the score uses,
     counted only for "strong" evidence. It is not part of the score; it only
     orders candidates whose scores are exactly equal."""
+    if not evidence.role_alignment.alignment_verified:
+        return 0.0
     weights = {"core": CORE_SIGNAL_WEIGHT, "supporting": SUPPORTING_SIGNAL_WEIGHT, "differentiator": DIFFERENTIATOR_SIGNAL_WEIGHT}
     return sum(
         weights.get(signal.tier, 0.0)
@@ -150,13 +152,18 @@ class CandidateRanker:
             parts["seniority_signal"] = SENIORITY_MISALIGNED_PENALTY
         # None (unknown) contributes nothing — missing data is never a penalty.
 
-        for signal in alignment.matched_signals:
-            if signal.tier == "core":
-                parts["core_coverage"] += CORE_SIGNAL_WEIGHT
-            elif signal.tier == "supporting":
-                parts["supporting_coverage"] += SUPPORTING_SIGNAL_WEIGHT
-            elif signal.tier == "differentiator":
-                parts["differentiator_coverage"] += DIFFERENTIATOR_SIGNAL_WEIGHT
+        # Unverified fallback matches (alignment_verified=False — the requirement judge was unavailable or failed for
+        # this candidate; see candidate_evidence_builder.py) never contribute to the score. Only a quote-verified
+        # match is real evidence a recruiter can check; an unchecked regex hit stays available internally
+        # (matched_signals is not cleared) but earns nothing here.
+        if alignment.alignment_verified:
+            for signal in alignment.matched_signals:
+                if signal.tier == "core":
+                    parts["core_coverage"] += CORE_SIGNAL_WEIGHT
+                elif signal.tier == "supporting":
+                    parts["supporting_coverage"] += SUPPORTING_SIGNAL_WEIGHT
+                elif signal.tier == "differentiator":
+                    parts["differentiator_coverage"] += DIFFERENTIATOR_SIGNAL_WEIGHT
 
         if evidence.search_evidence.provider_fit == "strong":
             parts["provider_fit"] = PROVIDER_FIT_STRONG_BONUS

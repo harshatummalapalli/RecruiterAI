@@ -643,6 +643,7 @@ def _alignment_from_judgments(
         seniority_alignment_basis=seniority_basis,
         matched_signals=matched,
         unmatched_signals=unmatched,
+        alignment_verified=True,
         **level_kwargs,
     )
 
@@ -719,6 +720,7 @@ def _build_role_alignment(evidence: CandidateEvidence, intent: SearchIntent) -> 
         seniority_alignment_basis=seniority_basis,
         matched_signals=matched,
         unmatched_signals=unmatched,
+        alignment_verified=False,
         **level_kwargs,
     )
 

@@ -739,3 +739,36 @@ def test_contradictory_provider_and_title_evidence_lets_title_win() -> None:
 
     assert evidence.role_alignment.seniority_alignment is True
     assert "current title" in evidence.role_alignment.seniority_alignment_basis.lower()
+
+
+def test_alignment_verified_is_true_only_on_the_judge_verified_path() -> None:
+    """The requirement judge ran and produced a real (possibly all-not_evidenced) result: alignment_verified is True,
+    regardless of whether anything was actually met."""
+    candidate = Candidate(
+        name="Judged",
+        title="Backend Engineer",
+        raw_data={
+            "basic_profile": {"headline": "Backend Engineer"},
+            "__requirement_judgments": [
+                {"tier": "core", "signal_text": "Proficiency in C# .NET", "verdict": "met", "quote": "Backend Engineer", "term": "Backend", "source": "headline", "strength": "strong"},
+            ],
+        },
+    )
+    intent = SearchIntent(role=Role(title="Backend Engineer"), core_signals=["Proficiency in C# .NET"])
+    evidence = build_candidate_evidence(candidate, intent)
+    assert evidence.role_alignment.alignment_verified is True
+
+
+def test_alignment_verified_is_false_on_the_unverified_fallback_path() -> None:
+    """No requirement judge output at all (unavailable, or crashed for this candidate) — the plain text-pattern
+    fallback runs, and it must say so."""
+    candidate = Candidate(
+        name="Unjudged",
+        title="Backend Engineer",
+        raw_data={"basic_profile": {"headline": "Backend Engineer building AI systems"}},
+    )
+    intent = SearchIntent(role=Role(title="Backend Engineer"), core_signals=["Experience in AI Engineering"])
+    evidence = build_candidate_evidence(candidate, intent)
+    # The fallback DOES find a term match (proving the gate below is doing real work, not just "nothing to gate").
+    assert evidence.role_alignment.matched_signals
+    assert evidence.role_alignment.alignment_verified is False

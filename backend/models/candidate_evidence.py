@@ -110,6 +110,13 @@ class RoleAlignment:
     seniority_alignment_basis: str
     matched_signals: List[MatchedSignal] = field(default_factory=list)
     unmatched_signals: List[MatchedSignal] = field(default_factory=list)  # matched_term is "" here
+    # True only when matched_signals/unmatched_signals were produced through the quote-verified requirement-judge
+    # path (see candidate_evidence_builder._alignment_from_judgments) — never when the requirement judge was
+    # unavailable or failed and a plain, unverified text-pattern search was used instead. This says nothing about the
+    # rest of the candidate record (career history, contact info, etc. are unaffected either way); it scopes only to
+    # whether matched_signals here can be trusted enough to contribute to evidence scoring/explanation. See
+    # CandidateRanker.score_components and MatchExplainer._strong_evidence, the two places this gates.
+    alignment_verified: bool = False
     # Two different facts, kept apart. The experience floor is arithmetic:
     # do the dated roles add up to the years the search asked for. Level fit
     # is a judgement about the title(s) against the target seniority:

@@ -157,6 +157,13 @@ def test_rerank_top_n_only_reorders_within_the_enriched_slice_tail_untouched() -
 
     baseline_tail_scores = {c.name: c.final_score for c in baseline[5:]}
 
+    # A judgment on B/E's raw_data, exactly like search_pipeline.py attaches once the requirement judge has verified
+    # a candidate's Harvest-read text DURING enrichment (after the baseline rank above, never before it) — without
+    # it, an unverified fallback match must not contribute to the score at all (RoleAlignment.alignment_verified).
+    judged_python = [{"tier": "core", "signal_text": "Proficiency in Python.", "verdict": "met", "quote": "Python", "term": "Python", "source": "harvest: skill", "strength": "strong"}]
+    candidates["B"].raw_data["__requirement_judgments"] = judged_python
+    candidates["E"].raw_data["__requirement_judgments"] = judged_python
+
     harvest_by_id = {
         candidates["B"].candidate_id: HarvestEvidence(raw={"element": {"skills": [{"name": "Python"}]}}, success=True),
         candidates["E"].candidate_id: HarvestEvidence(raw={"element": {"skills": [{"name": "Python"}]}}, success=True),
@@ -213,6 +220,11 @@ def test_rerank_top_n_at_phase_3_scale_15_of_25_tail_still_exactly_preserved() -
     assert [c.name for c in baseline] == names  # identical score/title -> alphabetical tiebreak
 
     baseline_tail = [(c.name, c.final_score) for c in baseline[15:]]
+
+    # A verified judgment attached after the baseline (see the A..G test above for why order matters).
+    judged_python = [{"tier": "core", "signal_text": "Proficiency in Python.", "verdict": "met", "quote": "Python", "term": "Python", "source": "harvest: skill", "strength": "strong"}]
+    candidates["N"].raw_data["__requirement_judgments"] = judged_python
+    candidates["O"].raw_data["__requirement_judgments"] = judged_python
 
     # Strong Harvest evidence for two candidates deep in the enriched slice.
     harvest_by_id = {

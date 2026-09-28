@@ -122,11 +122,18 @@ logger.setLevel(logging.INFO)
 # Remote/Hybrid/Onsite exists only on job_search, never person_search.
 # radius_place/radius_miles ARE supported (via geo_distance) provided a
 # place-name/ZIP-text anchor is given, not a raw postal filter.
+# required_skills/preferred_skills are deliberately excluded too: the
+# CrustDataProvider payload builder (_build_filter_conditions) has never
+# actually turned either field into a filter condition — this account's
+# plan is separately confirmed to deny "skills" as a response field at all
+# (see crustdata.py's DEFAULT_FIELDS comment) — so declaring them
+# "supported" here was a silent lie: nothing warned if either field were
+# ever populated, it would just vanish before reaching the provider.
+# Skill/technology requirements reach CrustData only through the
+# natural-language query (see search_translator.py / search_planner.py).
 CRUSTDATA_SUPPORTED_FILTERS = [
     "include_titles",
     "exclude_titles",
-    "required_skills",
-    "preferred_skills",
     "countries",
     "states",
     "cities",

@@ -14,6 +14,11 @@ A JD mentioning something is not the same as the JD requiring it. For every requ
 Title is a label, not evidence of primary identity by itself. When the JD gives an explicit responsibility breakdown, percentage split, or clearly dominant framing, that breakdown IS the primary-identity evidence — weigh it over the title.
 
 ============================================================
+NAMED TECHNOLOGIES MUST SURVIVE INTO core_capabilities / supporting_capabilities / differentiators
+============================================================
+When the JD explicitly names a technology as part of a required, dominant, or preferred capability (not a bare stack-list mention — see TECHNOLOGIES MENTIONED below for that), the `value` text for that capability must name the technology, not just a broader category label. "Advanced proficiency in Python and Java" must produce capability entries that say "Python" and "Java" (or, at minimum, a value whose text literally contains both names) — never compress it down to only "Full Stack Software Development" and lose the named technologies nowhere else in core/supporting/differentiators. This is not a license to list every tool mentioned anywhere in the JD as a separate capability — only ones already carrying required/dominant/preferred language under the classification above. A broader capability label is fine ALONGSIDE the named technologies (e.g. both "Full Stack Software Development" and "Python" as separate core_capabilities entries, or one entry whose value names both the category and the technology) — the failure mode this guards against is the named technology appearing nowhere in core/supporting/differentiators at all, discoverable only in the separate `technologies_mentioned` inventory that later steps do not treat as a requirement.
+
+============================================================
 HIRING COMPANY — the employer, never the candidate's own current employer
 ============================================================
 `hiring_company` is the company actually doing the hiring for this role — not any company mentioned as an example of the candidate's background, and never a staffing/recruiting agency's own name if the text also names the actual client/employer separately. Set `value` only when the employer is genuinely identifiable: a named company in the opening line ("At Epiq, your work..."), "Join <Company>", a letterhead/signature, or an unambiguous "who is hiring" statement. If the text never names the employer, or only vaguely gestures at "a fast-growing company" with no name, leave `value` null — do not guess a company name from partial context (a client name mentioned in passing, a tool/platform name, a competitor mentioned for comparison). Getting this wrong has a real cost: it is used to exclude that company's current employees from the candidate search, so prefer leaving it null over a weak guess.
@@ -44,6 +49,15 @@ TECHNOLOGIES MENTIONED — factual inventory, not a requirement classification
 Separately from core/supporting/differentiators (which classify importance for search), list EVERY technology, tool, language, platform, or framework named anywhere in the input — including ones that only appear in a bare, unqualified list (e.g. a "Technology Stack" section with no required/preferred language attached to each item). Group them under natural categories that fit what's actually present (e.g. Languages, Cloud & Infrastructure, Databases, Observability, Data & Messaging — choose categories that fit this JD, don't force a fixed taxonomy that doesn't apply). This list is purely factual — it must NEVER carry a required/preferred/differentiator label, and an item appearing here does not by itself mean it belongs in core/supporting/differentiators too. Do not omit an item just because it already appears, tagged, in core_capabilities elsewhere — completeness here matters more than avoiding overlap.
 
 ============================================================
+CURRENT-ROLE AND CAREER-BACKGROUND CONCEPTS — retrieval hints, NOT requirements
+============================================================
+Two small, separate lists, each at most 5 items, each a short title-like phrase (not a sentence). These are never shown to the recruiter as requirements and never affect what is required — they exist only to help a later search step think about who to look for. Leave either list empty rather than guess; never invent a title the text gives no basis for.
+
+`current_role_concepts`: plausible variants of what this person's CURRENT title could plausibly be, beyond the literal title/identity already captured above (e.g. for a role about applying LLMs in production, plausible current titles might include "AI Engineer", "AI Software Engineer", "Applied AI Engineer", "LLM Engineer" — only variants a recruiter would genuinely consider equivalent for this specific role, grounded in what the JD actually describes).
+
+`career_background_concepts`: plausible EARLIER-career or background titles a strong candidate for this role might have held even though their current title differs — grounded in the specific skills/technologies/domain this JD names (e.g. a role naming C#/.NET backend work plus recent AI/LLM work might plausibly have a background titled "Backend Engineer", "Software Engineer", ".NET Engineer", "C# Engineer"). Never a generic career-ladder guess disconnected from what this JD actually names.
+
+============================================================
 OUTPUT
 ============================================================
 Return ONLY valid JSON:
@@ -61,6 +75,8 @@ Return ONLY valid JSON:
   "differentiators": [{"value": "<text>", "tier_signal": "preferred|future_direction|contextual", "evidence": "<quote/paraphrase>"}],
   "technologies_mentioned": [{"category": "<e.g. Languages, Cloud & Infrastructure, Databases>", "items": ["<technology name>", "..."]}],
   "domain": ["<text>"],
+  "current_role_concepts": ["<at most 5 plausible current-title variants, or empty>"],
+  "career_background_concepts": ["<at most 5 plausible earlier-career/background titles, or empty>"],
   "explicit_constraints": {
     "locations": [{"city": "<or null>", "state": "<or null>", "country": "<or null>"}],
     "work_mode": "<text or null>",
