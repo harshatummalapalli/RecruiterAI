@@ -567,6 +567,8 @@ def parse_role_understanding(data: Dict[str, Any]) -> RoleUnderstanding:
         differentiators=_parse_capability_items(data.get("differentiators")),
         technologies_mentioned=_parse_technology_groups(data.get("technologies_mentioned")),
         domain=list(data.get("domain") or []),
+        current_role_concepts=list(data.get("current_role_concepts") or []),
+        career_background_concepts=list(data.get("career_background_concepts") or []),
         explicit_constraints=ExplicitConstraints(
             locations=_parse_locations(constraints_data.get("locations")),
             work_mode=constraints_data.get("work_mode"),

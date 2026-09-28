@@ -8,6 +8,8 @@ investigation this resolves for why this object exists."""
 from dataclasses import dataclass, field
 from typing import List, Optional
 
+from backend.models.retrieval_concepts import RetrievalConcepts
+
 
 @dataclass
 class StructuredLocation:
@@ -55,3 +57,7 @@ class ConfirmedHiringIntent:
     supporting_search_signals: List[str] = field(default_factory=list)
     differentiator_search_signals: List[str] = field(default_factory=list)
     natural_language_search_query: str = ""
+    # Retrieval-concepts representation (Phase 1, storage only — see backend/models/retrieval_concepts.py). Built
+    # once here, from RoleUnderstanding, by search_translator.build_retrieval_concepts; to_search_intent copies it
+    # through unchanged. Never read by SearchPlanner/CrustDataProvider/ranking/admission.
+    retrieval_concepts: Optional[RetrievalConcepts] = None

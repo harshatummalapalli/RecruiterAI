@@ -15,7 +15,8 @@ import re
 from typing import List, Optional
 
 from backend.models.hiring_intent import ConfirmedHiringIntent, StructuredLocation
-from backend.models.intake import IntakeResult, LocationEntry, SearchBoundary
+from backend.models.intake import IntakeResult, LocationEntry, RoleUnderstanding, SearchBoundary
+from backend.models.retrieval_concepts import RetrievalConcept, RetrievalConcepts
 from backend.models.search_intent import CompanyPreferences, Experience, Location, Role, SearchIntent, Titles
 from backend.providers.crustdata import SUPPORTED_EMPLOYMENT_TYPES
 from backend.services.query_expansion import QueryExpansionService
@@ -190,6 +191,65 @@ def _core_signals_with_duration(
     return [f"{minimum_years}+ years of professional experience", *core]
 
 
+def build_retrieval_concepts(
+    role: RoleUnderstanding, core: List[str], supporting: List[str], differentiator: List[str]
+) -> RetrievalConcepts:
+    """Phase 1 retrieval-concepts builder (storage only — see backend/models/retrieval_concepts.py). Pure: never
+    mutates core/supporting/differentiator. candidate_archetype/current_role_concepts/career_background_concepts
+    are carried through as-is from Task A; technology_concepts/functional_domain_concepts are included ONLY when
+    the value is already a substring of one of the three confirmed requirement lists — never an independently
+    sourced claim — and tagged with whichever tier it was found in."""
+    candidate_archetype = None
+    if role.candidate_archetype.value:
+        candidate_archetype = RetrievalConcept(value=role.candidate_archetype.value, source="task_a.candidate_archetype")
+
+    current_role_concepts = [
+        RetrievalConcept(value=value, source="task_a.current_role_concepts") for value in role.current_role_concepts
+    ]
+    career_background_concepts = [
+        RetrievalConcept(value=value, source="task_a.career_background_concepts")
+        for value in role.career_background_concepts
+    ]
+
+    tier_texts = [
+        ("core", " ".join(core).lower()),
+        ("supporting", " ".join(supporting).lower()),
+        ("differentiator", " ".join(differentiator).lower()),
+    ]
+
+    def _tier_for(value: str) -> Optional[str]:
+        needle = value.lower()
+        for tier, text in tier_texts:
+            if needle in text:
+                return tier
+        return None
+
+    technology_concepts: List[RetrievalConcept] = []
+    for group in role.technologies_mentioned:
+        for item in group.items:
+            tier = _tier_for(item)
+            if tier:
+                technology_concepts.append(
+                    RetrievalConcept(value=item, source="task_a.technologies_mentioned", requirement_tier=tier)
+                )
+
+    functional_domain_concepts: List[RetrievalConcept] = []
+    for value in role.domain:
+        tier = _tier_for(value)
+        if tier:
+            functional_domain_concepts.append(
+                RetrievalConcept(value=value, source="task_a.domain", requirement_tier=tier)
+            )
+
+    return RetrievalConcepts(
+        candidate_archetype=candidate_archetype,
+        current_role_concepts=current_role_concepts,
+        career_background_concepts=career_background_concepts,
+        technology_concepts=technology_concepts,
+        functional_domain_concepts=functional_domain_concepts,
+    )
+
+
 def build_confirmed_hiring_intent(result: IntakeResult, boundary: Optional[SearchBoundary] = None) -> ConfirmedHiringIntent:
     """Stage 1: IntakeResult -> Confirmed Hiring Intent. Refuses while any
     ask issue is pending — a contradictory or otherwise unresolved intake
@@ -229,6 +289,14 @@ def build_confirmed_hiring_intent(result: IntakeResult, boundary: Optional[Searc
         radius_miles = None
         radius_place = None
 
+    core_search_signals = _core_signals_with_duration(
+        list(decision.final_search_intent.hard_requirements),
+        list(decision.final_search_intent.strong_signals),
+        constraints.experience_minimum_years,
+    )
+    supporting_search_signals = list(decision.final_search_intent.strong_signals)
+    differentiator_search_signals = list(decision.final_search_intent.preferred_differentiators)
+
     return ConfirmedHiringIntent(
         posted_title=role.posted_title,
         posted_title_source=role.posted_title_source,
@@ -252,14 +320,13 @@ def build_confirmed_hiring_intent(result: IntakeResult, boundary: Optional[Searc
         # downstream re-derives or re-applies it once set.
         exclude_current_companies=[hiring_company] if hiring_company else [],
         preferred_company_types=[],
-        core_search_signals=_core_signals_with_duration(
-            list(decision.final_search_intent.hard_requirements),
-            list(decision.final_search_intent.strong_signals),
-            constraints.experience_minimum_years,
-        ),
-        supporting_search_signals=list(decision.final_search_intent.strong_signals),
-        differentiator_search_signals=list(decision.final_search_intent.preferred_differentiators),
+        core_search_signals=core_search_signals,
+        supporting_search_signals=supporting_search_signals,
+        differentiator_search_signals=differentiator_search_signals,
         natural_language_search_query=decision.final_search_intent.natural_language_search_query or "",
+        retrieval_concepts=build_retrieval_concepts(
+            role, core_search_signals, supporting_search_signals, differentiator_search_signals
+        ),
     )
 
 
@@ -329,6 +396,9 @@ def to_search_intent(intent: ConfirmedHiringIntent, query_expander: Optional[Que
         core_signals=list(intent.core_search_signals),
         supporting_signals=list(intent.supporting_search_signals),
         differentiator_signals=list(intent.differentiator_search_signals),
+        # Built once, at confirmation, by build_confirmed_hiring_intent — copied through unchanged, never
+        # recomputed or read here.
+        retrieval_concepts=intent.retrieval_concepts,
     )
 
 

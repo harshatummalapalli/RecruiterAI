@@ -252,6 +252,9 @@ def _record_from_dict(data: Dict[str, Any]) -> IntakeSessionRecord:
                 differentiators=[CapabilityItem(**item) for item in ru["differentiators"]],
                 technologies_mentioned=[TechnologyGroup(**group) for group in ru.get("technologies_mentioned") or []],
                 domain=list(ru["domain"]),
+                # .get(...) or [] (not bracket access): sessions persisted before these fields existed won't have them.
+                current_role_concepts=list(ru.get("current_role_concepts") or []),
+                career_background_concepts=list(ru.get("career_background_concepts") or []),
                 explicit_constraints=ExplicitConstraints(**constraints_data),
                 open_questions=list(ru["open_questions"]),
             ),

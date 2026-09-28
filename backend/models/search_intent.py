@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
 
+from backend.models.retrieval_concepts import RetrievalConcepts
+
 
 @dataclass
 class Role:
@@ -116,3 +118,7 @@ class SearchIntent:
     core_signals: List[str] = field(default_factory=list)
     supporting_signals: List[str] = field(default_factory=list)
     differentiator_signals: List[str] = field(default_factory=list)
+    # Retrieval-concepts representation (Phase 1, storage only — see backend/models/retrieval_concepts.py). Never
+    # read by SearchPlanner, QueryExpansionService, CapabilityMapper, any provider, ranking, or admission; not a
+    # requirement and not recruiter-editable (ConfirmationEdits has no path to it). None when nothing was built.
+    retrieval_concepts: Optional[RetrievalConcepts] = None

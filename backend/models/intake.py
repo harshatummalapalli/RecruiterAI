@@ -92,6 +92,12 @@ class RoleUnderstanding:
     # belongs here, never auto-promoted into core/supporting/differentiators.
     technologies_mentioned: List[TechnologyGroup] = field(default_factory=list)
     domain: List[str] = field(default_factory=list)
+    # Retrieval-concepts representation (Phase 1, storage only — see backend/models/retrieval_concepts.py). Plain
+    # title strings Task A judged as a genuinely plausible current title / prior-career title for this candidate,
+    # beyond the single primary_candidate_identity — empty when nothing is genuinely ambiguous. Never read by
+    # SearchPlanner/CrustDataProvider/ranking/admission; only carried through to SearchIntent.retrieval_concepts.
+    current_role_concepts: List[str] = field(default_factory=list)
+    career_background_concepts: List[str] = field(default_factory=list)
     explicit_constraints: ExplicitConstraints = field(default_factory=ExplicitConstraints)
     # Restricted, in the prompt, to 8 search-relevant categories only (identity,
     # leadership, seniority, experience, location/work-mode, tier ambiguity,
@@ -248,6 +254,8 @@ def role_understanding_to_dict(understanding: RoleUnderstanding) -> Dict[str, An
         "differentiators": [vars(item) for item in understanding.differentiators],
         "technologies_mentioned": [vars(group) for group in understanding.technologies_mentioned],
         "domain": list(understanding.domain),
+        "current_role_concepts": list(understanding.current_role_concepts),
+        "career_background_concepts": list(understanding.career_background_concepts),
         "explicit_constraints": {
             "locations": [vars(entry) for entry in constraints.locations],
             "work_mode": constraints.work_mode,
