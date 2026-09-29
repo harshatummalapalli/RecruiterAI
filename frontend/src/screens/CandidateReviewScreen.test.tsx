@@ -90,7 +90,7 @@ describe('cards', () => {
     expect(heavy.querySelectorAll('.ws-dot')).toHaveLength(5)
     expect(heavy.querySelectorAll('.ws-dot.is-shown')).toHaveLength(5)
     expect(heavy.querySelectorAll('.ws-chip--proof')).toHaveLength(3)
-    for (const label of ['Shortlist', 'Maybe', 'Reject', 'Full record', 'Proof']) expect(button(new RegExp(`^${label}`), heavy)).toBeTruthy()
+    for (const label of ['Shortlist', 'Maybe', 'Reject']) expect(button(new RegExp(`^${label}`), heavy)).toBeTruthy()
   })
 
   it('build one dot per non-years core requirement whatever the brief asks for', async () => {
@@ -110,7 +110,7 @@ describe('cards', () => {
 
   it('say zero evidence plainly', async () => {
     await render(makeResponse(SPECS, { workspace_arranged: true }))
-    expect(card('Zero Evidence').querySelector('.ws-card__why')?.textContent).toBe('Nothing beyond total years is shown on the profile.')
+    expect(card('Zero Evidence').querySelector('.ws-card__why')?.textContent).toBe('No additional core requirement evidence found.')
     expect(card('Zero Evidence').querySelector('.ws-chip--watch')).toBeNull()
   })
 
@@ -148,12 +148,11 @@ describe('cards', () => {
 })
 
 describe('a flat list, never grouped', () => {
-  it('stays in arrival order while reading, with progress', async () => {
+  it('stays in arrival order while reading', async () => {
     await render(
       makeResponse(SPECS, { status: 'running', progress: { admitted: 6, review_ready: 5, building_context: 1, surfaced: 0 } }),
       'searching',
     )
-    expect($('.ws-funnel__headline')?.textContent).toBe('Reading profiles: 5 of 6')
     expect(cardIds()).toEqual(['c1', 'c2', 'c3', 'c4', 'c5', 'c6'])
   })
 
@@ -168,15 +167,9 @@ describe('a flat list, never grouped', () => {
     expect(cardIds()).toEqual(['c1', 'c2', 'c3', 'c4', 'c5'])
   })
 
-  it('shows the honest funnel and keeps methodology under "How this list was made"', async () => {
-    await render(makeResponse(SPECS.slice(0, 5), { warnings: ['This search cannot filter by work mode (remote/hybrid/onsite), so results may include other arrangements.'] }))
-    expect($('.ws-funnel__headline')?.textContent).toBe('25 profiles were selected from the 50 retrieved and read in full.'.replace('25', '5'))
-    expect($('.ws-funnel__scope')?.textContent).toMatch(/size of the area, not the number of matches/)
-    expect($('.ws-funnel__how')?.textContent).toMatch(/cannot filter by work mode/)
-    expect($('.ws-funnel__how')?.textContent).toMatch(/not a ranking/)
-    expect($('.ws-funnel__how')?.textContent).not.toMatch(/Start here|group/i)
-    expect($('.ws-funnel__counts')).toBeNull()
-  })
+  // The funnel/"how this list was made" exposition (retrieved/selected counts, provider methodology) was
+  // deliberately removed from the recruiter-facing workspace — the recruiter sees what was found, not how the
+  // retrieval pipeline worked. funnelCopy() itself (models/workspace.test.ts) is untouched and still tested.
 })
 
 describe('decisions and filter', () => {
@@ -235,21 +228,17 @@ describe('decisions and filter', () => {
 })
 
 describe('proof and record', () => {
-  it('expand proof in place with quotes and their source', async () => {
+  it('one click on a candidate opens the full record, with quotes and their source', async () => {
     await render(makeResponse(SPECS, { workspace_arranged: true }))
-    const partial = card('Partial Evidence')
-    expect(partial.textContent).not.toContain('“')
-    await click(button(/^Proof/, partial))
-    expect(partial.textContent).toContain('“Built systems using capability 1 for production”')
-    expect(partial.textContent).toMatch(/role description · Engineer at Acme/)
-    expect(partial.textContent).toMatch(/Not proven on the profile:/)
-    await click(button(/^Proof/, partial))
-    expect(partial.textContent).not.toContain('“')
+    await click(card('Partial Evidence'))
+    const record = $('aside.record')!
+    expect(record.textContent).toContain('“Built systems using capability 1 for production”')
+    expect(record.textContent).toMatch(/role description · Engineer at Acme/)
   })
 
   it('open the full record without any "listed N of M" rank claim or provider wording', async () => {
     await render(makeResponse(SPECS, { workspace_arranged: true }))
-    await click(button(/Full record/, card('Heavy Evidence')))
+    await click(card('Heavy Evidence'))
     const record = $('aside.record')!
     expect(record.textContent).toContain('Heavy Evidence')
     expect(record.textContent).toMatch(/Requirement ledger/)

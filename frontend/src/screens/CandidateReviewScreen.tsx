@@ -1,16 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Pencil, Upload } from 'lucide-react'
+import { Pencil } from 'lucide-react'
 import type { SearchBrief } from '../models/searchBrief'
 import type { SearchResponse } from '../types'
-import { buildDiscoveryCandidates, emailStatusLine, phoneStatusLine } from '../models/discovery'
-import {
-  buildWorkspaceCandidates,
-  funnelCopy,
-  normalizeDecision,
-  readFunnel,
-  stableOrder,
-  type Decision,
-} from '../models/workspace'
+import { buildDiscoveryCandidates } from '../models/discovery'
+import { buildWorkspaceCandidates, normalizeDecision, stableOrder, type Decision } from '../models/workspace'
 import { CandidateRecord } from '../components/CandidateRecord'
 import { CandidateWorkspace } from '../components/CandidateWorkspace'
 import { AvailabilityNotice, CalibrationNote, NewCandidatesNotice, OtherReviewed, PausedPanel, RoleBar, ShowMoreBar } from '../components/RoleControls'
@@ -22,7 +15,6 @@ import {
   orderPresented,
   ROLE_ORDER_NOTE,
   pauseCopy,
-  reviewHeading,
   splitByPresentation,
   type PauseAction,
 } from '../models/roleWorkspace'
@@ -64,10 +56,9 @@ type CandidateReviewScreenProps = {
   roleMessage?: string | null
   // Set when a re-run changed nothing that is searched, so nothing was run.
   searchNotice?: string | null
+  // Reports whether a candidate record is open, so the role sidebar can collapse to give the record pane room.
+  onSelectionChange?: (hasSelection: boolean) => void
 }
-
-type Note = { id: string; text: string; createdAt: string }
-type Resume = { name: string; uploadedAt: string }
 
 function SkeletonRows() {
   return (
@@ -101,16 +92,13 @@ export function CandidateReviewScreen({
   onSearchResponse,
   roleMessage = null,
   searchNotice = null,
+  onSelectionChange,
 }: CandidateReviewScreenProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isEditingBrief, setIsEditingBrief] = useState(false)
   const [decisions, setDecisions] = useState<Record<string, Decision | undefined>>({})
-  const [resumes, setResumes] = useState<Record<string, Resume>>({})
-  const [notes, setNotes] = useState<Record<string, Note[]>>({})
-  const [noteDraft, setNoteDraft] = useState('')
   const [roleBusy, setRoleBusy] = useState(false)
   const [pauseDismissed, setPauseDismissed] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement | null>(null)
   // Choices made here that the server has not confirmed yet. A poll that lands between a click and its save must not
   // flip the card back, so these are laid over whatever the server returns until it agrees.
   const pendingDecisions = useRef<Record<string, Decision | null>>({})
@@ -139,17 +127,6 @@ export function CandidateReviewScreen({
       else hydrated[candidateId] = pending ?? undefined
     }
     setDecisions(hydrated)
-
-    const notesRecord = searchResponse?.notes ?? {}
-    const hydratedNotes: Record<string, Note[]> = {}
-    for (const [candidateId, entries] of Object.entries(notesRecord)) {
-      hydratedNotes[candidateId] = entries.map((entry, index) => ({
-        id: `${candidateId}-${index}`,
-        text: entry.text,
-        createdAt: entry.created_at,
-      }))
-    }
-    setNotes(hydratedNotes)
   }, [searchResponse])
 
   const candidates = useMemo(() => (searchResponse ? buildDiscoveryCandidates(searchResponse) : []), [searchResponse])
@@ -167,13 +144,22 @@ export function CandidateReviewScreen({
     return arrivalOrder.current.ids.map((id) => byId.get(id)).filter((item): item is (typeof arrangedItems)[number] => Boolean(item))
   }, [arrangedItems, searchGeneration, searchResponse])
   const selectedCandidate = candidates.find((candidate) => candidate.id === selectedId) ?? null
+  // Prev/next inside the open record: the same order the list is already shown in, so it never jumps around.
+  const orderedIds = flatItems.map((item) => item.candidate.id)
+  const selectedIndex = selectedId ? orderedIds.indexOf(selectedId) : -1
+  const prevCandidateId = selectedIndex > 0 ? orderedIds[selectedIndex - 1] : null
+  const nextCandidateId = selectedIndex >= 0 && selectedIndex < orderedIds.length - 1 ? orderedIds[selectedIndex + 1] : null
+
+  useEffect(() => {
+    onSelectionChange?.(Boolean(selectedCandidate))
+  }, [selectedCandidate, onSelectionChange])
 
   const progress = searchResponse?.progress
   const isRole = isRoleSearch(searchResponse)
   const role = searchResponse?.role ?? null
   // While a later cycle runs, the candidates already on screen stay as they are; only the first read shows progress.
-  const running = searchState === 'searching' && progress?.admitted && !(isRole && arrangedItems.length > 0) ? { read: progress.review_ready ?? 0, total: progress.admitted } : null
-  const funnel = !running && arrangedItems.length > 0 ? funnelCopy(readFunnel(searchResponse?.diagnostics), isRole ? (searchResponse?.candidate_count ?? candidates.length) : candidates.length) : null
+  // Retrieval counts, funnel breakdowns and "how this list was made" are deliberately not shown to the recruiter —
+  // "Reading profiles: N of M" below (from `progress`, not from here) is the only in-progress signal kept.
 
   const saved = (response: SearchResponse | undefined) => {
     // The server's answer keeps the role, feedback and the one-time summary current. Anything else is ignored.
@@ -217,23 +203,6 @@ export function CandidateReviewScreen({
 
   const toggleDecision = (id: string, choice: Decision) => decide(id, decisions[id] === choice ? undefined : choice)
 
-  const uploadResume = (id: string, file: File) => {
-    setResumes((current) => ({ ...current, [id]: { name: file.name, uploadedAt: new Date().toISOString() } }))
-  }
-
-  const addNote = (id: string) => {
-    const text = noteDraft.trim()
-    if (!text) return
-    setNotes((current) => ({
-      ...current,
-      [id]: [...(current[id] ?? []), { id: `${Date.now()}`, text, createdAt: new Date().toISOString() }],
-    }))
-    if (searchId) {
-      updateCandidateRecord(searchId, id, { note: text }).catch(() => {})
-    }
-    setNoteDraft('')
-  }
-
   const hasSearchedOnce = searchResponse !== null
   // The skeleton is only for the brief window before the FIRST candidates are admitted.
   const showSkeleton = searchState === 'searching' && (isRole ? arrangedItems.length === 0 : candidates.length === 0)
@@ -244,16 +213,12 @@ export function CandidateReviewScreen({
   const paused = role ? pauseCopy(role) : null
   const newNotice = newCandidatesNotice(searchResponse?.new_candidates ?? 0)
   const note = calibrationNote(searchResponse?.calibration)
-  const undecided = arrangedItems.filter((item) => !decisions[item.candidate.id]).length
-  const heading = isRole ? reviewHeading(arrangedItems.length, undecided) : null
   const cycleRunning = searchState === 'searching'
   const nothingMore = isRole && reserveItems.length === 0 && Boolean(searchResponse?.retrieval_exhausted)
   const moreMessage = roleMessage ?? (nothingMore ? "We haven't found additional candidates in the current search." : null)
 
   return (
     <div className="discovery">
-      <h2 className="discovery-heading">Candidate Review</h2>
-
       <div className="discovery-toolbar">
         <div className="discovery-toolbar__actions">
           <button type="button" className="discovery-edit-brief" onClick={() => setIsEditingBrief((current) => !current)}>
@@ -379,8 +344,6 @@ export function CandidateReviewScreen({
               </div>
             ) : null}
 
-            {heading && !showSkeleton ? <h3 className="role-heading">{heading}</h3> : null}
-
             {!showSkeleton && arrangedItems.length > 0 ? (
               <CandidateWorkspace
                 flatItems={flatItems}
@@ -388,9 +351,6 @@ export function CandidateReviewScreen({
                 selectedId={selectedId}
                 onOpen={setSelectedId}
                 onDecide={decide}
-                running={running}
-                funnel={funnel}
-                warnings={searchResponse?.warnings ?? []}
                 orderNote={isRole ? ROLE_ORDER_NOTE : undefined}
                 feedback={isRole ? (searchResponse?.feedback ?? {}) : undefined}
                 onFeedback={isRole ? giveFeedback : undefined}
@@ -418,9 +378,6 @@ export function CandidateReviewScreen({
                   selectedId={selectedId}
                   onOpen={setSelectedId}
                   onDecide={decide}
-                  running={null}
-                  funnel={null}
-                  warnings={[]}
                   feedback={searchResponse?.feedback ?? {}}
                   onFeedback={giveFeedback}
                 />
@@ -434,79 +391,9 @@ export function CandidateReviewScreen({
               decision={decisions[selectedCandidate.id]}
               onDecision={(decision) => toggleDecision(selectedCandidate.id, decision)}
               onClose={() => setSelectedId(null)}
-            >
-            <div className="brief-section">
-              <h3 className="brief-section__title">Contact</h3>
-              <dl className="workspace__preview-list">
-                <div className="workspace__preview-row">
-                  <dt>Email</dt>
-                  <dd className={selectedCandidate.contactEmail ? '' : 'discovery-resume-status--empty'}>{emailStatusLine(selectedCandidate)}</dd>
-                </div>
-                <div className="workspace__preview-row">
-                  <dt>Phone</dt>
-                  <dd className={selectedCandidate.contactPhone ? '' : 'discovery-resume-status--empty'}>{phoneStatusLine(selectedCandidate)}</dd>
-                </div>
-              </dl>
-            </div>
-
-            <div className="brief-section">
-              <h3 className="brief-section__title">Resume</h3>
-              {resumes[selectedCandidate.id] ? (
-                <p className="discovery-resume-status">{resumes[selectedCandidate.id].name}</p>
-              ) : (
-                <p className="discovery-resume-status discovery-resume-status--empty">No resume on file.</p>
-              )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="discovery-file-input"
-                onChange={(event) => {
-                  const file = event.target.files?.[0]
-                  if (file) uploadResume(selectedCandidate.id, file)
-                  event.target.value = ''
-                }}
-              />
-              <button type="button" className="discovery-action" onClick={() => fileInputRef.current?.click()}>
-                <Upload size={14} aria-hidden="true" />
-                {resumes[selectedCandidate.id] ? 'Replace Resume' : 'Upload Resume'}
-              </button>
-            </div>
-
-            <div className="brief-section">
-              <h3 className="brief-section__title">Notes</h3>
-              <div className="discovery-notes">
-                {(notes[selectedCandidate.id] ?? []).map((note) => (
-                  <p key={note.id} className="discovery-note">
-                    {note.text}
-                  </p>
-                ))}
-                {(notes[selectedCandidate.id] ?? []).length === 0 ? (
-                  <p className="discovery-note discovery-note--empty">No notes yet.</p>
-                ) : null}
-              </div>
-              <div className="discovery-note-form">
-                <textarea
-                  className="discovery-note-input"
-                  placeholder="Add a note about this candidate…"
-                  value={noteDraft}
-                  onChange={(event) => setNoteDraft(event.target.value)}
-                  rows={2}
-                />
-                <button type="button" className="discovery-action" onClick={() => addNote(selectedCandidate.id)} disabled={!noteDraft.trim()}>
-                  Add Note
-                </button>
-              </div>
-            </div>
-
-            <div className="brief-section">
-              <h3 className="brief-section__title">Coming Soon</h3>
-              <ul className="assessment-list assessment-list--future">
-                <li>Interview Questions</li>
-                <li>Outreach Draft</li>
-                <li>Compensation Analysis</li>
-              </ul>
-            </div>
-            </CandidateRecord>
+              onPrev={prevCandidateId ? () => setSelectedId(prevCandidateId) : undefined}
+              onNext={nextCandidateId ? () => setSelectedId(nextCandidateId) : undefined}
+            />
           ) : null}
         </div>
       )}

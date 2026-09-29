@@ -28,6 +28,34 @@
   background: var(--color-sidebar-bg);
   border-right: 1px solid var(--color-border);
   overflow-y: auto;
+  overflow-x: hidden;
+  transition: flex-basis var(--motion-pane, 0.22s) var(--motion-ease, ease), width var(--motion-pane, 0.22s) var(--motion-ease, ease), padding var(--motion-pane, 0.22s) var(--motion-ease, ease);
+}
+
+/* Collapses to a narrow rail when a candidate record opens (unless pinned) — the record pane gets the room. */
+.app-sidebar--collapsed {
+  flex-basis: 56px;
+  width: 56px;
+  padding: 22px 0;
+  align-items: center;
+}
+
+.app-sidebar__expand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--color-muted);
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.app-sidebar__expand:hover {
+  color: var(--color-accent);
+  background: rgba(24, 24, 27, 0.04);
 }
 
 .app-sidebar__brand {
@@ -35,6 +63,50 @@
   align-items: center;
   gap: 10px;
   padding: 2px 8px 22px;
+}
+
+.app-sidebar__pin {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--color-faint);
+  cursor: pointer;
+  transition: color var(--motion-fast, 0.15s) ease;
+}
+
+.app-sidebar__pin:hover,
+.app-sidebar__pin[aria-pressed='true'] {
+  color: var(--color-accent);
+}
+
+.app-sidebar__footer {
+  margin-top: auto;
+  padding: 14px 8px 0;
+  border-top: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.app-sidebar__signout {
+  align-self: flex-start;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.app-sidebar__signout:hover {
+  color: var(--color-primary-text);
 }
 
 .app-sidebar__name {

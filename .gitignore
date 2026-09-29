@@ -27,3 +27,7 @@ output/experiments/
 # Local record-preview data (real candidate profiles)
 output/record_preview/
 frontend/src/preview-data/
+
+# Archived local test/experiment search data (see archive/test-data/*/MANIFEST.json) — same PII concern as
+# output/searches above, just relocated rather than deleted.
+archive/

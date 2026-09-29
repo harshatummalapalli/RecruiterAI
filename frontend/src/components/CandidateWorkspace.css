@@ -57,40 +57,44 @@
 
 /* Decision filter */
 
+/* Quiet navigation, not dashboard widgets: plain text with an underline for the active filter, not pills. */
 .ws-filter {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 18px;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 10px;
 }
 
 .ws-filter__option {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 12px;
-  border: 1px solid var(--color-border);
-  border-radius: 999px;
-  background: var(--color-surface);
-  color: var(--color-secondary-text);
+  align-items: baseline;
+  gap: 5px;
+  padding: 0 0 10px;
+  margin-bottom: -11px;
+  border: none;
+  border-bottom: 1.5px solid transparent;
+  background: none;
+  color: var(--color-muted);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
+  transition: color var(--motion-fast, 0.15s) ease, border-color var(--motion-fast, 0.15s) ease;
 }
 
 .ws-filter__option:hover {
-  border-color: var(--color-accent);
+  color: var(--color-primary-text);
 }
 
 .ws-filter__option.is-active {
-  background: var(--color-primary-text);
-  border-color: var(--color-primary-text);
-  color: #ffffff;
+  color: var(--color-primary-text);
+  border-bottom-color: var(--color-primary-text);
 }
 
 .ws-filter__count {
   font-variant-numeric: tabular-nums;
   opacity: 0.7;
+  font-size: 12px;
 }
 
 /* List and sections */
@@ -322,10 +326,42 @@
   color: var(--color-primary-text);
 }
 
+/* Selected decisions were previously a solid dark fill regardless of which decision it was — reads as a
+   conventional SaaS primary-button treatment. Quieter now: a restrained tint per decision, matching how the
+   amber "watch" chip already worked elsewhere. The recruiter should barely notice the control until they
+   need it — color communicates which decision, not "this is a big action". */
 .ws-decision.is-active {
-  background: var(--color-primary-text);
-  border-color: var(--color-primary-text);
-  color: #ffffff;
+  background: var(--color-border-subtle);
+  border-color: var(--color-border);
+  color: var(--color-primary-text);
+}
+
+.ws-decision.is-active::before {
+  content: '\2713';
+  margin-right: 5px;
+  font-size: 11px;
+}
+
+.ws-decision.is-active.is-shortlist {
+  background: var(--color-accent-subtle);
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.ws-decision.is-active.is-maybe {
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning-border);
+  color: var(--color-warning);
+}
+
+.ws-decision.is-active.is-reject {
+  background: var(--color-border-subtle);
+  border-color: var(--color-border);
+  color: var(--color-primary-text);
+}
+
+.ws-card {
+  transition: border-color var(--motion-fast, 0.15s) ease, background-color var(--motion-fast, 0.15s) ease;
 }
 
 .ws-link {

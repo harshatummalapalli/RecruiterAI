@@ -58,12 +58,12 @@ describe('coverage copy', () => {
 
   it('states zero evidence plainly, without judging the person', () => {
     const why = factsFor({ name: 'A', core: [false, false, false, false], years: 'met' }).why
-    expect(why).toBe('Nothing beyond total years is shown on the profile.')
+    expect(why).toBe('No additional core requirement evidence found.')
     expect(why).not.toMatch(/weak|poor|bad|low/i)
   })
 
   it('does not mention total years when the brief has no years requirement', () => {
-    expect(factsFor({ name: 'A', core: [false, false] }).why).toBe('No core requirement is shown on the profile.')
+    expect(factsFor({ name: 'A', core: [false, false] }).why).toBe('No core requirement evidence found.')
   })
 })
 

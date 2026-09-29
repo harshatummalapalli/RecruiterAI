@@ -1,0 +1,126 @@
+/* Semantic design tokens for RecruiterAI. One canonical source: components consume these var(--color-*) names and
+   never redeclare their own values (the old per-screen duplicates in RecruiterWorkspaceScreen.css and
+   LoginScreen.css, which had quietly drifted apart, are gone — see those files).
+
+   Light is the default palette, defined on :root. Dark is layered on in two ways:
+   - prefers-color-scheme, for "System", guarded so an explicit light choice always wins over the OS;
+   - [data-theme="dark"], for an explicit choice, so the toggle wins in both directions.
+   ThemeProvider (src/theme/ThemeProvider.tsx) is the only thing that ever sets/removes data-theme. */
+
+:root {
+  --color-bg: #f7f5f0;
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-preview-bg: #faf8f4;
+  --color-sidebar-bg: #f1eee7;
+  --color-border: #e7e5e4;
+  --color-border-subtle: rgba(28, 27, 25, 0.06);
+  --color-primary-text: #1c1b19;
+  --color-secondary-text: #475569;
+  --color-muted: #64748b;
+  --color-faint: #94a3b8;
+  --color-placeholder: #a8a29e;
+  --color-accent: #0f766e;
+  --color-accent-hover: #115e59;
+  --color-accent-subtle: rgba(15, 118, 110, 0.1);
+  --color-focus-ring: rgba(15, 118, 110, 0.18);
+  --color-focus: #0f766e;
+  --color-success: #15803d;
+  --color-error: #b91c1c;
+  --color-danger: #b91c1c;
+  --color-warning: #b45309;
+  --color-warning-bg: rgba(180, 83, 9, 0.08);
+  --color-warning-border: rgba(180, 83, 9, 0.28);
+  --color-warning-subtle: rgba(180, 83, 9, 0.1);
+  --motion-fast: 0.15s;
+  --motion-pane: 0.22s;
+  --motion-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --color-bg: #000000;
+    --color-surface: #121212;
+    --color-surface-raised: #1a1a1a;
+    --color-preview-bg: #0d0d0d;
+    --color-sidebar-bg: #0a0a0a;
+    --color-border: #2a2a2a;
+    --color-border-subtle: rgba(255, 255, 255, 0.08);
+    --color-primary-text: #f5f3ee;
+    --color-secondary-text: #b8b5ad;
+    --color-muted: #8f8b82;
+    --color-faint: #6b675f;
+    --color-placeholder: #6b675f;
+    --color-accent: #3ba894;
+    --color-accent-hover: #4fbba6;
+    --color-accent-subtle: rgba(59, 168, 148, 0.16);
+    --color-focus-ring: rgba(59, 168, 148, 0.28);
+    --color-focus: #3ba894;
+    --color-success: #4ade80;
+    --color-error: #f87171;
+    --color-danger: #f87171;
+    --color-warning: #f0a24d;
+    --color-warning-bg: rgba(240, 162, 77, 0.12);
+    --color-warning-border: rgba(240, 162, 77, 0.32);
+    --color-warning-subtle: rgba(240, 162, 77, 0.14);
+  }
+}
+
+:root[data-theme='dark'] {
+  --color-bg: #000000;
+  --color-surface: #121212;
+  --color-surface-raised: #1a1a1a;
+  --color-preview-bg: #0d0d0d;
+  --color-sidebar-bg: #0a0a0a;
+  --color-border: #2a2a2a;
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
+  --color-primary-text: #f5f3ee;
+  --color-secondary-text: #b8b5ad;
+  --color-muted: #8f8b82;
+  --color-faint: #6b675f;
+  --color-placeholder: #6b675f;
+  --color-accent: #3ba894;
+  --color-accent-hover: #4fbba6;
+  --color-accent-subtle: rgba(59, 168, 148, 0.16);
+  --color-focus-ring: rgba(59, 168, 148, 0.28);
+  --color-focus: #3ba894;
+  --color-success: #4ade80;
+  --color-error: #f87171;
+  --color-danger: #f87171;
+  --color-warning: #f0a24d;
+  --color-warning-bg: rgba(240, 162, 77, 0.12);
+  --color-warning-border: rgba(240, 162, 77, 0.32);
+  --color-warning-subtle: rgba(240, 162, 77, 0.14);
+}
+
+html {
+  background: var(--color-bg);
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+  }
+}
+
+/* A visible, theme-safe focus ring wherever a component does not already define a more specific one. */
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

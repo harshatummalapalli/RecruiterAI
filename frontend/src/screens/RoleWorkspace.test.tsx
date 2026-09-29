@@ -78,11 +78,9 @@ describe('the first five and the rest that were read', () => {
   it('shows five candidates to review and keeps the other reviewed candidates collapsed', async () => {
     await render(makeRoleResponse(manySpecs(25)))
     expect(names()).toHaveLength(5)
-    expect($('.role-heading')?.textContent).toBe('5 candidates to review')
     const other = $('.role-other')!
     expect(other.textContent).toContain('20 other reviewed candidates')
     expect(other.querySelectorAll('article')).toHaveLength(0) // collapsed
-    expect($$('.ws-funnel__headline')[0].textContent).toMatch(/^25 profiles were selected from the 50 retrieved/)
   })
 
   it('opens the other reviewed candidates without calling them rejected, keeping their decisions available', async () => {
@@ -111,7 +109,7 @@ describe('the first five and the rest that were read', () => {
   it('counts what is still to review as decisions are made', async () => {
     await render(makeRoleResponse(manySpecs(25)))
     await click(button(/Shortlist/, card('Person 1')))
-    expect($('.role-heading')?.textContent).toBe('4 candidates to review')
+    expect(button(/To review/)?.querySelector('.ws-filter__count')?.textContent).toBe('4')
   })
 
   it('while the first candidates are still being read, shows progress and no cards', async () => {

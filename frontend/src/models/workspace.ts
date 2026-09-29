@@ -146,7 +146,7 @@ function watchChips(candidate: DiscoveryCandidate): WatchChip[] {
  */
 function whyLine(shown: number, described: number, hasYears: boolean): string {
   if (shown === 0) {
-    return hasYears ? 'Nothing beyond total years is shown on the profile.' : 'No core requirement is shown on the profile.'
+    return hasYears ? 'No additional core requirement evidence found.' : 'No core requirement evidence found.'
   }
   const base = `${shown} core ${shown === 1 ? 'requirement' : 'requirements'} shown`
   return described > 0 ? `${base} · ${described} in described work` : base

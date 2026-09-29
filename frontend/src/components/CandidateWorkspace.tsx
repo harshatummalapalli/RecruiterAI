@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
-import { ChevronDown, ChevronUp, RotateCcw } from 'lucide-react'
+import { RotateCcw } from 'lucide-react'
 import { initialsOf } from '../models/discovery'
 import {
   FILTERS,
@@ -32,10 +32,6 @@ type Props = {
   selectedId: string | null
   onOpen: (id: string | null) => void
   onDecide: (id: string, decision: Decision | undefined) => void
-
-  running: { read: number; total: number } | null
-  funnel: FunnelCopy | null
-  warnings: string[]
 
   /** Recorded reasons for Maybe and Reject, by candidate. When `onFeedback` is given, Maybe and Reject ask for one. */
   feedback?: Record<string, { decision?: string | null; reason?: string | null; note?: string | null }>
@@ -81,8 +77,6 @@ type CardProps = {
   item: WorkspaceCandidate
   decision: Decision | undefined
   selected: boolean
-  expanded: boolean
-  onToggleExpand: () => void
   onOpen: () => void
   onDecide: (decision: Decision) => void
   register: (element: HTMLElement | null) => void
@@ -91,17 +85,18 @@ type CardProps = {
   reason?: string | null
 }
 
-function CandidateCard({ item, decision, selected, expanded, onToggleExpand, onOpen, onDecide, register, prompt, reason }: CardProps) {
+// One click opens the full record — no separate "Proof" preview mode. The card itself only ever shows a
+// short preview of the evidence; the full requirement ledger and quotes live in the record pane.
+function CandidateCard({ item, decision, selected, onOpen, onDecide, register, prompt, reason }: CardProps) {
   const { candidate, facts } = item
   const place = [candidate.title, candidate.company !== 'Not specified' ? candidate.company : null, candidate.location !== 'Not specified' ? candidate.location : null]
     .filter(Boolean)
     .join(' · ')
   const showHeadline = candidate.headline && candidate.headline.trim().toLowerCase() !== candidate.title.trim().toLowerCase()
-  const hasProof = facts.chips.length > 0 || facts.notProven.length > 0 || facts.concerns.length > 0
 
   const onCardClick = (event: MouseEvent<HTMLElement>) => {
     if ((event.target as HTMLElement).closest('button, a')) return
-    if (hasProof) onToggleExpand()
+    onOpen()
   }
 
   return (
@@ -166,46 +161,10 @@ function CandidateCard({ item, decision, selected, expanded, onToggleExpand, onO
             </button>
           ))}
         </div>
-        <button type="button" className="ws-link" onClick={onOpen}>
-          Full record
-        </button>
-        {hasProof ? (
-          <button type="button" className="ws-link ws-link--quiet" aria-expanded={expanded} onClick={onToggleExpand}>
-            Proof {expanded ? <ChevronUp size={13} aria-hidden="true" /> : <ChevronDown size={13} aria-hidden="true" />}
-          </button>
-        ) : null}
       </div>
 
       {prompt}
       {!prompt && reason ? <p className="ws-reason">{reason}</p> : null}
-
-      {expanded ? (
-        <div className="ws-card__proof">
-          {facts.chips.length > 0 ? (
-            <ul className="ws-quotes">
-              {facts.chips.map((chip) => (
-                <li key={chip.label}>
-                  <p className="ws-quotes__req">{chip.requirement.replace(/[.\s]+$/, '')}</p>
-                  <p className="ws-quotes__quote">“{chip.quote}”</p>
-                  {chip.source ? <p className="ws-quotes__source">{chip.source}</p> : null}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          {facts.notProven.length > 0 ? (
-            <p className="ws-notproven">
-              <strong>Not proven on the profile:</strong> {facts.notProven.join(' · ')}
-            </p>
-          ) : null}
-          {facts.concerns.length > 0 ? (
-            <ul className="ws-concerns">
-              {facts.concerns.map((concern) => (
-                <li key={concern}>{concern}</li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
-      ) : null}
     </article>
   )
 }
@@ -293,9 +252,6 @@ export function CandidateWorkspace({
   selectedId,
   onOpen,
   onDecide,
-  running,
-  funnel,
-  warnings,
   feedback = {},
   onFeedback,
   compact = false,
@@ -305,7 +261,6 @@ export function CandidateWorkspace({
   // Cards whose decision no longer matches the filter stay in place as a slim row (with Undo) until the filter
   // changes, so nothing moves under the cursor. Maps to the decision they had before, for Undo.
   const [lingering, setLingering] = useState<Record<string, Decision | undefined>>({})
-  const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [focusId, setFocusId] = useState<string | null>(null)
   const cards = useRef(new Map<string, HTMLElement>())
   // Prompts the recruiter answered or skipped, and the reason they just chose (shown before the server confirms it).
@@ -443,26 +398,10 @@ export function CandidateWorkspace({
       onOpen(id)
       return
     }
-    if (key === 'escape') {
-      if (expanded.has(id)) {
-        setExpanded((current) => {
-          const next = new Set(current)
-          next.delete(id)
-          return next
-        })
-      } else if (selectedId) {
-        onOpen(null)
-      }
+    if (key === 'escape' && selectedId) {
+      onOpen(null)
     }
   }
-
-  const toggleExpand = (id: string) =>
-    setExpanded((current) => {
-      const next = new Set(current)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
 
   const renderEntry = (item: WorkspaceCandidate) => {
     const id = item.candidate.id
@@ -486,8 +425,6 @@ export function CandidateWorkspace({
         }
         reason={recorded ? `Reason: ${recorded}` : undefined}
         selected={selectedId === id}
-        expanded={expanded.has(id)}
-        onToggleExpand={() => toggleExpand(id)}
         onOpen={() => onOpen(id)}
         onDecide={(choice) => decide(id, choice)}
         register={register(id)}
@@ -497,8 +434,6 @@ export function CandidateWorkspace({
 
   return (
     <div className={`ws${compact ? ' ws--compact' : ''}`}>
-      {compact ? null : <FunnelHeader funnel={funnel} running={running} warnings={warnings} />}
-
       {compact ? null : (
       <div className="ws-filter" role="group" aria-label="Filter by decision">
         {FILTERS.map((option) => (

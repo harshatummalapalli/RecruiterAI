@@ -26,6 +26,7 @@ const service = vi.hoisted(() => ({
 vi.mock('../services/recruiterWorkflow', () => service)
 
 import { RecruiterWorkspaceScreen } from './RecruiterWorkspaceScreen'
+import { ThemeProvider } from '../theme/ThemeProvider'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -97,7 +98,7 @@ async function mountWithSearches(active: { kind: 'search' | 'draft'; id: string 
   service.confirmIntake.mockResolvedValue(PROPOSED)
   if (active) window.localStorage.setItem('recruiterai:activeSearch', JSON.stringify(active))
   await act(async () => {
-    root.render(<RecruiterWorkspaceScreen />)
+    root.render(<ThemeProvider><RecruiterWorkspaceScreen /></ThemeProvider>)
   })
   await act(async () => {})
 }

@@ -1,30 +1,4 @@
-.app-shell,
-.workspace {
-  --color-bg: #f7f5f0;
-  --color-surface: #ffffff;
-  --color-preview-bg: #faf8f4;
-  --color-sidebar-bg: #f1eee7;
-  --color-border: #e7e5e4;
-  --color-primary-text: #1c1b19;
-  --color-secondary-text: #475569;
-  --color-muted: #64748b;
-  --color-faint: #94a3b8;
-  --color-placeholder: #a8a29e;
-  --color-accent: #0f766e;
-  --color-accent-hover: #115e59;
-  --color-focus-ring: rgba(15, 118, 110, 0.18);
-  --color-success: #15803d;
-  --color-error: #b91c1c;
-  /* Requirement concerns (e.g. a seniority mismatch) are a flag for the
-     recruiter to investigate, not a rejection — deliberately amber, not
-     the same red used for --color-error, so the Candidate Decision Card
-     never visually implies "concern = reject". Matches the amber already
-     used ad hoc for the concern pill/row flag below. */
-  --color-warning: #b45309;
-  --color-warning-bg: rgba(180, 83, 9, 0.08);
-  --color-warning-border: rgba(180, 83, 9, 0.28);
-
-}
+/* Color tokens are global now (src/styles/tokens.css, light + dark) — this file only consumes them. */
 
 .workspace {
   min-height: 100vh;
@@ -43,6 +17,18 @@
   max-width: 1040px;
   display: flex;
   flex-direction: column;
+}
+
+/* The candidate-review workspace (the three-pane view) is not editorial reading content like the JD composer or
+   Living Brief — it's a working desktop surface, and it should use the viewport instead of sitting capped at
+   1040px with the freed sidebar-collapse space going nowhere. */
+.workspace__content--wide {
+  max-width: 1600px;
+}
+
+/* Less dead air above a working desktop surface than above a page of editorial reading content. */
+.workspace:has(.workspace__content--wide) {
+  padding-top: 32px;
 }
 
 /* Greeting */
@@ -1170,7 +1156,9 @@
 .discovery-main {
   flex: 1 1 480px;
   min-width: 0;
-  max-width: 100%;
+  /* Grows to use freed space (e.g. the sidebar collapsing) without stretching arbitrarily wide on an ultra-wide
+     display — a candidate list that wide stops reading like a list. */
+  max-width: 760px;
   overflow-x: auto;
 }
 
@@ -1418,17 +1406,35 @@
 /* Candidate profile panel */
 
 .discovery-profile {
-  flex: 1 1 360px;
+  flex: 1 1 420px;
   min-width: 0;
-  max-width: 420px;
+  max-width: 500px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 18px;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 16px;
-  padding: 26px 28px 30px;
+  padding: 22px 26px 26px;
   box-shadow: 0 1px 2px rgba(24, 24, 27, 0.03), 0 4px 16px rgba(24, 24, 27, 0.03);
+  /* A proper third pane, not a modal or a drawer: it scrolls independently of the candidate list beside it,
+     and its own header (record-head, sticky below) stays put while the rest of it scrolls. */
+  position: sticky;
+  top: 24px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  animation: pane-in var(--motion-pane, 0.22s) var(--motion-ease, ease) both;
+}
+
+@keyframes pane-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .discovery-profile__head {

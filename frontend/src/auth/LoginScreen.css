@@ -1,12 +1,6 @@
 .login-screen {
-  --color-bg: #f7f5f0;
-  --color-surface: #ffffff;
-  --color-border: #e7e5e4;
-  --color-primary-text: #18181b;
-  --color-secondary-text: #52525b;
-  --color-muted: #71717a;
-  --color-error: #b91c1c;
-
+  /* Color tokens are global now (src/styles/tokens.css) — this used to redeclare its own, slightly
+     different shades of the same colors; now it shares the same ones as the rest of the product. */
   min-height: 100vh;
   width: 100%;
   background: var(--color-bg);

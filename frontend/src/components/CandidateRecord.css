@@ -10,6 +10,46 @@
   display: flex;
   gap: 14px;
   align-items: flex-start;
+  /* Stays put while the rest of the pane scrolls beneath it — the trick is to claim back the parent's own
+     top padding as the header's own, so "sticky" has somewhere to land right at the pane's edge. */
+  position: sticky;
+  top: -22px;
+  margin: -22px -26px 0;
+  padding: 22px 26px 14px;
+  background: var(--color-surface);
+  z-index: 1;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.record-head__nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+
+.record-nav-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-secondary-text);
+  cursor: pointer;
+  transition: border-color var(--motion-fast, 0.15s) ease, color var(--motion-fast, 0.15s) ease, opacity var(--motion-fast, 0.15s) ease;
+}
+
+.record-nav-button:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.record-nav-button:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .record-avatar {
@@ -88,8 +128,8 @@
 .record-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding-top: 18px;
+  gap: 8px;
+  padding-top: 14px;
   border-top: 1px solid var(--color-border);
 }
 

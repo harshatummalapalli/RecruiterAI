@@ -366,7 +366,12 @@ class IntakeAnswerRequest(BaseModel):
 
 
 # The sidebar lists at most this many roles, and an unsearched brief only while it is recent.
-SIDEBAR_LIMIT = 50
+# Completed searches and drafts each get their OWN budget, rather than competing for one shared, recency-sorted
+# slot list — a burst of drafts (real or test-generated) can then never push a completed search out of view; it
+# can only push out an OLDER draft. Searches get the much larger budget: they represent committed work, drafts
+# are transient by nature. See the forensic audit this resolves for why a shared budget was the actual bug.
+SIDEBAR_SEARCH_LIMIT = 200
+SIDEBAR_DRAFT_LIMIT = 20
 DRAFT_VISIBLE_SECONDS = 14 * 24 * 3600
 
 
@@ -806,25 +811,35 @@ def create_app(
 
     @app.get("/searches", dependencies=[Depends(require_session)])
     def list_searches() -> Dict[str, Any]:
-        """The workspace sidebar: every role, plus briefs that have not been searched yet. Newest activity first."""
-        items: List[Dict[str, Any]] = []
+        """The workspace sidebar: every role, plus briefs that have not been searched yet. Newest activity first
+        within each group — but completed searches and drafts are two separate lists with two separate budgets
+        (SIDEBAR_SEARCH_LIMIT, SIDEBAR_DRAFT_LIMIT), not one shared, recency-sorted list. A flood of drafts (a
+        recruiter's own, or test-generated ones sharing the default storage path) can only ever crowd out an
+        OLDER DRAFT — never a completed search. Completed searches are listed first, by identity (search_id),
+        never merged or de-duplicated by title."""
+        searches: List[Dict[str, Any]] = []
         used_sessions: set = set()
         for path in Path(search_store.storage_dir).glob("*.json"):
             summary = search_summary_cache.get(search_store, path)
             if summary is None:
                 continue
-            items.append(summary["summary"])
+            searches.append(summary["summary"])
             if summary["session_id"]:
                 used_sessions.add(summary["session_id"])
+        searches.sort(key=lambda item: item.get("updated_at") or "", reverse=True)
+
         cutoff = datetime.now(timezone.utc).timestamp() - DRAFT_VISIBLE_SECONDS
+        drafts: List[Dict[str, Any]] = []
         for draft in list_draft_summaries(intake_session_manager):
             if draft["session_id"] in used_sessions or not draft.get("boundary"):
                 continue
             updated = datetime.fromisoformat(draft["updated_at"]).timestamp()
             if updated >= cutoff:
-                items.append(draft_summary(draft))
-        items.sort(key=lambda item: item.get("updated_at") or "", reverse=True)
-        return {"searches": items[:SIDEBAR_LIMIT]}
+                drafts.append(draft_summary(draft))
+        drafts.sort(key=lambda item: item.get("updated_at") or "", reverse=True)
+
+        items = searches[:SIDEBAR_SEARCH_LIMIT] + drafts[:SIDEBAR_DRAFT_LIMIT]
+        return {"searches": items}
 
     @app.get("/search/{search_id}", response_model=SearchResponse, dependencies=[Depends(require_session)])
     def get_search(search_id: str) -> SearchResponse:

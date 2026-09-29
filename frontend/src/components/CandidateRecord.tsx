@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from 'react'
-import { AlertTriangle, Check, ExternalLink, Minus, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { AlertTriangle, Check, ChevronDown, ChevronUp, ExternalLink, Minus, X } from 'lucide-react'
 import { initialsOf, relevanceLabel, type DiscoveryCandidate, type LedgerGroup, type LedgerRow } from '../models/discovery'
 import './CandidateRecord.css'
 
@@ -21,8 +21,9 @@ type CandidateRecordProps = {
   decision?: RecordDecision
   onDecision: (decision: RecordDecision) => void
   onClose: () => void
-  /** Contact, resume, notes and the rest of the recruiter workflow, unchanged, below the record. */
-  children?: ReactNode
+  /** Move to the previous/next candidate in the same list, without closing and reopening the pane. */
+  onPrev?: () => void
+  onNext?: () => void
 }
 
 function Avatar({ name, url }: { name: string; url: string | null }) {
@@ -99,7 +100,7 @@ function LedgerSection({ group }: { group: LedgerGroup }) {
   )
 }
 
-export function CandidateRecord({ candidate, decision, onDecision, onClose, children }: CandidateRecordProps) {
+export function CandidateRecord({ candidate, decision, onDecision, onClose, onPrev, onNext }: CandidateRecordProps) {
   const [showAllCareer, setShowAllCareer] = useState(false)
   const [showAllSkills, setShowAllSkills] = useState(false)
   const [showAllCerts, setShowAllCerts] = useState(false)
@@ -112,6 +113,27 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, chil
   const hasLedger = candidate.ledger.length > 0
   const educationLine = (entry: DiscoveryCandidate['education'][number]) =>
     [[entry.degree, entry.fieldOfStudy].filter(Boolean).join(', ') || 'Degree not specified', entry.institution, entry.years].filter(Boolean).join(' · ')
+
+  // Move to the next/previous candidate without leaving the record — inspect, next, inspect, next.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target?.closest('input, textarea, select, [contenteditable="true"]')) return
+      if (event.metaKey || event.ctrlKey || event.altKey) return
+      const key = event.key.toLowerCase()
+      if ((key === 'j' || key === 'arrowdown') && onNext) {
+        event.preventDefault()
+        onNext()
+      } else if ((key === 'k' || key === 'arrowup') && onPrev) {
+        event.preventDefault()
+        onPrev()
+      } else if (key === 'escape') {
+        onClose()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onNext, onPrev, onClose])
 
   return (
     <aside className="discovery-profile record" aria-label="Candidate record">
@@ -138,9 +160,17 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, chil
             ) : null}
           </div>
         </div>
-        <button type="button" className="discovery-profile__close" onClick={onClose} aria-label="Close record">
-          <X size={16} />
-        </button>
+        <div className="record-head__nav">
+          <button type="button" className="record-nav-button" onClick={onPrev} disabled={!onPrev} aria-label="Previous candidate" title="Previous (K)">
+            <ChevronUp size={15} />
+          </button>
+          <button type="button" className="record-nav-button" onClick={onNext} disabled={!onNext} aria-label="Next candidate" title="Next (J)">
+            <ChevronDown size={15} />
+          </button>
+          <button type="button" className="discovery-profile__close" onClick={onClose} aria-label="Close record">
+            <X size={16} />
+          </button>
+        </div>
       </header>
 
       <div className="brief-segmented record-decision" role="group" aria-label="Recruiter decision">
@@ -234,20 +264,6 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, chil
           </ul>
         </section>
       ) : null}
-
-      <section className="record-section" aria-labelledby="record-unknown">
-        <h3 id="record-unknown" className="record-section__title">
-          What we don't know
-        </h3>
-        <ul className="assessment-list">
-          {candidate.whatWeDontKnow
-            // The level line already has its own place under Experience and level.
-            .filter((item) => !(candidate.levelLine && item.startsWith('Level alignment:')))
-            .map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-        </ul>
-      </section>
 
       <section className="record-section" aria-labelledby="record-career">
         <h3 id="record-career" className="record-section__title">
@@ -352,16 +368,6 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, chil
         )}
       </section>
 
-      {candidate.aboutExcerpt ? (
-        <section className="record-section" aria-labelledby="record-own-words">
-          <h3 id="record-own-words" className="record-section__title">
-            In their own words <span className="record-count">self-reported, not verified</span>
-          </h3>
-          <blockquote className="record-own-words">{candidate.aboutExcerpt}</blockquote>
-        </section>
-      ) : null}
-
-      {children}
     </aside>
   )
 }

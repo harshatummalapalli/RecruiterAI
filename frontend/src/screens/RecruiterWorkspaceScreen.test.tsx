@@ -26,6 +26,7 @@ const service = vi.hoisted(() => ({
 vi.mock('../services/recruiterWorkflow', () => service)
 
 import { RecruiterWorkspaceScreen } from './RecruiterWorkspaceScreen'
+import { ThemeProvider } from '../theme/ThemeProvider'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -80,7 +81,7 @@ async function mountRestoredSearch(confirmedBrief: ConfirmedBriefFixture | null 
   service.loadIntakeSession.mockResolvedValue({ session_id: 'session-1', result: intake, boundary: HYBRID_TORONTO, posted_title_input: intake.role_understanding.posted_title })
   service.confirmIntake.mockResolvedValue(PROPOSED)
   await act(async () => {
-    root.render(<RecruiterWorkspaceScreen />)
+    root.render(<ThemeProvider><RecruiterWorkspaceScreen /></ThemeProvider>)
   })
   await act(async () => {})
 }
@@ -115,7 +116,7 @@ describe('the workspace header', () => {
     act(() => root.unmount())
     root = createRoot(container)
     await act(async () => {
-      root.render(<RecruiterWorkspaceScreen />)
+      root.render(<ThemeProvider><RecruiterWorkspaceScreen /></ThemeProvider>)
     })
     await act(async () => {})
     expect($('.workspace__greeting h1')?.textContent).toBe('AI Engineer')

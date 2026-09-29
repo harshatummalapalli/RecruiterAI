@@ -40,6 +40,7 @@ const ACTIVE_KEY = 'recruiterai:activeSearch'
 const LEGACY_POINTER_KEY = 'recruiterai:lastSearch'
 const BRIEFS_KEY = 'recruiterai:briefs'
 const COMPOSE_KEY = 'recruiterai:composeDraft'
+const SIDEBAR_PIN_KEY = 'recruiterai:sidebarPinned'
 const SIDEBAR_REFRESH_MS = 30000
 
 type ComposeDraft = { postedTitle: string; jdText: string; boundary: SearchBoundary }
@@ -119,6 +120,12 @@ export function RecruiterWorkspaceScreen() {
   const [active, setActive] = useState<ActiveSearch | null>(null)
   const [roleMessage, setRoleMessage] = useState<string | null>(null)
   const [searchNotice, setSearchNotice] = useState<string | null>(null)
+  // The role sidebar collapses to a narrow rail while a candidate record is open, so the record pane has the
+  // room — unless the recruiter has pinned it open. "Keep roles open" persists across sessions; whether a
+  // candidate is currently open does not (it's not meaningful state to remember on reload).
+  const [sidebarPinned, setSidebarPinned] = useState<boolean>(() => readJson<boolean>(SIDEBAR_PIN_KEY) ?? false)
+  const [candidateOpen, setCandidateOpen] = useState(false)
+  const sidebarCollapsed = candidateOpen && !sidebarPinned
   // The poll loop for a running search. A ref because it is plumbing, cleared when a search is opened or started or the
   // component unmounts, so at most one poll loop is ever active.
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -302,6 +309,18 @@ export function RecruiterWorkspaceScreen() {
       setJdText(draft.jdText ?? '')
       if (draft.boundary) setBoundary(draft.boundary)
     }
+  }
+
+  const toggleSidebarPin = () => {
+    setSidebarPinned((current) => {
+      const next = !current
+      writeJson(SIDEBAR_PIN_KEY, next)
+      return next
+    })
+  }
+
+  const handleSignOut = () => {
+    logout().finally(() => window.location.reload())
   }
 
   // On mount: list every search, then reopen the one that was open. A refresh must never re-run OpenAI or CrustData.
@@ -548,9 +567,20 @@ export function RecruiterWorkspaceScreen() {
 
   return (
     <div className="app-shell">
-      <SearchSidebar items={searches} active={active} onSelect={(item) => void openSearch(item)} onNew={handleStartNewSearch} isNewActive={active === null} />
+      <SearchSidebar
+        items={searches}
+        active={active}
+        onSelect={(item) => void openSearch(item)}
+        onNew={handleStartNewSearch}
+        isNewActive={active === null}
+        collapsed={sidebarCollapsed}
+        pinned={sidebarPinned}
+        onTogglePin={toggleSidebarPin}
+        onExpand={toggleSidebarPin}
+        onSignOut={handleSignOut}
+      />
       <main className="workspace">
-        <div className="workspace__content">
+        <div className={`workspace__content${step === 'review' ? ' workspace__content--wide' : ''}`}>
           <header className="workspace__greeting">
             {step === 'review' ? (
               <div>
@@ -568,17 +598,6 @@ export function RecruiterWorkspaceScreen() {
                 <p>What are you hiring for today?</p>
               </div>
             )}
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                type="button"
-                className="workspace__new-search"
-                onClick={() => {
-                  logout().finally(() => window.location.reload())
-                }}
-              >
-                Sign out
-              </button>
-            </div>
           </header>
 
           {step === 'jd' ? (
@@ -690,6 +709,7 @@ export function RecruiterWorkspaceScreen() {
               onSearchResponse={handleSearchResponse}
               roleMessage={roleMessage}
               searchNotice={searchNotice}
+              onSelectionChange={setCandidateOpen}
             />
           ) : null}
 

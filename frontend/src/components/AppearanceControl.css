@@ -1,0 +1,25 @@
+.appearance-control {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--color-muted);
+}
+
+.appearance-control__select {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-secondary-text);
+  font: inherit;
+  font-size: 12.5px;
+  padding: 4px 7px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color var(--motion-fast, 0.15s) ease, color var(--motion-fast, 0.15s) ease;
+}
+
+.appearance-control__select:hover {
+  border-color: var(--color-accent);
+  color: var(--color-primary-text);
+}
