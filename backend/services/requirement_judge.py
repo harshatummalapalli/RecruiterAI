@@ -37,6 +37,7 @@ from backend.models.candidate import Candidate
 from backend.models.candidate_evidence import HarvestEvidence, TextSource
 from backend.models.search_intent import SearchIntent
 from backend.services.candidate_evidence_builder import build_candidate_evidence
+from backend.services.requirement_semantics import evaluate as evaluate_recognized_requirement, recognize_requirement
 
 logger = logging.getLogger(__name__)
 
@@ -217,14 +218,36 @@ class RequirementJudge:
             return JudgeOutcome(judgments=None)
         outcome = JudgeOutcome(judgments=None, requirements=len(requirements))
         try:
+            # Deterministic pre-pass: a requirement whose own wording
+            # unambiguously names a validated company-size/industry/career-
+            # progression pattern (see requirement_semantics.py) is answered
+            # directly from career_signals.py and never sent to the LLM at
+            # all — everything else falls through to the existing judge path
+            # below, completely unchanged. Inside this try block on purpose:
+            # a failure here must degrade exactly like any other judge
+            # failure, never break the search.
+            deterministic: Dict[int, Dict[str, Any]] = {}
+            for i, (tier, text) in enumerate(requirements):
+                recognized = recognize_requirement(text)
+                if recognized is not None:
+                    deterministic[i] = evaluate_recognized_requirement(recognized, tier, text, candidate)
+            remaining = [i for i in range(len(requirements)) if i not in deterministic]
+
+            if not remaining:
+                outcome.judgments = [deterministic[i] for i in range(len(requirements))]
+                return outcome
+
             passages = build_passages(candidate, intent, harvest_evidence)
             if not passages:
-                outcome.judgments = [self._not_evidenced(tier, text) for tier, text in requirements]
+                outcome.judgments = [
+                    deterministic[i] if i in deterministic else self._not_evidenced(tier, text)
+                    for i, (tier, text) in enumerate(requirements)
+                ]
                 return outcome
 
             client = self._client or OpenAI(api_key=get_openai_api_key())
             results: Dict[int, Dict[str, Any]] = {}
-            pending = list(range(len(requirements)))
+            pending = list(remaining)
             # The model sometimes answers only some of the requirements (seen
             # live: 3 of 12 on one call, 12 of 12 on the next, same input).
             # A silently missing answer would read as "not evidenced" and
@@ -242,7 +265,8 @@ class RequirementJudge:
                 if pending and attempt == 0:
                     outcome.re_asked_missing += len(pending)
             outcome.judgments = [
-                self._verified(i, tier, text, results.get(i), passages) for i, (tier, text) in enumerate(requirements)
+                deterministic[i] if i in deterministic else self._verified(i, tier, text, results.get(i), passages)
+                for i, (tier, text) in enumerate(requirements)
             ]
             self._review(client, outcome)
             return outcome
@@ -270,7 +294,7 @@ class RequirementJudge:
         claims = [
             (index, judgment)
             for index, judgment in enumerate(outcome.judgments or [])
-            if judgment.get("verdict") == "met" and judgment.get("source") != "career dates"
+            if judgment.get("verdict") == "met" and judgment.get("source") != "career dates" and not judgment.get("deterministic")
         ]
         if not claims:
             return
