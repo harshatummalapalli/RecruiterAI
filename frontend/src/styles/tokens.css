@@ -8,23 +8,27 @@
    ThemeProvider (src/theme/ThemeProvider.tsx) is the only thing that ever sets/removes data-theme. */
 
 :root {
-  --color-bg: #f7f5f0;
+  /* Neutral light background — the previous warm-ivory tint (#f7f5f0 and its family) is retired per the frozen
+     visual direction; this and the surface/border family below are now hue-neutral gray, not cream. */
+  --color-bg: #f5f5f7;
   --color-surface: #ffffff;
   --color-surface-raised: #ffffff;
-  --color-preview-bg: #faf8f4;
-  --color-sidebar-bg: #f1eee7;
-  --color-border: #e7e5e4;
-  --color-border-subtle: rgba(28, 27, 25, 0.06);
-  --color-primary-text: #1c1b19;
+  --color-preview-bg: #fafafb;
+  --color-sidebar-bg: #eeeef0;
+  --color-border: #d8d8dc;
+  --color-border-subtle: rgba(29, 29, 31, 0.06);
+  --color-primary-text: #1d1d1f;
   --color-secondary-text: #475569;
   --color-muted: #64748b;
   --color-faint: #94a3b8;
   --color-placeholder: #a8a29e;
-  --color-accent: #0f766e;
-  --color-accent-hover: #115e59;
-  --color-accent-subtle: rgba(15, 118, 110, 0.1);
-  --color-focus-ring: rgba(15, 118, 110, 0.18);
-  --color-focus: #0f766e;
+  /* Semantic green — frozen direction: #2F7D5B in light. Used only for evidence/searching/shortlisted signal,
+     never as decorative branding — see the components that consume --color-accent. */
+  --color-accent: #2f7d5b;
+  --color-accent-hover: #256b4c;
+  --color-accent-subtle: rgba(47, 125, 91, 0.1);
+  --color-focus-ring: rgba(47, 125, 91, 0.18);
+  --color-focus: #2f7d5b;
   --color-success: #15803d;
   --color-error: #b91c1c;
   --color-danger: #b91c1c;
@@ -51,11 +55,13 @@
     --color-muted: #8f8b82;
     --color-faint: #6b675f;
     --color-placeholder: #6b675f;
-    --color-accent: #3ba894;
-    --color-accent-hover: #4fbba6;
-    --color-accent-subtle: rgba(59, 168, 148, 0.16);
-    --color-focus-ring: rgba(59, 168, 148, 0.28);
-    --color-focus: #3ba894;
+    /* Frozen direction's dark-mode green — lighter than the light-mode #2F7D5B so it reads against true black
+       without going neon. */
+    --color-accent: #5db88a;
+    --color-accent-hover: #72c79b;
+    --color-accent-subtle: rgba(93, 184, 138, 0.16);
+    --color-focus-ring: rgba(93, 184, 138, 0.28);
+    --color-focus: #5db88a;
     --color-success: #4ade80;
     --color-error: #f87171;
     --color-danger: #f87171;
@@ -79,11 +85,11 @@
   --color-muted: #8f8b82;
   --color-faint: #6b675f;
   --color-placeholder: #6b675f;
-  --color-accent: #3ba894;
-  --color-accent-hover: #4fbba6;
-  --color-accent-subtle: rgba(59, 168, 148, 0.16);
-  --color-focus-ring: rgba(59, 168, 148, 0.28);
-  --color-focus: #3ba894;
+  --color-accent: #5db88a;
+  --color-accent-hover: #72c79b;
+  --color-accent-subtle: rgba(93, 184, 138, 0.16);
+  --color-focus-ring: rgba(93, 184, 138, 0.28);
+  --color-focus: #5db88a;
   --color-success: #4ade80;
   --color-error: #f87171;
   --color-danger: #f87171;

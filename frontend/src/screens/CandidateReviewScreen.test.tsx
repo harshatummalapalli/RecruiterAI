@@ -1,6 +1,4 @@
 // @vitest-environment jsdom
-/// <reference types="node" />
-import { readFileSync } from 'node:fs'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -31,7 +29,6 @@ const SPECS: CandidateSpec[] = [
   { name: 'Still Reading', core: [true], years: 'met', state: 'building_context' },
 ]
 
-const workspaceCss = readFileSync('src/components/CandidateWorkspace.css', 'utf-8') // vitest runs from frontend/
 
 let root: Root
 let container: HTMLElement
@@ -85,7 +82,8 @@ describe('cards', () => {
     await render(makeResponse(SPECS, { workspace_arranged: true }))
     const heavy = card('Heavy Evidence')
     expect(heavy.querySelector('.ws-card__role')?.textContent).toBe('Backend Engineer · Acme · Toronto, Ontario, Canada')
-    expect(heavy.querySelector('.ws-card__headline')?.textContent).toBe('Backend Engineer | Python | Distributed systems')
+    // The card is deliberately compact (frozen spec): no separate headline line, only name/title/company/location.
+    expect(heavy.querySelector('.ws-card__headline')).toBeNull()
     expect(heavy.querySelector('.ws-card__why')?.textContent).toBe('5 core requirements shown · 5 in described work')
     expect(heavy.querySelectorAll('.ws-dot')).toHaveLength(5)
     expect(heavy.querySelectorAll('.ws-dot.is-shown')).toHaveLength(5)
@@ -121,22 +119,10 @@ describe('cards', () => {
     expect(card('Heavy Evidence').querySelector('.ws-chip--watch')).toBeNull()
   })
 
-  it('show Open to work only where the profile says so, and no date anywhere', async () => {
+  it('shows no open-to-work chip or date on the compact card (that lives in the full record instead)', async () => {
     await render(makeResponse(SPECS.map((spec) => ({ ...spec, updatedAt: '2026-03-04' })), { workspace_arranged: true }))
-    expect($$('.ws-chip--neutral').map((chip) => chip.closest('article')?.querySelector('.ws-card__name')?.textContent)).toEqual(['Heavy Evidence'])
+    expect($$('article.ws-card .ws-chip--neutral')).toHaveLength(0)
     expect($$('article.ws-card').map((element) => element.textContent).join(' ')).not.toMatch(/updated|2026|Mar/i)
-  })
-
-  it('keep a long headline to one line and the full text intact', async () => {
-    await render(makeResponse(SPECS, { workspace_arranged: true }))
-    const headline = card('Long Headline').querySelector('.ws-card__headline') as HTMLElement
-    expect(headline.textContent).toContain('and much more')
-    // jsdom cannot measure layout, so check the rule that makes it one line: nowrap + hidden overflow + ellipsis.
-    expect(headline.className).toBe('ws-card__headline')
-    const rule = /\.ws-card__headline\s*\{([^}]*)\}/.exec(workspaceCss)?.[1] ?? ''
-    expect(rule).toMatch(/white-space:\s*nowrap/)
-    expect(rule).toMatch(/overflow:\s*hidden/)
-    expect(rule).toMatch(/text-overflow:\s*ellipsis/)
   })
 
   it('show a profile still being read as a quiet row with no actions', async () => {
@@ -241,7 +227,7 @@ describe('proof and record', () => {
     await click(card('Heavy Evidence'))
     const record = $('aside.record')!
     expect(record.textContent).toContain('Heavy Evidence')
-    expect(record.textContent).toMatch(/Requirement ledger/)
+    expect(record.textContent).toMatch(/Evidence for this role/)
     expect(container.textContent).not.toMatch(/listed \d+ of \d+/i)
     expect(container.textContent).not.toMatch(/crustdata|harvest|provider|natural_language/i)
     expect(container.textContent).not.toMatch(/updated \w{3} \d/i)

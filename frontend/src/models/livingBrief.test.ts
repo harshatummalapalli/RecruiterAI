@@ -15,8 +15,8 @@ import {
 import { createEmptySearchBoundary } from './searchBoundary'
 
 describe('requirements and their provenance', () => {
-  it('lists Core, Supporting, Preferred in that order, using the same words as the workspace', () => {
-    expect(requirementGroups(makeIntakeResult()).map((group) => group.label)).toEqual(['Core', 'Supporting', 'Preferred'])
+  it('lists Core, Supporting, Differentiator in that order, using the same words as the workspace', () => {
+    expect(requirementGroups(makeIntakeResult()).map((group) => group.label)).toEqual(['Core', 'Supporting', 'Differentiator'])
   })
 
   it('says "stated" only where the server found the requirement in the input, and "inferred" everywhere else', () => {
@@ -180,7 +180,7 @@ describe('confirmation summary and boundary wording', () => {
     const lines = confirmationSummary(makeIntakeResult(), HYBRID_TORONTO, makeBrief())
     expect(lines.map((line) => line.label)).toEqual(['Looking for', 'Experience', 'Where', 'Requirements', 'Not from'])
     expect(lines.find((line) => line.label === 'Where')?.value).toBe('Toronto, Ontario, Canada · 25 mi radius · Hybrid')
-    expect(lines.find((line) => line.label === 'Requirements')?.value).toBe('3 core · 2 supporting · 2 preferred')
+    expect(lines.find((line) => line.label === 'Requirements')?.value).toBe('3 core · 2 supporting · 2 differentiator')
     expect(JSON.stringify(lines)).not.toMatch(/crustdata|provider|boolean|query|filter/i)
   })
 

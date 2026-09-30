@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Menu } from 'lucide-react'
 import {
   runCandidateSearch,
   loadPersistedSearch,
@@ -20,6 +21,7 @@ import type { IntakeIssue, IntakeResult } from '../models/intake'
 import type { ActiveSearch } from '../models/roleWorkspace'
 import { CandidateReviewScreen } from './CandidateReviewScreen'
 import { DebugPanel } from './DebugPanel'
+import { HomeScreen } from './HomeScreen'
 import { LivingBrief } from './LivingBrief'
 import { SearchBoundaryForm } from './SearchBoundaryForm'
 import { SearchSidebar } from '../components/SearchSidebar'
@@ -28,7 +30,7 @@ import type { SearchListItem, SearchResponse } from '../types'
 import './RecruiterWorkspaceScreen.css'
 
 type ParseState = 'idle' | 'parsing' | 'success' | 'error'
-type Step = 'jd' | 'brief' | 'review'
+type Step = 'home' | 'jd' | 'brief' | 'review'
 type SearchState = 'idle' | 'searching' | 'done' | 'error'
 
 const RECRUITER_NAME = 'Harsha'
@@ -104,7 +106,7 @@ export function RecruiterWorkspaceScreen() {
   const [baselineBrief, setBaselineBrief] = useState<SearchBrief | null>(null)
   const [parseState, setParseState] = useState<ParseState>('idle')
   const [parseErrors, setParseErrors] = useState<string[]>([])
-  const [step, setStep] = useState<Step>('jd')
+  const [step, setStep] = useState<Step>('home')
   const [intakeSessionId, setIntakeSessionId] = useState<string | null>(null)
   const [intakeResult, setIntakeResult] = useState<IntakeResult | null>(null)
   const [isAnswering, setIsAnswering] = useState(false)
@@ -533,6 +535,27 @@ export function RecruiterWorkspaceScreen() {
     }
   }
 
+  // Back to "Your searches": leaves whatever role was open without touching its data, and stops resuming it on
+  // the next load — Home is the resting state until another row (or New Search) is clicked.
+  const handleGoHome = () => {
+    loadToken.current += 1
+    clearWorkingState()
+    setActiveSearch(null)
+    setStep('home')
+  }
+
+  // Pause/Resume triggered from a Home row, for a role that is not the one currently open in the workspace.
+  // Independent of searchId/searchResponse — only refreshes the Home list, never touches open-workspace state.
+  const handleRoleActionFromHome = async (id: string, action: 'pause' | 'resume') => {
+    try {
+      await setRoleAction(id, action)
+    } catch {
+      // The list just won't reflect the change; nothing else depended on it succeeding.
+    } finally {
+      refreshSearches()
+    }
+  }
+
   const handleSearchResponse = (response: SearchResponse) => {
     if (response.search_id === stateRef.current.active?.id) {
       setSearchResponse(response)
@@ -565,6 +588,19 @@ export function RecruiterWorkspaceScreen() {
     return parts.join(' · ')
   })()
 
+  if (step === 'home') {
+    return (
+      <HomeScreen
+        items={searches}
+        recruiterName={RECRUITER_NAME}
+        onOpen={(item) => void openSearch(item)}
+        onNew={handleStartNewSearch}
+        onPause={(id) => void handleRoleActionFromHome(id, 'pause')}
+        onResume={(id) => void handleRoleActionFromHome(id, 'resume')}
+      />
+    )
+  }
+
   return (
     <div className="app-shell">
       <SearchSidebar
@@ -574,30 +610,43 @@ export function RecruiterWorkspaceScreen() {
         onNew={handleStartNewSearch}
         isNewActive={active === null}
         collapsed={sidebarCollapsed}
-        pinned={sidebarPinned}
-        onTogglePin={toggleSidebarPin}
-        onExpand={toggleSidebarPin}
+        glued={sidebarPinned}
+        onToggleGlue={toggleSidebarPin}
         onSignOut={handleSignOut}
+        onGoHome={handleGoHome}
       />
       <main className="workspace">
         <div className={`workspace__content${step === 'review' ? ' workspace__content--wide' : ''}`}>
           <header className="workspace__greeting">
-            {step === 'review' ? (
-              <div>
-                <h1>{posted || identity || 'Candidate Workspace'}</h1>
-                {showIdentity ? (
-                  <p className="workspace__identity">
-                    <span className="workspace__identity-label">Searching for</span> {identity}
-                  </p>
-                ) : null}
-                <p>{workspaceSubtitle}</p>
-              </div>
-            ) : (
-              <div>
-                <h1>{greeting}</h1>
-                <p>What are you hiring for today?</p>
-              </div>
-            )}
+            <div className="workspace__greeting-row">
+              {step === 'review' && sidebarCollapsed ? (
+                <button
+                  type="button"
+                  className="workspace__reopen-sidebar"
+                  onClick={toggleSidebarPin}
+                  aria-label="Show roles"
+                  title="Show roles"
+                >
+                  <Menu size={16} aria-hidden="true" />
+                </button>
+              ) : null}
+              {step === 'review' ? (
+                <div>
+                  <h1>{posted || identity || 'Candidate Workspace'}</h1>
+                  {showIdentity ? (
+                    <p className="workspace__identity">
+                      <span className="workspace__identity-label">Searching for</span> {identity}
+                    </p>
+                  ) : null}
+                  <p>{workspaceSubtitle}</p>
+                </div>
+              ) : (
+                <div>
+                  <h1>{greeting}</h1>
+                  <p>What are you hiring for today?</p>
+                </div>
+              )}
+            </div>
           </header>
 
           {step === 'jd' ? (

@@ -92,8 +92,6 @@ function CandidateCard({ item, decision, selected, onOpen, onDecide, register, p
   const place = [candidate.title, candidate.company !== 'Not specified' ? candidate.company : null, candidate.location !== 'Not specified' ? candidate.location : null]
     .filter(Boolean)
     .join(' · ')
-  const showHeadline = candidate.headline && candidate.headline.trim().toLowerCase() !== candidate.title.trim().toLowerCase()
-
   const onCardClick = (event: MouseEvent<HTMLElement>) => {
     if ((event.target as HTMLElement).closest('button, a')) return
     onOpen()
@@ -111,16 +109,8 @@ function CandidateCard({ item, decision, selected, onOpen, onDecide, register, p
       <div className="ws-card__who">
         <Avatar name={candidate.name} url={candidate.photoUrl} />
         <div className="ws-card__identity">
-          <div className="ws-card__nameline">
-            <h3 className="ws-card__name">{candidate.name}</h3>
-            {candidate.openToWork === true ? (
-              <span className="ws-chip ws-chip--neutral" title="Stated on the candidate's own profile. Shown for information only.">
-                Open to work
-              </span>
-            ) : null}
-          </div>
+          <h3 className="ws-card__name">{candidate.name}</h3>
           <p className="ws-card__role">{place}</p>
-          {showHeadline ? <p className="ws-card__headline">{candidate.headline}</p> : null}
         </div>
       </div>
 

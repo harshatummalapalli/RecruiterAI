@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { AlertTriangle, Check, ChevronDown, ChevronUp, ExternalLink, Minus, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { AlertTriangle, Check, ChevronDown, ChevronUp, ExternalLink, Minus, Plus, X } from 'lucide-react'
 import { initialsOf, relevanceLabel, type DiscoveryCandidate, type LedgerGroup, type LedgerRow } from '../models/discovery'
 import './CandidateRecord.css'
 
@@ -13,8 +13,9 @@ const DECISIONS: Array<{ value: RecordDecision; label: string }> = [
 
 const CAREER_SHOWN = 5
 const SKILLS_SHOWN = 10
-const CERTS_SHOWN = 3
 const EDUCATION_SHOWN = 2
+
+export type RecordNote = { id: string; text: string; createdAt: string }
 
 type CandidateRecordProps = {
   candidate: DiscoveryCandidate
@@ -24,6 +25,11 @@ type CandidateRecordProps = {
   /** Move to the previous/next candidate in the same list, without closing and reopening the pane. */
   onPrev?: () => void
   onNext?: () => void
+  /** Recruiter working memory — separate from AI-generated evidence, persisted per candidate. */
+  notes: RecordNote[]
+  noteDraft: string
+  onNoteDraftChange: (value: string) => void
+  onAddNote: () => void
 }
 
 function Avatar({ name, url }: { name: string; url: string | null }) {
@@ -100,14 +106,18 @@ function LedgerSection({ group }: { group: LedgerGroup }) {
   )
 }
 
-export function CandidateRecord({ candidate, decision, onDecision, onClose, onPrev, onNext }: CandidateRecordProps) {
+export function CandidateRecord({ candidate, decision, onDecision, onClose, onPrev, onNext, notes, noteDraft, onNoteDraftChange, onAddNote }: CandidateRecordProps) {
   const [showAllCareer, setShowAllCareer] = useState(false)
   const [showAllSkills, setShowAllSkills] = useState(false)
-  const [showAllCerts, setShowAllCerts] = useState(false)
+  const noteInputRef = useRef<HTMLTextAreaElement>(null)
+
+  const focusNoteComposer = () => {
+    noteInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    noteInputRef.current?.focus()
+  }
 
   const career = showAllCareer ? candidate.career : candidate.career.slice(0, CAREER_SHOWN)
   const skills = showAllSkills ? candidate.skills : candidate.skills.slice(0, SKILLS_SHOWN)
-  const certs = showAllCerts ? candidate.certifications : candidate.certifications.slice(0, CERTS_SHOWN)
   const educationHead = candidate.education.slice(0, EDUCATION_SHOWN)
   const educationRest = candidate.education.slice(EDUCATION_SHOWN)
   const hasLedger = candidate.ledger.length > 0
@@ -161,6 +171,9 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
           </div>
         </div>
         <div className="record-head__nav">
+          <button type="button" className="record-nav-button" onClick={focusNoteComposer} aria-label="Add a note" title="Add a note">
+            <Plus size={15} />
+          </button>
           <button type="button" className="record-nav-button" onClick={onPrev} disabled={!onPrev} aria-label="Previous candidate" title="Previous (K)">
             <ChevronUp size={15} />
           </button>
@@ -186,9 +199,18 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
         ))}
       </div>
 
+      {candidate.aboutExcerpt || candidate.headline ? (
+        <section className="record-section" aria-labelledby="record-snapshot">
+          <h3 id="record-snapshot" className="record-section__title">
+            Candidate Snapshot
+          </h3>
+          <p className="record-muted">{candidate.aboutExcerpt || candidate.headline}</p>
+        </section>
+      ) : null}
+
       <section className="record-section" aria-labelledby="record-review-first">
         <h3 id="record-review-first" className="record-section__title">
-          Why review first
+          Why this candidate
         </h3>
         {candidate.reviewFirst.length ? (
           <ul className="record-review">
@@ -207,7 +229,7 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
 
       <section className="record-section" aria-labelledby="record-ledger">
         <h3 id="record-ledger" className="record-section__title">
-          Requirement ledger
+          Evidence for this role
         </h3>
         {hasLedger ? (
           <>
@@ -215,6 +237,15 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
             {candidate.ledger.map((group) => (
               <LedgerSection key={group.tier} group={group} />
             ))}
+            {candidate.potentialConcerns.length ? (
+              <ul className="record-ledger__concerns">
+                {candidate.potentialConcerns.map((item) => (
+                  <li key={item}>
+                    <AlertTriangle size={13} aria-hidden="true" /> {item}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </>
         ) : (
           <>
@@ -230,44 +261,9 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
         )}
       </section>
 
-      {candidate.experienceLine || candidate.levelLine ? (
-        <section className="record-section" aria-labelledby="record-level">
-          <h3 id="record-level" className="record-section__title">
-            Experience and level
-          </h3>
-          <dl className="record-facts">
-            {candidate.experienceLine ? (
-              <>
-                <dt>Experience</dt>
-                <dd>{candidate.experienceLine}</dd>
-              </>
-            ) : null}
-            {candidate.levelLine ? (
-              <>
-                <dt>Level</dt>
-                <dd>{candidate.levelLine}</dd>
-              </>
-            ) : null}
-          </dl>
-        </section>
-      ) : null}
-
-      {candidate.potentialConcerns.length ? (
-        <section className="record-section record-section--concerns" aria-labelledby="record-concerns">
-          <h3 id="record-concerns" className="record-section__title">
-            <AlertTriangle size={15} aria-hidden="true" /> What concerns us
-          </h3>
-          <ul className="assessment-list assessment-list--concerns">
-            {candidate.potentialConcerns.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
       <section className="record-section" aria-labelledby="record-career">
         <h3 id="record-career" className="record-section__title">
-          Career
+          Experience
         </h3>
         {candidate.career.length ? (
           <>
@@ -323,24 +319,6 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
         </section>
       ) : null}
 
-      {candidate.certifications.length ? (
-        <section className="record-section" aria-labelledby="record-certs">
-          <h3 id="record-certs" className="record-section__title">
-            Certifications <span className="record-count">{candidate.certifications.length}</span>
-          </h3>
-          <ul className="assessment-list">
-            {certs.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-          {candidate.certifications.length > CERTS_SHOWN ? (
-            <button type="button" className="record-more" onClick={() => setShowAllCerts((current) => !current)}>
-              {showAllCerts ? 'Show fewer' : `Show ${candidate.certifications.length - CERTS_SHOWN} more`}
-            </button>
-          ) : null}
-        </section>
-      ) : null}
-
       <section className="record-section" aria-labelledby="record-education">
         <h3 id="record-education" className="record-section__title">
           Education
@@ -368,6 +346,35 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
         )}
       </section>
 
+      <section className="record-section" aria-labelledby="record-notes">
+        <h3 id="record-notes" className="record-section__title">
+          Recruiter Notes
+        </h3>
+        <div className="discovery-notes">
+          {notes.length ? (
+            notes.map((note) => (
+              <p key={note.id} className="discovery-note">
+                {note.text}
+              </p>
+            ))
+          ) : (
+            <p className="discovery-note discovery-note--empty">No notes yet.</p>
+          )}
+        </div>
+        <div className="discovery-note-form">
+          <textarea
+            ref={noteInputRef}
+            className="discovery-note-input"
+            placeholder="Add a note…"
+            value={noteDraft}
+            onChange={(event) => onNoteDraftChange(event.target.value)}
+            rows={2}
+          />
+          <button type="button" className="record-more" onClick={onAddNote} disabled={!noteDraft.trim()}>
+            Add note
+          </button>
+        </div>
+      </section>
     </aside>
   )
 }

@@ -40,6 +40,9 @@ const click = (element: Element | null | undefined) =>
     element!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
   })
 const sidebarButton = (label: RegExp) => Array.from(container.querySelectorAll('.app-sidebar__item')).find((b) => label.test(b.textContent ?? '')) as HTMLButtonElement
+// Home ("Your searches") is now the landing screen when nothing is remembered as open — these tests exercise the
+// jd/brief/review flow and its sidebar, so they reach past Home the same way a recruiter would: New Search.
+const enterWorkspace = () => click(button(/New Search/i))
 
 const PROPOSED: SearchIntent = {
   role: { title: 'Backend-heavy AI Engineer', seniority: 'Senior' },
@@ -117,20 +120,25 @@ afterEach(() => {
 })
 
 describe('the sidebar and switching between searches', () => {
-  it('lists every search by title, company and place, and opens the new-search form by default', async () => {
+  it('lists every search on Home, and New Search opens the intake form', async () => {
     await mountWithSearches()
-    const rows = Array.from(container.querySelectorAll('.app-sidebar__item')).map((row) => row.textContent)
+    const rows = Array.from(container.querySelectorAll('.home__row')).map((row) => row.textContent)
     expect(rows[0]).toContain('AI Engineer')
     expect(rows[0]).toContain('Northwind · Toronto')
-    expect(rows[1]).toContain('Staff Backend Engineer')
-    expect(rows[1]).toContain('Epiq · Hyderabad')
-    expect(rows[2]).toContain('Draft')
+    await enterWorkspace()
+    const sidebarRows = Array.from(container.querySelectorAll('.app-sidebar__item')).map((row) => row.textContent)
+    expect(sidebarRows[0]).toContain('AI Engineer')
+    expect(sidebarRows[0]).toContain('Northwind · Toronto')
+    expect(sidebarRows[1]).toContain('Staff Backend Engineer')
+    expect(sidebarRows[1]).toContain('Epiq · Hyderabad')
+    expect(sidebarRows[2]).toContain('Draft')
     expect($('#posted-title')).not.toBeNull()
     expect($('.app-sidebar__new')?.className).toContain('is-active')
   })
 
   it('uses the plain intake copy', async () => {
     await mountWithSearches()
+    await enterWorkspace()
     expect(container.querySelector('label[for="posted-title"]')?.textContent?.trim()).toBe('Job Title')
     expect(($('#posted-title') as HTMLInputElement).placeholder).toBe('e.g. AI Engineer')
     expect(container.textContent).toContain("The title you're hiring for.")
@@ -139,6 +147,7 @@ describe('the sidebar and switching between searches', () => {
 
   it('opens a search from the sidebar, marks it active, and shows its own candidates', async () => {
     await mountWithSearches()
+    await enterWorkspace()
     await click(sidebarButton(/AI Engineer/))
     await act(async () => {})
     expect(service.loadPersistedSearch).toHaveBeenCalledWith('role-a')
@@ -184,6 +193,7 @@ describe('the sidebar and switching between searches', () => {
 
   it('keeps a description that was typed but not built when the recruiter looks at another search and comes back', async () => {
     await mountWithSearches()
+    await enterWorkspace()
     const editor = $('textarea[aria-label="Job description"]') as HTMLTextAreaElement
     await act(async () => {
       Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(editor, 'We need a data engineer')
@@ -197,6 +207,7 @@ describe('the sidebar and switching between searches', () => {
 
   it('reopens a brief that was not searched yet, with its own boundary', async () => {
     await mountWithSearches()
+    await enterWorkspace()
     await click(sidebarButton(/Data Engineer/))
     await act(async () => {})
     expect(service.loadIntakeSession).toHaveBeenCalledWith('draft-c')

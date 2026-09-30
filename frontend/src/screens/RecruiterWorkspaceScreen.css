@@ -41,6 +41,34 @@
   margin-bottom: 48px;
 }
 
+.workspace__greeting-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+/* Only rendered while the role rail is collapsed and unglued — reopens it (same action as Glue). */
+.workspace__reopen-sidebar {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  margin-top: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-secondary-text);
+  cursor: pointer;
+  transition: border-color var(--motion-fast, 0.15s) ease, color var(--motion-fast, 0.15s) ease;
+}
+
+.workspace__reopen-sidebar:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
 .workspace__new-search {
   flex-shrink: 0;
   margin-top: 6px;

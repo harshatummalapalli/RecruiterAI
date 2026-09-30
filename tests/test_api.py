@@ -358,6 +358,114 @@ def test_rerunning_the_same_search_id_does_not_re_enrich_an_already_successful_c
     assert call_count["n"] == 1  # not re-enriched on the second run
 
 
+def test_old_stored_search_has_career_and_photo_rehydrated_on_reload(tmp_path) -> None:
+    # Simulates a search persisted before `career`/`photo_url`/`open_to_work`
+    # existed on CandidateEvidence (every real search on disk before the
+    # "release 2" commit is exactly this shape): the raw CrustData candidate
+    # and raw Harvest response are both already stored, but the evidence dict
+    # predates the code that reads career/photo out of them. A GET reload
+    # must backfill those three fields from the already-stored raw data —
+    # and must NEVER call Harvest or CrustData again to do it.
+    from backend.providers.harvest import HarvestEnrichmentService
+    from backend.services.search_store import SearchStore
+
+    call_count = {"n": 0}
+
+    class CountingClient:
+        def is_configured(self):
+            return True
+
+        def fetch_profile(self, profile_url, **kwargs):
+            call_count["n"] += 1
+            return {
+                "element": {
+                    "photo": "https://img.example/harvest-alice.jpg",
+                    "openToWork": True,
+                    "experience": [
+                        {"position": "Software Engineer", "companyName": "OpenAI", "startDate": {"text": "Jan 2022"}, "endDate": {"text": "Present"}, "description": "Builds RAG systems."}
+                    ],
+                },
+                "cost": 0.0064,
+            }
+
+    harvest_service = HarvestEnrichmentService(client=CountingClient(), top_n=5)
+    store = SearchStore(storage_dir=tmp_path)
+
+    ProviderRegistry._providers.clear()
+    ProviderRegistry.register("mock", _HarvestableProvider())
+    app = create_app(
+        jd_parser=JDParser(provider=FakeParser()),
+        search_planner=SearchPlanner(),
+        query_expander=QueryExpansionService(),
+        capability_mapper=CapabilityMapper(),
+        provider_registry=ProviderRegistry,
+        candidate_merger=CandidateMerger(),
+        candidate_ranker=CandidateRanker(),
+        match_explainer=MatchExplainer(),
+        search_diagnostics=SearchDiagnostics(),
+        excel_exporter=ExcelExporter(),
+        search_store=store,
+        harvest_enrichment_service=harvest_service,
+    )
+    client = TestClient(app)
+    _login(client)
+
+    started = client.post("/search", json={"jd_text": "Need a Python engineer", "provider": "mock"}).json()
+    created = _wait_for_search(client, started["search_id"])
+    search_id = created["search_id"]
+    candidate_id = created["candidates"][0]["candidate_id"]
+    assert call_count["n"] == 1
+    # The real pipeline already populated career/photo — confirm the fixture
+    # is meaningful before we simulate the old, pre-release-2 shape.
+    assert created["evidence"][0]["career"]
+    assert created["evidence"][0]["photo_url"]
+
+    # Record a recruiter decision + note before simulating the old shape, to
+    # prove rehydration never disturbs them.
+    client.patch(f"/search/{search_id}/candidate", json={"candidate_id": candidate_id, "decision": "shortlist", "note": "Strong RAG background."})
+
+    # Simulate an old, pre-release-2 stored record: strip the three
+    # presentation fields the same way they're genuinely absent from every
+    # search stored before that release.
+    def strip_new_fields(record):
+        evidence = record["response"]["evidence"][0]
+        del evidence["career"]
+        del evidence["photo_url"]
+        del evidence["open_to_work"]
+
+    old_shape_record = store.update(search_id, strip_new_fields)
+    assert "career" not in old_shape_record["response"]["evidence"][0]
+
+    reloaded_1 = client.get(f"/search/{search_id}")
+    assert reloaded_1.status_code == 200
+    payload_1 = reloaded_1.json()
+    ev_1 = payload_1["evidence"][0]
+
+    assert ev_1["career"], "career should be rehydrated from the already-stored raw Harvest data"
+    assert ev_1["career"][0]["title"] == "Software Engineer"
+    assert ev_1["career"][0]["description"] == "Builds RAG systems."
+    assert ev_1["photo_url"] == "https://img.example/harvest-alice.jpg"
+    assert ev_1["open_to_work"] is True
+    # No new Harvest or CrustData call was made to rehydrate.
+    assert call_count["n"] == 1
+    # Candidate id, decisions and notes are untouched by rehydration.
+    assert payload_1["candidates"][0]["candidate_id"] == candidate_id
+    assert payload_1["recruiter_decisions"] == {candidate_id: "shortlist"}
+    assert payload_1["notes"][candidate_id][0]["text"] == "Strong RAG background."
+    # Role-specific evidence (never touched by rehydration) is identical to
+    # what the real pipeline originally computed.
+    assert ev_1["role_alignment"] == created["evidence"][0]["role_alignment"]
+
+    # Repeated GET is idempotent: same result, still zero new provider calls,
+    # and the on-disk record is still the stripped, old-shape one (rehydration
+    # is response-time only, never written back to disk).
+    reloaded_2 = client.get(f"/search/{search_id}")
+    payload_2 = reloaded_2.json()
+    assert payload_2["evidence"][0] == ev_1
+    assert call_count["n"] == 1
+    assert "career" not in store.load(search_id)["response"]["evidence"][0]
+
+
 def test_decision_and_note_survive_a_reload_of_the_same_search(tmp_path) -> None:
     # Regression test for the "decisions/notes lost on refresh" bug: PATCH
     # /search/{id}/candidate always persisted them (search_store.py never

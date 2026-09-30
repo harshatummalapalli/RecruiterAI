@@ -143,11 +143,6 @@
   color: var(--color-primary-text);
 }
 
-.record-section--concerns .record-section__title {
-  color: var(--color-warning);
-  align-items: center;
-}
-
 .record-count {
   font-size: 12px;
   font-weight: 400;
@@ -317,6 +312,31 @@
 .record-ledger__gaps svg {
   flex: none;
   margin-top: 3px;
+}
+
+/* A relevant concern folded into Evidence rather than its own "What concerns us" section — still visually
+   distinct (amber, like the "not proven" language elsewhere) but not a separate heading. */
+.record-ledger__concerns {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.record-ledger__concerns li {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-warning);
+}
+
+.record-ledger__concerns svg {
+  flex: none;
+  margin-top: 2px;
 }
 
 .record-facts {

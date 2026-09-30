@@ -39,6 +39,7 @@ from backend.providers.openai import OpenAIProvider
 from backend.providers.registry import ProviderRegistry
 from backend.services.candidate_merger import CandidateMerger
 from backend.services.candidate_ranker import CandidateRanker
+from backend.services.candidate_evidence_builder import rehydrate_response_evidence
 from backend.services.capability_mapper import CapabilityMapper
 from backend.providers.harvest import HarvestEnrichmentService
 from backend.services import candidate_presentation as presentation_rules
@@ -801,6 +802,16 @@ def create_app(
         # separately (PATCH, below) and live at the top level of the record, not inside that snapshot, so they must be
         # merged in here rather than trusted to already be present on it.
         response_data = dict(record["response"])
+        # Backfills presentation-only fields (career/photo/open-to-work) from
+        # already-stored raw CrustData/Harvest data on a search persisted
+        # before those fields existed on CandidateEvidence. No network call,
+        # no change to role_alignment/requirement_judgments/ranking/admission
+        # — see candidate_evidence_builder.rehydrate_response_evidence.
+        response_data["evidence"] = rehydrate_response_evidence(
+            response_data.get("candidates") or [],
+            response_data.get("evidence") or [],
+            record.get("harvest_evidence"),
+        )
         response_data["recruiter_decisions"] = record.get("recruiter_decisions", {})
         response_data["notes"] = record.get("notes", {})
         response_data["workspace_arranged"] = bool(record.get("workspace_arranged", False))

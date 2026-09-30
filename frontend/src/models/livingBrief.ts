@@ -26,7 +26,7 @@ export const PROVENANCE_LABEL: Record<ProvenanceKind, string> = {
 
 export type RequirementTier = 'core' | 'supporting' | 'preferred'
 
-export const TIER_LABEL: Record<RequirementTier, string> = { core: 'Core', supporting: 'Supporting', preferred: 'Preferred' }
+export const TIER_LABEL: Record<RequirementTier, string> = { core: 'Core', supporting: 'Supporting', preferred: 'Differentiator' }
 
 export type RequirementItem = { text: string; provenance: 'stated' | 'inferred' | 'confirmed'; evidence: string | null }
 export type RequirementGroup = { tier: RequirementTier; label: string; items: RequirementItem[] }
@@ -207,7 +207,7 @@ export function confirmationSummary(result: IntakeResult, boundary: SearchBounda
   lines.push({ label: 'Where', value: `${formatBoundaryLocation(boundary)} · ${workModeLabel(boundary)}` })
   lines.push({
     label: 'Requirements',
-    value: `${core.length} core · ${supporting.length} supporting · ${preferred.length} preferred`,
+    value: `${core.length} core · ${supporting.length} supporting · ${preferred.length} differentiator`,
   })
   if (brief.companies.exclude.length) lines.push({ label: 'Not from', value: `Current employees of ${brief.companies.exclude.join(', ')}` })
   return lines

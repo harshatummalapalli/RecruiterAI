@@ -4,7 +4,7 @@ import type { SearchBrief } from '../models/searchBrief'
 import type { SearchResponse } from '../types'
 import { buildDiscoveryCandidates } from '../models/discovery'
 import { buildWorkspaceCandidates, normalizeDecision, stableOrder, type Decision } from '../models/workspace'
-import { CandidateRecord } from '../components/CandidateRecord'
+import { CandidateRecord, type RecordNote } from '../components/CandidateRecord'
 import { CandidateWorkspace } from '../components/CandidateWorkspace'
 import { AvailabilityNotice, CalibrationNote, NewCandidatesNotice, OtherReviewed, PausedPanel, RoleBar, ShowMoreBar } from '../components/RoleControls'
 import {
@@ -99,6 +99,9 @@ export function CandidateReviewScreen({
   const [decisions, setDecisions] = useState<Record<string, Decision | undefined>>({})
   const [roleBusy, setRoleBusy] = useState(false)
   const [pauseDismissed, setPauseDismissed] = useState(false)
+  // Recruiter working memory — separate from AI-generated evidence. Persisted per candidate via updateCandidateRecord.
+  const [notes, setNotes] = useState<Record<string, RecordNote[]>>({})
+  const [noteDraft, setNoteDraft] = useState('')
   // Choices made here that the server has not confirmed yet. A poll that lands between a click and its save must not
   // flip the card back, so these are laid over whatever the server returns until it agrees.
   const pendingDecisions = useRef<Record<string, Decision | null>>({})
@@ -127,6 +130,17 @@ export function CandidateReviewScreen({
       else hydrated[candidateId] = pending ?? undefined
     }
     setDecisions(hydrated)
+
+    const notesRecord = searchResponse?.notes ?? {}
+    const hydratedNotes: Record<string, RecordNote[]> = {}
+    for (const [candidateId, entries] of Object.entries(notesRecord)) {
+      hydratedNotes[candidateId] = entries.map((entry, index) => ({
+        id: `${candidateId}-${index}`,
+        text: entry.text,
+        createdAt: entry.created_at,
+      }))
+    }
+    setNotes(hydratedNotes)
   }, [searchResponse])
 
   const candidates = useMemo(() => (searchResponse ? buildDiscoveryCandidates(searchResponse) : []), [searchResponse])
@@ -202,6 +216,19 @@ export function CandidateReviewScreen({
   }
 
   const toggleDecision = (id: string, choice: Decision) => decide(id, decisions[id] === choice ? undefined : choice)
+
+  const addNote = (id: string) => {
+    const text = noteDraft.trim()
+    if (!text) return
+    setNotes((current) => ({
+      ...current,
+      [id]: [...(current[id] ?? []), { id: `${Date.now()}`, text, createdAt: new Date().toISOString() }],
+    }))
+    if (searchId) {
+      updateCandidateRecord(searchId, id, { note: text }).then(saved).catch(() => {})
+    }
+    setNoteDraft('')
+  }
 
   const hasSearchedOnce = searchResponse !== null
   // The skeleton is only for the brief window before the FIRST candidates are admitted.
@@ -393,6 +420,10 @@ export function CandidateReviewScreen({
               onClose={() => setSelectedId(null)}
               onPrev={prevCandidateId ? () => setSelectedId(prevCandidateId) : undefined}
               onNext={nextCandidateId ? () => setSelectedId(nextCandidateId) : undefined}
+              notes={notes[selectedCandidate.id] ?? []}
+              noteDraft={noteDraft}
+              onNoteDraftChange={setNoteDraft}
+              onAddNote={() => addNote(selectedCandidate.id)}
             />
           ) : null}
         </div>

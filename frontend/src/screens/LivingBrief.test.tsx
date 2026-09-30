@@ -65,10 +65,10 @@ describe('structure', () => {
       '.lb-header',
       '.lb-decision',
       '#lb-read',
-      '#lb-boundary',
       '#lb-level',
       '#lb-requirements',
       '#lb-tech',
+      '#lb-boundary',
       '#lb-notes',
       '#lb-warnings',
       '#lb-confirm',
@@ -80,10 +80,12 @@ describe('structure', () => {
     }
   })
 
-  it('names Core, Supporting and Preferred like the rest of the product, and never "Differentiators"', async () => {
+  it('names Core, Supporting and Differentiator consistently — never "Preferred" as the tier name', async () => {
     await render(makeIntakeResult())
-    expect($$('.lb-subheading').map((e) => e.textContent?.replace(/\s*\d+$/, ''))).toEqual(['Core', 'Supporting', 'Preferred'])
-    expect(container.textContent).not.toMatch(/Differentiator/)
+    expect($$('.lb-subheading').map((e) => e.textContent?.replace(/\s*\d+$/, ''))).toEqual(['Core', 'Supporting', 'Differentiator'])
+    expect($('.lb-facts__row')?.parentElement?.textContent).not.toMatch(/\bpreferred\b/i)
+    // "Preferred Skills" in the editable brief form below is a distinct, unrelated field label (nice-to-have
+    // skills), not the requirement-tier name this test is about — not asserted against here.
   })
 
   it('shows the posted title and the candidate identity as two separate things', async () => {

@@ -14,7 +14,7 @@ evaluates a Backend Engineer search and a Lead Data Analyst search identically.
 """
 
 import re
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import date, datetime
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -1081,3 +1081,116 @@ def _build_uncertainty(evidence: CandidateEvidence) -> List[UncertaintyNote]:
             )
         )
     return notes
+
+
+# ---------------------------------------------------------------------------
+# Presentation-field rehydration (server-side, GET-time only)
+#
+# Older stored searches were persisted before `career`/`photo_url`/
+# `open_to_work` existed on CandidateEvidence (see the "release 2" commit).
+# Their evidence dicts on disk simply lack those keys. The raw material to
+# fill them in was already fetched and is already sitting on disk — the raw
+# CrustData candidate (`record["response"]["candidates"][i]["raw_data"]`) and
+# the raw Harvest response (`record["harvest_evidence"][candidate_id]`) — so
+# this backfills those three presentation-only keys from data already paid
+# for and already stored. It NEVER makes a network call, NEVER touches
+# role_alignment/requirement_judgments/matched_signals/ranking/admission, and
+# is a strict no-op (returns the input unchanged) once a dict already has all
+# three keys — so re-running it on an already-current record, or calling it
+# twice in a row, changes nothing (idempotent).
+_PAST_ROLE_FIELDS = {"title", "company", "industries", "function", "seniority", "start_date", "end_date", "description"}
+
+
+def _harvest_element_from_raw(harvest_raw: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Same shape `_element()` reads, but from the on-disk dict form of
+    HarvestEvidence (dataclasses.asdict output), not the live object."""
+    if not isinstance(harvest_raw, dict) or not harvest_raw.get("success"):
+        return {}
+    raw = harvest_raw.get("raw")
+    if not isinstance(raw, dict):
+        return {}
+    element = raw.get("element")
+    return element if isinstance(element, dict) else {}
+
+
+def _past_roles_from_stored(stored: Any) -> List[PastRole]:
+    roles: List[PastRole] = []
+    if not isinstance(stored, list):
+        return roles
+    for entry in stored:
+        if not isinstance(entry, dict):
+            continue
+        cleaned = {key: value for key, value in entry.items() if key in _PAST_ROLE_FIELDS}
+        try:
+            roles.append(PastRole(**cleaned))
+        except TypeError:
+            # A field of an unexpected type (e.g. industries not a list) —
+            # skip this one role rather than fail the whole rehydration.
+            continue
+    return roles
+
+
+def rehydrate_presentation_fields(
+    evidence: Dict[str, Any],
+    candidate_raw_data: Optional[Dict[str, Any]] = None,
+    harvest_raw: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """Backfills `career`, `photo_url`, `open_to_work` on an already-persisted,
+    serialized CandidateEvidence dict, using only already-stored raw data.
+    Every other key (including role_alignment, requirement_judgments,
+    matched_signals, harvest_skills, education, uncertainty) is returned
+    exactly as given — this function only ever adds the three keys above, and
+    only when they are entirely absent from `evidence`."""
+    if not isinstance(evidence, dict):
+        return evidence
+    if "career" in evidence and "photo_url" in evidence and "open_to_work" in evidence:
+        return evidence
+
+    result = dict(evidence)
+    candidate_raw_data = candidate_raw_data if isinstance(candidate_raw_data, dict) else {}
+    basic_profile = candidate_raw_data.get("basic_profile")
+    basic_profile = basic_profile if isinstance(basic_profile, dict) else {}
+    element = _harvest_element_from_raw(harvest_raw)
+
+    if "photo_url" not in result:
+        result["photo_url"] = _photo_url(basic_profile, element)
+
+    if "open_to_work" not in result:
+        open_flag = element.get("openToWork")
+        result["open_to_work"] = open_flag if isinstance(open_flag, bool) else None
+
+    if "career" not in result:
+        past_roles = _past_roles_from_stored(result.get("past_roles"))
+        current_title = result.get("current_title") or ""
+        current_company = result.get("current_company") or ""
+        # The stored evidence dict has no raw "current employment" object
+        # (only the flattened current_title/current_company strings), so the
+        # CrustData-fallback branch of _build_career (used only when Harvest
+        # has no experience array) cannot recover a start date for the
+        # current role here. Known, documented limitation — see report.
+        career_entries = _build_career(element, {}, current_title, current_company, past_roles)
+        result["career"] = [asdict(entry) for entry in career_entries]
+
+    return result
+
+
+def rehydrate_response_evidence(
+    candidates: List[Dict[str, Any]],
+    evidence_list: List[Dict[str, Any]],
+    harvest_store: Optional[Dict[str, Any]],
+) -> List[Dict[str, Any]]:
+    """Index-aligned with `candidates`/`evidence_list`, exactly like every
+    other list this codebase keeps in lockstep by position. Never changes the
+    length or order of `evidence_list`, never touches `candidates` or
+    anything outside the three presentation fields per entry."""
+    harvest_store = harvest_store if isinstance(harvest_store, dict) else {}
+    rehydrated: List[Dict[str, Any]] = []
+    for index, item in enumerate(evidence_list or []):
+        if not isinstance(item, dict):
+            rehydrated.append(item)
+            continue
+        candidate = candidates[index] if index < len(candidates) and isinstance(candidates[index], dict) else {}
+        candidate_id = candidate.get("candidate_id") or item.get("candidate_id")
+        harvest_raw = harvest_store.get(candidate_id) if candidate_id else None
+        rehydrated.append(rehydrate_presentation_fields(item, candidate.get("raw_data"), harvest_raw))
+    return rehydrated

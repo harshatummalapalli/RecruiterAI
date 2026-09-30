@@ -159,14 +159,6 @@ export function LivingBrief({ result, boundary, brief, onChangeBrief, onAnswer, 
         </section>
       ) : null}
 
-      {/* 4 Boundary */}
-      <section className="lb-section" aria-labelledby="lb-boundary">
-        <h3 id="lb-boundary" className="lb-heading">
-          Search boundary <ProvenanceTag kind="confirmed" />
-        </h3>
-        <BoundaryEditor boundary={boundary} onApply={onApplyBoundary} limitation={limitations[0] ?? null} open={boundaryOpen} onOpenChange={setBoundaryOpen} />
-      </section>
-
       {/* 5 Level */}
       {role.seniority_scope.value || experience || (role.leadership_type.value && role.leadership_type.value !== 'none') ? (
         <section className="lb-section" aria-labelledby="lb-level">
@@ -241,6 +233,15 @@ export function LivingBrief({ result, boundary, brief, onChangeBrief, onAnswer, 
           </details>
         </section>
       ) : null}
+
+      {/* Search boundary — moved here (after Requirements/Technologies, before Notes) to follow the approved
+          visual ordering; still the same BoundaryEditor, same edit/confirm behavior, unchanged. */}
+      <section className="lb-section" aria-labelledby="lb-boundary">
+        <h3 id="lb-boundary" className="lb-heading">
+          Search boundary <ProvenanceTag kind="confirmed" />
+        </h3>
+        <BoundaryEditor boundary={boundary} onApply={onApplyBoundary} limitation={limitations[0] ?? null} open={boundaryOpen} onOpenChange={setBoundaryOpen} />
+      </section>
 
       {/* 8 Recruiter notes */}
       {notes.length || result.decision.search_consequence_summary ? (

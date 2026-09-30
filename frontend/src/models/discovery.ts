@@ -191,7 +191,7 @@ function emptyEvidence(): CandidateEvidenceRaw {
 const TIER_LABEL: Record<'core' | 'supporting' | 'differentiator', string> = {
   core: 'Core requirements',
   supporting: 'Supporting',
-  differentiator: 'Preferred',
+  differentiator: 'Differentiator',
 }
 
 /** Where a quote came from, in recruiter language. Never names a data provider. */
