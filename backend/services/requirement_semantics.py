@@ -274,7 +274,21 @@ def _first_matching(events: Sequence[Dict[str, Any]], predicate) -> Optional[Dic
 def _judgment(
     tier: str, text: str, *, met: bool, quote: str, evidence_detail: str,
     evidence_type: str = "title_history", strength: str = "supporting",
+    evidence_state: Optional[str] = None,
 ) -> Dict[str, Any]:
+    """`verdict` stays exactly the existing two-value set ("met"/
+    "not_evidenced") the frontend already string-matches on — never
+    "unknown" — so this never touches rendering even though this function
+    is shared by every family. `evidence_state` is a purely additive,
+    backend-only field: "met"/"not_evidenced"/"unknown", defaulting to
+    mirror `verdict` for every family that doesn't pass it explicitly
+    (company_size, industry, career_progression, career_state — all
+    unaffected). Only role_context ever passes "unknown" — see
+    _evaluate_role_context_evidence_matches — to distinguish "checked, no
+    match" from "nothing to check," without redesigning the judgment
+    model's public verdict contract."""
+    if evidence_state is None:
+        evidence_state = "met" if met else "not_evidenced"
     return {
         "tier": tier,
         "signal_text": text,
@@ -286,6 +300,7 @@ def _judgment(
         "evidence_type": evidence_type,
         "strength": strength,
         "deterministic": True,
+        "evidence_state": evidence_state,
     }
 
 
@@ -307,12 +322,16 @@ def harvest_employment_events(harvest_evidence: Optional[HarvestEvidence]) -> Li
         if not isinstance(entry, dict):
             continue
         description = entry.get("description")
-        if not isinstance(description, str) or not description.strip():
-            continue
+        description = description.strip() if isinstance(description, str) and description.strip() else None
+        # Kept even when description is None/empty — the caller needs to
+        # know a relevant employment event EXISTS with no usable
+        # description (unknown) as distinct from no employment data at
+        # all, and distinct from a description that was checked and simply
+        # didn't match (not_evidenced). See _evaluate_role_context_evidence_matches.
         events.append({
             "title": entry.get("position") or "",
             "company": entry.get("companyName") or "",
-            "description": description.strip(),
+            "description": description,
         })
     return events
 
@@ -396,29 +415,61 @@ def _evaluate_role_context_evidence_matches(
     that they actually recruited for it). A description must independently
     read as (a) the candidate's own hiring/recruiting activity AND (b)
     naming the requested concept, in the SAME event — a software engineer's
-    own bio mentioning "engineer" is not evidence they hired one."""
+    own bio mentioning "engineer" is not evidence they hired one.
+
+    Three distinct outcomes, never collapsed into two (see the "Role
+    Context Evidence Availability" release):
+      met            a real description demonstrates the requirement.
+      not_evidenced  at least one real description was actually checked
+                     against the requirement and none demonstrated it —
+                     missing evidence is never a positive, but a CHECKED
+                     absence is also not the same as never having checked.
+      unknown        no employment event had a usable description at all
+                     (Harvest never ran, failed, or every event's own
+                     description is missing/empty) — nothing was checked,
+                     so nothing can be concluded either way. Missing
+                     evidence must never read as negative evidence."""
     value_keywords = _ROLE_CONTEXT_EVIDENCE_KEYWORDS.get(requirement.value or "", [])
+    described_events = [e for e in harvest_events if e["description"]]
+
     match = _first_matching(
-        harvest_events,
+        described_events,
         lambda e: bool(_HIRING_ACTIVITY_RE.search(e["description"])) and _matches_any(value_keywords, e["description"]),
     )
-    if not match:
+    if match:
+        title = match["title"] or "This role"
+        company = match["company"]
+        label = f"{title} at {company}" if company else title
+        # The quote is the real description text itself (trimmed for
+        # display), not a generated summary — "Strong technical recruiting
+        # background" is exactly the kind of fabricated, un-attributable
+        # claim this must avoid.
+        snippet = match["description"][:220].strip()
+        quote = f"{label} — “{snippet}”"
         return _judgment(
-            tier, requirement.text, met=False, quote="", evidence_detail="",
+            tier, requirement.text, met=True, quote=quote,
+            evidence_detail=f"Role description for {label} names {requirement.value}.",
             evidence_type="demonstrated_work", strength="strong",
         )
-    title = match["title"] or "This role"
-    company = match["company"]
-    label = f"{title} at {company}" if company else title
-    # The quote is the real description text itself (trimmed for display),
-    # not a generated summary — "Strong technical recruiting background" is
-    # exactly the kind of fabricated, un-attributable claim this must avoid.
-    snippet = match["description"][:220].strip()
-    quote = f"{label} — “{snippet}”"
+
+    if described_events:
+        # CASE B: real descriptions existed and were checked; none matched.
+        return _judgment(
+            tier, requirement.text, met=False, quote="",
+            evidence_detail=f"{len(described_events)} employment description(s) were checked; none named {requirement.value}.",
+            evidence_type="demonstrated_work", strength="strong",
+            evidence_state="not_evidenced",
+        )
+
+    # CASE C: nothing to check — never say the candidate didn't do the work.
+    if harvest_events:
+        detail = f"Employment history is on file, but no role description was available to check for {requirement.value}."
+    else:
+        detail = f"No employment description data was available to check for {requirement.value}."
     return _judgment(
-        tier, requirement.text, met=True, quote=quote,
-        evidence_detail=f"Role description for {label} names {requirement.value}.",
+        tier, requirement.text, met=False, quote="", evidence_detail=detail,
         evidence_type="demonstrated_work", strength="strong",
+        evidence_state="unknown",
     )
 
 
