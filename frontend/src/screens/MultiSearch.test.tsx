@@ -292,7 +292,7 @@ describe('roles: show more and pause, wired to the server', () => {
     await act(async () => {})
 
     expect($('.app-sidebar')).toBeNull() // still collapsed — the shell did not change
-    expect(container.textContent).toContain('No candidates are shortlisted yet.')
+    expect(container.textContent).toContain('No candidates have been shortlisted yet.')
   })
 
   it('re-running with nothing changed says nothing was searched again', async () => {

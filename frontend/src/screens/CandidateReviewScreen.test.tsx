@@ -84,7 +84,10 @@ describe('cards', () => {
     expect(heavy.querySelector('.ws-card__role')?.textContent).toBe('Backend Engineer · Acme · Toronto, Ontario, Canada')
     // The card is deliberately compact (frozen spec): no separate headline line, only name/title/company/location.
     expect(heavy.querySelector('.ws-card__headline')).toBeNull()
-    expect(heavy.querySelector('.ws-card__why')?.textContent).toBe('5 core requirements shown · 5 in described work')
+    // The dots are the ONLY evidence fingerprint on the card now — no
+    // "N core requirements shown · M in described work" sentence beside
+    // them (that detail lives one click away, in the Candidate Record).
+    expect(heavy.querySelector('.ws-card__why')?.textContent).toBe('')
     expect(heavy.querySelectorAll('.ws-dot')).toHaveLength(5)
     expect(heavy.querySelectorAll('.ws-dot.is-shown')).toHaveLength(5)
     expect(heavy.querySelectorAll('.ws-chip--proof')).toHaveLength(3)
@@ -106,9 +109,10 @@ describe('cards', () => {
     expect(card('Big Brief').querySelector('.ws-dots.is-dense')).toBeTruthy()
   })
 
-  it('say zero evidence plainly', async () => {
+  it('say zero evidence plainly, with the dots alone (no shown-count sentence)', async () => {
     await render(makeResponse(SPECS, { workspace_arranged: true }))
-    expect(card('Zero Evidence').querySelector('.ws-card__why')?.textContent).toBe('No additional core requirement evidence found.')
+    expect(card('Zero Evidence').querySelectorAll('.ws-dot.is-shown')).toHaveLength(0)
+    expect(card('Zero Evidence').querySelector('.ws-card__why')?.textContent).toBe('')
     expect(card('Zero Evidence').querySelector('.ws-chip--watch')).toBeNull()
   })
 
@@ -231,6 +235,19 @@ describe('proof and record', () => {
     expect(container.textContent).not.toMatch(/listed \d+ of \d+/i)
     expect(container.textContent).not.toMatch(/crustdata|harvest|provider|natural_language/i)
     expect(container.textContent).not.toMatch(/updated \w{3} \d/i)
+  })
+
+  it('shows the evidence fingerprint exactly once, with no score/rank/match% language anywhere', async () => {
+    await render(makeResponse(SPECS, { workspace_arranged: true }))
+    await click(card('Heavy Evidence'))
+    const record = $('aside.record')!
+    // Exactly one fingerprint, right after identity, before the decision.
+    expect(record.querySelectorAll('.record-fingerprint')).toHaveLength(1)
+    const dotsInRecord = record.querySelectorAll('.record-fingerprint .ws-dot')
+    expect(dotsInRecord.length).toBe(5)
+    expect(record.querySelectorAll('.ws-dots')).toHaveLength(1) // never a second dots row elsewhere in the record
+    expect(record.textContent).not.toMatch(/\d+%|match score|match %|confidence score|rank(ed|ing)?\b/i)
+    expect(record.textContent).not.toMatch(/excellent|poor fit/i)
   })
 })
 

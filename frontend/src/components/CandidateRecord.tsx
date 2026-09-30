@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { AlertTriangle, Check, ChevronDown, ChevronUp, ExternalLink, HelpCircle, Minus, Plus, X } from 'lucide-react'
 import { initialsOf, relevanceLabel, type DiscoveryCandidate, type LedgerGroup, type LedgerRow } from '../models/discovery'
+import { cardFacts } from '../models/workspace'
+import { EvidenceDots } from './CandidateWorkspace'
 import './CandidateRecord.css'
 
 export type RecordDecision = 'shortlist' | 'maybe' | 'reject'
@@ -129,6 +131,11 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
     noteInputRef.current?.focus()
   }
 
+  // The ONE evidence fingerprint in the record — reuses the exact same
+  // computation and rendering the candidate list card uses (cardFacts /
+  // EvidenceDots), never a second parallel dots representation. Shown once,
+  // here, quietly — no percentage, no "N of M" spelled out beside it.
+  const facts = cardFacts(candidate)
   const career = showAllCareer ? candidate.career : candidate.career.slice(0, CAREER_SHOWN)
   const skills = showAllSkills ? candidate.skills : candidate.skills.slice(0, SKILLS_SHOWN)
   const educationHead = candidate.education.slice(0, EDUCATION_SHOWN)
@@ -198,6 +205,12 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
           </button>
         </div>
       </header>
+
+      {facts.dots.length > 0 ? (
+        <div className="record-fingerprint">
+          <EvidenceDots facts={facts} />
+        </div>
+      ) : null}
 
       <div className="brief-segmented record-decision" role="group" aria-label="Recruiter decision">
         {DECISIONS.map((option) => (

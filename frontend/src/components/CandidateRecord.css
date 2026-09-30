@@ -121,6 +121,15 @@
   color: var(--color-accent);
 }
 
+/* The ONE evidence fingerprint in the record — quiet and prominent, never a
+   score. Same .ws-dots/.ws-dot styling the candidate card already uses
+   (loaded via CandidateWorkspace.css, imported alongside EvidenceDots). */
+.record-fingerprint {
+  display: flex;
+  align-items: center;
+  padding: 2px 0 4px;
+}
+
 .record-decision {
   align-self: flex-start;
 }

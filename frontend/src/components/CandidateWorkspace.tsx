@@ -23,6 +23,17 @@ const DECISIONS: Array<{ value: Decision; label: string; key: string }> = [
 
 const DECISION_LABEL: Record<Decision, string> = { shortlist: 'Shortlisted', maybe: 'Maybe', reject: 'Rejected' }
 
+// Calm, role-aware empty states — never implies the SEARCH found nothing
+// (an empty filter is not an empty search) and never uses "Complete"/
+// "Search complete"/"No candidates found" language.
+const EMPTY_STATE: Record<FilterKey, { title: string; body?: string }> = {
+  all: { title: 'No candidates yet.' },
+  to_review: { title: 'No candidates are waiting for review.' },
+  shortlist: { title: 'No candidates have been shortlisted yet.', body: 'Candidates you shortlist will appear here.' },
+  maybe: { title: 'No candidates are marked Maybe yet.' },
+  reject: { title: 'No candidates have been rejected.' },
+}
+
 type Decisions = Record<string, Decision | undefined>
 
 type Props = {
@@ -57,7 +68,10 @@ function Avatar({ name, url }: { name: string; url: string | null }) {
 // Above this many core requirements the dots shrink so the row stays compact. Every requirement still gets its dot.
 const DENSE_DOTS = 10
 
-function EvidenceDots({ facts }: { facts: CardFacts }) {
+// Exported so CandidateRecord can render the exact same dots — the ONE
+// evidence fingerprint, never a second parallel dots implementation. See
+// CandidateRecord.tsx's own "Evidence Fingerprint" section.
+export function EvidenceDots({ facts }: { facts: CardFacts }) {
   if (facts.dots.length === 0) return null
   const shown = facts.dots.filter((dot) => dot.shown).length
   return (
@@ -114,10 +128,14 @@ function CandidateCard({ item, decision, selected, onOpen, onDecide, register, p
         </div>
       </div>
 
-      {facts.why ? (
+      {/* Dots only — the ONE evidence fingerprint. The "N core requirements
+         shown · M in described work" sentence this used to pair with is
+         gone: the dots already say this, and the full requirement-by-
+         requirement detail lives one click away in the Candidate Record's
+         own Evidence for this role section. Never restate it here. */}
+      {facts.dots.length > 0 ? (
         <div className="ws-card__why">
           <EvidenceDots facts={facts} />
-          <span>{facts.why}</span>
         </div>
       ) : null}
 
@@ -442,9 +460,10 @@ export function CandidateWorkspace({
 
       <div className="ws-list" onKeyDown={onKeyDown}>
         {visibleItems.length === 0 ? (
-          <p className="ws-empty">
-            {filter === 'to_review' ? 'Everything has a decision.' : `No candidates are ${FILTERS.find((entry) => entry.key === filter)?.label.toLowerCase()} yet.`}
-          </p>
+          <div className="ws-empty">
+            <p className="ws-empty__title">{EMPTY_STATE[filter].title}</p>
+            {EMPTY_STATE[filter].body ? <p className="ws-empty__body">{EMPTY_STATE[filter].body}</p> : null}
+          </div>
         ) : null}
 
         {visibleItems.length > 0 ? <p className="ws-note">{orderNote ?? 'In the order they were read.'}</p> : null}
