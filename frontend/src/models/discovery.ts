@@ -42,10 +42,19 @@ export type CareerItem = {
 // The requirement ledger: one row per confirmed requirement, with the proof
 // beside it. Built only from judgments the backend has already verified.
 export type LedgerVerdict = 'met' | 'partly' | 'not_evidenced'
+/** "not_evidenced" (checked; nothing demonstrated it) vs "unknown" (nothing
+ * was available to check) — a distinction verdict itself doesn't carry, so
+ * this is derived separately. Backend-additive: a judgment persisted before
+ * evidence_state existed has none, and is treated exactly as verdict alone
+ * always has been (met -> 'met', anything else -> 'not_evidenced') — see
+ * buildLedger(). */
+export type EvidenceState = 'met' | 'not_evidenced' | 'unknown'
+
 export type LedgerRow = {
   tier: 'core' | 'supporting' | 'differentiator'
   requirement: string
   verdict: LedgerVerdict
+  evidenceState: EvidenceState
   quote: string | null
   /** Recruiter wording for where the quote came from, e.g. "role description · Engineer at Acme". */
   sourceLabel: string | null
@@ -220,6 +229,11 @@ export function buildLedger(judgments: RequirementJudgmentRaw[] | null | undefin
         tier,
         requirement: judgment.signal_text,
         verdict: judgment.verdict,
+        // Legacy-safe: a judgment with no evidence_state (every search
+        // persisted before this field existed) falls back to exactly what
+        // verdict alone already meant — never a new "unknown" appearing
+        // out of nowhere for old data.
+        evidenceState: judgment.evidence_state ?? (judgment.verdict === 'met' ? 'met' : 'not_evidenced'),
         quote: judgment.verdict === 'not_evidenced' ? null : readString(judgment.quote),
         sourceLabel: judgment.verdict === 'not_evidenced' ? null : sourceLabel(judgment),
         derived: (judgment.source ?? '').toLowerCase() === 'career dates',

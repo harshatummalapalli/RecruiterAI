@@ -233,3 +233,118 @@ describe('proof and record', () => {
     expect(container.textContent).not.toMatch(/updated \w{3} \d/i)
   })
 })
+
+describe('evidence state: met / not_evidenced / unknown', () => {
+  // Builds a single-candidate response via the shared fixture, then
+  // overrides requirement_judgments directly so each test controls
+  // evidence_state precisely (the fixture itself never sets it).
+  function responseWithJudgments(judgments: Record<string, unknown>[]) {
+    const response = makeResponse([{ name: 'Evidence Candidate', core: [] }])
+    ;(response.evidence![0] as unknown as Record<string, unknown>).requirement_judgments = judgments
+    return response
+  }
+
+  const MET_JUDGMENT = {
+    tier: 'core',
+    signal_text: 'Has recruited software engineers',
+    verdict: 'met',
+    evidence_state: 'met',
+    quote: 'Lead Recruiter at Nitor Infotech — “Recruited software engineers for the platform team.”',
+    source: 'employment record',
+    strength: 'strong',
+  }
+  const NOT_EVIDENCED_JUDGMENT = {
+    tier: 'core',
+    signal_text: 'Has recruited AI/ML teams',
+    verdict: 'not_evidenced',
+    evidence_state: 'not_evidenced',
+    source: 'employment record',
+  }
+  const UNKNOWN_JUDGMENT = {
+    tier: 'core',
+    signal_text: 'Has recruited engineering leaders',
+    verdict: 'not_evidenced',
+    evidence_state: 'unknown',
+    source: 'employment record',
+  }
+  const LEGACY_JUDGMENT = {
+    // No evidence_state at all — exactly the shape of every judgment
+    // persisted before this release.
+    tier: 'core',
+    signal_text: 'Proficiency in Python',
+    verdict: 'not_evidenced',
+  }
+
+  it('1. met renders as affirmative evidence with its real quote', async () => {
+    await render(responseWithJudgments([MET_JUDGMENT]))
+    await click(card('Evidence Candidate'))
+    const record = $('aside.record')!
+    const row = $$('.record-ledger__row--met').find((r) => r.textContent?.includes('Has recruited software engineers'))!
+    expect(row).toBeTruthy()
+    expect(row.querySelector('.record-ledger__quote')?.textContent).toContain('Recruited software engineers for the platform team')
+    expect(record.textContent).not.toMatch(/not demonstrated|unavailable/i)
+  })
+
+  it('2. not_evidenced renders distinctly from met', async () => {
+    await render(responseWithJudgments([NOT_EVIDENCED_JUDGMENT]))
+    await click(card('Evidence Candidate'))
+    const row = $$('.record-ledger__row--missing').find((r) => r.textContent?.includes('Has recruited AI/ML teams'))!
+    expect(row).toBeTruthy()
+    expect(row.classList.contains('record-ledger__row--unknown')).toBe(false)
+    expect(row.textContent).toContain('Not demonstrated in available role evidence.')
+    // Never a false-negative implication.
+    expect(row.textContent?.toLowerCase()).not.toMatch(/doesn't have|failed|not qualified|no experience/)
+  })
+
+  it('3. unknown renders distinctly from not_evidenced', async () => {
+    await render(responseWithJudgments([NOT_EVIDENCED_JUDGMENT, UNKNOWN_JUDGMENT]))
+    await click(card('Evidence Candidate'))
+    const notEvidencedRow = $$('.record-ledger__row--missing').find((r) => r.textContent?.includes('Has recruited AI/ML teams'))!
+    const unknownRow = $$('.record-ledger__row--missing').find((r) => r.textContent?.includes('Has recruited engineering leaders'))!
+    expect(unknownRow.classList.contains('record-ledger__row--unknown')).toBe(true)
+    expect(notEvidencedRow.classList.contains('record-ledger__row--unknown')).toBe(false)
+    expect(unknownRow.textContent).toContain('Role evidence unavailable.')
+    expect(unknownRow.textContent).not.toContain('Not demonstrated in available role evidence.')
+    expect(unknownRow.textContent?.toLowerCase()).not.toMatch(/doesn't have|not qualified|no experience/)
+  })
+
+  it('4. legacy judgment without evidence_state renders exactly as verdict alone always has (never "unknown")', async () => {
+    await render(responseWithJudgments([LEGACY_JUDGMENT]))
+    await click(card('Evidence Candidate'))
+    const row = $$('.record-ledger__row--missing').find((r) => r.textContent?.includes('Proficiency in Python'))!
+    expect(row).toBeTruthy()
+    expect(row.classList.contains('record-ledger__row--unknown')).toBe(false)
+    expect(row.textContent).toContain('Not demonstrated in available role evidence.')
+  })
+
+  it('5. existing recruiter actions (Shortlist/Maybe/Reject) are unaffected', async () => {
+    await render(responseWithJudgments([MET_JUDGMENT, NOT_EVIDENCED_JUDGMENT, UNKNOWN_JUDGMENT]))
+    await click(card('Evidence Candidate'))
+    for (const label of ['Shortlist', 'Maybe', 'Reject']) {
+      expect(button(new RegExp(`^${label}`), $('aside.record')!)).toBeTruthy()
+    }
+  })
+
+  it('6. candidate ordering is unaffected by evidence_state', async () => {
+    await render(makeResponse(SPECS, { workspace_arranged: true }))
+    // Arrival order, exactly as the existing "flat list, never grouped"
+    // contract already requires — evidence_state adds no reordering.
+    expect(cardIds()).toEqual(SPECS.map((_, i) => `c${i + 1}`))
+  })
+
+  it('7. existing Candidate Record sections remain intact', async () => {
+    await render(responseWithJudgments([MET_JUDGMENT, NOT_EVIDENCED_JUDGMENT, UNKNOWN_JUDGMENT]))
+    await click(card('Evidence Candidate'))
+    const record = $('aside.record')!
+    for (const heading of ['Why this candidate', 'Evidence for this role', 'Experience', 'Education', 'Recruiter Notes']) {
+      expect(record.textContent).toContain(heading)
+    }
+  })
+
+  it('8. no score, rank, or match percentage appears anywhere in the record', async () => {
+    await render(responseWithJudgments([MET_JUDGMENT, NOT_EVIDENCED_JUDGMENT, UNKNOWN_JUDGMENT]))
+    await click(card('Evidence Candidate'))
+    const record = $('aside.record')!
+    expect(record.textContent).not.toMatch(/\d+%|match score|confidence|rank(ed|ing)?\b/i)
+  })
+})

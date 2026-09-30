@@ -259,6 +259,23 @@
   color: var(--color-muted);
 }
 
+/* "Evidence unavailable" (nothing to check) reads more faintly than
+   "not demonstrated" (checked, didn't show it) — same neutral family, one
+   step quieter, dashed rather than solid, never a warning color. */
+.record-ledger__row--unknown .record-ledger__mark {
+  background: transparent;
+  border: 1px dashed var(--color-faint);
+  color: var(--color-faint);
+}
+
+.record-ledger__row--unknown .record-ledger__req {
+  color: var(--color-faint);
+}
+
+.record-ledger__row--unknown .record-ledger__note {
+  font-style: italic;
+}
+
 .record-ledger__body {
   min-width: 0;
 }
@@ -312,6 +329,11 @@
 .record-ledger__gaps svg {
   flex: none;
   margin-top: 3px;
+}
+
+.record-ledger__gaps--unknown {
+  color: var(--color-faint);
+  font-style: italic;
 }
 
 /* A relevant concern folded into Evidence rather than its own "What concerns us" section — still visually

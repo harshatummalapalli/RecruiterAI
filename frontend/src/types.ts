@@ -153,6 +153,11 @@ export interface RequirementJudgmentRaw {
   evidence_type?: string
   strength?: string
   review?: string
+  /** Additive; absent on any judgment persisted before this field existed.
+   * Distinguishes "checked, did not demonstrate it" (not_evidenced) from
+   * "nothing was available to check" (unknown) — verdict itself stays
+   * exactly 'met' | 'partly' | 'not_evidenced' either way. */
+  evidence_state?: 'met' | 'not_evidenced' | 'unknown'
 }
 
 // Raw shape of a backend CandidateEvidence (dataclasses.asdict()) — career

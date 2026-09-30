@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { AlertTriangle, Check, ChevronDown, ChevronUp, ExternalLink, Minus, Plus, X } from 'lucide-react'
+import { AlertTriangle, Check, ChevronDown, ChevronUp, ExternalLink, HelpCircle, Minus, Plus, X } from 'lucide-react'
 import { initialsOf, relevanceLabel, type DiscoveryCandidate, type LedgerGroup, type LedgerRow } from '../models/discovery'
 import './CandidateRecord.css'
 
@@ -68,6 +68,11 @@ function LedgerRowView({ row }: { row: LedgerRow }) {
 function LedgerSection({ group }: { group: LedgerGroup }) {
   const shown = group.rows.filter((row) => row.verdict !== 'not_evidenced')
   const missing = group.rows.filter((row) => row.verdict === 'not_evidenced')
+  // "unknown" (nothing was available to check) reads very differently from
+  // "not_evidenced" (checked, didn't demonstrate it) — a recruiter must be
+  // able to tell them apart at a glance, never as an implied negative.
+  const notDemonstrated = missing.filter((row) => row.evidenceState !== 'unknown')
+  const unavailable = missing.filter((row) => row.evidenceState === 'unknown')
   // Core gaps matter most, so each gets its own line. Supporting and preferred
   // gaps collapse into one line so the ledger stays readable.
   const perRowGaps = group.tier === 'core'
@@ -84,22 +89,30 @@ function LedgerSection({ group }: { group: LedgerGroup }) {
           <LedgerRowView key={row.requirement} row={row} />
         ))}
         {perRowGaps
-          ? missing.map((row) => (
-              <li key={row.requirement} className="record-ledger__row record-ledger__row--missing">
-                <span className="record-ledger__mark" aria-label="Not evidenced">
-                  <Minus size={14} aria-hidden="true" />
-                </span>
-                <div className="record-ledger__body">
-                  <p className="record-ledger__req">{row.requirement}</p>
-                  <p className="record-ledger__note">Not evidenced on this profile.</p>
-                </div>
-              </li>
-            ))
+          ? missing.map((row) => {
+              const unknown = row.evidenceState === 'unknown'
+              return (
+                <li key={row.requirement} className={`record-ledger__row record-ledger__row--missing${unknown ? ' record-ledger__row--unknown' : ''}`}>
+                  <span className="record-ledger__mark" aria-label={unknown ? 'Evidence unavailable' : 'Not demonstrated'}>
+                    {unknown ? <HelpCircle size={14} aria-hidden="true" /> : <Minus size={14} aria-hidden="true" />}
+                  </span>
+                  <div className="record-ledger__body">
+                    <p className="record-ledger__req">{row.requirement}</p>
+                    <p className="record-ledger__note">{unknown ? 'Role evidence unavailable.' : 'Not demonstrated in available role evidence.'}</p>
+                  </div>
+                </li>
+              )
+            })
           : null}
       </ul>
-      {!perRowGaps && missing.length ? (
+      {!perRowGaps && notDemonstrated.length ? (
         <p className="record-ledger__gaps">
-          <Minus size={13} aria-hidden="true" /> Not evidenced: {missing.map((row) => row.requirement).join(' · ')}
+          <Minus size={13} aria-hidden="true" /> Not demonstrated: {notDemonstrated.map((row) => row.requirement).join(' · ')}
+        </p>
+      ) : null}
+      {!perRowGaps && unavailable.length ? (
+        <p className="record-ledger__gaps record-ledger__gaps--unknown">
+          <HelpCircle size={13} aria-hidden="true" /> Evidence unavailable: {unavailable.map((row) => row.requirement).join(' · ')}
         </p>
       ) : null}
     </div>
