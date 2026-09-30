@@ -230,7 +230,7 @@ class RequirementJudge:
             for i, (tier, text) in enumerate(requirements):
                 recognized = recognize_requirement(text)
                 if recognized is not None:
-                    deterministic[i] = evaluate_recognized_requirement(recognized, tier, candidate)
+                    deterministic[i] = evaluate_recognized_requirement(recognized, tier, candidate, harvest_evidence)
             remaining = [i for i in range(len(requirements)) if i not in deterministic]
 
             if not remaining:

@@ -36,12 +36,16 @@ one of the three validated patterns; recognizing MORE than that would be
 inventing a new interpretation system, not wiring an existing one — out of
 scope by design.
 
-Only the technology industry is recognized (the one family actually
-validated end-to-end in the Search Logic Experiment and the acceptance
-runs). Generalizing to arbitrary recruiter-named industries is a documented,
-not-implemented, future primitive — see the release report. No new
-semantic family was added in this release; this is a representation
-refactor only.
+Only the technology industry is recognized for the `industry` family (the
+one validated end-to-end in the Search Logic Experiment and the acceptance
+runs). Generalizing to arbitrary recruiter-named industries is a
+documented, not-implemented, future primitive — see the release reports.
+
+`role_context` (added in the Role Context Evidence Spike release) answers a
+DIFFERENT question from `industry`: "works at a technology company" never
+proves "has recruited technical talent" — the latter is grounded only in a
+real employment event's own Harvest role description, never in skills,
+headline, current title alone, or company industry.
 """
 
 import re
@@ -49,6 +53,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple
 
 from backend.models.candidate import Candidate
+from backend.models.candidate_evidence import HarvestEvidence
 from backend.services.career_signals import (
     current_employer_matches_industry,
     current_role,
@@ -77,9 +82,9 @@ from backend.services.career_signals import (
 # evaluate() has exactly one branch per combination — adding a family means
 # adding a branch, not extending a schema.
 
-Family = Literal["company_size", "industry", "career_progression", "career_state"]
+Family = Literal["company_size", "industry", "career_progression", "career_state", "role_context"]
 Scope = Literal["current", "career"]
-Operator = Literal["matches", "worked_across", "duration_at_least", "currently_leadership", "historical_leadership_progression"]
+Operator = Literal["matches", "worked_across", "duration_at_least", "currently_leadership", "historical_leadership_progression", "evidence_matches"]
 
 
 @dataclass(frozen=True)
@@ -99,6 +104,52 @@ class SemanticRequirement:
 # The one industry family validated so far. Kept private and singular on
 # purpose — see the module docstring.
 _TECHNOLOGY_KEYWORDS = ["technology", "software", "it services", "information technology", "internet", "saas"]
+
+# role_context: has the candidate actually RECRUITED for a technical role, as
+# opposed to merely worked at a technology company (a different family
+# entirely — see the module docstring's key distinction). Exactly three
+# values, deliberately not a general ontology: "software engineering
+# recruiting" and "AI/ML recruiting" name the two concrete examples the
+# release asked for; "technical recruiting" is the one generic bucket for
+# "technical talent"/"technical roles"/"engineering leaders" wording that
+# doesn't cleanly fall into either of the first two. Each value's keyword
+# set is what evaluate() looks for INSIDE a real employment-event
+# description — recognition (below) only decides which bucket a
+# REQUIREMENT names; these keyword sets decide whether a candidate's own,
+# real description text actually supports it.
+_ROLE_CONTEXT_EVIDENCE_KEYWORDS = {
+    "software engineering recruiting": ["software engineer", "backend engineer", "frontend engineer", "full stack", "full-stack", "developer", "\\bsde\\b", "engineering team", "engineering role", "engineering hir"],
+    "AI/ML recruiting": ["ai/ml", "\\bai\\b", "\\bml\\b", "machine learning", "data scien", "artificial intelligence"],
+    "technical recruiting": ["technical", "\\bengineering\\b", "\\bengineer"],
+}
+# The description must ALSO read as the candidate's own hiring/recruiting
+# activity, not merely mention a technical-role noun in some other context
+# (e.g. a software engineer's own job description mentioning "engineer").
+_HIRING_ACTIVITY_RE = re.compile(r"\b(recruit(?:ing|ed|er|ment)?|hir(?:e|ing|ed|es)|talent acquisition|sourc(?:e|ing|ed))\b", re.I)
+
+# Conservative recognition: requires an explicit PAST-TENSE hiring verb
+# ("recruited"/"hired") directly followed by a technical-role noun phrase —
+# never a bare title ("technical recruiter"), never an industry/company
+# claim ("works in technology"), both of which the release explicitly says
+# must NOT auto-become role_context (they may still be relevant to the
+# industry/company_size families, unaffected here).
+_ROLE_CONTEXT_AI_ML_RE = re.compile(
+    r"\b(?:recruited|hired)\b.{0,30}\b(?:ai/ml|ai\s*(?:and|&)\s*ml)\b|"
+    r"\b(?:recruited|hired)\b.{0,30}\b(?:artificial\s+intelligence|machine\s+learning)\b|"
+    r"\b(?:recruited|hired)\b.{0,30}\b(?:ai|ml)\s+(?:engineers?|teams?|talent)\b",
+    re.I,
+)
+_ROLE_CONTEXT_SWE_RE = re.compile(
+    r"\b(?:recruited|hired)\b.{0,30}\b(?:software|backend|frontend|full.?stack)\s+(?:engineers?|developers?|teams?)\b|"
+    r"\b(?:recruited|hired)\b.{0,30}\bengineering\s+teams?\b|"
+    r"\b(?:recruited|hired)\b.{0,30}\b(?:software\s+)?engineers?\b",
+    re.I,
+)
+_ROLE_CONTEXT_TECHNICAL_RE = re.compile(
+    r"\b(?:recruited|hired)\b.{0,30}\btechnical\s+(?:talent|teams?|roles?|staff)\b|"
+    r"\b(?:recruited|hired)\b.{0,30}\bengineering\s+leaders?\b",
+    re.I,
+)
 
 
 # Conservative, explicit trigger phrases only. Every pattern requires the
@@ -134,14 +185,27 @@ _CURRENT_LEADERSHIP_RE = re.compile(
 
 def recognize_requirement(signal_text: str) -> Optional[SemanticRequirement]:
     """"What does the recruiter mean" — the ONLY place requirement text is
-    interpreted. None for anything not unambiguously one of the three
-    validated families; the caller must fall back to the existing LLM judge
-    for everything else, including ambiguous scope-less wording."""
+    interpreted. None for anything not unambiguously one of the validated
+    families; the caller must fall back to the existing LLM judge for
+    everything else, including ambiguous scope-less wording."""
     text = (signal_text or "").strip()
     if not text:
         return None
 
     is_current = bool(_CURRENT_RE.search(text))
+
+    # role_context checked first and independently of the current/historical
+    # qualifier logic below — "recruited/hired" is inherently a past-activity
+    # claim, always scope="career", never scope="current". Order matters:
+    # AI/ML before the broader software-engineering pattern, since "hired AI
+    # engineers" would otherwise also satisfy the generic "...engineers?"
+    # branch of the software-engineering regex.
+    if _ROLE_CONTEXT_AI_ML_RE.search(text):
+        return SemanticRequirement(text=text, family="role_context", scope="career", operator="evidence_matches", value="AI/ML recruiting")
+    if _ROLE_CONTEXT_SWE_RE.search(text):
+        return SemanticRequirement(text=text, family="role_context", scope="career", operator="evidence_matches", value="software engineering recruiting")
+    if _ROLE_CONTEXT_TECHNICAL_RE.search(text):
+        return SemanticRequirement(text=text, family="role_context", scope="career", operator="evidence_matches", value="technical recruiting")
 
     duration_match = _TECH_DURATION_RE.search(text)
     if duration_match:
@@ -207,7 +271,10 @@ def _first_matching(events: Sequence[Dict[str, Any]], predicate) -> Optional[Dic
     return None
 
 
-def _judgment(tier: str, text: str, *, met: bool, quote: str, evidence_detail: str) -> Dict[str, Any]:
+def _judgment(
+    tier: str, text: str, *, met: bool, quote: str, evidence_detail: str,
+    evidence_type: str = "title_history", strength: str = "supporting",
+) -> Dict[str, Any]:
     return {
         "tier": tier,
         "signal_text": text,
@@ -216,10 +283,42 @@ def _judgment(tier: str, text: str, *, met: bool, quote: str, evidence_detail: s
         "term": quote if met else "",
         "source": "employment record",
         "evidence_detail": evidence_detail,
-        "evidence_type": "title_history",
-        "strength": "supporting",
+        "evidence_type": evidence_type,
+        "strength": strength,
         "deterministic": True,
     }
+
+
+def harvest_employment_events(harvest_evidence: Optional[HarvestEvidence]) -> List[Dict[str, Any]]:
+    """The real, per-event employment DESCRIPTIONS Harvest returned — the
+    only reliable source of role-context evidence (CrustData never returns
+    role descriptions; see career_signals.py/candidate_evidence_builder.py's
+    own findings). Each entry keeps title/company/description together, so
+    evidence can always be attributed to one specific, named employment
+    event. Empty when Harvest wasn't configured, failed, or hasn't run for
+    this candidate yet — never a network call here."""
+    if harvest_evidence is None or not harvest_evidence.success or not isinstance(harvest_evidence.raw, dict):
+        return []
+    element = harvest_evidence.raw.get("element")
+    if not isinstance(element, dict):
+        return []
+    events: List[Dict[str, Any]] = []
+    for entry in element.get("experience") or []:
+        if not isinstance(entry, dict):
+            continue
+        description = entry.get("description")
+        if not isinstance(description, str) or not description.strip():
+            continue
+        events.append({
+            "title": entry.get("position") or "",
+            "company": entry.get("companyName") or "",
+            "description": description.strip(),
+        })
+    return events
+
+
+def _matches_any(pattern_strings: List[str], text: str) -> bool:
+    return any(re.search(p, text, re.I) for p in pattern_strings)
 
 
 def _evaluate_company_size_matches(requirement: SemanticRequirement, tier: str, events: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -288,8 +387,46 @@ def _evaluate_career_state_currently_leadership(requirement: SemanticRequirement
     return _judgment(tier, requirement.text, met=met, quote=quote, evidence_detail="The current employment event's own title is leadership-shaped." if met else "")
 
 
+def _evaluate_role_context_evidence_matches(
+    requirement: SemanticRequirement, tier: str, harvest_events: List[Dict[str, Any]]
+) -> Dict[str, Any]:
+    """Grounded ONLY in a real employment event's own description — never in
+    skills, headline, current title alone, or company industry (those prove
+    a different thing: what kind of company/role the candidate was in, not
+    that they actually recruited for it). A description must independently
+    read as (a) the candidate's own hiring/recruiting activity AND (b)
+    naming the requested concept, in the SAME event — a software engineer's
+    own bio mentioning "engineer" is not evidence they hired one."""
+    value_keywords = _ROLE_CONTEXT_EVIDENCE_KEYWORDS.get(requirement.value or "", [])
+    match = _first_matching(
+        harvest_events,
+        lambda e: bool(_HIRING_ACTIVITY_RE.search(e["description"])) and _matches_any(value_keywords, e["description"]),
+    )
+    if not match:
+        return _judgment(
+            tier, requirement.text, met=False, quote="", evidence_detail="",
+            evidence_type="demonstrated_work", strength="strong",
+        )
+    title = match["title"] or "This role"
+    company = match["company"]
+    label = f"{title} at {company}" if company else title
+    # The quote is the real description text itself (trimmed for display),
+    # not a generated summary — "Strong technical recruiting background" is
+    # exactly the kind of fabricated, un-attributable claim this must avoid.
+    snippet = match["description"][:220].strip()
+    quote = f"{label} — “{snippet}”"
+    return _judgment(
+        tier, requirement.text, met=True, quote=quote,
+        evidence_detail=f"Role description for {label} names {requirement.value}.",
+        evidence_type="demonstrated_work", strength="strong",
+    )
+
+
 # One entry per (family, operator) this module actually handles — adding a
 # new family means adding one entry here, never touching the dispatch logic.
+# The handler signature is uniform (requirement, tier, data) for every
+# family; role_context's "data" is harvest_events instead of CrustData
+# events — evaluate() decides which one to build based on the family below.
 _EVALUATORS = {
     ("company_size", "matches"): _evaluate_company_size_matches,
     ("company_size", "worked_across"): _evaluate_company_size_worked_across,
@@ -297,18 +434,25 @@ _EVALUATORS = {
     ("industry", "duration_at_least"): _evaluate_industry_duration,
     ("career_progression", "historical_leadership_progression"): _evaluate_career_progression_historical,
     ("career_state", "currently_leadership"): _evaluate_career_state_currently_leadership,
+    ("role_context", "evidence_matches"): _evaluate_role_context_evidence_matches,
 }
 
 
-def evaluate(requirement: SemanticRequirement, tier: str, candidate: Candidate) -> Dict[str, Any]:
+def evaluate(requirement: SemanticRequirement, tier: str, candidate: Candidate, harvest_evidence: Optional[HarvestEvidence] = None) -> Dict[str, Any]:
     """"Does this candidate satisfy this already-explicit requirement" — the
     full judgment dict, in requirement_judge's existing shape. Never
     re-reads `requirement.text` for meaning (only recognize_requirement()
     does that); never fabricates a quote — every quote/evidence_detail here
     is built only from fields literally present on the specific employment
     event(s) that made the verdict true, and a False verdict carries no
-    quote at all, the same as requirement_judge's own not_evidenced shape."""
+    quote at all, the same as requirement_judge's own not_evidenced shape.
+
+    `harvest_evidence` is only used by role_context (the one family that
+    needs Harvest's role descriptions — CrustData never returns them); every
+    other family ignores it, exactly as before this parameter existed."""
     handler = _EVALUATORS.get((requirement.family, requirement.operator))
     if handler is None:
         raise AssertionError(f"Unhandled semantic requirement: family={requirement.family} operator={requirement.operator}")
+    if requirement.family == "role_context":
+        return handler(requirement, tier, harvest_employment_events(harvest_evidence))
     return handler(requirement, tier, employment_events(candidate))
