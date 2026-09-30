@@ -5,6 +5,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { MoreHorizontal, Plus, Search } from 'lucide-react'
 import type { SearchListItem } from '../types'
+import { AppearanceControl } from '../components/AppearanceControl'
+import { initialsOf } from '../models/discovery'
 import './HomeScreen.css'
 
 type Tab = 'active' | 'drafts' | 'archived'
@@ -14,6 +16,17 @@ function getGreeting(hour: number): string {
   if (hour < 12) return 'Good morning'
   if (hour < 18) return 'Good afternoon'
   return 'Good evening'
+}
+
+// A handful of legacy searches carry a JD's own leading heading line (e.g.
+// literally "Job Description") as their title — a real fallback that
+// predates role labeling, never a value worth showing as if it were a role
+// name. Recognized narrowly, by exact generic phrasing only: never
+// reinterprets or fabricates an actual title.
+const GENERIC_TITLES = new Set(['job description', 'jd', 'untitled', ''])
+
+function displayTitle(title: string): string {
+  return GENERIC_TITLES.has(title.trim().toLowerCase()) ? 'Untitled search' : title
 }
 
 // Honest, count-derived activity text — no fabricated action history (no "You shortlisted Priya Raman"): the
@@ -91,6 +104,58 @@ function RowMenu({
   )
 }
 
+// Home has no SearchSidebar (see the "not the app's home navigation" note
+// on SearchSidebar itself), so account access — Appearance + Sign out —
+// lives here instead: a small, deliberately quiet control, never a
+// settings page.
+function AccountControl({ recruiterName, onSignOut }: { recruiterName: string; onSignOut: () => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    if (!open) return
+    const onDocClick = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false)
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onDocClick)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDocClick)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+  return (
+    <div className="home-account" ref={ref}>
+      <button type="button" className="home-account__trigger" onClick={() => setOpen((v) => !v)} aria-haspopup="menu" aria-expanded={open}>
+        <span className="home-account__avatar" aria-hidden="true">
+          {initialsOf(recruiterName)}
+        </span>
+        <span className="home-account__name">{recruiterName}</span>
+      </button>
+      {open ? (
+        <div className="home-account__menu" role="menu">
+          <div className="home-account__appearance">
+            <AppearanceControl />
+          </div>
+          <button
+            type="button"
+            role="menuitem"
+            className="home-account__signout"
+            onClick={() => {
+              setOpen(false)
+              onSignOut()
+            }}
+          >
+            Sign out
+          </button>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 export function HomeScreen({
   items,
   recruiterName,
@@ -98,6 +163,7 @@ export function HomeScreen({
   onNew,
   onPause,
   onResume,
+  onSignOut,
 }: {
   items: SearchListItem[]
   recruiterName: string
@@ -105,6 +171,7 @@ export function HomeScreen({
   onNew: () => void
   onPause: (id: string) => void
   onResume: (id: string) => void
+  onSignOut: () => void
 }) {
   const [tab, setTab] = useState<Tab>('active')
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>('all')
@@ -141,10 +208,13 @@ export function HomeScreen({
           <p className="home__greeting">{greeting}</p>
           <h1 className="home__title">Your searches</h1>
         </div>
-        <button type="button" className="home__new" onClick={onNew}>
-          <Plus size={15} aria-hidden="true" />
-          New Search
-        </button>
+        <div className="home__header-actions">
+          <button type="button" className="home__new" onClick={onNew}>
+            <Plus size={15} aria-hidden="true" />
+            New Search
+          </button>
+          <AccountControl recruiterName={recruiterName} onSignOut={onSignOut} />
+        </div>
       </header>
 
       <div className="home__tabs" role="tablist">
@@ -250,7 +320,7 @@ export function HomeScreen({
             return (
               <div key={`${item.kind}:${item.id}`} className="home__row" onClick={() => onOpen(item)}>
                 <div className="home__cell home__cell--role">
-                  <p className="home__role-title">{item.title}</p>
+                  <p className="home__role-title">{displayTitle(item.title)}</p>
                   <p className="home__role-sub">{[item.company, item.place].filter(Boolean).join(' · ')}</p>
                 </div>
 

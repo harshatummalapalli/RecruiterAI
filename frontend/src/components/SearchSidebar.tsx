@@ -70,24 +70,29 @@ export function SearchSidebar({
         New search
       </button>
 
-      <p className="app-sidebar__label">SEARCHES</p>
-      {items.length === 0 ? <p className="app-sidebar__empty">Your searches will appear here.</p> : null}
-      <ul className="app-sidebar__list">
-        {items.map((item) => {
-          const badge = sidebarBadge(item)
-          const subtitle = sidebarSubtitle(item)
-          const selected = isActive(item, active)
-          return (
-            <li key={`${item.kind}:${item.id}`}>
-              <button type="button" className={`app-sidebar__item${selected ? ' is-active' : ''}`} aria-current={selected ? 'page' : undefined} onClick={() => onSelect(item)}>
-                <span className="app-sidebar__title">{item.title}</span>
-                {subtitle ? <span className="app-sidebar__subtitle">{subtitle}</span> : null}
-                {badge ? <span className={`app-sidebar__badge is-${badge.tone}`}>{badge.text}</span> : null}
-              </button>
-            </li>
-          )
-        })}
-      </ul>
+      {/* Only this middle region scrolls — the header above and the account
+         footer below stay fixed, so Sign out is always reachable without
+         scrolling through however many searches exist. */}
+      <div className="app-sidebar__scroll">
+        <p className="app-sidebar__label">SEARCHES</p>
+        {items.length === 0 ? <p className="app-sidebar__empty">Your searches will appear here.</p> : null}
+        <ul className="app-sidebar__list">
+          {items.map((item) => {
+            const badge = sidebarBadge(item)
+            const subtitle = sidebarSubtitle(item)
+            const selected = isActive(item, active)
+            return (
+              <li key={`${item.kind}:${item.id}`}>
+                <button type="button" className={`app-sidebar__item${selected ? ' is-active' : ''}`} aria-current={selected ? 'page' : undefined} onClick={() => onSelect(item)}>
+                  <span className="app-sidebar__title">{item.title}</span>
+                  {subtitle ? <span className="app-sidebar__subtitle">{subtitle}</span> : null}
+                  {badge ? <span className={`app-sidebar__badge is-${badge.tone}`}>{badge.text}</span> : null}
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
 
       <div className="app-sidebar__footer">
         <AppearanceControl />

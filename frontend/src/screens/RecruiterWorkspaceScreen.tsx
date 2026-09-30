@@ -597,6 +597,7 @@ export function RecruiterWorkspaceScreen() {
         onNew={handleStartNewSearch}
         onPause={(id) => void handleRoleActionFromHome(id, 'pause')}
         onResume={(id) => void handleRoleActionFromHome(id, 'resume')}
+        onSignOut={handleSignOut}
       />
     )
   }

@@ -1178,15 +1178,19 @@
   display: flex;
   align-items: flex-start;
   gap: 24px;
-  flex-wrap: wrap;
+  /* Wrapping to a new line (the old default) is exactly what could push the
+     Candidate Record pane onto its own row below a tall candidate list,
+     reading as "a large dead area above it" — the three workspace regions
+     (rail/list/record) must always sit side by side. */
+  flex-wrap: nowrap;
 }
 
 .discovery-main {
   flex: 1 1 480px;
   min-width: 0;
-  /* Grows to use freed space (e.g. the sidebar collapsing) without stretching arbitrarily wide on an ultra-wide
-     display — a candidate list that wide stops reading like a list. */
-  max-width: 760px;
+  /* Wider than before (was 760px) — an overly tight cap wasted width on a
+     wide desktop viewport instead of giving the candidate list room. */
+  max-width: 920px;
   overflow-x: auto;
 }
 
@@ -1434,9 +1438,10 @@
 /* Candidate profile panel */
 
 .discovery-profile {
-  flex: 1 1 420px;
+  flex: 1 1 440px;
   min-width: 0;
-  max-width: 500px;
+  /* Wider than before (was 500px), same reasoning as .discovery-main. */
+  max-width: 620px;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -1446,8 +1451,11 @@
   padding: 22px 26px 26px;
   box-shadow: 0 1px 2px rgba(24, 24, 27, 0.03), 0 4px 16px rgba(24, 24, 27, 0.03);
   /* A proper third pane, not a modal or a drawer: it scrolls independently of the candidate list beside it,
-     and its own header (record-head, sticky below) stays put while the rest of it scrolls. */
+     and its own header (record-head, sticky below) stays put while the rest of it scrolls. align-self is
+     explicit (not just inherited from the parent's align-items) so this pane's top always lines up with the
+     top of the candidate list beside it, with no dead space above it, regardless of anything else on the row. */
   position: sticky;
+  align-self: flex-start;
   top: 24px;
   max-height: calc(100vh - 48px);
   overflow-y: auto;
@@ -1669,6 +1677,14 @@
 }
 
 @media (max-width: 960px) {
+  /* Below desktop width there genuinely isn't room for three side-by-side
+     regions — stacking the Candidate Record below the list here is a
+     deliberate narrow-viewport fallback, not the wrap bug this nowrap
+     default (above, desktop) exists to prevent. */
+  .discovery-layout {
+    flex-wrap: wrap;
+  }
+
   .candidate-row {
     grid-template-columns: 22px minmax(140px, 1.6fr) minmax(100px, 1fr) minmax(100px, 1fr) 76px 70px;
   }

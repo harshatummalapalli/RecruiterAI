@@ -27,9 +27,18 @@
   padding: 22px 14px 18px;
   background: var(--color-sidebar-bg);
   border-right: 1px solid var(--color-border);
+  /* The sidebar's own box never scrolls as a whole — only .app-sidebar__scroll
+     (the search list) does, so a long list can never push the account
+     footer below the viewport. */
+  overflow: hidden;
+  transition: flex-basis var(--motion-pane, 0.22s) var(--motion-ease, ease), width var(--motion-pane, 0.22s) var(--motion-ease, ease), padding var(--motion-pane, 0.22s) var(--motion-ease, ease);
+}
+
+.app-sidebar__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  transition: flex-basis var(--motion-pane, 0.22s) var(--motion-ease, ease), width var(--motion-pane, 0.22s) var(--motion-ease, ease), padding var(--motion-pane, 0.22s) var(--motion-ease, ease);
 }
 
 /* Glue OFF (default): opening a candidate record unmounts the rail entirely (width 0, not a narrow icon rail —
@@ -85,7 +94,7 @@
 }
 
 .app-sidebar__footer {
-  margin-top: auto;
+  flex: none;
   padding: 14px 8px 0;
   border-top: 1px solid var(--color-border);
   display: flex;
