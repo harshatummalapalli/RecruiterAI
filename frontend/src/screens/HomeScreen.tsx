@@ -1,12 +1,14 @@
-// "Your searches" — the top-level landing screen (frozen handoff, section 5). Active / Drafts / Archived, a
-// table of roles, and only the row actions that are actually wired to a real backend call (Open, Pause, Resume,
-// Continue). No Archive/Rename/Delete/Restore here — the backend has no archived-role concept and no delete/
-// rename endpoints, so those stay out rather than being faked. See docs discussion in this session.
+// "Your searches" — the top-level landing screen (frozen handoff, section 5,
+// restructured under the global product shell). Active / Drafts / Archived,
+// a table of roles, and only the row actions that are actually wired to a
+// real backend call (Open, Pause, Resume, Continue). No Archive/Rename/
+// Delete/Restore here — the backend has no archived-role concept and no
+// delete/rename endpoints, so those stay out rather than being faked.
+// Account access (Appearance/Sign out) lives in the global shell now
+// (GlobalShell/AccountControl), not here — Home is just its content.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { MoreHorizontal, Plus, Search } from 'lucide-react'
 import type { SearchListItem } from '../types'
-import { AppearanceControl } from '../components/AppearanceControl'
-import { initialsOf } from '../models/discovery'
 import './HomeScreen.css'
 
 type Tab = 'active' | 'drafts' | 'archived'
@@ -104,58 +106,6 @@ function RowMenu({
   )
 }
 
-// Home has no SearchSidebar (see the "not the app's home navigation" note
-// on SearchSidebar itself), so account access — Appearance + Sign out —
-// lives here instead: a small, deliberately quiet control, never a
-// settings page.
-function AccountControl({ recruiterName, onSignOut }: { recruiterName: string; onSignOut: () => void }) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement | null>(null)
-  useEffect(() => {
-    if (!open) return
-    const onDocClick = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false)
-    }
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('mousedown', onDocClick)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDocClick)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [open])
-  return (
-    <div className="home-account" ref={ref}>
-      <button type="button" className="home-account__trigger" onClick={() => setOpen((v) => !v)} aria-haspopup="menu" aria-expanded={open}>
-        <span className="home-account__avatar" aria-hidden="true">
-          {initialsOf(recruiterName)}
-        </span>
-        <span className="home-account__name">{recruiterName}</span>
-      </button>
-      {open ? (
-        <div className="home-account__menu" role="menu">
-          <div className="home-account__appearance">
-            <AppearanceControl />
-          </div>
-          <button
-            type="button"
-            role="menuitem"
-            className="home-account__signout"
-            onClick={() => {
-              setOpen(false)
-              onSignOut()
-            }}
-          >
-            Sign out
-          </button>
-        </div>
-      ) : null}
-    </div>
-  )
-}
-
 export function HomeScreen({
   items,
   recruiterName,
@@ -163,7 +113,6 @@ export function HomeScreen({
   onNew,
   onPause,
   onResume,
-  onSignOut,
 }: {
   items: SearchListItem[]
   recruiterName: string
@@ -171,7 +120,6 @@ export function HomeScreen({
   onNew: () => void
   onPause: (id: string) => void
   onResume: (id: string) => void
-  onSignOut: () => void
 }) {
   const [tab, setTab] = useState<Tab>('active')
   const [activeFilter, setActiveFilter] = useState<ActiveFilter>('all')
@@ -208,13 +156,10 @@ export function HomeScreen({
           <p className="home__greeting">{greeting}</p>
           <h1 className="home__title">Your searches</h1>
         </div>
-        <div className="home__header-actions">
-          <button type="button" className="home__new" onClick={onNew}>
-            <Plus size={15} aria-hidden="true" />
-            New Search
-          </button>
-          <AccountControl recruiterName={recruiterName} onSignOut={onSignOut} />
-        </div>
+        <button type="button" className="home__new" onClick={onNew}>
+          <Plus size={15} aria-hidden="true" />
+          New Search
+        </button>
       </header>
 
       <div className="home__tabs" role="tablist">

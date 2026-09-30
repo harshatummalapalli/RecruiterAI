@@ -2071,6 +2071,27 @@
   color: var(--color-muted);
 }
 
+/* "• Searching · Epiq" — the role's live status, next to the role title
+   that's now the dominant heading (replacing the old generic "Candidate
+   Workspace" fallback). */
+.workspace__role-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 4px 0 0;
+}
+
+.workspace__role-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-faint);
+}
+
+.workspace__role-dot.is-active {
+  background: var(--color-accent);
+}
+
 .workspace__brief {
   display: flex;
   flex-direction: column;

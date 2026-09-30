@@ -23,14 +23,16 @@ import { CandidateReviewScreen } from './CandidateReviewScreen'
 import { DebugPanel } from './DebugPanel'
 import { HomeScreen } from './HomeScreen'
 import { LivingBrief } from './LivingBrief'
+import { SettingsScreen } from './SettingsScreen'
 import { SearchBoundaryForm } from './SearchBoundaryForm'
-import { SearchSidebar } from '../components/SearchSidebar'
+import { GlobalShell, type GlobalDestination } from '../components/GlobalShell'
+import { SearchSidebar, type RoleNavInfo } from '../components/SearchSidebar'
 import { createEmptySearchBoundary, isSearchBoundaryComplete, type SearchBoundary } from '../models/searchBoundary'
 import type { SearchListItem, SearchResponse } from '../types'
 import './RecruiterWorkspaceScreen.css'
 
 type ParseState = 'idle' | 'parsing' | 'success' | 'error'
-type Step = 'home' | 'jd' | 'brief' | 'review'
+type Step = 'home' | 'settings' | 'jd' | 'brief' | 'review'
 type SearchState = 'idle' | 'searching' | 'done' | 'error'
 
 const RECRUITER_NAME = 'Harsha'
@@ -544,6 +546,13 @@ export function RecruiterWorkspaceScreen() {
     setStep('home')
   }
 
+  // Settings is a global destination, not a role one — it never touches
+  // whatever role/search is currently open, so returning from it (via the
+  // global shell's Home/role state) needs no special handling here.
+  const handleGoSettings = () => {
+    setStep('settings')
+  }
+
   // Pause/Resume triggered from a Home row, for a role that is not the one currently open in the workspace.
   // Independent of searchId/searchResponse — only refreshes the Home list, never touches open-workspace state.
   const handleRoleActionFromHome = async (id: string, action: 'pause' | 'resume') => {
@@ -573,10 +582,12 @@ export function RecruiterWorkspaceScreen() {
   const progress = searchResponse?.progress
   const isRole = Boolean(searchResponse?.role)
   const presentedCount = isRole ? Object.values(searchResponse?.presentation ?? {}).filter((entry) => entry.state === 'presented').length : null
+  const roleStatusLabel = searchResponse?.role?.status === 'paused' ? 'Paused' : 'Searching'
   const workspaceSubtitle = (() => {
     if (isRole) {
       if (searchState === 'searching' && !presentedCount) return 'Finding candidates…'
-      return [searchResponse?.role?.label?.company, searchResponse?.role?.label?.place].filter(Boolean).join(' · ') || 'Candidate review'
+      const company = [searchResponse?.role?.label?.company, searchResponse?.role?.label?.place].filter(Boolean).join(' · ')
+      return `${roleStatusLabel}${company ? ` · ${company}` : ''}`
     }
     if (!progress || !progress.admitted) {
       return searchState === 'searching' ? 'Finding candidates…' : 'What are you hiring for today?'
@@ -588,21 +599,52 @@ export function RecruiterWorkspaceScreen() {
     return parts.join(' · ')
   })()
 
+  const globalDestination: GlobalDestination = step === 'home' ? 'home' : step === 'settings' ? 'settings' : 'role'
+
+  // Role nav ("where am I inside this hiring mandate") once the role's own
+  // reading exists — Understanding is always reachable; Candidates only
+  // once a search has actually run (nothing to show before that).
+  const roleTitle = posted || identity || 'Untitled role'
+  const roleNavInfo: RoleNavInfo | undefined =
+    intakeResult && (step === 'brief' || step === 'review')
+      ? {
+          title: roleTitle,
+          statusLabel: isRole ? roleStatusLabel : 'Drafting',
+          company: searchResponse?.role?.label?.company ?? '',
+          section: step === 'brief' ? 'understanding' : 'candidates',
+          candidatesEnabled: Boolean(searchResponse),
+          onSelectUnderstanding: () => setStep('brief'),
+          onSelectCandidates: () => {
+            if (searchResponse) setStep('review')
+          },
+        }
+      : undefined
+
   if (step === 'home') {
     return (
-      <HomeScreen
-        items={searches}
-        recruiterName={RECRUITER_NAME}
-        onOpen={(item) => void openSearch(item)}
-        onNew={handleStartNewSearch}
-        onPause={(id) => void handleRoleActionFromHome(id, 'pause')}
-        onResume={(id) => void handleRoleActionFromHome(id, 'resume')}
-        onSignOut={handleSignOut}
-      />
+      <GlobalShell active={globalDestination} onHome={handleGoHome} onSettings={handleGoSettings} recruiterName={RECRUITER_NAME} onSignOut={handleSignOut}>
+        <HomeScreen
+          items={searches}
+          recruiterName={RECRUITER_NAME}
+          onOpen={(item) => void openSearch(item)}
+          onNew={handleStartNewSearch}
+          onPause={(id) => void handleRoleActionFromHome(id, 'pause')}
+          onResume={(id) => void handleRoleActionFromHome(id, 'resume')}
+        />
+      </GlobalShell>
+    )
+  }
+
+  if (step === 'settings') {
+    return (
+      <GlobalShell active={globalDestination} onHome={handleGoHome} onSettings={handleGoSettings} recruiterName={RECRUITER_NAME} onSignOut={handleSignOut}>
+        <SettingsScreen recruiterName={RECRUITER_NAME} />
+      </GlobalShell>
     )
   }
 
   return (
+    <GlobalShell active={globalDestination} onHome={handleGoHome} onSettings={handleGoSettings} recruiterName={RECRUITER_NAME} onSignOut={handleSignOut}>
     <div className="app-shell">
       <SearchSidebar
         items={searches}
@@ -613,8 +655,7 @@ export function RecruiterWorkspaceScreen() {
         collapsed={sidebarCollapsed}
         glued={sidebarPinned}
         onToggleGlue={toggleSidebarPin}
-        onSignOut={handleSignOut}
-        onGoHome={handleGoHome}
+        roleNav={roleNavInfo}
       />
       <main className="workspace">
         <div className={`workspace__content${step === 'review' ? ' workspace__content--wide' : ''}`}>
@@ -633,13 +674,16 @@ export function RecruiterWorkspaceScreen() {
               ) : null}
               {step === 'review' ? (
                 <div>
-                  <h1>{posted || identity || 'Candidate Workspace'}</h1>
+                  <h1>{roleTitle}</h1>
                   {showIdentity ? (
                     <p className="workspace__identity">
                       <span className="workspace__identity-label">Searching for</span> {identity}
                     </p>
                   ) : null}
-                  <p>{workspaceSubtitle}</p>
+                  <p className="workspace__role-subtitle">
+                    <span className={`workspace__role-dot${searchResponse?.role?.status !== 'paused' ? ' is-active' : ''}`} aria-hidden="true" />
+                    {workspaceSubtitle}
+                  </p>
                 </div>
               ) : (
                 <div>
@@ -767,5 +811,6 @@ export function RecruiterWorkspaceScreen() {
         </div>
       </main>
     </div>
+    </GlobalShell>
   )
 }

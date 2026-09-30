@@ -44,33 +44,19 @@
 /* Glue OFF (default): opening a candidate record unmounts the rail entirely (width 0, not a narrow icon rail —
    see RecruiterWorkspaceScreen's sidebarCollapsed / SearchSidebar returning null). Glue ON: it stays. */
 
-.app-sidebar__back {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  align-self: flex-start;
-  border: none;
-  background: none;
-  padding: 0 8px 14px;
-  font: inherit;
-  font-size: 13px;
-  color: var(--color-muted);
-  cursor: pointer;
-}
-
-.app-sidebar__back:hover {
-  color: var(--color-primary-text);
-}
-
-.app-sidebar__brand {
+.app-sidebar__top {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 2px 8px 22px;
+  gap: 8px;
+  padding: 2px 8px 18px;
+}
+
+.app-sidebar__top .app-sidebar__new {
+  flex: 1;
 }
 
 .app-sidebar__glue {
-  margin-left: auto;
+  flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -93,35 +79,85 @@
   color: var(--color-accent);
 }
 
-.app-sidebar__footer {
-  flex: none;
-  padding: 14px 8px 0;
-  border-top: 1px solid var(--color-border);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* Role nav — "where am I inside this hiring mandate." Shown instead of the
+   flat search list once a specific role is open (see SearchSidebar's
+   roleNav prop). Understanding/Candidates are the only two destinations;
+   Shortlisted/Maybe/Rejected deliberately stay as the Candidates screen's
+   own filter pills, not duplicated here. */
+.app-sidebar__role {
+  padding: 4px 8px 18px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 14px;
 }
 
-.app-sidebar__signout {
-  align-self: flex-start;
-  border: none;
-  background: none;
-  padding: 0;
-  font: inherit;
+.app-sidebar__role-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-primary-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-sidebar__role-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 3px 0 14px;
   font-size: 12.5px;
   color: var(--color-muted);
+}
+
+.app-sidebar__role-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-faint);
+}
+
+.app-sidebar__role-dot.is-active {
+  background: var(--color-accent);
+}
+
+.app-sidebar__role-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.app-sidebar__role-nav-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--color-secondary-text);
   cursor: pointer;
 }
 
-.app-sidebar__signout:hover {
-  color: var(--color-primary-text);
+.app-sidebar__role-nav-item:hover {
+  background: rgba(24, 24, 27, 0.04);
 }
 
-.app-sidebar__name {
-  font-size: 12.5px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+.app-sidebar__role-nav-item.is-active {
+  background: var(--color-surface);
   color: var(--color-primary-text);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.app-sidebar__role-nav-item:disabled {
+  color: var(--color-faint);
+  cursor: default;
+}
+
+.app-sidebar__role-nav-item:disabled:hover {
+  background: transparent;
 }
 
 .app-sidebar__new {
@@ -149,7 +185,7 @@
 }
 
 .app-sidebar__label {
-  margin: 26px 8px 8px;
+  margin: 4px 8px 8px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;

@@ -1,0 +1,82 @@
+/* The outermost product shell — brand, Home, Settings, account. Always
+   present, always the same width, never collapses: infrastructure, not a
+   working surface. Role navigation (SearchSidebar in role-nav mode) and the
+   workspace itself render inside .global-shell__body. */
+
+.global-shell {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  background: var(--color-bg);
+}
+
+.global-nav {
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  flex: 0 0 176px;
+  width: 176px;
+  height: 100vh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 18px 12px;
+  background: var(--color-sidebar-bg);
+  border-right: 1px solid var(--color-border);
+}
+
+.global-nav__brand {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px 18px;
+}
+
+.global-nav__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--color-secondary-text);
+  cursor: pointer;
+  transition: background-color var(--motion-fast, 0.15s) ease, color var(--motion-fast, 0.15s) ease;
+}
+
+.global-nav__item:hover {
+  background: var(--color-surface);
+  color: var(--color-primary-text);
+}
+
+.global-nav__item.is-active {
+  background: var(--color-accent-subtle);
+  color: var(--color-accent);
+}
+
+.global-nav__spacer {
+  flex: 1 1 auto;
+}
+
+.global-shell__body {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+
+/* A small, unobtrusive fallback brand mark for a context that isn't nested
+   inside .global-shell (there is none today — the shell is always present
+   — but kept as the one place this treatment is defined, per the
+   requirement that RecruiterAI stay identifiable even if a future screen
+   renders outside the shell). */
+.global-brand-fallback {
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.85;
+}
