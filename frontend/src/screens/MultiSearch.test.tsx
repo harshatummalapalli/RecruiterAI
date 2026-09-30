@@ -270,12 +270,37 @@ describe('roles: show more and pause, wired to the server', () => {
     expect($('.role-bar')?.textContent).toContain('Paused')
   })
 
+  it('switching to an empty candidate filter closes the record but never resurrects the sidebar', async () => {
+    // The regression this pins down: CandidateWorkspace.changeFilter() calls
+    // onOpen(null) when the open candidate doesn't match the new filter —
+    // that's correct (candidate content only). What must NOT happen is the
+    // role sidebar re-expanding as a SIDE EFFECT of that close, the way
+    // Glue-off behavior previously did for every candidateOpen transition,
+    // open or close alike.
+    await mountWithSearches({ kind: 'search', id: 'role-a' })
+    expect($('.app-sidebar__role-title')?.textContent).toBe('AI Engineer')
+
+    const firstCard = container.querySelector('article.ws-card')!
+    await click(firstCard)
+    await act(async () => {})
+    // Opening a candidate collapses the rail, exactly as before.
+    expect($('.app-sidebar')).toBeNull()
+
+    // None of the 25 fixture candidates have a decision, so Shortlisted is
+    // empty and the open candidate (undecided) no longer matches it.
+    await click(button(/^Shortlisted/))
+    await act(async () => {})
+
+    expect($('.app-sidebar')).toBeNull() // still collapsed — the shell did not change
+    expect(container.textContent).toContain('No candidates are shortlisted yet.')
+  })
+
   it('re-running with nothing changed says nothing was searched again', async () => {
     await mountWithSearches({ kind: 'search', id: 'role-a' })
     service.createConfirmation.mockResolvedValue({ ...CONFIRMED, confirmation_id: 'conf-9' })
     service.runCandidateSearch.mockResolvedValue(roleResponse('role-a', 'AI Engineer'))
     await click(button(/Edit Brief/))
-    await click(button(/Run Search Again/))
+    await click(button(/^Search$/))
     await act(async () => {})
     expect(container.textContent).toContain('Nothing that changes the search was edited, so no new search was run.')
   })

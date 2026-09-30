@@ -144,7 +144,7 @@ describe('searching again goes through a confirmation, never a browser-built int
     await mountRestoredSearch()
 
     await click(button(/Edit Brief/))
-    await click(button(/Run Search Again/))
+    await click(button(/^Search$/))
 
     expect(service.createConfirmation).toHaveBeenCalledTimes(1)
     const [sessionId, edits] = service.createConfirmation.mock.calls[0]
@@ -163,9 +163,21 @@ describe('searching again goes through a confirmation, never a browser-built int
     service.createConfirmation.mockRejectedValue(Object.assign(new Error('x'), { messages: ['1 question still needs your answer.'] }))
     await mountRestoredSearch()
     await click(button(/Edit Brief/))
-    await click(button(/Run Search Again/))
+    await click(button(/^Search$/))
     expect(service.runCandidateSearch).not.toHaveBeenCalled()
-    expect($('.workspace__status--error')?.textContent).toContain('1 question still needs your answer.')
+    expect($('.lb-errors')?.textContent).toContain('1 question still needs your answer.')
+  })
+})
+
+describe('no dev-only UI in the rendered application', () => {
+  it('never renders the debug panel, raw JSON, or "dev only" UI', async () => {
+    await mountRestoredSearch()
+    await click(button(/Edit Brief/))
+    expect(container.textContent).not.toMatch(/dev only/i)
+    expect(container.textContent).not.toContain('Recruiter Intelligence')
+    expect(container.textContent).not.toContain('Role Classification')
+    expect(container.querySelector('.debug-panel')).toBeNull()
+    expect(container.querySelector('pre')).toBeNull()
   })
 })
 
@@ -186,7 +198,7 @@ describe('editing the boundary from the workspace', () => {
   it('offers no location or work-mode fields in the brief editor, only the boundary', async () => {
     await mountRestoredSearch()
     await click(button(/Edit Brief/))
-    const panel = $('.discovery-edit-panel')!.textContent!
+    const panel = $('.workspace__brief')!.textContent!
     expect(panel).toContain('Search boundary')
     expect(panel).not.toMatch(/Search geography|Work Mode\b(?!.*boundary)/)
   })

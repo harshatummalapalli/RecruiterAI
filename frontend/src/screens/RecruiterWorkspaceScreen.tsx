@@ -20,7 +20,6 @@ import { diffBriefEdits, formatBoundaryLocation } from '../models/livingBrief'
 import type { IntakeIssue, IntakeResult } from '../models/intake'
 import type { ActiveSearch } from '../models/roleWorkspace'
 import { CandidateReviewScreen } from './CandidateReviewScreen'
-import { DebugPanel } from './DebugPanel'
 import { HomeScreen } from './HomeScreen'
 import { LivingBrief } from './LivingBrief'
 import { SettingsScreen } from './SettingsScreen'
@@ -124,12 +123,23 @@ export function RecruiterWorkspaceScreen() {
   const [active, setActive] = useState<ActiveSearch | null>(null)
   const [roleMessage, setRoleMessage] = useState<string | null>(null)
   const [searchNotice, setSearchNotice] = useState<string | null>(null)
-  // The role sidebar collapses to a narrow rail while a candidate record is open, so the record pane has the
-  // room — unless the recruiter has pinned it open. "Keep roles open" persists across sessions; whether a
-  // candidate is currently open does not (it's not meaningful state to remember on reload).
+  // The role sidebar collapses to a narrow rail when a candidate record opens, so the record pane has the room —
+  // unless the recruiter has pinned it open. "Keep roles open" persists across sessions; whether a candidate is
+  // currently open does not (it's not meaningful state to remember on reload).
+  //
+  // One-directional on purpose: collapsing only ever happens because a candidate record OPENED. It never
+  // auto-reopens just because a record closed — including when a candidate filter change closes the record as a
+  // side effect (CandidateWorkspace.changeFilter's onOpen(null), when the open candidate doesn't match the new
+  // filter). A candidate filter is candidate-content only; it must never visibly change the workspace shell. The
+  // sidebar only reopens via an explicit recruiter action — the header hamburger (equivalent to Glue) or Glue
+  // itself — never as a side effect of which candidates happen to be visible.
   const [sidebarPinned, setSidebarPinned] = useState<boolean>(() => readJson<boolean>(SIDEBAR_PIN_KEY) ?? false)
   const [candidateOpen, setCandidateOpen] = useState(false)
-  const sidebarCollapsed = candidateOpen && !sidebarPinned
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  useEffect(() => {
+    if (candidateOpen && !sidebarPinned) setSidebarCollapsed(true)
+    else if (sidebarPinned) setSidebarCollapsed(false)
+  }, [candidateOpen, sidebarPinned])
   // The poll loop for a running search. A ref because it is plumbing, cleared when a search is opened or started or the
   // component unmounts, so at most one poll loop is ever active.
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -231,6 +241,9 @@ export function RecruiterWorkspaceScreen() {
     setSearchId(null)
     setRoleMessage(null)
     setSearchNotice(null)
+    // A fresh workspace context (new role opened, or back to composing) never starts pre-collapsed from
+    // whatever the previous role left behind.
+    setSidebarCollapsed(false)
   }
 
   // The brief and boundary a search came from, resumed read only so the boundary can still be edited and re-confirmed.
@@ -795,7 +808,9 @@ export function RecruiterWorkspaceScreen() {
               searchGeneration={searchGeneration}
               boundary={intakeSessionId ? boundary : null}
               onApplyBoundary={handleApplyBoundary}
-              boundaryLimitation={intakeResult?.decision.limitations?.[0] ?? null}
+              intakeResult={intakeSessionId ? intakeResult : null}
+              onAnswer={handleAnswerIntake}
+              isAnswering={isAnswering}
               searchErrors={searchErrors}
               onShowMore={handleShowMore}
               onRoleAction={handleRoleAction}
@@ -806,8 +821,6 @@ export function RecruiterWorkspaceScreen() {
               onSelectionChange={setCandidateOpen}
             />
           ) : null}
-
-          <DebugPanel jdText={jdText} brief={brief} searchResponse={searchResponse} />
         </div>
       </main>
     </div>

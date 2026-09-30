@@ -704,6 +704,15 @@
   margin-top: 8px;
 }
 
+/* Edit Brief (inside the candidate-review workspace): just a Cancel
+   above the reused Living Brief — no grid, no second action here,
+   "Search"/confirm lives inside LivingBrief itself. */
+.brief-actions--top {
+  grid-column: auto;
+  justify-content: flex-start;
+  margin: 0 0 16px;
+}
+
 .brief-back {
   display: inline-flex;
   align-items: center;
@@ -2128,8 +2137,3 @@
   text-decoration: underline;
 }
 
-.discovery-edit-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}

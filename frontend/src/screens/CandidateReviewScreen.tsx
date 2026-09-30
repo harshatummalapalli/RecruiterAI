@@ -19,10 +19,9 @@ import {
   type PauseAction,
 } from '../models/roleWorkspace'
 import { updateCandidateRecord } from '../services/recruiterWorkflow'
-import { BoundaryEditor } from '../components/BoundaryEditor'
-import { formatBoundaryLocation, workModeLabel } from '../models/livingBrief'
 import type { SearchBoundary } from '../models/searchBoundary'
-import { SearchBriefReview, summarizeCompanies, summarizeExperience, summarizeSkills } from './SearchBriefReview'
+import type { IntakeIssue, IntakeResult } from '../models/intake'
+import { LivingBrief } from './LivingBrief'
 
 type FieldChange = (path: string, updater: (current: SearchBrief) => SearchBrief) => void
 
@@ -39,7 +38,15 @@ type CandidateReviewScreenProps = {
   // could not be resumed, in which case it is shown as unavailable rather than editable.
   boundary: SearchBoundary | null
   onApplyBoundary: (boundary: SearchBoundary) => Promise<void>
-  boundaryLimitation?: string | null
+  // Edit Brief reuses the exact Living Brief experience — same role
+  // understanding, same requirements, same "Adjust before searching" form
+  // — instead of a parallel raw-fields view. Null exactly when the
+  // original intake reading could not be resumed (same condition boundary
+  // already used to be unavailable under), in which case Edit Brief says
+  // so rather than showing a broken or fabricated reading.
+  intakeResult?: IntakeResult | null
+  onAnswer?: (issue: IntakeIssue, value: string, label: string) => void
+  isAnswering?: boolean
   // Why the last attempt to search again was refused, in plain sentences.
   searchErrors?: string[]
   // Bumped once per "Find Candidates"/"Run Search Again" click — see
@@ -84,7 +91,9 @@ export function CandidateReviewScreen({
   searchGeneration,
   boundary,
   onApplyBoundary,
-  boundaryLimitation = null,
+  intakeResult = null,
+  onAnswer = () => {},
+  isAnswering = false,
   searchErrors = [],
   onShowMore,
   onRoleAction,
@@ -256,84 +265,36 @@ export function CandidateReviewScreen({
       </div>
 
       {isEditingBrief ? (
-        <div className="workspace__grid">
-          <div className="discovery-edit-panel">
-            {boundary ? (
-              <section className="brief-panel" aria-label="Search boundary">
-                <h2 className="brief-section__title">Search boundary</h2>
-                <BoundaryEditor boundary={boundary} onApply={onApplyBoundary} limitation={boundaryLimitation} />
-              </section>
-            ) : (
-              <p className="discovery-empty">The brief this search came from is no longer available, so the boundary cannot be edited. Start a new search to change it.</p>
-            )}
-            <SearchBriefReview brief={brief} onChange={onChangeBrief} />
-          </div>
-
-          <aside className="workspace__preview" aria-label="Search summary">
-            <p className="workspace__preview-label">Search Summary</p>
-            <dl className="workspace__preview-list">
-              <div className="workspace__preview-row">
-                <dt>Role</dt>
-                <dd>{brief.role.primaryTitle || 'Not specified'}</dd>
-              </div>
-              <div className="workspace__preview-row">
-                <dt>Location</dt>
-                <dd>{boundary ? `${formatBoundaryLocation(boundary)} · ${workModeLabel(boundary)}` : 'Not available'}</dd>
-              </div>
-              <div className="workspace__preview-row">
-                <dt>Experience</dt>
-                <dd>{summarizeExperience(brief)}</dd>
-              </div>
-              <div className="workspace__preview-row">
-                <dt>Skills</dt>
-                <dd>
-                  {brief.skills.required.length || brief.skills.preferred.length || brief.skills.excluded.length
-                    ? summarizeSkills(brief.skills.required, brief.skills.preferred, brief.skills.excluded)
-                    : 'Matched via natural-language search, not itemized filters'}
-                </dd>
-              </div>
-              <div className="workspace__preview-row">
-                <dt>Companies</dt>
-                <dd>{summarizeCompanies(brief.companies.include, brief.companies.exclude)}</dd>
-              </div>
-            </dl>
-          </aside>
-
-          <div className="brief-actions">
+        <div className="workspace__brief">
+          <div className="brief-actions brief-actions--top">
             <button type="button" className="brief-back" onClick={() => setIsEditingBrief(false)}>
               Cancel
             </button>
-
-            <div className="brief-find-slot">
-              {searchErrors.length ? (
-                <div className="workspace__status workspace__status--error" role="alert">
-                  {searchErrors.map((message) => (
-                    <p key={message}>{message}</p>
-                  ))}
-                </div>
-              ) : showError ? (
-                <div className="workspace__status workspace__status--error" role="alert">
-                  <p>We couldn't complete this search. You can try again.</p>
-                </div>
-              ) : null}
-
-              <button
-                type="button"
-                className={`workspace__parse${searchState === 'searching' ? ' workspace__parse--busy' : ''}`}
-                onClick={onRunSearch}
-                disabled={searchState === 'searching'}
-              >
-                {searchState === 'searching' ? (
-                  <>
-                    <span className="workspace__spinner" aria-hidden="true" />
-                    <span>Searching the market…</span>
-                  </>
-                ) : (
-                  <span>Run Search Again</span>
-                )}
-              </button>
-            </div>
           </div>
+
+          {/* The exact same Living Brief the recruiter already saw before confirming this search — role
+             understanding, requirements, boundary, notes — reused as-is, never a parallel raw-fields form.
+             "Search" (LivingBrief's own confirm action) is wired to the SAME onRunSearch this screen already
+             used for "Run Search Again": editing here changes no backend/confirmation behavior, only which UI
+             component the recruiter edits through. */}
+          {intakeResult && boundary ? (
+            <LivingBrief
+              result={intakeResult}
+              boundary={boundary}
+              brief={brief}
+              onChangeBrief={onChangeBrief}
+              onAnswer={onAnswer}
+              isAnswering={isAnswering}
+              onApplyBoundary={onApplyBoundary}
+              onSearch={onRunSearch}
+              isSearching={searchState === 'searching'}
+              searchErrors={searchErrors.length ? searchErrors : showError ? ["We couldn't complete this search. You can try again."] : []}
+            />
+          ) : (
+            <p className="discovery-empty">
+              The original role understanding for this search is no longer available, so Edit Brief can't be shown here. Start a new search to change it.
+            </p>
+          )}
         </div>
       ) : (
         <div className="discovery-layout">

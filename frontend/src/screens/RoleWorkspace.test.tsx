@@ -260,7 +260,7 @@ describe('search availability', () => {
     expect($('.role-notice')!.textContent).toContain('This search may be too restrictive.')
     expect(container.textContent).not.toContain('No candidates matched this search.')
     await click(button(/Review search criteria/))
-    expect($('.discovery-edit-panel')).not.toBeNull()
+    expect($('.workspace__brief')).not.toBeNull()
   })
 })
 
@@ -319,7 +319,7 @@ describe('the role and its lifecycle', () => {
     expect(panel.textContent).toContain('This search is very narrow.')
     expect(Array.from(panel.querySelectorAll('li')).map((li) => li.textContent)).toContain('Move a requirement from Core to Supporting')
     await click(button(/Review search criteria/, panel))
-    expect($('.discovery-edit-panel')).not.toBeNull()
+    expect($('.workspace__brief')).not.toBeNull()
     expect(handlers.onRunSearch).not.toHaveBeenCalled()
   })
 
