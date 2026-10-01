@@ -513,7 +513,7 @@ def run_search_pipeline(
         _persist(status=STATUS_RUNNING, candidates=admitted, explanations=explanations, evidence=evidence, candidate_states=candidate_states)
         logger.info("[SEARCH] Admitted into workspace | search_id=%s admitted=%s", search_id, len(admitted))
 
-        # --- Enrichment budget (HARVEST_ENRICHMENT_TOP_N, unchanged=15) is
+        # --- Enrichment budget (HARVEST_ENRICHMENT_TOP_N, default=25) is
         # a slice of the ADMITTED workspace, never the full discovery pool. ---
         harvest_slice = admitted[: harvest_enrichment_service.top_n]
         harvest_slice_ids = {_candidate_key(c) for c in harvest_slice if _candidate_key(c)}

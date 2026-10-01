@@ -237,9 +237,15 @@ class CrustDataProvider(BaseProvider):
                 [search.employment_type],
             )
 
+        # Scope the target/preferred-companies filter to the candidate's
+        # CURRENT employer (`.current.company_name`), the same way the
+        # exclude filter below does. The unscoped `.company_name` field
+        # matches anyone who EVER worked at a target company across their
+        # whole career, which surfaced non-current employees as if they
+        # were insiders at a target firm.
         self._append_condition(
             conditions,
-            "experience.employment_details.company_name",
+            "experience.employment_details.current.company_name",
             "in",
             self._clean_string_values(search.preferred_companies),
         )

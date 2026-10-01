@@ -179,8 +179,10 @@ def test_build_payload_maps_richer_search_query_to_crustdata_filters() -> None:
         condition == {"field": "years_of_experience_raw", "type": "=<", "value": 10}
         for condition in filters["conditions"]
     )
+    # Target/preferred companies are scoped to the CURRENT employer, never
+    # the unscoped field that also matches past employers.
     assert any(
-        condition == {"field": "experience.employment_details.company_name", "type": "in", "value": ["OpenAI"]}
+        condition == {"field": "experience.employment_details.current.company_name", "type": "in", "value": ["OpenAI"]}
         for condition in filters["conditions"]
     )
     assert any(
@@ -210,6 +212,27 @@ def test_build_payload_title_exclusion_only_scopes_current_title_not_past() -> N
             assert condition["field"] == "experience.employment_details.current.title"
     assert not any(condition.get("field") == "experience.employment_details.past.title" for condition in filters["conditions"])
     assert not any(condition.get("field") == "experience.employment_details.title" for condition in filters["conditions"])
+
+
+def test_build_payload_preferred_companies_only_scopes_current_employer_not_past() -> None:
+    # A candidate who merely worked at a target company at SOME point in
+    # their career (but is not there now) must not be matched by the
+    # target/preferred-companies filter — it is scoped to the current
+    # employer only, mirroring the exclude-companies filter. The unscoped
+    # `experience.employment_details.company_name` field (which also matches
+    # past employers) must never appear.
+    provider = CrustDataProvider()
+    payload = provider._build_payload(SearchQuery(preferred_companies=["Morae", "UnitedLex"]))
+    filters = payload["filters"]
+
+    assert {
+        "field": "experience.employment_details.current.company_name",
+        "type": "in",
+        "value": ["Morae", "UnitedLex"],
+    } in filters["conditions"]
+    assert not any(
+        condition.get("field") == "experience.employment_details.company_name" for condition in filters["conditions"]
+    )
 
 
 def test_build_payload_geo_distance_radius() -> None:
