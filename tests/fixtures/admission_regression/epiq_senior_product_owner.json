@@ -1,0 +1,239 @@
+{
+  "jd_id": "epiq_senior_product_owner",
+  "source": "real",
+  "source_search_id": "42f8cbd4-222f-426e-b62a-5b35a09712c3",
+  "description": "Real Epiq Senior Product Owner run (Hyderabad/hybrid, 7+ yrs). Anchor case: six level_fit==above candidates were admitted including a Lead Product Manager at rank 4; 42 candidates tied at the 2.0 cutoff for 25 slots. No below-level and no sub-floor candidates present in this pool.",
+  "intent": {
+    "title": "Product Owner",
+    "seniority": "senior",
+    "minimum_years": 7
+  },
+  "rules": "DRAFT (awaiting user tweaks): level_fit above/below -> exclude; experience_floor False -> exclude; unclear/aligned -> admit; level_fit null -> admit (no target seniority).",
+  "candidates": [
+    {
+      "ref": "Product Manager",
+      "current_seniority": "Entry Level Manager",
+      "level_fit": "unclear",
+      "experience_floor": true,
+      "baseline_score": 7.3,
+      "expected": "admit",
+      "expected_reason": null
+    },
+    {
+      "ref": "Product Manager",
+      "current_seniority": "Entry Level Manager",
+      "level_fit": "unclear",
+      "experience_floor": true,
+      "baseline_score": 6.6,
+      "expected": "admit",
+      "expected_reason": null
+    },
+    {
+      "ref": "Product Owner",
+      "current_seniority": "Owner / Partner",
+      "level_fit": "unclear",
+      "experience_floor": true,
+      "baseline_score": 5.0,
+      "expected": "admit",
+      "expected_reason": null
+    },
+    {
+      "ref": "Lead Product Manager",
+      "current_seniority": "Entry Level Manager",
+      "level_fit": "above",
+      "experience_floor": true,
+      "baseline_score": 4.5,
+      "expected": "exclude",
+      "expected_reason": "level_above_target"
+    },
+    {
+      "ref": "Team Lead",
+      "current_seniority": "Senior",
+      "level_fit": "above",
+      "experience_floor": true,
+      "baseline_score": 3.6,
+      "expected": "exclude",
+      "expected_reason": "level_above_target"
+    },
+    {
+      "ref": "Senior Product Manager",
+      "current_seniority": "Entry Level Manager",
+      "level_fit": "aligned",
+      "experience_floor": true,
+      "baseline_score": 3.5,
+      "expected": "admit",
+      "expected_reason": null
+    },
+    {
+      "ref": "Senior Legal Associate",
+      "current_seniority": "Senior",
+      "level_fit": "aligned",
+      "experience_floor": true,
+      "baseline_score": 3.5,
+      "expected": "admit",
+      "expected_reason": null
+    },
+    {
+      "ref": "Senior Technical Architect",
+      "current_seniority": "Senior",
+      "level_fit": "aligned",
+      "experience_floor": true,
+      "baseline_score": 3.5,
+      "expected": "admit",
+      "expected_reason": null
+    },
+    {
+      "ref": "Manage Product Development",
+      "current_seniority": "Entry Level",
+      "level_fit": "unclear",
+      "experience_floor": true,
+      "baseline_score": 3.5,
+      "expected": "admit",
+      "expected_reason": null
+    },
+    {
+      "ref": "Senior Engineering Lead",
+      "current_seniority": "Senior",
+      "level_fit": "above",
+      "experience_floor": true,
+      "baseline_score": 3.3,
+      "expected": "exclude",
+      "expected_reason": "level_above_target"
+    },
+    {
+      "ref": "Senior Project Manager",
+      "current_seniority": "Entry Level Manager",
+      "level_fit": "aligned",
+      "experience_floor": true,
+      "baseline_score": 2.6,
+      "expected": "admit",
+      "expected_reason": null
+    },
+    {
+      "ref": "Lead \u2013 Strategic Projects & Legal Operations, Legal Innovation Hub, S&L",
+      "current_seniority": "Senior",
+      "level_fit": "above",
+      "experience_floor": true,
+      "baseline_score": 2.6,
+      "expected": "exclude",
+      "expected_reason": "level_above_target"
+    },
+    {
+      "ref": "Senior Manager",
+      "current_seniority": "Experienced Manager",
+      "level_fit": "aligned",
+      "experience_floor": true,
+      "baseline_score": 2.0,
+      "expected": "admit",
+      "expected_reason": null
+    },
+    {
+      "ref": "Senior Specialist",
+      "current_seniority": "Senior",
+      "level_fit": "aligned",
+      "experience_floor": true,
+      "baseline_score": 2.0,
+      "expected": "admit",
+      "expected_reason": null
+    },
+    {
+      "ref": "Project Lead  - eDiscovery & Data Breach",
+      "current_seniority": "Senior",
+      "level_fit": "above",
+      "experience_floor": true,
+      "baseline_score": 2.0,
+      "expected": "exclude",
+      "expected_reason": "level_above_target"
+    },
+    {
+      "ref": "Manager",
+      "current_seniority": "Entry Level Manager",
+      "level_fit": "aligned",
+      "experience_floor": true,
+      "baseline_score": 2.0,
+      "expected": "admit",
+      "expected_reason": null
+    },
+    {
+      "ref": "Senior Manager",
+      "current_seniority": "Experienced Manager",
+      "level_fit": "aligned",
+      "experience_floor": true,
+      "baseline_score": 2.0,
+      "expected": "admit",
+      "expected_reason": null
+    },
+    {
+      "ref": "Volunteer Experience",
+      "current_seniority": "Entry Level",
+      "level_fit": "unclear",
+      "experience_floor": true,
+      "baseline_score": 2.0,
+      "expected": "admit",
+      "expected_reason": null
+    },
+    {
+      "ref": "Freelance",
+      "current_seniority": "Entry Level",
+      "level_fit": "above",
+      "experience_floor": true,
+      "baseline_score": 2.0,
+      "expected": "exclude",
+      "expected_reason": "level_above_target"
+    },
+    {
+      "ref": "Project Manager",
+      "current_seniority": "Entry Level Manager",
+      "level_fit": "aligned",
+      "experience_floor": true,
+      "baseline_score": 2.0,
+      "expected": "admit",
+      "expected_reason": null
+    },
+    {
+      "ref": "Program Manager | AI & Automation-Led Learning Solutions | Curriculum Development | Enterprise-Scale Delivery | Learning & Development",
+      "current_seniority": null,
+      "level_fit": "unclear",
+      "experience_floor": true,
+      "baseline_score": 2.0,
+      "expected": "admit",
+      "expected_reason": null
+    },
+    {
+      "ref": "Senior Project Manager",
+      "current_seniority": "Entry Level Manager",
+      "level_fit": "aligned",
+      "experience_floor": true,
+      "baseline_score": 2.0,
+      "expected": "admit",
+      "expected_reason": null
+    },
+    {
+      "ref": "Project Manager",
+      "current_seniority": "Entry Level Manager",
+      "level_fit": "unclear",
+      "experience_floor": true,
+      "baseline_score": 2.0,
+      "expected": "admit",
+      "expected_reason": null
+    },
+    {
+      "ref": "Associate Manager - Contact Management",
+      "current_seniority": "Entry Level Manager",
+      "level_fit": "aligned",
+      "experience_floor": true,
+      "baseline_score": 2.0,
+      "expected": "admit",
+      "expected_reason": null
+    },
+    {
+      "ref": "Senior Software Engineer QA",
+      "current_seniority": "Senior",
+      "level_fit": "aligned",
+      "experience_floor": true,
+      "baseline_score": 1.0,
+      "expected": "admit",
+      "expected_reason": null
+    }
+  ]
+}

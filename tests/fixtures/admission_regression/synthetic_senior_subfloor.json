@@ -1,0 +1,14 @@
+{
+  "jd_id": "synthetic_senior_subfloor",
+  "source": "synthetic",
+  "description": "A Senior Backend Engineer search (6+ yrs) where the distinguishing signal is the experience floor, not level. Several candidates read as level-aligned or unclear but their dated roles fall short of 6 years. Isolates the below_experience_floor branch, and confirms experience_floor==None (unknown) never gates.",
+  "intent": {"title": "Senior Backend Engineer", "seniority": "senior", "minimum_years": 6},
+  "rules": "DRAFT: experience_floor False -> exclude; experience_floor None (unknown) -> admit; level unclear/aligned -> admit.",
+  "candidates": [
+    {"ref": "Senior Backend Engineer, 9 dated years", "level_fit": "aligned", "experience_floor": true, "expected": "admit", "expected_reason": null},
+    {"ref": "Backend Engineer, 3 dated years", "level_fit": "unclear", "experience_floor": false, "expected": "exclude", "expected_reason": "below_experience_floor"},
+    {"ref": "Senior Engineer by title but only 4 dated years", "level_fit": "aligned", "experience_floor": false, "expected": "exclude", "expected_reason": "below_experience_floor"},
+    {"ref": "Engineer, dated roles undated/unknown span", "level_fit": "unclear", "experience_floor": null, "expected": "admit", "expected_reason": null},
+    {"ref": "Senior Engineer, 7 dated years", "level_fit": "aligned", "experience_floor": true, "expected": "admit", "expected_reason": null}
+  ]
+}

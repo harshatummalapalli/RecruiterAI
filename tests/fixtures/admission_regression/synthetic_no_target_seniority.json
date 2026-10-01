@@ -1,0 +1,13 @@
+{
+  "jd_id": "synthetic_no_target_seniority",
+  "source": "synthetic",
+  "description": "A search that states NO target seniority (e.g. 'Backend Engineer' with no level). level_fit is null for everyone, so the gate must NOT fire on anyone — a guard that the eligibility gate does not over-reach when there is no level to be eligible against. Even an obvious Director must be admitted here, because the search never asked for a level.",
+  "intent": {"title": "Backend Engineer", "seniority": null, "minimum_years": 0},
+  "rules": "DRAFT: level_fit null -> admit (no target seniority). The gate is inert for this JD by design.",
+  "candidates": [
+    {"ref": "Backend Engineer", "level_fit": null, "experience_floor": null, "expected": "admit", "expected_reason": null},
+    {"ref": "Senior Backend Engineer", "level_fit": null, "experience_floor": true, "expected": "admit", "expected_reason": null},
+    {"ref": "Director of Engineering (no level requested, so not gated)", "level_fit": null, "experience_floor": true, "expected": "admit", "expected_reason": null},
+    {"ref": "Junior Developer (no level requested, so not gated)", "level_fit": null, "experience_floor": true, "expected": "admit", "expected_reason": null}
+  ]
+}

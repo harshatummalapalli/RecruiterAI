@@ -1,0 +1,18 @@
+{
+  "jd_id": "synthetic_lead_mixed",
+  "source": "synthetic",
+  "description": "A Lead Data Engineer search (8+ yrs). The richest mixed case: confident above (Director/VP), confident below (mid IC), unclear (unreliable signal), aligned, and a sub-floor candidate. Exercises every gate branch Epiq's real pool does not. Expected verdicts follow the DRAFT rules.",
+  "intent": {"title": "Lead Data Engineer", "seniority": "lead", "minimum_years": 8},
+  "rules": "DRAFT (awaiting user tweaks): level_fit above/below -> exclude; experience_floor False -> exclude; unclear/aligned -> admit.",
+  "candidates": [
+    {"ref": "Lead Data Engineer", "level_fit": "aligned", "experience_floor": true, "expected": "admit", "expected_reason": null},
+    {"ref": "Staff Data Engineer (headline says Lead)", "level_fit": "aligned", "experience_floor": true, "expected": "admit", "expected_reason": null},
+    {"ref": "VP of Data", "level_fit": "above", "experience_floor": true, "expected": "exclude", "expected_reason": "level_above_target"},
+    {"ref": "Director of Data Engineering", "level_fit": "above", "experience_floor": true, "expected": "exclude", "expected_reason": "level_above_target"},
+    {"ref": "Data Engineer (mid)", "level_fit": "below", "experience_floor": true, "expected": "exclude", "expected_reason": "level_below_target"},
+    {"ref": "Junior Data Engineer", "level_fit": "below", "experience_floor": false, "expected": "exclude", "expected_reason": "level_below_target"},
+    {"ref": "Engineer (title states no level, conflicting headline)", "level_fit": "unclear", "experience_floor": true, "expected": "admit", "expected_reason": null},
+    {"ref": "Consultant (CrustData seniority 'Senior', real level ambiguous)", "level_fit": "unclear", "experience_floor": true, "expected": "admit", "expected_reason": null},
+    {"ref": "Analytics Lead with only 5 dated years", "level_fit": "aligned", "experience_floor": false, "expected": "exclude", "expected_reason": "below_experience_floor"}
+  ]
+}

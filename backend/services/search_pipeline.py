@@ -40,6 +40,7 @@ from backend.models.search_intent import SearchIntent
 from backend.models.search_plan import SearchPlan
 from backend.providers.base import BaseProvider
 from backend.providers.harvest import HarvestEnrichmentService
+from backend.services.admission import partition_by_eligibility
 from backend.services.candidate_evidence_builder import build_candidate_evidence
 from backend.services import candidate_presentation as presentation_rules
 from backend.services.candidate_merger import CandidateMerger
@@ -466,17 +467,53 @@ def run_search_pipeline(
             logger.info("[SEARCH] Feedback tie-break applied | search_id=%s dimensions=%s", search_id, guidance.dimensions)
         logger.info("[SEARCH] Baseline ranking complete | search_id=%s count=%s", search_id, len(ranked_candidates))
 
-        # --- Admission: top N by the EXISTING baseline rank. No new score
-        # threshold — per product decision, a positional cut on the
-        # already-validated ranking, nothing else. ---
-        admitted = ranked_candidates[:target_pool_size]
-        funnel["selected"] = len(admitted)
+        # --- Admission: top N by the EXISTING baseline rank, then a
+        # categorical eligibility gate (Phase 1a) applied WITHIN that slice.
+        # The positional cut answers "which are best"; the gate answers "which
+        # are even a legitimate match for the level asked for" — two different
+        # questions the old pure positional cut conflated. The gate hard-
+        # excludes a candidate whose level_fit is a confident above/below the
+        # target seniority, or who is below the experience floor; the pool
+        # SHRINKS rather than backfilling from further down the ranking (per
+        # product decision: a Senior search should not surface a confirmed
+        # Director even to fill a slot). It never fires on an "unclear" level
+        # (CrustData's seniority signal is independently unreliable — see
+        # candidate_evidence_builder._classify_level) nor when the search
+        # states no target seniority. Exclusions are recorded with reasons in
+        # diagnostics below — hard-excluded from the pool, never silently. ---
+        positional_slice = ranked_candidates[:target_pool_size]
+        funnel["selected"] = len(positional_slice)
+
+        def _alignment_signals(candidate: Candidate) -> tuple:
+            alignment = build_candidate_evidence(candidate, intent).role_alignment
+            return alignment.level_fit, alignment.experience_floor
+
+        gate_result = partition_by_eligibility(positional_slice, _alignment_signals)
+        admitted = gate_result.eligible
+        gate_exclusions = [
+            {
+                "candidate_id": _candidate_key(e.candidate) or None,
+                "name": getattr(e.candidate, "name", None),
+                "title": getattr(e.candidate, "title", None),
+                "reason": e.reason,
+            }
+            for e in gate_result.excluded
+        ]
+        if gate_exclusions:
+            logger.info(
+                "[SEARCH] Eligibility gate excluded %s of %s positional-slice candidates | search_id=%s",
+                len(gate_exclusions), len(positional_slice), search_id,
+            )
+
+        # Positional-boundary diagnostics describe the baseline cut itself and
+        # are computed against the full positional slice, independent of how
+        # many the gate then removed.
         baseline_scores = [c.final_score or 0.0 for c in ranked_candidates]
-        cutoff_score = baseline_scores[len(admitted) - 1] if admitted else 0.0
+        cutoff_score = baseline_scores[len(positional_slice) - 1] if positional_slice else 0.0
         # Diagnostic only: how many candidates just outside the cut scored
         # within 1.0 of the last admitted one, the data needed to decide
         # later whether retrieving more than 50 would change who is shown.
-        near_miss_count = sum(1 for score in baseline_scores[len(admitted): len(admitted) + 10] if score >= cutoff_score - 1.0)
+        near_miss_count = sum(1 for score in baseline_scores[len(positional_slice): len(positional_slice) + 10] if score >= cutoff_score - 1.0)
         # Diagnostic only: how many retrieved candidates share the cutoff's
         # baseline score. When this is large, who lands inside the 25 was
         # decided by tie-breaking on thin, pre-read evidence, not by merit.
@@ -760,7 +797,7 @@ def run_search_pipeline(
                 },
                 "evidence_coverage": evidence_coverage,
                 "ranking": ranking_rows,
-                "admission": {"near_miss_just_outside_cut": near_miss_count, "tied_at_cutoff_baseline_score": tied_at_cutoff, "admitted": len(admitted), "final_candidate_count": len(admitted)},
+                "admission": {"near_miss_just_outside_cut": near_miss_count, "tied_at_cutoff_baseline_score": tied_at_cutoff, "positional_slice": len(positional_slice), "gate_excluded": len(gate_exclusions), "gate_exclusions": gate_exclusions, "admitted": len(admitted), "final_candidate_count": len(admitted)},
                 "total_search_elapsed_ms": round((time.perf_counter() - started_at) * 1000, 1),
             },
         )
