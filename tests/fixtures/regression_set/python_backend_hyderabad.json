@@ -3,7 +3,8 @@
   "source": "validated-live-2026-10-01",
   "raw_brief": "Software Engineers proficient in Python, FastAPI and/or Django who have been a Java developer earlier or worked extensively on Java but presently working on Python. Experience 5-8 years. Education B.Tech OR B.E OR M.Tech in Computer Science, IT, Data Science OR AI. Currently at companies 5000+ employees. Location Hyderabad, Telangana, India.",
   "archetype": {"value": "skill_defined", "confidence": "high", "rationale": "Title ('Software Engineer') is weak; Python/Java/framework stack defines the person. Gate on a broad engineering title family, carry the language as keyword retrieval."},
-  "role_family": ["Software Engineer", "Software Developer", "Backend Engineer", "Backend Developer", "Python Developer", "Full Stack Developer", "Full Stack Engineer", "Applications Developer"],
+  "role_family": ["Software Engineer"],
+  "retrieval_expectations": {"title_family": ["Software Engineer", "Backend Engineer", "Backend Developer", "Python Developer"]},
   "logical_intent": {
     "all_of": [
       {"leaf": {"signal": "location", "any_of": ["Hyderabad, Telangana, India"]}},
@@ -30,7 +31,6 @@
     {"name": "education stream CS/IT/DS/AI", "type": "education", "strength": "required", "routing": "enforce_but_not_verifiable", "provider_field": "education.schools.field_of_study", "note": "filterable server-side but NOT returned (response-gated) -> enforce at retrieval, disclose cannot-display, or verify via Harvest"},
     {"name": "company size 5000+ (current)", "type": "company_scale", "temporal": "current", "strength": "required", "routing": "enforce_with_warning", "provider_field": "current.company_headcount_latest", "data_confidence": "unknown", "note": "verified filter; completeness unestablished -> warn + verify downstream where possible"}
   ],
-  "expected_title_family": ["Software Engineer", "Software Developer", "Backend Engineer", "Backend Developer", "Python Developer", "Full Stack Developer", "Full Stack Engineer", "Applications Developer"],
   "expected_filter_tree": {
     "op": "and",
     "conditions": [

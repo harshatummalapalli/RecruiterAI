@@ -129,7 +129,9 @@ def test_python_brief_semantics() -> None:
 def test_epiq_brief_semantics() -> None:
     i = _golden("epiq_product_owner")
     assert i.role_archetype.value in {"title_defined", "hybrid"}
-    assert set(i.role_family) == {"Product Owner", "Product Manager", "Product Lead"}
+    # role_family is SOURCE only now (seniority stripped); the broad retrieval
+    # family (PO/PM/Product Lead) is a Phase-3 compiler responsibility.
+    assert set(i.role_family) == {"Product Owner"}
     # The load-bearing lesson: target companies are PREFERRED, never required.
     assert i.companies, "target companies should be captured"
     assert all(c.strength == "preferred" for c in i.companies)
@@ -159,13 +161,17 @@ def test_no_provider_mechanics_leak_is_rejected() -> None:
         parse_structured_intent(json.dumps(bad))
 
 
-def test_role_family_matches_regression_fixture_title_family() -> None:
-    """The structured intent's role_family must agree with the Phase-0 regression
-    suite's expected_title_family — the two artifacts cannot drift apart."""
+def test_role_family_matches_regression_fixture_source_role() -> None:
+    """The structured intent's role_family (SOURCE) must agree with the Phase-0
+    regression fixture's role_family — both are the role the recruiter expressed,
+    NOT the broad retrieval family (which is retrieval_expectations.title_family,
+    a Phase-3 compiler artifact)."""
     for name in ("python_backend_hyderabad", "epiq_product_owner"):
         intent = _golden(name)
         reg = json.loads((REGRESSION_DIR / f"{name}.json").read_text(encoding="utf-8"))
-        assert set(intent.role_family) == set(reg["expected_title_family"]), f"{name}: role_family drift"
+        assert set(intent.role_family) == set(reg["role_family"]), f"{name}: source role drift"
+        # and the source role must sit within the approved retrieval family
+        assert set(intent.role_family) <= set(reg["retrieval_expectations"]["title_family"])
 
 
 def test_golden_python_satisfies_all_four_invariants() -> None:

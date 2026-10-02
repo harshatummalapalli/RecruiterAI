@@ -4,7 +4,7 @@
     "confidence": 0.85,
     "rationale": "'Product Owner' carries strong occupational meaning and should drive the search; the stack is secondary."
   },
-  "role_family": ["Product Owner", "Product Manager", "Product Lead"],
+  "role_family": ["Product Owner"],
   "seniority": {"value": "Senior", "strength": "required"},
   "companies": [
     {"name": "Arete", "relationship": "any", "strength": "preferred"},

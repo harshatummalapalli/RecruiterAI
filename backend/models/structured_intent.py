@@ -149,6 +149,11 @@ class StructuredHiringIntent(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     role_archetype: RoleArchetype
+    # The role(s) the recruiter ACTUALLY expressed (source), normalized only for
+    # wording with seniority stripped into `seniority`. This is NOT the broad
+    # retrieval title family — the compiler (Phase 3) expands this into an
+    # approved retrieval family via the role-family taxonomy. Extraction
+    # preserves meaning; compilation expands representation.
     role_family: List[str] = Field(min_length=1)
     seniority: Optional[Seniority] = None
     skills: List[SkillReq] = Field(default_factory=list)

@@ -66,8 +66,9 @@ def test_suite_is_not_empty_and_has_the_two_anchors() -> None:
 @pytest.mark.parametrize("fx", FIXTURES, ids=[f["jd_id"] for f in FIXTURES])
 def test_fixture_is_well_formed(fx: Dict[str, Any]) -> None:
     for key in ("jd_id", "raw_brief", "archetype", "role_family", "logical_intent",
-                "requirements", "expected_title_family", "expected_filter_tree"):
+                "requirements", "retrieval_expectations", "expected_filter_tree"):
         assert key in fx, f"{fx['_file']}: missing '{key}'"
+    assert fx["retrieval_expectations"].get("title_family"), f"{fx['_file']}: missing retrieval title_family"
 
     assert fx["archetype"]["value"] in VALID_ARCHETYPES, f"{fx['_file']}: bad archetype"
     assert isinstance(fx["archetype"].get("confidence"), str) and fx["archetype"].get("rationale"), \
@@ -98,6 +99,29 @@ def test_logical_intent_respects_two_level_cap(fx: Dict[str, Any]) -> None:
             assert set(inner.keys()) <= {"all_of", "any_of"}, f"{fx['_file']}: group must be all_of/any_of"
             for leaf in inner.get("all_of", []) + inner.get("any_of", []):
                 assert "group" not in leaf, f"{fx['_file']}: nesting exceeds two levels (scoping guard)"
+
+
+@pytest.mark.parametrize("fx", FIXTURES, ids=[f["jd_id"] for f in FIXTURES])
+def test_filter_tree_titles_come_from_retrieval_family(fx: Dict[str, Any]) -> None:
+    """Phase-3 contract: the compiled title filter must draw ONLY from the
+    approved retrieval title family — the compiler expands representation
+    (source role -> retrieval family), it does not invent titles freehand."""
+    fam = {t.lower() for t in fx["retrieval_expectations"]["title_family"]}
+    source = {t.lower() for t in fx["role_family"]}
+    assert source <= fam, f"{fx['_file']}: source role_family must be within the retrieval family"
+
+    title_values = []
+
+    def walk(node: Dict[str, Any]) -> None:
+        if "op" in node:
+            for c in node["conditions"]:
+                walk(c)
+        elif "current.title" in str(node.get("field", "")):
+            title_values.append(str(node["value"]).lower())
+
+    walk(fx["expected_filter_tree"])
+    for v in title_values:
+        assert v in fam, f"{fx['_file']}: filter title {v!r} not in approved retrieval family {fam}"
 
 
 @pytest.mark.parametrize("fx", FIXTURES, ids=[f["jd_id"] for f in FIXTURES])

@@ -4,7 +4,7 @@
     "confidence": 0.9,
     "rationale": "The title 'Software Engineer' is generic; the Python/Java/framework stack defines the person."
   },
-  "role_family": ["Software Engineer", "Software Developer", "Backend Engineer", "Backend Developer", "Python Developer", "Full Stack Developer", "Full Stack Engineer", "Applications Developer"],
+  "role_family": ["Software Engineer"],
   "skills": [
     {"name": "Python", "relationship": "current", "strength": "required"},
     {"name": "Java", "relationship": "past", "strength": "required"}
