@@ -40,6 +40,30 @@ COMPILER_VERSION = "v1-2026-10-02"
 
 _HARD_ROUTES = {"enforce", "enforce_with_warning", "enforce_but_not_verifiable"}
 
+# Degree surface-form normalization: the SAME degree, the strings providers
+# actually store. Whole-word "(.)" means "B.Tech" never matches "Bachelor of
+# Technology", so a narrow literal list misses most real records (verified live:
+# 3 vs 39). This expands REPRESENTATION, not meaning; scoped to the engineering/
+# tech degrees (so "B.E" is read as Bachelor of Engineering, as the role implies).
+# An unlisted degree is used verbatim (no expansion).
+_DEGREE_SURFACE_FORMS = {
+    "b.tech": ["B.Tech", "Bachelor of Technology"],
+    "btech": ["B.Tech", "Bachelor of Technology"],
+    "b.e": ["B.E", "Bachelor of Engineering"],
+    "be": ["B.E", "Bachelor of Engineering"],
+    "m.tech": ["M.Tech", "Master of Technology"],
+    "mtech": ["M.Tech", "Master of Technology"],
+}
+
+
+def _expand_degrees(degrees):
+    out = []
+    for d in degrees:
+        for v in _DEGREE_SURFACE_FORMS.get(d.strip().lower(), [d]):
+            if v not in out:
+                out.append(v)
+    return out
+
 
 @dataclass
 class CompiledConstraint:
@@ -194,7 +218,7 @@ def compile_intent(intent: StructuredHiringIntent) -> CompiledPlan:
     if intent.education:
         degree_route = hard_ok(_DEGREE, intent.education.strength) if intent.education.degrees else None
         stream_route = hard_ok(_STREAM, intent.education.strength) if intent.education.streams else None
-        degree_grp = _or([_leaf(_DEGREE, "(.)", d) for d in intent.education.degrees]) if (degree_route in _HARD_ROUTES) else None
+        degree_grp = _or([_leaf(_DEGREE, "(.)", d) for d in _expand_degrees(intent.education.degrees)]) if (degree_route in _HARD_ROUTES) else None
         stream_grp = _or([_leaf(_STREAM, "(.)", s) for s in intent.education.streams]) if (stream_route in _HARD_ROUTES) else None
         members = [g for g in (degree_grp, stream_grp) if g]
         if len(members) >= 2:

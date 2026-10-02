@@ -323,12 +323,27 @@
               {
                 "field": "education.schools.degree",
                 "type": "(.)",
+                "value": "Bachelor of Technology"
+              },
+              {
+                "field": "education.schools.degree",
+                "type": "(.)",
                 "value": "B.E"
               },
               {
                 "field": "education.schools.degree",
                 "type": "(.)",
+                "value": "Bachelor of Engineering"
+              },
+              {
+                "field": "education.schools.degree",
+                "type": "(.)",
                 "value": "M.Tech"
+              },
+              {
+                "field": "education.schools.degree",
+                "type": "(.)",
+                "value": "Master of Technology"
               }
             ]
           },
