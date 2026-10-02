@@ -23,6 +23,11 @@ output/searches/
 output/intake_sessions/
 # Experiment artifacts (raw provider data / candidate PII)
 output/experiments/
+# Shadow-mode compiler divergence logs (candidate-derived) and confirmation store (real PII)
+output/compiler_shadow/
+output/confirmations/
+# Local dev server logs
+*_dev.log
 
 # Local record-preview data (real candidate profiles)
 output/record_preview/
