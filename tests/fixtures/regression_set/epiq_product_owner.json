@@ -1,7 +1,7 @@
 {
   "jd_id": "epiq_product_owner",
   "source": "validated-live-2026-10-01",
-  "raw_brief": "Senior Product Owner at Epiq (Hyderabad, hybrid), 7+ years. Capability signals: product vision & strategy, backlog ownership & Agile delivery, hands-on AI fluency, stakeholder engagement, quality/risk, AI/ML experience, legal-tech domain. Recruiter listed 13 legal-services target companies; exclude current Epiq employees.",
+  "raw_brief": "Senior Product Owner at Epiq, based in Hyderabad, Telangana, India (hybrid). 7+ years of experience. The candidate must demonstrate product vision & strategy, backlog ownership & Agile delivery, and hands-on AI fluency. Stakeholder engagement and quality & risk management are valuable. AI/ML product experience and legal-technology domain knowledge are a plus. Target companies (people from these are preferred): Arete, QuisLex, UnitedLex, Consilio, Elevate, Integreon, KLDiscovery, Aeren LPO, Lighthouse, Morae, Relativity, EXO Edge, Iota Analytics. Do not consider people currently employed at Epiq.",
   "archetype": {"value": "title_defined", "confidence": "high", "rationale": "'Product Owner' carries strong occupational meaning; the title family is the primary gate and capability signals validate via evidence. Proven by the role-first experiment (0 -> 2.0-tail, 95-100% product)."},
   "role_family": ["Product Owner", "Product Manager", "Product Lead"],
   "logical_intent": {

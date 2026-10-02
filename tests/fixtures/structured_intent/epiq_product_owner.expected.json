@@ -14,7 +14,12 @@
     {"name": "Elevate", "relationship": "any", "strength": "preferred"},
     {"name": "Integreon", "relationship": "any", "strength": "preferred"},
     {"name": "KLDiscovery", "relationship": "any", "strength": "preferred"},
-    {"name": "Morae", "relationship": "any", "strength": "preferred"}
+    {"name": "Aeren LPO", "relationship": "any", "strength": "preferred"},
+    {"name": "Lighthouse", "relationship": "any", "strength": "preferred"},
+    {"name": "Morae", "relationship": "any", "strength": "preferred"},
+    {"name": "Relativity", "relationship": "any", "strength": "preferred"},
+    {"name": "EXO Edge", "relationship": "any", "strength": "preferred"},
+    {"name": "Iota Analytics", "relationship": "any", "strength": "preferred"}
   ],
   "experience": {"minimum_years": 7, "maximum_years": null, "strength": "required"},
   "location": {"entries": ["Hyderabad, Telangana, India"], "strength": "required"},

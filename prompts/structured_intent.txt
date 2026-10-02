@@ -19,7 +19,7 @@ Return a single JSON object with exactly these keys:
 
 Omit any key that the brief does not mention (except role_archetype and role_family, which are always required). Do not invent sections.
 
-RULES — these are hiring-intent semantics, not search mechanics:
+RULES — these are hiring-intent semantics, not search mechanics. Two principles govern everything below: NEVER LOSE a stated requirement or option, and NEVER INVENT one the source does not support. You may normalize wording; you may not manufacture or drop meaning.
 
 1. ROLE ARCHETYPE. Classify how the role is defined:
    - "title_defined": the title itself carries strong occupational meaning (e.g. Product Owner, Recruiter, Accountant). The title family will drive the search.
@@ -27,32 +27,35 @@ RULES — these are hiring-intent semantics, not search mechanics:
    - "hybrid": both matter (e.g. "AI Product Manager").
    Give a confidence in [0,1] and a ONE-SENTENCE rationale. Do not write a long explanation.
 
-2. ROLE FAMILY. The set of plausible job titles that mean the same role, broad enough to catch real people. For a skill_defined role, use the broad engineering/discipline family (e.g. Software Engineer, Backend Engineer, Backend Developer), NOT the skill as a title.
+2. ROLE FAMILY — normalize wording, do not manufacture semantics. The set of plausible job titles that mean the same role. For a skill_defined role, use the broad engineering/discipline family (e.g. Software Engineer, Backend Engineer, Backend Developer), NOT the skill as a title. Do NOT introduce seniority levels, title variants, or adjacent roles the source does not support. "Product Owner / Product Manager / Product Lead" normalizes to exactly those three — never "Senior Product Owner" unless the source states that seniority.
 
-3. REQUIRED vs PREFERRED — never upgrade a preference into a requirement.
-   - "required": explicitly mandatory ("must", "required", a stated minimum, "only candidates who...").
-   - "preferred": "preferably", "nice to have", "a plus", "ideally", "bonus".
-   - "context": descriptive flavor that shouldn't gate anyone.
-   Example: "Python and preferably FastAPI" -> Python required, FastAPI preferred. "Java is a plus" -> Java preferred.
+3. REQUIRED vs PREFERRED — strength is under-sensitive by default; correct for that.
+   - Mark "required" when the source presents the signal as a qualification the candidate is expected to possess. This includes explicit mandatory language ("must", "required", a stated minimum, "only candidates who...") AND strong qualification language: "proficient in", "strong experience with", "extensive experience in", "hands-on experience with", "expertise in", and equivalent formulations. A plainly stated qualification ("experience with X") is required when presented as an expectation.
+   - Mark "preferred" ONLY when the source explicitly weakens it: "preferred", "preferably", "nice to have", "a plus", "bonus", "ideally", or equivalent.
+   - Do NOT infer "preferred" merely because the source does not literally say "required".
+   Examples: "proficient in Python" -> required. "extensive experience with Java" -> required. "experience with Python" (as a qualification) -> required. "Python is a plus" -> preferred. "ideally FastAPI" -> preferred.
 
-4. TEMPORAL RELATIONSHIP — apply to skills, companies, and company_scale.
-   - "past": "previously", "earlier in career", "has been", "worked on ... earlier".
-   - "current": "currently", "presently", "now".
-   - "any": unspecified, or "at some point".
-   "Currently works at a 5000+ company" and "has worked at an enterprise" are DIFFERENT — encode the relationship faithfully.
+4. TEMPORAL RELATIONSHIP — apply to skills, companies, and company_scale. Determine it from the language surrounding the signal, not from the mere fact that the term appears.
+   - "current": "currently", "presently", "now", or the present-tense technical stack of the role.
+   - "past": "previously", "earlier", "earlier in career", "has been", "worked on ... earlier".
+   - "any": only when the source gives NO temporal evidence.
+   NEVER output "any" when the source provides enough evidence to choose "current" or "past". Example: "presently working on Python with Django/FastAPI, worked extensively on Java earlier" -> Python current, Django current, FastAPI current, Java past.
 
-5. SKILL GROUPING (two-level logic only).
-   - Independent required/preferred skills go in "skills".
-   - "X and/or Y" or "X or Y" goes in "skill_any_of" as an OR group.
-   - Do NOT build nested logic beyond this.
+5. OPTION CONSERVATION (two-level logic only). When the source presents alternatives in an OR/AND group, preserve EVERY semantically distinct stated option. Never silently drop one to simplify output or because another seems more common.
+   - "B.Tech / B.E / M.Tech" -> all three degrees. "CS, IT, Data Science or AI" -> all four streams.
+   - Independent skills go in "skills". "X and/or Y" / "X or Y" goes in "skill_any_of" as an OR group preserving both. A "skill_any_of" group MUST contain 2 or more alternatives — never a single skill (a lone skill always goes in "skills"). Do NOT build nested logic beyond this.
 
-6. COMPANIES. A named company the recruiter likes is usually "preferred" unless the brief clearly says the candidate must currently/previously work there. Never assume a listed company is mandatory. Capture relationship (current/past/any) faithfully.
+6. COMPANIES. A named company the recruiter likes is "preferred" unless the source clearly says the candidate must currently/previously work there. Never assume a listed company is mandatory. Capture every named company and its relationship (current/past/any) faithfully.
 
-7. EDUCATION. List the EXACT degrees and streams stated — never broaden them. "B.Tech or B.E in CS, IT, Data Science or AI" -> degrees:[B.Tech,B.E], streams:[Computer Science, Information Technology, Data Science, Artificial Intelligence]. Degrees are an OR set; streams are an OR set.
+7. EDUCATION. List the EXACT degrees and streams stated — never broaden and never drop (see Option Conservation). Degrees are an OR set; streams are an OR set.
 
 8. LOCATION. Multiple places ("Hyderabad or Pune") are OR entries. Use "City, State, Country" form where known.
 
-9. EVIDENCE SIGNALS. Capability/narrative requirements that describe what a good candidate demonstrates (e.g. "product vision", "backlog ownership", "microservices", "stakeholder engagement"). These are things to verify in a candidate's record — carry their strength, but they are NOT structural filters.
+9. SKILLS vs EVIDENCE SIGNALS — a sharp boundary.
+   - A "skill" is a named technical/professional COMPETENCY that can be searched for as a candidate attribute: Python, Java, FastAPI, Django, Kubernetes, SQL, Machine Learning.
+   - An "evidence signal" is a CAPABILITY, RESPONSIBILITY, OWNERSHIP, BEHAVIOR, or OUTCOME that must be demonstrated through a candidate's record: product vision, backlog ownership, stakeholder management, Agile delivery, owning product strategy, cross-functional leadership, AI fluency.
+   - Do NOT convert a capability/responsibility into a skill merely because it can be written as a noun phrase ("backlog ownership" is NOT a skill).
+   - A named methodology or domain may be a skill when the source clearly treats it as one; otherwise prefer evidence_signal for capability statements.
 
 10. NEVER output provider or database terms (no field names, no operators, no "filter"/"hard"/"relevance"/"retrieval"). If you are tempted to say how to search, stop — describe the meaning instead.
 

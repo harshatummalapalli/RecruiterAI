@@ -23,6 +23,86 @@ def _golden(name: str) -> StructuredHiringIntent:
     return parse_structured_intent((GOLDEN_DIR / f"{name}.expected.json").read_text(encoding="utf-8"))
 
 
+_SENIORITY_WORDS = ("senior", "junior", "principal", "staff", "lead ", "sr.", "sr ")
+
+
+def _all_skill_terms(i: StructuredHiringIntent):
+    names = {s.name.lower() for s in i.skills}
+    for g in i.skill_any_of:
+        names |= {n.lower() for n in g.any_of}
+    return names
+
+
+def python_invariant_violations(i: StructuredHiringIntent) -> list:
+    """The four invariants for the Python anchor. Shared by the golden test and
+    the live gate. Returns a list of human-readable violations (empty == pass)."""
+    v = []
+    # Invariant 2 — no invention: brief states no seniority.
+    if i.seniority is not None:
+        v.append(f"invented seniority {i.seniority.value!r} (brief states none)")
+    # Invariant 1 — no loss: all education options preserved.
+    if i.education:
+        if set(i.education.degrees) < {"B.Tech", "B.E", "M.Tech"}:
+            v.append(f"dropped a degree option: {i.education.degrees}")
+        if set(s.lower() for s in i.education.streams) < {"computer science", "information technology", "data science", "artificial intelligence"}:
+            v.append(f"dropped a stream option (e.g. IT): {i.education.streams}")
+    else:
+        v.append("education missing entirely")
+    # Invariant 1 — Django AND FastAPI both preserved.
+    terms = _all_skill_terms(i)
+    if "django" not in terms or "fastapi" not in terms:
+        v.append(f"lost Django/FastAPI: {terms}")
+    # Invariant 3 — temporal specificity + strength.
+    def find(name):
+        for s in i.skills:
+            if s.name.lower() == name:
+                return s
+        return None
+    py = find("python"); ja = find("java")
+    if not py or py.relationship != "current" or py.strength != "required":
+        v.append(f"Python must be current+required, got {py}")
+    if not ja or ja.relationship != "past" or ja.strength != "required":
+        v.append(f"Java must be past+required, got {ja}")
+    for g in i.skill_any_of:
+        if {n.lower() for n in g.any_of} == {"django", "fastapi"}:
+            if g.relationship != "current" or g.strength != "required":
+                v.append(f"Django/FastAPI must be current+required, got rel={g.relationship} str={g.strength}")
+    if i.company_scale and (i.company_scale.relationship != "current" or i.company_scale.minimum_employees != 5000):
+        v.append(f"company_scale must be current/5000, got {i.company_scale}")
+    # Invariant 4 — semantic routing: tech must be skills, not evidence.
+    ev = {e.name.lower() for e in i.evidence_signals}
+    if ev & {"python", "java", "django", "fastapi"}:
+        v.append(f"tech misrouted into evidence_signals: {ev}")
+    return v
+
+
+def epiq_invariant_violations(i: StructuredHiringIntent) -> list:
+    """The four invariants for the Epiq anchor."""
+    v = []
+    # Invariant 2 — no invention: role_family must not bake in seniority.
+    for t in i.role_family:
+        if any(w in t.lower() for w in ("senior", "junior", "principal", "sr.")):
+            v.append(f"role_family invented seniority: {t!r}")
+    if i.role_archetype.value not in {"title_defined", "hybrid"}:
+        v.append(f"archetype should be title_defined/hybrid, got {i.role_archetype.value}")
+    # Invariant 1 — no loss: all 13 target companies preserved, all preferred.
+    if len(i.companies) < 13:
+        v.append(f"lost target companies: {len(i.companies)}/13")
+    if any(c.strength != "preferred" for c in i.companies):
+        v.append("a target company was not 'preferred' (no fake requirement/boost)")
+    # Invariant 4 — semantic routing: product capabilities are evidence, not skills.
+    skill_terms = _all_skill_terms(i)
+    for cap in ("product vision", "backlog", "agile", "stakeholder", "fluency"):
+        if any(cap in s for s in skill_terms):
+            v.append(f"capability misrouted into skills: {cap!r}")
+    if not any("product vision" in e.name.lower() for e in i.evidence_signals):
+        v.append("product-vision capability not captured as an evidence signal")
+    # Epiq exclusion preserved.
+    if not any(x.kind == "current_company" and x.value == "Epiq" for x in i.exclusions):
+        v.append("lost the exclude-current-Epiq constraint")
+    return v
+
+
 def test_goldens_parse_and_validate() -> None:
     for name in ("python_backend_hyderabad", "epiq_product_owner"):
         intent = _golden(name)
@@ -86,6 +166,14 @@ def test_role_family_matches_regression_fixture_title_family() -> None:
         intent = _golden(name)
         reg = json.loads((REGRESSION_DIR / f"{name}.json").read_text(encoding="utf-8"))
         assert set(intent.role_family) == set(reg["expected_title_family"]), f"{name}: role_family drift"
+
+
+def test_golden_python_satisfies_all_four_invariants() -> None:
+    assert python_invariant_violations(_golden("python_backend_hyderabad")) == []
+
+
+def test_golden_epiq_satisfies_all_four_invariants() -> None:
+    assert epiq_invariant_violations(_golden("epiq_product_owner")) == []
 
 
 def test_two_level_logic_only_no_nested_groups() -> None:
