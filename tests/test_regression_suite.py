@@ -131,7 +131,7 @@ def test_expected_filter_tree_is_structurally_valid_and_shallow(fx: Dict[str, An
 
     def walk(node: Dict[str, Any]) -> None:
         if "op" in node:
-            assert node["op"] in {"and", "or"}
+            assert node["op"] in {"and", "or", "all_of"}  # all_of = same-entry nested-array group
             assert node.get("conditions"), f"{fx['_file']}: empty group"
             for c in node["conditions"]:
                 walk(c)
@@ -139,5 +139,7 @@ def test_expected_filter_tree_is_structurally_valid_and_shallow(fx: Dict[str, An
             assert LEAF_KEYS <= set(node.keys()), f"{fx['_file']}: leaf missing field/type/value: {node}"
 
     walk(tree)
-    # Provider filter trees may nest one OR-group inside the root AND — depth 2.
-    assert _tree_depth(tree) <= 2, f"{fx['_file']}: filter tree deeper than two levels"
+    # Provider filter trees are root AND with OR-groups (depth 2). A same-entry
+    # education all_of(OR, OR) adds exactly one more level (depth 3); nothing
+    # should go deeper than that.
+    assert _tree_depth(tree) <= 3, f"{fx['_file']}: filter tree deeper than allowed"

@@ -73,9 +73,23 @@ def test_compiler_is_deterministic(name):
 def test_required_constraints_are_not_silently_dropped_python():
     plan = compile_intent(_intent("python_backend_hyderabad"))
     routes = {c.source: c.route for c in plan.audit}
-    for req in ("skill:Python", "skill:Java", "skill_any_of:Django|FastAPI", "education.degrees",
-                "education.streams", "company_scale", "role_family", "experience", "location"):
+    for req in ("skill:Python", "skill:Java", "skill_any_of:Django|FastAPI", "education",
+                "company_scale", "role_family", "experience", "location"):
         assert routes.get(req) == "provider_hard_filter", f"{req} not hard-filtered: {routes.get(req)}"
+
+
+def test_education_is_a_single_same_entry_all_of_group_python():
+    """Degree and stream must be ONE grouped predicate on the same school entry
+    (all_of), never two separate top-level conditions (which CrustData returns
+    0 for, verified live)."""
+    plan = compile_intent(_intent("python_backend_hyderabad"))
+    all_of_groups = [c for c in plan.filter_tree["conditions"] if c.get("op") == "all_of"]
+    assert len(all_of_groups) == 1, "education should compile to exactly one all_of group"
+    fields = {l["field"] for l in _leaves(all_of_groups[0], [])}
+    assert fields == {"education.schools.degree", "education.schools.field_of_study"}
+    # and there must be NO bare top-level education conditions outside the group
+    for leaf in _leaves({"op": "and", "conditions": [c for c in plan.filter_tree["conditions"] if c.get("op") != "all_of"]}, []):
+        assert "education.schools" not in leaf["field"], "education leaked outside the all_of group"
 
 
 def test_preferred_companies_never_become_hard_filters_epiq():

@@ -186,26 +186,28 @@ def compile_intent(intent: StructuredHiringIntent) -> CompiledPlan:
             audit.append(CompiledConstraint("company_scale", cs.strength, "downstream_evidence",
                                             [field_name], temporal=cs.relationship, capability=route))
 
-    # --- education ---
+    # --- education: ONE grouped predicate, not two. Degree and stream must
+    # match the SAME school entry, so when both are present they are emitted as
+    # an all_of group on the education.schools nested array (verified live: the
+    # two-separate-conditions form returns 0 where same-entry all_of returns a
+    # real pool). ---
     if intent.education:
-        if intent.education.degrees:
-            route = hard_ok(_DEGREE, intent.education.strength)
-            if route in _HARD_ROUTES:
-                grp = _or([_leaf(_DEGREE, "(.)", d) for d in intent.education.degrees])
-                if grp:
-                    conditions.append(grp)
-                audit.append(CompiledConstraint("education.degrees", intent.education.strength,
-                                                "provider_hard_filter", [_DEGREE], capability=route))
-        if intent.education.streams:
-            route = hard_ok(_STREAM, intent.education.strength)
-            if route in _HARD_ROUTES:
-                grp = _or([_leaf(_STREAM, "(.)", s) for s in intent.education.streams])
-                if grp:
-                    conditions.append(grp)
-                if route == "enforce_but_not_verifiable":
-                    warnings.append("education stream: filterable but response-gated (not displayable); verify via Harvest if needed")
-                audit.append(CompiledConstraint("education.streams", intent.education.strength,
-                                                "provider_hard_filter", [_STREAM], capability=route))
+        degree_route = hard_ok(_DEGREE, intent.education.strength) if intent.education.degrees else None
+        stream_route = hard_ok(_STREAM, intent.education.strength) if intent.education.streams else None
+        degree_grp = _or([_leaf(_DEGREE, "(.)", d) for d in intent.education.degrees]) if (degree_route in _HARD_ROUTES) else None
+        stream_grp = _or([_leaf(_STREAM, "(.)", s) for s in intent.education.streams]) if (stream_route in _HARD_ROUTES) else None
+        members = [g for g in (degree_grp, stream_grp) if g]
+        if len(members) >= 2:
+            conditions.append({"op": "all_of", "conditions": members})
+        elif members:
+            conditions.append(members[0])
+        if stream_route == "enforce_but_not_verifiable":
+            warnings.append("education stream: filterable but response-gated (not displayable); verify via Harvest if needed")
+        if degree_grp or stream_grp:
+            audit.append(CompiledConstraint("education", intent.education.strength, "provider_hard_filter",
+                                            [f for f, g in ((_DEGREE, degree_grp), (_STREAM, stream_grp)) if g],
+                                            capability=stream_route or degree_route,
+                                            note="degree + stream grouped on the same school entry (all_of)"))
 
     # --- companies (named) ---
     for c in intent.companies:

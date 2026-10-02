@@ -310,47 +310,52 @@
         "value": 5000
       },
       {
-        "op": "or",
+        "op": "all_of",
         "conditions": [
           {
-            "field": "education.schools.degree",
-            "type": "(.)",
-            "value": "B.Tech"
+            "op": "or",
+            "conditions": [
+              {
+                "field": "education.schools.degree",
+                "type": "(.)",
+                "value": "B.Tech"
+              },
+              {
+                "field": "education.schools.degree",
+                "type": "(.)",
+                "value": "B.E"
+              },
+              {
+                "field": "education.schools.degree",
+                "type": "(.)",
+                "value": "M.Tech"
+              }
+            ]
           },
           {
-            "field": "education.schools.degree",
-            "type": "(.)",
-            "value": "B.E"
-          },
-          {
-            "field": "education.schools.degree",
-            "type": "(.)",
-            "value": "M.Tech"
-          }
-        ]
-      },
-      {
-        "op": "or",
-        "conditions": [
-          {
-            "field": "education.schools.field_of_study",
-            "type": "(.)",
-            "value": "Computer Science"
-          },
-          {
-            "field": "education.schools.field_of_study",
-            "type": "(.)",
-            "value": "Information Technology"
-          },
-          {
-            "field": "education.schools.field_of_study",
-            "type": "(.)",
-            "value": "Data Science"
-          },
-          {
-            "field": "education.schools.field_of_study",
-            "type": "(.)",
-            "value": "Artificial Intelligence"
+            "op": "or",
+            "conditions": [
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Computer Science"
+              },
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Information Technology"
+              },
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Data Science"
+              },
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Artificial Intelligence"
+              }
+            ]
           }
         ]
       }
