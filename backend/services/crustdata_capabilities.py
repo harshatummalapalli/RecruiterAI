@@ -40,6 +40,8 @@ from typing import Dict, Optional
 # No VERIFIED provider-side soft-preference mechanism exists on our plan.
 # Natural-language company injection was measured to be inert (arm C == arm D,
 # 2026-10-01). Flip to True only if a real boost mechanism is later verified.
+CAPABILITY_MAP_VERSION = "v1-2026-10-01"
+
 PREFERENCE_MECHANISM_AVAILABLE = False
 
 # CrustData's `(.)` operator matches WHOLE WORDS, not substrings

@@ -36,6 +36,8 @@ _HEADCOUNT = "experience.employment_details.current.company_headcount_latest"
 _DEGREE = "education.schools.degree"
 _STREAM = "education.schools.field_of_study"
 
+COMPILER_VERSION = "v1-2026-10-02"
+
 _HARD_ROUTES = {"enforce", "enforce_with_warning", "enforce_but_not_verifiable"}
 
 
