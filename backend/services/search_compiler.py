@@ -103,6 +103,15 @@ def compile_intent(intent: StructuredHiringIntent) -> CompiledPlan:
             conditions.append(_leaf("basic_profile.location.city", "in", cities))
         audit.append(CompiledConstraint("location", intent.location.strength, "provider_hard_filter",
                                         ["basic_profile.location.*"], note=f"entries={entries}"))
+    if intent.location and intent.location.radius:
+        r = intent.location.radius
+        unit = {"miles": "mi", "mile": "mi", "mi": "mi", "km": "km", "kilometers": "km"}.get(r.unit.lower(), "mi")
+        conditions.append(_leaf("basic_profile.location", "geo_distance",
+                                {"location": r.around, "distance": r.value, "unit": unit}))
+        audit.append(CompiledConstraint("location.radius",
+                                        intent.location.strength if intent.location else "required",
+                                        "provider_hard_filter", ["basic_profile.location"],
+                                        note=f"{r.value} {unit} around {r.around}"))
 
     # --- experience ---
     if intent.experience:
@@ -209,13 +218,17 @@ def compile_intent(intent: StructuredHiringIntent) -> CompiledPlan:
                                             [field_name], temporal=c.relationship, capability=route,
                                             note="no verified provider preference mechanism -> context/evidence, not a filter"))
 
-    # --- exclusions ---
+    # --- exclusions (explicit; exclude is not the inverse of required include) ---
+    _EXCLUDE_COMPANY_FIELD = {
+        "current_company": _CUR_COMPANY, "exclude_current_company": _CUR_COMPANY,
+        "exclude_past_company": _PAST_COMPANY, "exclude_any_company": _ANY_COMPANY,
+    }
     for x in intent.exclusions:
-        if x.kind == "current_company":
-            conditions.append(_leaf(_CUR_COMPANY, "not_in", [x.value]))
-            audit.append(CompiledConstraint(f"exclude_current_company:{x.value}", "required",
-                                            "provider_hard_filter", [_CUR_COMPANY]))
-        elif x.kind == "title":
+        if x.kind in _EXCLUDE_COMPANY_FIELD:
+            fld = _EXCLUDE_COMPANY_FIELD[x.kind]
+            conditions.append(_leaf(fld, "not_in", [x.value]))
+            audit.append(CompiledConstraint(f"{x.kind}:{x.value}", "required", "provider_hard_filter", [fld]))
+        elif x.kind in ("title", "exclude_title"):
             conditions.append(_leaf(_CUR_TITLE, "(!)", x.value))
             audit.append(CompiledConstraint(f"exclude_title:{x.value}", "required",
                                             "provider_hard_filter", [_CUR_TITLE]))

@@ -43,7 +43,19 @@ def _extract_text(response: Any) -> str:
     return "".join(chunks)
 
 
-def extract_structured_intent(job_description: str, client: Optional[Any] = None) -> StructuredHiringIntent:
+def build_prompt(job_description: str, recruiter_brief: Optional[str] = None) -> str:
+    """Assemble the extraction prompt from two authoritative sources: the JD and
+    an optional recruiter / hiring-manager brief (constraints the JD may not
+    state — target companies, size, education, radius). Plain placeholder swaps,
+    never str.format (the prompt has literal JSON braces)."""
+    text = _PROMPT.read_text(encoding="utf-8")
+    text = text.replace("{job_description}", job_description or "(none provided)")
+    text = text.replace("{recruiter_brief}", (recruiter_brief or "(none provided)"))
+    return text
+
+
+def extract_structured_intent(job_description: str, recruiter_brief: Optional[str] = None,
+                              client: Optional[Any] = None) -> StructuredHiringIntent:
     api_key = get_openai_api_key()
     if client is None:
         if not api_key:
@@ -51,9 +63,7 @@ def extract_structured_intent(job_description: str, client: Optional[Any] = None
         from openai import OpenAI
         client = OpenAI(api_key=api_key)
 
-    # The prompt contains literal JSON braces, so a plain placeholder swap —
-    # never str.format (which would try to interpret the braces).
-    prompt = _PROMPT.read_text(encoding="utf-8").replace("{job_description}", job_description)
+    prompt = build_prompt(job_description, recruiter_brief)
     response = client.responses.create(
         model=_INTAKE_MODEL,
         input=[{"role": "user", "content": prompt}],

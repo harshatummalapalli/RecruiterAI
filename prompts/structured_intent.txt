@@ -12,8 +12,8 @@ Return a single JSON object with exactly these keys:
   "company_scale": { "minimum_employees": 0, "relationship": "current|past|any", "strength": "required|preferred" },
   "education": { "degrees": ["..."], "streams": ["..."], "strength": "required|preferred" },
   "experience": { "minimum_years": 0, "maximum_years": null, "strength": "required|preferred" },
-  "location": { "entries": ["City, State, Country"], "strength": "required|preferred" },
-  "exclusions": [ { "kind": "current_company|title|other", "value": "..." } ],
+  "location": { "entries": ["City, State, Country"], "radius": { "value": 25, "unit": "miles", "around": "City, State, Country" }, "strength": "required|preferred" },
+  "exclusions": [ { "kind": "exclude_current_company|exclude_past_company|exclude_any_company|exclude_title", "value": "..." } ],
   "evidence_signals": [ { "name": "...", "strength": "required|preferred|context" } ]
 }
 
@@ -49,7 +49,9 @@ RULES — these are hiring-intent semantics, not search mechanics. Two principle
 
 7. EDUCATION. List the EXACT degrees and streams stated — never broaden and never drop (see Option Conservation). Degrees are an OR set; streams are an OR set.
 
-8. LOCATION. Multiple places ("Hyderabad or Pune") are OR entries. Use "City, State, Country" form where known.
+8. LOCATION. Multiple places ("Hyderabad or Pune") are OR entries. Use "City, State, Country" form where known. When a commute radius is stated ("within 25 miles of Hyderabad", "25 mi radius"), ALSO emit location.radius {value, unit, around} with the anchor place — a radius is different from a plain city match, so capture it only when actually stated.
+
+8b. EXCLUSIONS are explicit and are NOT the inverse of a required include. "Don't show / exclude people currently at X" -> exclusion kind exclude_current_company; "...who ever worked at X" -> exclude_any_company; "...previously at X" -> exclude_past_company; "exclude <title>" -> exclude_title. A company the recruiter LIKES goes in companies (include/prefer); a company to screen OUT goes in exclusions.
 
 9. SKILLS vs EVIDENCE SIGNALS — a sharp boundary.
    - A "skill" is a named technical/professional COMPETENCY that can be searched for as a candidate attribute: Python, Java, FastAPI, Django, Kubernetes, SQL, Machine Learning.
@@ -59,5 +61,10 @@ RULES — these are hiring-intent semantics, not search mechanics. Two principle
 
 10. NEVER output provider or database terms (no field names, no operators, no "filter"/"hard"/"relevance"/"retrieval"). If you are tempted to say how to search, stop — describe the meaning instead.
 
+There are two sources of hiring intent, BOTH authoritative. Merge them into ONE structured intent. The recruiter/hiring-manager brief carries ADDITIONAL requirements the JD may not state (e.g. target companies, company size, education, radius) — treat them exactly like JD requirements, not as corrections. Apply the same required/preferred and temporal rules to both.
+
 Job description / notes:
 {job_description}
+
+Recruiter / hiring-manager brief (additional hiring requirements; may be empty):
+{recruiter_brief}

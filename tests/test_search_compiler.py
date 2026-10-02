@@ -108,6 +108,59 @@ def test_seniority_routes_to_admission_not_a_filter_epiq():
     assert sen and sen[0].route == "admission_level_fit"
 
 
+from backend.models.structured_intent import (
+    StructuredHiringIntent, RoleArchetype, LocationReq, Radius, Exclusion)
+from backend.services.structured_intent_extractor import build_prompt
+
+
+def _leaf_set(tree):
+    return {(l["field"], l["type"], repr(l["value"])) for l in _leaves(tree, [])}
+
+
+def test_radius_compiles_to_geo_distance_with_anchor():
+    intent = StructuredHiringIntent(
+        role_archetype=RoleArchetype(value="title_defined", confidence=0.9, rationale="x"),
+        role_family=["Product Owner"],
+        location=LocationReq(entries=["Hyderabad, Telangana, India"],
+                             radius=Radius(value=25, unit="miles", around="Hyderabad, Telangana, India")),
+    )
+    plan = compile_intent(intent)
+    geo = [l for l in _leaves(plan.filter_tree, []) if l["type"] == "geo_distance"]
+    assert geo and geo[0]["value"] == {"location": "Hyderabad, Telangana, India", "distance": 25, "unit": "mi"}
+    # plain city match (no radius) must NOT emit geo_distance
+    plain = compile_intent(StructuredHiringIntent(
+        role_archetype=RoleArchetype(value="title_defined", confidence=0.9, rationale="x"),
+        role_family=["Product Owner"], location=LocationReq(entries=["Hyderabad, Telangana, India"])))
+    assert not [l for l in _leaves(plain.filter_tree, []) if l["type"] == "geo_distance"]
+
+
+def test_exclusions_are_relationship_aware():
+    intent = StructuredHiringIntent(
+        role_archetype=RoleArchetype(value="title_defined", confidence=0.9, rationale="x"),
+        role_family=["Product Owner"],
+        exclusions=[
+            Exclusion(kind="exclude_current_company", value="Epiq"),
+            Exclusion(kind="exclude_past_company", value="BadCo"),
+            Exclusion(kind="exclude_any_company", value="EverCo"),
+            Exclusion(kind="exclude_title", value="Intern"),
+        ],
+    )
+    leaves = _leaf_set(compile_intent(intent).filter_tree)
+    assert ("experience.employment_details.current.company_name", "not_in", repr(["Epiq"])) in leaves
+    assert ("experience.employment_details.past.company_name", "not_in", repr(["BadCo"])) in leaves
+    assert ("experience.employment_details.company_name", "not_in", repr(["EverCo"])) in leaves
+    assert ("experience.employment_details.current.title", "(!)", repr("Intern")) in leaves
+
+
+def test_recruiter_brief_channel_feeds_the_prompt():
+    with_brief = build_prompt("Product Owner JD", "Target companies: Epiq, QuisLex. Current size 5000+.")
+    assert "Target companies: Epiq, QuisLex" in with_brief
+    assert "Product Owner JD" in with_brief
+    without = build_prompt("Product Owner JD")
+    assert "(none provided)" in without  # recruiter brief slot filled, not left as a literal placeholder
+    assert "{recruiter_brief}" not in with_brief and "{job_description}" not in with_brief
+
+
 def test_semantic_diff_surfaces_hard_to_contextual_company_change():
     """Shadow-mode: the old plan hard-filtered on current company; the new plan
     does not. The diff must make that visible."""

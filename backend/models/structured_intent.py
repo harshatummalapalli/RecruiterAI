@@ -129,13 +129,28 @@ class Experience(_Strengthed):
     maximum_years: Optional[int] = None
 
 
+class Radius(BaseModel):
+    """A commute radius anchored on a place, kept distinct from a plain city
+    match ("Hyderabad" vs "within 25 miles of Hyderabad"). The anchor is
+    preserved so the compiler never has to guess what the radius is around."""
+    model_config = ConfigDict(extra="forbid")
+    value: int = Field(gt=0)
+    unit: str = "miles"   # "miles" | "km"
+    around: str           # the anchor place, e.g. "Hyderabad, Telangana, India"
+
+
 class LocationReq(_Strengthed):
     entries: List[str] = Field(default_factory=list)   # OR (e.g. "Hyderabad, Telangana, India")
+    radius: Optional[Radius] = None
 
 
+# Exclusion is its own explicit list because exclude is NOT the inverse of a
+# required include. kind: company exclusions carry a relationship
+# ("exclude_current_company" | "exclude_past_company" | "exclude_any_company"),
+# plus "exclude_title" | "current_company" (legacy alias for exclude_current_company).
 class Exclusion(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    kind: str  # "current_company" | "title" | "other"
+    kind: str
     value: str
 
 
