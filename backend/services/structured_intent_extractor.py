@@ -20,6 +20,14 @@ logger = logging.getLogger(__name__)
 
 _PROMPT = Path(__file__).resolve().parents[2] / "prompts" / "structured_intent.txt"
 
+# Intake extraction model. gpt-6.1-sol (reasoning=medium) was adopted after a
+# controlled 5x2 Phase-2 experiment: it is stable 5/5 on both anchors and fixed
+# every semantic failure gpt-4o-mini produced (required/preferred, temporal,
+# option conservation, no invented seniority/company_scale). Intake is the cheap
+# once-per-search call — the sanctioned place for a stronger model.
+_INTAKE_MODEL = "gpt-6.1-sol"
+_INTAKE_REASONING_EFFORT = "medium"
+
 
 def _extract_text(response: Any) -> str:
     text = getattr(response, "output_text", None)
@@ -47,9 +55,10 @@ def extract_structured_intent(job_description: str, client: Optional[Any] = None
     # never str.format (which would try to interpret the braces).
     prompt = _PROMPT.read_text(encoding="utf-8").replace("{job_description}", job_description)
     response = client.responses.create(
-        model="gpt-4o-mini",
+        model=_INTAKE_MODEL,
         input=[{"role": "user", "content": prompt}],
         text={"format": {"type": "json_object"}},
+        reasoning={"effort": _INTAKE_REASONING_EFFORT},
     )
     content = _extract_text(response)
     try:
