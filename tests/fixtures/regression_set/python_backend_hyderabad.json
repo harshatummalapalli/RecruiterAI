@@ -2,62 +2,368 @@
   "jd_id": "python_backend_hyderabad",
   "source": "validated-live-2026-10-01",
   "raw_brief": "Software Engineers proficient in Python, FastAPI and/or Django who have been a Java developer earlier or worked extensively on Java but presently working on Python. Experience 5-8 years. Education B.Tech OR B.E OR M.Tech in Computer Science, IT, Data Science OR AI. Currently at companies 5000+ employees. Location Hyderabad, Telangana, India.",
-  "archetype": {"value": "skill_defined", "confidence": "high", "rationale": "Title ('Software Engineer') is weak; Python/Java/framework stack defines the person. Gate on a broad engineering title family, carry the language as keyword retrieval."},
-  "role_family": ["Software Engineer"],
-  "retrieval_expectations": {"title_family": ["Software Engineer", "Backend Engineer", "Backend Developer", "Python Developer"]},
+  "archetype": {
+    "value": "skill_defined",
+    "confidence": "high",
+    "rationale": "Title ('Software Engineer') is weak; Python/Java/framework stack defines the person. Gate on a broad engineering title family, carry the language as keyword retrieval."
+  },
+  "role_family": [
+    "Software Engineer"
+  ],
+  "retrieval_expectations": {
+    "title_family": [
+      "Software Engineer",
+      "Backend Engineer",
+      "Backend Developer",
+      "Python Developer"
+    ]
+  },
   "logical_intent": {
     "all_of": [
-      {"leaf": {"signal": "location", "any_of": ["Hyderabad, Telangana, India"]}},
-      {"leaf": {"signal": "experience", "range": [5, 8]}},
-      {"leaf": {"signal": "role_family", "any_of_role_family": true}},
-      {"leaf": {"signal": "skill", "name": "Python", "temporal": "current"}},
-      {"group": {"any_of": [{"skill": "Django"}, {"skill": "FastAPI"}]}},
-      {"leaf": {"signal": "skill", "name": "Java", "temporal": "past"}},
-      {"group": {"all_of": [
-        {"any_of_degree": ["B.Tech", "B.E", "M.Tech"]},
-        {"any_of_stream": ["Computer Science", "Information Technology", "Data Science", "Artificial Intelligence"]}
-      ]}},
-      {"leaf": {"signal": "company_scale", "min_employees": 5000, "relationship": "current"}}
+      {
+        "leaf": {
+          "signal": "location",
+          "any_of": [
+            "Hyderabad, Telangana, India"
+          ]
+        }
+      },
+      {
+        "leaf": {
+          "signal": "experience",
+          "range": [
+            5,
+            8
+          ]
+        }
+      },
+      {
+        "leaf": {
+          "signal": "role_family",
+          "any_of_role_family": true
+        }
+      },
+      {
+        "leaf": {
+          "signal": "skill",
+          "name": "Python",
+          "temporal": "current"
+        }
+      },
+      {
+        "group": {
+          "any_of": [
+            {
+              "skill": "Django"
+            },
+            {
+              "skill": "FastAPI"
+            }
+          ]
+        }
+      },
+      {
+        "leaf": {
+          "signal": "skill",
+          "name": "Java",
+          "temporal": "past"
+        }
+      },
+      {
+        "group": {
+          "all_of": [
+            {
+              "any_of_degree": [
+                "B.Tech",
+                "B.E",
+                "M.Tech"
+              ]
+            },
+            {
+              "any_of_stream": [
+                "Computer Science",
+                "Information Technology",
+                "Data Science",
+                "Artificial Intelligence"
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "leaf": {
+          "signal": "company_scale",
+          "min_employees": 5000,
+          "relationship": "current"
+        }
+      }
     ]
   },
   "requirements": [
-    {"name": "role_family", "type": "role", "strength": "required", "routing": "enforce", "provider_field": "current.title", "note": "fuzzy (.) OR over the family"},
-    {"name": "Python (current)", "type": "skill", "temporal": "current", "strength": "required", "routing": "enforce", "provider_field": "current.description|headline|summary keyword", "verify_downstream": true},
-    {"name": "Django|FastAPI", "type": "skill", "logic": "any_of", "strength": "required", "routing": "enforce", "provider_field": "description|headline|summary keyword", "verify_downstream": true},
-    {"name": "Java (past)", "type": "skill", "temporal": "past", "strength": "required", "routing": "enforce", "provider_field": "past.description|past.title keyword", "verify_downstream": true},
-    {"name": "experience 5-8", "type": "experience", "strength": "required", "routing": "enforce", "provider_field": "years_of_experience_raw"},
-    {"name": "location Hyderabad", "type": "location", "strength": "required", "routing": "enforce", "provider_field": "basic_profile.location.*"},
-    {"name": "education degree B.Tech/B.E/M.Tech", "type": "education", "strength": "required", "routing": "enforce", "provider_field": "education.schools.degree"},
-    {"name": "education stream CS/IT/DS/AI", "type": "education", "strength": "required", "routing": "enforce_but_not_verifiable", "provider_field": "education.schools.field_of_study", "note": "filterable server-side but NOT returned (response-gated) -> enforce at retrieval, disclose cannot-display, or verify via Harvest"},
-    {"name": "company size 5000+ (current)", "type": "company_scale", "temporal": "current", "strength": "required", "routing": "enforce_with_warning", "provider_field": "current.company_headcount_latest", "data_confidence": "unknown", "note": "verified filter; completeness unestablished -> warn + verify downstream where possible"}
+    {
+      "name": "role_family",
+      "type": "role",
+      "strength": "required",
+      "routing": "enforce",
+      "provider_field": "current.title",
+      "note": "fuzzy (.) OR over the family"
+    },
+    {
+      "name": "Python (current)",
+      "type": "skill",
+      "temporal": "current",
+      "strength": "required",
+      "routing": "enforce",
+      "provider_field": "current.description|headline|summary keyword",
+      "verify_downstream": true
+    },
+    {
+      "name": "Django|FastAPI",
+      "type": "skill",
+      "logic": "any_of",
+      "strength": "required",
+      "routing": "enforce",
+      "provider_field": "description|headline|summary keyword",
+      "verify_downstream": true
+    },
+    {
+      "name": "Java (past)",
+      "type": "skill",
+      "temporal": "past",
+      "strength": "required",
+      "routing": "enforce",
+      "provider_field": "past.description|past.title keyword",
+      "verify_downstream": true
+    },
+    {
+      "name": "experience 5-8",
+      "type": "experience",
+      "strength": "required",
+      "routing": "enforce",
+      "provider_field": "years_of_experience_raw"
+    },
+    {
+      "name": "location Hyderabad",
+      "type": "location",
+      "strength": "required",
+      "routing": "enforce",
+      "provider_field": "basic_profile.location.*"
+    },
+    {
+      "name": "education degree B.Tech/B.E/M.Tech",
+      "type": "education",
+      "strength": "required",
+      "routing": "enforce",
+      "provider_field": "education.schools.degree"
+    },
+    {
+      "name": "education stream CS/IT/DS/AI",
+      "type": "education",
+      "strength": "required",
+      "routing": "enforce_but_not_verifiable",
+      "provider_field": "education.schools.field_of_study",
+      "note": "filterable server-side but NOT returned (response-gated) -> enforce at retrieval, disclose cannot-display, or verify via Harvest"
+    },
+    {
+      "name": "company size 5000+ (current)",
+      "type": "company_scale",
+      "temporal": "current",
+      "strength": "required",
+      "routing": "enforce_with_warning",
+      "provider_field": "current.company_headcount_latest",
+      "data_confidence": "unknown",
+      "note": "verified filter; completeness unestablished -> warn + verify downstream where possible"
+    }
   ],
   "expected_filter_tree": {
     "op": "and",
     "conditions": [
-      {"field": "basic_profile.location.country", "type": "in", "value": ["India"]},
-      {"field": "basic_profile.location.state", "type": "in", "value": ["Telangana"]},
-      {"field": "basic_profile.location.city", "type": "in", "value": ["Hyderabad"]},
-      {"field": "years_of_experience_raw", "type": "=>", "value": 5},
-      {"field": "years_of_experience_raw", "type": "=<", "value": 8},
-      {"op": "or", "conditions": [
-        {"field": "experience.employment_details.current.title", "type": "(.)", "value": "Software Engineer"},
-        {"field": "experience.employment_details.current.title", "type": "(.)", "value": "Backend Engineer"},
-        {"field": "experience.employment_details.current.title", "type": "(.)", "value": "Backend Developer"},
-        {"field": "experience.employment_details.current.title", "type": "(.)", "value": "Python Developer"}
-      ]},
-      {"op": "or", "conditions": [
-        {"field": "experience.employment_details.current.description", "type": "(.)", "value": "Python"},
-        {"field": "basic_profile.headline", "type": "(.)", "value": "Python"},
-        {"field": "basic_profile.summary", "type": "(.)", "value": "Python"}
-      ]},
-      {"op": "or", "conditions": [
-        {"field": "experience.employment_details.past.description", "type": "(.)", "value": "Java"},
-        {"field": "experience.employment_details.past.title", "type": "(.)", "value": "Java"}
-      ]},
-      {"field": "experience.employment_details.current.company_headcount_latest", "type": "=>", "value": 5000}
+      {
+        "field": "basic_profile.location.country",
+        "type": "in",
+        "value": [
+          "India"
+        ]
+      },
+      {
+        "field": "basic_profile.location.state",
+        "type": "in",
+        "value": [
+          "Telangana"
+        ]
+      },
+      {
+        "field": "basic_profile.location.city",
+        "type": "in",
+        "value": [
+          "Hyderabad"
+        ]
+      },
+      {
+        "field": "years_of_experience_raw",
+        "type": "=>",
+        "value": 5
+      },
+      {
+        "field": "years_of_experience_raw",
+        "type": "=<",
+        "value": 8
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.title",
+            "type": "(.)",
+            "value": "Software Engineer"
+          },
+          {
+            "field": "experience.employment_details.current.title",
+            "type": "(.)",
+            "value": "Backend Engineer"
+          },
+          {
+            "field": "experience.employment_details.current.title",
+            "type": "(.)",
+            "value": "Backend Developer"
+          },
+          {
+            "field": "experience.employment_details.current.title",
+            "type": "(.)",
+            "value": "Python Developer"
+          }
+        ]
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.description",
+            "type": "(.)",
+            "value": "Python"
+          },
+          {
+            "field": "basic_profile.headline",
+            "type": "(.)",
+            "value": "Python"
+          },
+          {
+            "field": "basic_profile.summary",
+            "type": "(.)",
+            "value": "Python"
+          }
+        ]
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.past.description",
+            "type": "(.)",
+            "value": "Java"
+          },
+          {
+            "field": "experience.employment_details.past.title",
+            "type": "(.)",
+            "value": "Java"
+          }
+        ]
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.description",
+            "type": "(.)",
+            "value": "Django"
+          },
+          {
+            "field": "basic_profile.headline",
+            "type": "(.)",
+            "value": "Django"
+          },
+          {
+            "field": "basic_profile.summary",
+            "type": "(.)",
+            "value": "Django"
+          },
+          {
+            "field": "experience.employment_details.current.description",
+            "type": "(.)",
+            "value": "FastAPI"
+          },
+          {
+            "field": "basic_profile.headline",
+            "type": "(.)",
+            "value": "FastAPI"
+          },
+          {
+            "field": "basic_profile.summary",
+            "type": "(.)",
+            "value": "FastAPI"
+          }
+        ]
+      },
+      {
+        "field": "experience.employment_details.current.company_headcount_latest",
+        "type": "=>",
+        "value": 5000
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "education.schools.degree",
+            "type": "(.)",
+            "value": "B.Tech"
+          },
+          {
+            "field": "education.schools.degree",
+            "type": "(.)",
+            "value": "B.E"
+          },
+          {
+            "field": "education.schools.degree",
+            "type": "(.)",
+            "value": "M.Tech"
+          }
+        ]
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "education.schools.field_of_study",
+            "type": "(.)",
+            "value": "Computer Science"
+          },
+          {
+            "field": "education.schools.field_of_study",
+            "type": "(.)",
+            "value": "Information Technology"
+          },
+          {
+            "field": "education.schools.field_of_study",
+            "type": "(.)",
+            "value": "Data Science"
+          },
+          {
+            "field": "education.schools.field_of_study",
+            "type": "(.)",
+            "value": "Artificial Intelligence"
+          }
+        ]
+      }
     ]
   },
-  "known_good": ["Enterprise Software Engineer currently coding Python (Django/FastAPI) with earlier Java, 5-8 yrs, Hyderabad, degree in CS/IT/DS/AI"],
-  "known_bad": [".NET/C# backend engineer", "current-title Java Developer with no Python", "sub-5 or over-8 years", "non-Hyderabad"],
+  "known_good": [
+    "Enterprise Software Engineer currently coding Python (Django/FastAPI) with earlier Java, 5-8 yrs, Hyderabad, degree in CS/IT/DS/AI"
+  ],
+  "known_bad": [
+    ".NET/C# backend engineer",
+    "current-title Java Developer with no Python",
+    "sub-5 or over-8 years",
+    "non-Hyderabad"
+  ],
   "validation_note": "Filter mechanics validated live 2026-10-01: full tree returns 26 provider matches; S3 core (78) sampled 25 -> ~20+ relevant. FINAL quality of the fully-constrained set NOT yet judged (Phase 5)."
 }
