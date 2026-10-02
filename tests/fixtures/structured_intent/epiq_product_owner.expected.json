@@ -1,0 +1,33 @@
+{
+  "role_archetype": {
+    "value": "title_defined",
+    "confidence": 0.85,
+    "rationale": "'Product Owner' carries strong occupational meaning and should drive the search; the stack is secondary."
+  },
+  "role_family": ["Product Owner", "Product Manager", "Product Lead"],
+  "seniority": {"value": "Senior", "strength": "required"},
+  "companies": [
+    {"name": "Arete", "relationship": "any", "strength": "preferred"},
+    {"name": "QuisLex", "relationship": "any", "strength": "preferred"},
+    {"name": "UnitedLex", "relationship": "any", "strength": "preferred"},
+    {"name": "Consilio", "relationship": "any", "strength": "preferred"},
+    {"name": "Elevate", "relationship": "any", "strength": "preferred"},
+    {"name": "Integreon", "relationship": "any", "strength": "preferred"},
+    {"name": "KLDiscovery", "relationship": "any", "strength": "preferred"},
+    {"name": "Morae", "relationship": "any", "strength": "preferred"}
+  ],
+  "experience": {"minimum_years": 7, "maximum_years": null, "strength": "required"},
+  "location": {"entries": ["Hyderabad, Telangana, India"], "strength": "required"},
+  "exclusions": [
+    {"kind": "current_company", "value": "Epiq"}
+  ],
+  "evidence_signals": [
+    {"name": "product vision and strategy", "strength": "required"},
+    {"name": "backlog ownership and Agile delivery", "strength": "required"},
+    {"name": "hands-on AI fluency", "strength": "required"},
+    {"name": "stakeholder engagement", "strength": "preferred"},
+    {"name": "quality and risk management", "strength": "preferred"},
+    {"name": "AI/ML product experience", "strength": "preferred"},
+    {"name": "legal technology domain", "strength": "preferred"}
+  ]
+}

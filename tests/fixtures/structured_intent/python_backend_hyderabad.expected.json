@@ -1,0 +1,24 @@
+{
+  "role_archetype": {
+    "value": "skill_defined",
+    "confidence": 0.9,
+    "rationale": "The title 'Software Engineer' is generic; the Python/Java/framework stack defines the person."
+  },
+  "role_family": ["Software Engineer", "Software Developer", "Backend Engineer", "Backend Developer", "Python Developer", "Full Stack Developer", "Full Stack Engineer", "Applications Developer"],
+  "seniority": {"value": "Senior", "strength": "preferred"},
+  "skills": [
+    {"name": "Python", "relationship": "current", "strength": "required"},
+    {"name": "Java", "relationship": "past", "strength": "required"}
+  ],
+  "skill_any_of": [
+    {"any_of": ["Django", "FastAPI"], "relationship": "current", "strength": "required"}
+  ],
+  "company_scale": {"minimum_employees": 5000, "relationship": "current", "strength": "required"},
+  "education": {
+    "degrees": ["B.Tech", "B.E", "M.Tech"],
+    "streams": ["Computer Science", "Information Technology", "Data Science", "Artificial Intelligence"],
+    "strength": "required"
+  },
+  "experience": {"minimum_years": 5, "maximum_years": 8, "strength": "required"},
+  "location": {"entries": ["Hyderabad, Telangana, India"], "strength": "required"}
+}
