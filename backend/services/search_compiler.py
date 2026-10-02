@@ -38,6 +38,24 @@ _STREAM = "education.schools.field_of_study"
 
 COMPILER_VERSION = "v1-2026-10-02"
 
+# Small, explicit, versioned canonical-city aliases: the recruiter's word -> the
+# string CrustData stores for exact city filtering. Verified live: city
+# "Bangalore" matches 0 (CrustData uses "Bengaluru"). This is representation
+# normalization, NOT a rewrite of the recruiter's visible intent (the source
+# value is preserved in the audit). Deliberately tiny — not a geo synonym engine.
+CITY_ALIAS_VERSION = "v1-2026-10-02"
+_CITY_ALIASES = {
+    "bangalore": "Bengaluru",
+    "bombay": "Mumbai",
+    "calcutta": "Kolkata",
+    "madras": "Chennai",
+    "gurgaon": "Gurugram",
+}
+
+
+def _canonical_city(city: str) -> str:
+    return _CITY_ALIASES.get(city.strip().lower(), city)
+
 _HARD_ROUTES = {"enforce", "enforce_with_warning", "enforce_but_not_verifiable"}
 
 # Degree surface-form normalization: the SAME degree, the strings providers
@@ -83,6 +101,10 @@ class CompiledPlan:
     retrieval_title_family: List[str]
     taxonomy_version: str
     warnings: List[str] = field(default_factory=list)
+    # Representation normalizations (source value preserved) — e.g. a canonical
+    # city alias. These are NOT meaning changes; they record how the recruiter's
+    # value was mapped to the provider's stored form.
+    normalizations: List[Dict[str, Any]] = field(default_factory=list)
 
 
 def _leaf(f: str, t: str, v: Any) -> Dict[str, Any]:
@@ -106,6 +128,15 @@ def compile_intent(intent: StructuredHiringIntent) -> CompiledPlan:
     conditions: List[Dict[str, Any]] = []
     audit: List[CompiledConstraint] = []
     warnings: List[str] = []
+    normalizations: List[Dict[str, Any]] = []
+
+    def _city(raw: str) -> str:
+        canon = _canonical_city(raw)
+        if canon != raw:
+            normalizations.append({"field": "basic_profile.location.city", "source_value": raw,
+                                   "provider_normalized_value": canon, "normalization": "canonical_city_alias",
+                                   "version": CITY_ALIAS_VERSION})
+        return canon
 
     def hard_ok(field_name: str, strength: str) -> str:
         return cap.recommend_routing(field_name, strength)
@@ -120,20 +151,24 @@ def compile_intent(intent: StructuredHiringIntent) -> CompiledPlan:
                 conditions += [
                     _leaf("basic_profile.location.country", "in", [country]),
                     _leaf("basic_profile.location.state", "in", [state]),
-                    _leaf("basic_profile.location.city", "in", [city]),
+                    _leaf("basic_profile.location.city", "in", [_city(city)]),
                 ]
             else:  # fall back to city-level match on whatever was given
-                conditions.append(_leaf("basic_profile.location.city", "in", [parts[0]]))
+                conditions.append(_leaf("basic_profile.location.city", "in", [_city(parts[0])]))
         else:
-            cities = [e.split(",")[0].strip() for e in entries]
+            cities = [_city(e.split(",")[0].strip()) for e in entries]
             conditions.append(_leaf("basic_profile.location.city", "in", cities))
         audit.append(CompiledConstraint("location", intent.location.strength, "provider_hard_filter",
                                         ["basic_profile.location.*"], note=f"entries={entries}"))
     if intent.location and intent.location.radius:
         r = intent.location.radius
         unit = {"miles": "mi", "mile": "mi", "mi": "mi", "km": "km", "kilometers": "km"}.get(r.unit.lower(), "mi")
+        around_parts = [p.strip() for p in r.around.split(",")]
+        if around_parts:
+            around_parts[0] = _city(around_parts[0])
+        around = ", ".join(around_parts)
         conditions.append(_leaf("basic_profile.location", "geo_distance",
-                                {"location": r.around, "distance": r.value, "unit": unit}))
+                                {"location": around, "distance": r.value, "unit": unit}))
         audit.append(CompiledConstraint("location.radius",
                                         intent.location.strength if intent.location else "required",
                                         "provider_hard_filter", ["basic_profile.location"],
@@ -268,7 +303,7 @@ def compile_intent(intent: StructuredHiringIntent) -> CompiledPlan:
 
     tree = {"op": "and", "conditions": conditions}
     return CompiledPlan(filter_tree=tree, audit=audit, retrieval_title_family=retrieval_titles,
-                        taxonomy_version=tax.TAXONOMY_VERSION, warnings=warnings)
+                        taxonomy_version=tax.TAXONOMY_VERSION, warnings=warnings, normalizations=normalizations)
 
 
 def canonicalize(tree: Dict[str, Any]) -> Any:

@@ -215,6 +215,17 @@ def run_search_pipeline(
       confirmation_id  the confirmed brief this cycle ran from
     Candidates from earlier cycles are kept; this cycle's are appended (index-aligned arrays)."""
     started_at = time.perf_counter()
+
+    # Shadow-mode (default off, SEARCH_COMPILER_SHADOW_ENABLED): compute what the
+    # Hiring-Intent Compiler WOULD produce for this search and log how it diverges
+    # from the legacy plan. It never affects this search and never sends the
+    # compiled plan to CrustData. Absolutely isolated: any failure is swallowed.
+    try:
+        from backend.services.search_compiler_shadow import run_shadow
+        run_shadow(search_id, jd_text, mapped_plan)
+    except Exception:  # pragma: no cover - belt-and-suspenders; run_shadow already isolates
+        logger.debug("[SHADOW] outer guard caught an error (ignored)", exc_info=True)
+
     created_at = existing_record.get("created_at") or _now_iso()
     existing_harvest_raw = existing_record.get("harvest_evidence", {})
     existing_harvest = {
