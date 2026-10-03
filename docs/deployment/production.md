@@ -102,3 +102,33 @@ is **resource exhaustion** (OOM/CPU) or a **full disk**. Diagnose/fix without SS
 - If starved: stop the offending process / free disk, then `sudo systemctl restart sshd`. **Do not reboot blindly; do not reset credentials.**
 - The OCI serial/VNC **console asks for an OS password**, which these key-only images don't set — it's a dead end without first provisioning one; prefer Run Command.
 By the time SSH access was granted for the `e4a137d` deploy the instance had recovered (≈447 MB free, disk 33%), so SSH connected normally and the banner timeout did not recur.
+
+## Full host lock-up (memory thrash) — recovery (observed 2026-10-03, post-deploy)
+Shape is **`VM.Standard.E2.1.Micro` — 1 OCPU / 1 GB RAM** (OCI Always Free),
+instance `recruiterai-vcn`, region India South (Hyderabad). On 1 GB this box
+can **thrash into total unresponsiveness**: TCP on 22/80/443 still completes
+(kernel answers SYN) but **nothing above TCP responds** — no SSH banner, no
+HTTP/HTTPS, and **OCI Run Command cannot even fork a shell** (command sits at
+`Accepted` with no exit code, or `Expired`). It was **not** disk (33% used) and
+**not** missing swap (≈2.5 GB swap already present: `/swapfile` 2 G + `/.swapfile`
+498 M); the OOM-killer never fired — the box swap-stormed until it wedged.
+- **When SSH *and* Run Command are both unresponsive, the only recovery is an
+  OCI-console power-cycle:** Console → Compute → Instances → `recruiterai-vcn` →
+  **Reboot**. Graceful reboot will NOT complete on a wedged OS (it hangs at
+  "Stopping" / 0%); after ~2 min use **Force reboot** (hard power-cycle).
+- After boot (~1–2 min), SSH may first give a plain `Connection timed out`
+  (sshd still starting) before it answers — retry.
+- Services are `enabled`, so `recruiterai-backend` + `nginx` auto-start on boot.
+  The backend takes ~50 s to finish startup; until then `/health` can time out
+  (`000`) even though nginx serves the static SPA with 200. Re-check `/health`
+  after startup logs "Application startup complete".
+- Recovery verified 2026-10-03: site 200, `/health` 200, `DEPLOYED_SHA`
+  e4a137d, shadow unset, `NRestarts=0`.
+
+**Hardening to reduce recurrence (recommended, not yet applied):** install
+`earlyoom` (`sudo dnf install -y earlyoom && sudo systemctl enable --now earlyoom`)
+so a runaway is killed *before* the host thrashes; lower `vm.swappiness` to ~10
+(`/etc/sysctl.d/99-swappiness.conf`); optionally set `MemoryHigh=400M` on
+`recruiterai-backend` for soft reclaim before the 500 M hard cap. Current state
+when the lock-up occurred: swappiness 60, earlyoom not installed,
+`MemoryHigh=infinity`.
