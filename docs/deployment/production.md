@@ -125,10 +125,16 @@ HTTP/HTTPS, and **OCI Run Command cannot even fork a shell** (command sits at
 - Recovery verified 2026-10-03: site 200, `/health` 200, `DEPLOYED_SHA`
   e4a137d, shadow unset, `NRestarts=0`.
 
-**Hardening to reduce recurrence (recommended, not yet applied):** install
-`earlyoom` (`sudo dnf install -y earlyoom && sudo systemctl enable --now earlyoom`)
-so a runaway is killed *before* the host thrashes; lower `vm.swappiness` to ~10
-(`/etc/sysctl.d/99-swappiness.conf`); optionally set `MemoryHigh=400M` on
-`recruiterai-backend` for soft reclaim before the 500 M hard cap. Current state
-when the lock-up occurred: swappiness 60, earlyoom not installed,
-`MemoryHigh=infinity`.
+**Hardening applied (2026-10-04):**
+- `earlyoom` 1.7 installed (from `ol9_developer_EPEL`, via
+  `oracle-epel-release-el9`), `systemctl enable --now earlyoom` — kills the
+  heaviest process *before* the host thrashes, breaking the swap-storm spiral
+  that wedges sshd/nginx. Verify: `systemctl is-active earlyoom`.
+- `vm.swappiness` lowered 60 → 10, persisted in `/etc/sysctl.d/99-swappiness.conf`.
+  Verify: `cat /proc/sys/vm/swappiness`.
+- NOT applied: `MemoryHigh` on `recruiterai-backend` (left at `infinity`; the
+  500 M hard `MemoryMax` stands, and the backend idles ~108 MB). Add later only
+  if OOM pressure recurs despite earlyoom.
+
+State when the lock-up occurred (for reference): swappiness 60, earlyoom not
+installed, `MemoryHigh=infinity`, ~2.5 GB swap already present.
