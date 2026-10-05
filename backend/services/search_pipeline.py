@@ -45,6 +45,7 @@ from backend.services.candidate_evidence_builder import build_candidate_evidence
 from backend.services import candidate_presentation as presentation_rules
 from backend.services.candidate_merger import CandidateMerger
 from backend.services.candidate_ranker import CandidateRanker
+from backend.services import geo_enforcement
 from backend.services.match_explainer import MatchExplainer
 from backend.services.requirement_judge import (
     INPUT_USD_PER_MILLION_TOKENS,
@@ -414,6 +415,27 @@ def run_search_pipeline(
         merged_candidates = candidate_merger.merge(raw_candidates)
         logger.info("[SEARCH] Candidate merge complete | search_id=%s unique=%s", search_id, len(merged_candidates))
 
+        # --- Geographic safety net (deterministic, default-on when geography is constrained) ---
+        # GUARANTEE: a location-constrained search never surfaces a candidate whose KNOWN
+        # current country/state is outside the confirmed scope — even if the provider
+        # degraded to an unfiltered global response (observed 2026-10-05: a slow geo+hybrid
+        # query timed out, retried, and returned a worldwide pool for a Hyderabad search).
+        # Conservative: unknown locations are kept. Kill-switch: SEARCH_GEO_ENFORCEMENT_ENABLED=false.
+        geo_dropped = 0
+        if geo_enforcement.is_enabled():
+            geo = geo_enforcement.enforce_location(
+                merged_candidates,
+                countries=intent.location.countries,
+                states=intent.location.states,
+            )
+            geo_dropped = geo.dropped_count
+            if geo_dropped:
+                logger.info(
+                    "[SEARCH] Geographic safety net dropped %s out-of-scope candidate(s) | search_id=%s countries=%s states=%s",
+                    geo_dropped, search_id, intent.location.countries, intent.location.states,
+                )
+                merged_candidates = geo.kept
+
         # What CrustData actually told us, kept honest: `total_count` is the
         # size of the pool that passed the query's hard filters (a location
         # boundary, mostly), NOT a count of good matches, so it is stored as
@@ -429,6 +451,7 @@ def run_search_pipeline(
                 "in_scope": int(max(total_counts)) if total_counts else None,
                 "has_location_scope": bool(intent.location.countries or intent.location.states or intent.location.cities),
                 "retrieved": len(merged_candidates),
+                "geo_dropped": geo_dropped,
                 "selected": None,
             }
         )

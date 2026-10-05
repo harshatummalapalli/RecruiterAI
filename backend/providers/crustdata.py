@@ -1,4 +1,5 @@
 import logging
+import os
 import time
 from typing import Any, Dict, List, Optional
 
@@ -33,6 +34,14 @@ DEFAULT_FIELDS = [
 ]
 DEFAULT_MAX_RETRIES = 3
 DEFAULT_RETRY_BACKOFF_BASE = 0.5
+# A geo-distance + hybrid query can legitimately take tens of seconds server-side.
+# The old 10s read timeout tripped on a slow query, retried, and the provider
+# returned an UNFILTERED global pool (observed live 2026-10-05 — a 38.9s request
+# surfaced worldwide candidates for a Hyderabad search). Give the query room to
+# complete (where it DOES filter correctly); the connect timeout stays short.
+# Overridable per-request (options["request_timeout"]) or via env.
+DEFAULT_REQUEST_TIMEOUT = 60.0
+DEFAULT_CONNECT_TIMEOUT = 10.0
 
 # CrustData's person_search employment_type vocabulary, confirmed live via
 # person_autocomplete on experience.employment_details.current.employment_type.
@@ -324,7 +333,14 @@ class CrustDataProvider(BaseProvider):
             logger.warning("Sourcing configuration is unavailable")
             raise ConfigurationError("Sourcing configuration is unavailable.")
 
-        client = self._client or httpx.Client(timeout=10.0)
+        timeout_seconds = float(
+            options.get("request_timeout")
+            or os.environ.get("CRUSTDATA_REQUEST_TIMEOUT")
+            or DEFAULT_REQUEST_TIMEOUT
+        )
+        client = self._client or httpx.Client(
+            timeout=httpx.Timeout(timeout_seconds, connect=DEFAULT_CONNECT_TIMEOUT)
+        )
         should_close_client = self._client is None
         max_retries = int(options.get("max_retries") or DEFAULT_MAX_RETRIES)
         retry_backoff_base = float(options.get("retry_backoff_base") or DEFAULT_RETRY_BACKOFF_BASE)

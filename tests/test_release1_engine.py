@@ -344,7 +344,7 @@ def test_pipeline_records_an_honest_funnel_and_restores_diagnostics(tmp_path) ->
     record = _run_pipeline(tmp_path, 30, _AlwaysMetJudge())
     funnel = record["response"]["diagnostics"]["funnel"]
     assert funnel == {
-        "in_scope": 725313, "has_location_scope": True, "retrieved": 30, "selected": 25,
+        "in_scope": 725313, "has_location_scope": True, "retrieved": 30, "geo_dropped": 0, "selected": 25,
         "read_in_depth": 25, "presented": 25,
     }
     internal = record["internal_diagnostics"]
