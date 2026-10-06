@@ -24,5 +24,16 @@ reasoning effort are whatever `structured_intent_extractor` already uses; nothin
 - `provenance.py` — lexical stated-vs-inferred report (JD, BRIEF, APPROVED, INFERRED).
 - `run_baseline.py` — the harness, the recording client and the five-run semantic-stability summary.
 
-Not built yet, deliberately: the experimental schema extension. It is designed only after the baseline shows what the
-current representation cannot express.
+## Experimental arm (built after the baseline, from its failures)
+
+- `DESIGN.md` — field-by-field justification of the extension and what was deliberately not added.
+- `experimental_schema.py` — `ExperimentalHiringIntent(StructuredHiringIntent)`: additive, serialisable only, no compiler support.
+- `prompt_v2.txt`, `experimental_extractor.py` — same model/effort (imported from production); only prompt and parse target differ.
+- `validators.py` — code checks the model's provenance / reconciliation claims against the JD and brief text.
+- `gold_experimental.py` — evaluator for the new shape (same assertion ids where the question is the same).
+- `run_experimental.py` — five-run harness. Streams, because the larger reply exceeds the ~90 s non-streaming upstream cutoff.
+- `compare_arms.py` — offline baseline-vs-experimental table. `results/` — compact stripped run snapshots.
+- `RESULTS.md` — tables, caveats, verdict.
+
+    OPENAI_API_KEY=... python -m backend.experiments.intake_strategy.run_experimental --runs 5
+    python -m backend.experiments.intake_strategy.compare_arms

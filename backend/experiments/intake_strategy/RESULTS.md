@@ -7,8 +7,8 @@ Config for both arms: `gpt-6.1-sol`, reasoning effort `medium`, same JD, same br
 ## Provenance of this result (what to distrust)
 - **Prompt and schema changed together.** The baseline used the production prompt; the experimental arm uses `prompt_v2.txt`
   (production rules 1-10 verbatim, plus nine new generic rules; the "treat the brief exactly like JD requirements" tail is
-  replaced by the source-priority model). The two cannot be separated: 13 of the 16 baseline failures were classed
-  REPRESENTATION from the schema alone, so they needed fields regardless of the prompt, but the reconciliation gains also
+  replaced by the source-priority model). The two cannot be separated: 12 of the 14 non-PASS baseline critical assertions were
+  classed REPRESENTATION from the schema alone (the other two RECONCILIATION), so they needed fields regardless of the prompt, but the reconciliation gains also
   owe something to the new priority rule.
 - **The prompt's illustrations were written with this class of role in mind.** They contain none of Role 1's values (a test
   enforces that, and that no gold assertion text reaches a prompt), but they show the same *shape* (a domain-led track with

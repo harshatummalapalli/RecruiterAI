@@ -35,7 +35,14 @@ compliance/audit, security frameworks) must not be silently discarded: reconcile
 - `provenance.py` lexical JD / BRIEF / APPROVED / INFERRED report.
 - `tests/test_experiment_intake_strategy.py` (15 tests). Full suite at handoff: 789 passed, 4 skipped.
 
-## What is NOT done
+## UPDATE (later session): baseline AND experimental arm are done
+The baseline was run (5/5 parsed) and the experimental representation was designed and run 5x. Read `RESULTS.md` first and
+`DESIGN.md` second. Verdict recorded there: INTAKE REPRESENTATION SUFFICIENT FOR THIS CLASS OF ROLE, with the live-retrieval gate
+NOT met (reconciliation reliability: leadership PARTIAL x3, Path B domain leak x1). Operational notes learnt: the injected OpenAI
+credential works with `OPENAI_API_KEY=placeholder` (the proxy replaces Authorization); non-streaming calls past ~90 s are cut
+upstream. Open owner decisions are listed in RESULTS.md. The "What is NOT done" list below is the original, now superseded.
+
+## What is NOT done (original, superseded)
 1. The baseline has NEVER been run: no OpenAI key was available. There are no results and no verdict yet.
 2. The experimental schema extension (design only AFTER the baseline), the 5-run experimental arm, the five-run
    comparison, failure taxonomy table, architecture recommendation, final executive conclusion.
