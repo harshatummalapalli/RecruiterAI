@@ -1,0 +1,31 @@
+Job Description:
+Job Summary
+The Data Analyst Lead – Cyber Incident Review is responsible for leading a team of Cyber Incident Review Analysts while ensuring the delivery of high-quality review services, adherence to security standards, and compliance with established protocols. This role combines hands-on cyber review expertise with people leadership, quality oversight, operational coordination, and data-driven decision-making.
+
+The successful candidate will perform the responsibilities of a Cyber Incident Review Analyst and Quality Control Analyst while mentoring team members, managing workflow priorities, driving process improvements, and partnering with the Review Manager to achieve business objectives. The role requires strong analytical capabilities, leadership skills, attention to detail, and a solid understanding of cybersecurity review processes, data privacy, information security principles, and data analytics.
+
+Key Responsibilities
+
+* Lead, mentor, and support a team of Cyber Incident Review Analysts to ensure quality, productivity, and compliance objectives are met.
+* Review, analyse, and interpret large datasets to identify trends, anomalies, and potential security risks.
+* Utilize SQL, Python, and Power Query to extract, transform, analyse, and report on review-related data.
+* Collaborate with technology, security, legal, compliance, and business stakeholders to address review findings and support remediation efforts.
+* Prepare management reports, dashboards, and performance metrics to support operational and business decisions.
+* Maintain accurate documentation, procedures, audit trails, and quality records in accordance with organizational and client requirements.
+* Assist the Review Manager with administrative activities, resource planning, workflow management, and team coordination.
+* Coach, develop, and provide ongoing feedback to team members to enhance performance and capability.
+* Drive continuous improvement initiatives to enhance operational efficiency, quality, and compliance outcomes.
+
+
+Qualifications & Requirements
+
+* Bachelor's degree in Cybersecurity, Information Technology, Computer Science, Information Systems, Data Analytics, or a related discipline preferred.
+* Hands-on experience with SQL and Python for data querying, analysis, automation, and reporting.
+* Working knowledge of Power Query for data transformation, preparation, and reporting.
+* Experience performing review, quality assurance, compliance, audit, or security monitoring activities.
+* Experience leading teams, mentoring analysts, and coordinating operational workflows.
+* Experience working with security frameworks, data privacy requirements, and regulatory compliance standards is highly desirable.
+* Equivalent combination of education and relevant professional experience will be considered.
+
+* Experience with Relativity and Canopy platforms is preferred.
+* Experience managing cyber incident reviews, breach investigations, or data privacy review workflows is an advantage.

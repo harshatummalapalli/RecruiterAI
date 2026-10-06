@@ -1,0 +1,100 @@
+ROLE 1 — Lead Data Analyst / Cyber Incident Review
+
+I am looking for Lead Data Analysts with hands-on experience with:
+- SQL
+- Python
+
+Those tools are used for:
+- data querying
+- data analysis
+- automation
+- reporting
+
+Also:
+- working knowledge of Power Query for data transformation, preparation and reporting
+- 6+ years of experience
+
+CRITICAL DOMAIN DISTINCTION:
+
+This is for a "Cyber Incident Review" team within a Legal Tech / Legal Solutions environment.
+
+The team analyses:
+- Cyber Incidents
+- Data Breaches
+- Cyber Incident Review
+- Data Breach Analysis
+
+This is NOT a Cyber Security role.
+
+Do NOT treat these as equivalent:
+- Cyber Incident Review
+- Data Breach Analysis
+
+with:
+- Cyber Security
+- SOC
+- Security Operations
+- Security Analyst
+- SIEM
+- Threat Detection
+- security incident response
+- other cybersecurity operations work
+
+A candidate should not become relevant merely because a profile contains the word "cyber" or "incident".
+
+There are TWO legitimate candidate sourcing paths.
+
+PATH A — DOMAIN-LED CANDIDATE
+
+Ideal:
+- Lead / Senior Data Analyst identity
+- SQL
+- Python
+- Power Query
+- Cyber Incident Review and/or Data Breach Analysis experience
+- preferably from Legal Tech / LPO / Legal Solutions / legal-services technology / Data Breach Analysis environments
+
+For this path:
+- India-wide location is acceptable
+- remote resources across India are acceptable
+
+PATH B — CAPABILITY-LED DATA ANALYST
+
+Acceptable alternative:
+- strong Data Analyst background
+- 6+ years
+- hands-on SQL
+- hands-on Python
+- Power Query
+- querying / analysis / automation / reporting experience
+
+For this path:
+- location should be Hyderabad OR Pune
+
+The intended priority is:
+
+1. Domain-led + tools + experience = strongest target
+2. Capability-led + tools + experience = acceptable alternative
+3. Generic cybersecurity/SOC/security profiles = NOT equivalent
+
+RECRUITER CLARIFICATIONS
+
+- Target: Lead Data Analysts with hands-on SQL and Python.
+- Python/SQL are used for querying, analysis, automation, and reporting.
+- Power Query is working knowledge, and is a lower bar than hands-on SQL/Python.
+- The team is Cyber Incident Review in a Legal Tech environment.
+- This is NOT cybersecurity operations.
+- This is NOT SOC.
+- This is NOT a conventional security-operations role.
+- A strong SQL/Python analyst working at a security firm should be excluded.
+- Preferred background includes Cyber Incident Review, Data Breach Analysis, Legal Tech, LPO, Legal Solutions, or related evidence-backed environments.
+- Path A is domain-led.
+- Path A can source across India / remote.
+- Path A does NOT require Power Query.
+- Path B is capability-led / hybrid.
+- Path B requires Lead level and 6+ years.
+- Path B requires hands-on SQL/Python.
+- Path B requires working knowledge of Power Query.
+- Path B geography is Hyderabad OR Pune.
+- Path B does not require the cyber-incident domain.
+- "Lead" may mean people leadership OR technical leadership.
