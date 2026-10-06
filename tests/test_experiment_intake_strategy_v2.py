@@ -515,7 +515,7 @@ def test_prompt_keeps_production_rules_verbatim_and_adds_no_role_specific_text(v
 
 def test_v3_prompt_states_the_hardening_rules_generically() -> None:
     text = (PROMPT_V2.parent / "prompt_v3.txt").read_text(encoding="utf-8")
-    for needle in ("belongs to THAT path only", "copied verbatim", "location.countries", "location.remote", "seniority.alternatives",
+    for needle in ("belongs to THAT path only", "SHORT designation", "never the whole heading", "location.countries", "location.remote", "seniority.alternatives",
                    "Keep the source's own qualifiers", "check every required atom against your reconciliations"):
         assert needle in text, needle
 

@@ -18,7 +18,7 @@ Return a single JSON object with exactly these keys (BASIS is defined below the 
   "domain": [ { "name": "...", "strength": "required|preferred|context", "basis": BASIS } ],
   "semantic_exclusions": [ { "concept": "...", "includes": ["..."], "basis": BASIS } ],
   "sourcing_paths": [
-    { "id": "the name the source gives the path", "label": "...", "strategy": "domain_led|capability_led|hybrid",
+    { "id": "the short name the source gives the path", "label": "...", "strategy": "domain_led|capability_led|hybrid",
       "seniority": { ... same shape as above ... }, "experience": { ... }, "location": { ... },
       "skills": [ ... same shape as above ... ], "domain": [ ... same shape as above ... ], "basis": BASIS }
   ],
@@ -86,7 +86,7 @@ RULES — these are hiring-intent semantics, not search mechanics. Two principle
    - "capability_led": what identifies the candidate is skills, tools and level, whatever domain they worked in.
    - "hybrid": both matter.
    Put in the global fields what holds for EVERY path. Put in a path ONLY what differs for that path. A path's seniority, experience or location REPLACES the global value for that path; a path skill or domain entry with the same name REPLACES the global entry for that path; any other path entry is an addition. Do not copy the global intent into the paths. If a requirement is stated for only some paths, it belongs to those paths, not to the global fields. Never merge two alternative paths into one list of requirements. Do not invent a path.
-   Scope belongs to the source's own structure. A requirement the source states inside one path's own section, or in a sentence that names that path ("<path name> requires ..."), belongs to THAT path only. Do not lift it into the global fields because an overview also lists it, and do not let another path inherit it because it is globally plausible. A requirement is global only when the source states it for every path (or when no paths are in play). Set each path's id to the name the source itself gives it, copied verbatim (for example "Option 2"); use a short slug only when the source gives the path no name.
+   Scope belongs to the source's own structure. A requirement the source states inside one path's own section, or in a sentence that names that path ("<path name> requires ..."), belongs to THAT path only. Do not lift it into the global fields because an overview also lists it, and do not let another path inherit it because it is globally plausible. A requirement is global only when the source states it for every path (or when no paths are in play). Set each path's id to the SHORT designation the source itself uses for it, copied verbatim (for example "Option 2" or "Track B"; never the whole heading or its description, and at most 24 characters); use a short slug only when the source gives the path no designation.
    Illustration from an unrelated role: a "claims adjuster" brief with "track 1: experience in marine claims, anywhere in Brazil; track 2: any adjuster in Sao Paulo, marine experience not needed" -> two paths, each with its own location; marine claims is a domain on the first and not a requirement on the second.
 
 14. PROFICIENCY. Set "proficiency" on a skill when the source distinguishes depth: "hands_on" (the candidate is expected to use it directly and substantively) or "working_knowledge" (a lower bar: working familiarity). Use null when no depth is stated. Proficiency is separate from strength: strength says how much the skill is wanted; proficiency says how deeply. Never encode depth into strength.
