@@ -1,0 +1,128 @@
+{
+  "arm": "baseline",
+  "config": {
+    "model": "gpt-6.1-sol",
+    "reasoning_effort": "medium"
+  },
+  "tokens": {
+    "input": 15310,
+    "output": 8414
+  },
+  "stability": {
+    "runs": 5,
+    "parsed": 5,
+    "errors": [],
+    "components": {
+      "structure": {
+        "modal_value": "('education', 'evidence_signals', 'exclusions', 'experience', 'location', 'role_archetype', 'role_family', 'seniority', 'skill_any_of', 'skills')",
+        "agreement": "3/5",
+        "distinct": 2
+      },
+      "archetype": {
+        "modal_value": "'hybrid'",
+        "agreement": "5/5",
+        "distinct": 1
+      },
+      "paths": {
+        "modal_value": "0",
+        "agreement": "5/5",
+        "distinct": 1
+      },
+      "seniority": {
+        "modal_value": "'lead'",
+        "agreement": "5/5",
+        "distinct": 1
+      },
+      "must_preferred": {
+        "modal_value": "('required', 'required', 'preferred')",
+        "agreement": "4/5",
+        "distinct": 2
+      },
+      "experience": {
+        "modal_value": "(6, 'required')",
+        "agreement": "5/5",
+        "distinct": 1
+      },
+      "negatives": {
+        "modal_value": "('security firms',)",
+        "agreement": "4/5",
+        "distinct": 2
+      },
+      "geography": {
+        "modal_value": "(('hyderabad, telangana, india', 'india', 'pune, maharashtra, india'), False)",
+        "agreement": "5/5",
+        "distinct": 1
+      },
+      "domain_distinction": {
+        "modal_value": "('FAIL', 'RECONCILIATION')",
+        "agreement": "5/5",
+        "distinct": 1
+      },
+      "provenance_inferred_required": {
+        "modal_value": "6",
+        "agreement": "3/5",
+        "distinct": 3
+      }
+    },
+    "assertion_statuses": {
+      "two_paths_preserved": {
+        "FAIL": 5
+      },
+      "path_a_domain_led": {
+        "FAIL": 5
+      },
+      "path_b_capability_led": {
+        "FAIL": 5
+      },
+      "path_geography_differs": {
+        "FAIL": 5
+      },
+      "pq_not_mandatory_path_a": {
+        "FAIL": 5
+      },
+      "pq_working_knowledge_path_b": {
+        "FAIL": 5
+      },
+      "sql_hands_on": {
+        "PARTIAL": 5
+      },
+      "python_hands_on": {
+        "PARTIAL": 5
+      },
+      "path_b_min_6_years": {
+        "PARTIAL": 5
+      },
+      "path_b_lead_requirement": {
+        "PARTIAL": 3,
+        "FAIL": 2
+      },
+      "cyber_review_not_secops": {
+        "FAIL": 5
+      },
+      "hard_negative_secops_preserved": {
+        "FAIL": 5
+      },
+      "lead_people_or_technical": {
+        "FAIL": 5
+      },
+      "no_invented_radius": {
+        "PASS": 5
+      },
+      "no_invented_company_filter": {
+        "PASS": 5
+      },
+      "provenance_preserved": {
+        "FAIL": 5
+      },
+      "compiler_country_not_city": {
+        "FAIL": 5
+      },
+      "compiler_multi_location_keeps_country": {
+        "FAIL": 5
+      },
+      "compiler_no_company_filter": {
+        "PASS": 5
+      }
+    }
+  }
+}

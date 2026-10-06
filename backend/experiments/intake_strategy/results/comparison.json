@@ -1,0 +1,439 @@
+{
+  "table": [
+    {
+      "id": "two_paths_preserved",
+      "baseline": "FAILx5",
+      "experimental": "PASSx5",
+      "experimental_failure_class": {}
+    },
+    {
+      "id": "path_a_domain_led",
+      "baseline": "FAILx5",
+      "experimental": "PASSx5",
+      "experimental_failure_class": {}
+    },
+    {
+      "id": "path_b_capability_led",
+      "baseline": "FAILx5",
+      "experimental": "PASSx5",
+      "experimental_failure_class": {}
+    },
+    {
+      "id": "path_geography_differs",
+      "baseline": "FAILx5",
+      "experimental": "PASSx5",
+      "experimental_failure_class": {}
+    },
+    {
+      "id": "pq_not_mandatory_path_a",
+      "baseline": "FAILx5",
+      "experimental": "PASSx5",
+      "experimental_failure_class": {}
+    },
+    {
+      "id": "pq_working_knowledge_path_b",
+      "baseline": "FAILx5",
+      "experimental": "PASSx5",
+      "experimental_failure_class": {}
+    },
+    {
+      "id": "sql_hands_on",
+      "baseline": "PARTIALx5",
+      "experimental": "PASSx5",
+      "experimental_failure_class": {}
+    },
+    {
+      "id": "python_hands_on",
+      "baseline": "PARTIALx5",
+      "experimental": "PASSx5",
+      "experimental_failure_class": {}
+    },
+    {
+      "id": "path_b_min_6_years",
+      "baseline": "PARTIALx5",
+      "experimental": "PASSx5",
+      "experimental_failure_class": {}
+    },
+    {
+      "id": "path_b_lead_requirement",
+      "baseline": "PARTIALx3 FAILx2",
+      "experimental": "PASSx5",
+      "experimental_failure_class": {}
+    },
+    {
+      "id": "cyber_review_not_secops",
+      "baseline": "FAILx5",
+      "experimental": "PASSx5",
+      "experimental_failure_class": {}
+    },
+    {
+      "id": "hard_negative_secops_preserved",
+      "baseline": "FAILx5",
+      "experimental": "PASSx5",
+      "experimental_failure_class": {}
+    },
+    {
+      "id": "lead_people_or_technical",
+      "baseline": "FAILx5",
+      "experimental": "PASSx2 PARTIALx3",
+      "experimental_failure_class": {
+        "RECONCILIATION": 3
+      }
+    },
+    {
+      "id": "no_invented_radius",
+      "baseline": "PASSx5",
+      "experimental": "PASSx5",
+      "experimental_failure_class": {}
+    },
+    {
+      "id": "no_invented_company_filter",
+      "baseline": "PASSx5",
+      "experimental": "PASSx5",
+      "experimental_failure_class": {}
+    },
+    {
+      "id": "no_invented_company_exclusion",
+      "baseline": "FAILx5",
+      "experimental": "PASSx5",
+      "experimental_failure_class": {}
+    },
+    {
+      "id": "provenance_preserved",
+      "baseline": "FAILx5",
+      "experimental": "PASSx5",
+      "experimental_failure_class": {}
+    },
+    {
+      "id": "path_b_domain_not_required",
+      "baseline": "not expressible (no field)",
+      "experimental": "PASSx4 FAILx1",
+      "experimental_failure_class": {
+        "RECONCILIATION": 1
+      }
+    },
+    {
+      "id": "intent_country_level_geography",
+      "baseline": "not expressible (no field)",
+      "experimental": "PASSx5",
+      "experimental_failure_class": {}
+    },
+    {
+      "id": "reconciliation_visible",
+      "baseline": "not expressible (no field)",
+      "experimental": "PASSx5",
+      "experimental_failure_class": {}
+    },
+    {
+      "id": "jd_not_silently_discarded",
+      "baseline": "not expressible (no field)",
+      "experimental": "PASSx5",
+      "experimental_failure_class": {}
+    }
+  ],
+  "compiler": [
+    {
+      "id": "compiler_country_not_city",
+      "baseline": "FAILx5",
+      "experimental": "not run (compiler unchanged, out of scope)"
+    },
+    {
+      "id": "compiler_multi_location_keeps_country",
+      "baseline": "FAILx5",
+      "experimental": "not run (compiler unchanged, out of scope)"
+    },
+    {
+      "id": "compiler_no_company_filter",
+      "baseline": "PASSx5",
+      "experimental": "not run (compiler unchanged, out of scope)"
+    }
+  ],
+  "observations": {
+    "runs": {
+      "baseline_parsed": 5,
+      "experimental_parsed": 5,
+      "experimental_attempted": 5
+    },
+    "semantic_negative_about_security_firms": "5/5 runs (the brief states it; the model kept it as a semantic concept, not a company filter)",
+    "path_a_effective_seniority": {
+      "Senior/preferred": 3,
+      "Lead/preferred": 2
+    },
+    "path_a_effective_experience": {
+      "6+/required": 5
+    },
+    "domain_atoms_per_run": [
+      5,
+      5,
+      4,
+      9,
+      4
+    ],
+    "semantic_exclusions_per_run": [
+      3,
+      3,
+      3,
+      3,
+      3
+    ],
+    "reconciliations_per_run": [
+      6,
+      6,
+      6,
+      6,
+      6
+    ],
+    "remote_mentioned_anywhere_in_intent": "5/5 (no typed field: lives only in quote / label text)",
+    "quote_overlap_below_0.5": "27/192 atoms with a quote (paraphrase vs mismatch is undecidable lexically)",
+    "validation_status_counts": [
+      {
+        "verified": 36
+      },
+      {
+        "verified": 37
+      },
+      {
+        "verified": 37
+      },
+      {
+        "verified": 43
+      },
+      {
+        "verified": 39
+      }
+    ],
+    "diagnostic_codes": {
+      "quote_weakly_related": 20
+    }
+  },
+  "tokens": {
+    "baseline": {
+      "input": 15310,
+      "output": 8414
+    },
+    "experimental": {
+      "input": 22645,
+      "output": 20584
+    }
+  },
+  "experimental_stability": {
+    "runs": 5,
+    "parsed": 5,
+    "errors": [],
+    "components": {
+      "path_strategies": {
+        "modal_value": "('capability_led', 'domain_led')",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "('capability_led', 'domain_led')": 5
+        }
+      },
+      "geography_A": {
+        "modal_value": "('india',)",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "('india',)": 5
+        }
+      },
+      "geography_B": {
+        "modal_value": "('hyderabad', 'pune')",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "('hyderabad', 'pune')": 5
+        }
+      },
+      "power_query_A": {
+        "modal_value": "'absent'",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "'absent'": 5
+        }
+      },
+      "power_query_B": {
+        "modal_value": "'required/working_knowledge'",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "'required/working_knowledge'": 5
+        }
+      },
+      "sql_B": {
+        "modal_value": "'required/hands_on'",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "'required/hands_on'": 5
+        }
+      },
+      "python_B": {
+        "modal_value": "'required/hands_on'",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "'required/hands_on'": 5
+        }
+      },
+      "experience_B": {
+        "modal_value": "(6, 'required')",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "(6, 'required')": 5
+        }
+      },
+      "seniority_B": {
+        "modal_value": "('lead', 'required', ('people', 'technical'))",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "('lead', 'required', ('people', 'technical'))": 5
+        }
+      },
+      "seniority_A": {
+        "modal_value": "('senior', 'preferred', ('people', 'technical'))",
+        "agreement": "3/5",
+        "distinct": 2,
+        "values": {
+          "('senior', 'preferred', ('people', 'technical'))": 3,
+          "('lead', 'preferred', ('people', 'technical'))": 2
+        }
+      },
+      "domain_A": {
+        "modal_value": "('context', 'context', 'preferred', 'required')",
+        "agreement": "2/5",
+        "distinct": 4,
+        "values": {
+          "('context', 'context', 'context', 'preferred', 'required')": 1,
+          "('context', 'context', 'preferred', 'required')": 2,
+          "('context', 'preferred', 'preferred', 'preferred', 'preferred', 'preferred', 'preferred', 'preferred', 'preferred')": 1,
+          "('context', 'context', 'preferred', 'preferred')": 1
+        }
+      },
+      "domain_B_required": {
+        "modal_value": "False",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "False": 5
+        }
+      },
+      "semantic_negative": {
+        "modal_value": "True",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "True": 5
+        }
+      },
+      "company_exclusions": {
+        "modal_value": "0",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "0": 5
+        }
+      },
+      "reconciliations_expected_found": {
+        "modal_value": "\"{'security_ops_item': True, 'power_query_waived_on_A': True, 'lead_leadership_widened': True}\"",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "\"{'security_ops_item': True, 'power_query_waived_on_A': True, 'lead_leadership_widened': True}\"": 5
+        }
+      },
+      "basis_coverage": {
+        "modal_value": "'37/37'",
+        "agreement": "2/5",
+        "distinct": 4,
+        "values": {
+          "'36/36'": 1,
+          "'37/37'": 2,
+          "'43/43'": 1,
+          "'39/39'": 1
+        }
+      },
+      "unsupported_or_misattributed": {
+        "modal_value": "0",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "0": 5
+        }
+      }
+    },
+    "assertion_statuses": {
+      "two_paths_preserved": {
+        "PASS": 5
+      },
+      "path_a_domain_led": {
+        "PASS": 5
+      },
+      "path_b_capability_led": {
+        "PASS": 5
+      },
+      "path_geography_differs": {
+        "PASS": 5
+      },
+      "pq_not_mandatory_path_a": {
+        "PASS": 5
+      },
+      "pq_working_knowledge_path_b": {
+        "PASS": 5
+      },
+      "sql_hands_on": {
+        "PASS": 5
+      },
+      "python_hands_on": {
+        "PASS": 5
+      },
+      "path_b_min_6_years": {
+        "PASS": 5
+      },
+      "path_b_lead_requirement": {
+        "PASS": 5
+      },
+      "cyber_review_not_secops": {
+        "PASS": 5
+      },
+      "hard_negative_secops_preserved": {
+        "PASS": 5
+      },
+      "lead_people_or_technical": {
+        "PASS": 2,
+        "PARTIAL": 3
+      },
+      "no_invented_radius": {
+        "PASS": 5
+      },
+      "no_invented_company_filter": {
+        "PASS": 5
+      },
+      "no_invented_company_exclusion": {
+        "PASS": 5
+      },
+      "provenance_preserved": {
+        "PASS": 5
+      },
+      "path_b_domain_not_required": {
+        "PASS": 4,
+        "FAIL": 1
+      },
+      "intent_country_level_geography": {
+        "PASS": 5
+      },
+      "reconciliation_visible": {
+        "PASS": 5
+      },
+      "jd_not_silently_discarded": {
+        "PASS": 5
+      }
+    },
+    "diagnostic_codes_across_runs": {
+      "quote_weakly_related": 20
+    }
+  }
+}

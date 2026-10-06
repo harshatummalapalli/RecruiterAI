@@ -12,6 +12,11 @@ Also checked, deterministically: the quote sits in the source the model named (e
 narrowing the model recorded was actually applied to the path it names; a JD item the brief contradicted does not
 survive as a required atom; an inferred atom is never required; path ids are unique and referenced paths exist.
 
+"verified" means the quote exists verbatim in the cited source and was cited to the right one. It does NOT mean the quote
+entails the atom: `quote_overlap` (share of the atom's meaningful words found in its quote) is reported per atom as an
+informational signal only, because a faithful paraphrase scores low and a deterministic check cannot tell it from a
+mismatch. It never changes a status or a verdict.
+
 Known limit, reported not tuned away: lexical support misses faithful paraphrases, and "approved_knowledge" claims
 cannot be checked here at all, so they are reported as unverified.
 """
@@ -28,6 +33,7 @@ from backend.experiments.intake_strategy.experimental_schema import (
 )
 from backend.services.requirement_provenance import _meaningful, _present, _sentences, _tokens, stated_evidence
 
+WEAK_OVERLAP = 0.34  # informational threshold only
 _QUOTE_MARKS = str.maketrans({"‘": "'", "’": "'", "“": '"', "”": '"', "–": "-", "—": "-", " ": " "})
 _ELLIPSIS = re.compile(r"…|\.\.\.")
 
@@ -140,6 +146,10 @@ def _verify_atom(atom: Dict[str, Any], jd: str, brief: str, jd_sentences: List[s
     quote_found = bool(verbatim)
     if basis.quote and not quote_found:
         out["quote_not_found"] = True
+    words = _meaningful(atom["text"])
+    if basis.quote and words:
+        qtoks = _tokens(basis.quote)
+        out["quote_overlap"] = round(sum(1 for w in words if _present(w, qtoks)) / len(words), 2)
     # Derived by code from where support was FOUND (either source), not from what the model cited.
     seen = sorted(found) if status in ("verified", "lexical") else verified
     if status == "inferred":
@@ -182,6 +192,8 @@ def validate(intent: ExperimentalHiringIntent, jd: str, brief: str) -> Dict[str,
             diag("approved_knowledge_unverified", r["ref"], f"{r['text']!r}: approved_knowledge cannot be verified here")
         if r["status"] == "inferred" and r["constraint"]:
             diag("inferred_hard_constraint", r["ref"], f"{r['kind']} {r['text']!r} is required but inferred (stated nowhere)")
+        if r.get("quote_overlap") is not None and r["quote_overlap"] < WEAK_OVERLAP:
+            diag("quote_weakly_related", r["ref"], f"{r['text']!r}: only {r['quote_overlap']:.0%} of its words appear in its quote (informational)")
         if r.get("quote_not_found") and r["status"] not in ("missing", "inferred"):
             diag("quote_not_found", r["ref"], f"{r['text']!r}: the quote is not verbatim in either source")
 

@@ -7,6 +7,11 @@ prompt (prompt_v2.txt) and the parse target (ExperimentalHiringIntent) differ. T
 the representation, and compiler behaviour is deliberately unchanged and out of scope. Never imports a provider, Harvest,
 the search pipeline or the judge.
 
+Transport: the experimental reply is much larger than the baseline's (per-atom provenance), and a non-streaming request
+that runs past ~90 s is cut off upstream ("InternalServerError: upstream request failed", observed 5/5 on the first
+attempt, each at ~92 s; the baseline's failed run 5 died at the same point). The reply is therefore streamed and
+reassembled into the SAME final response object. Model, reasoning effort, prompt text and parse path are unchanged.
+
 A parse/validation failure is recorded as a result (a structural failure rate is a stability signal). Only transient
 transport/server errors (HTTP 5xx, connection, timeout) are retried, at most twice, and each retry is recorded.
 """
@@ -32,6 +37,33 @@ from backend.services.structured_intent_extractor import _INTAKE_MODEL, _INTAKE_
 MAX_TRANSIENT_RETRIES = 2
 
 
+class StreamingRecordingClient(RecordingClient):
+    """RecordingClient that streams, then hands back the final response object exactly as a non-streaming call would."""
+
+    def create(self, **kwargs: Any) -> Any:
+        final = None
+        for event in self._inner.responses.create(stream=True, **kwargs):
+            if getattr(event, "type", None) == "response.completed":
+                final = event.response
+            elif getattr(event, "type", None) in ("response.failed", "response.incomplete"):
+                raise RuntimeError(f"model response {event.type}: {getattr(getattr(event, 'response', None), 'error', None)}")
+        if final is None:
+            raise RuntimeError("stream ended without response.completed")
+        usage = getattr(final, "usage", None)
+        self.calls.append(
+            {
+                "model": kwargs.get("model"),
+                "reasoning": kwargs.get("reasoning"),
+                "prompt": kwargs.get("input"),
+                "raw_text": getattr(final, "output_text", None),
+                "input_tokens": int(getattr(usage, "input_tokens", 0) or 0),
+                "output_tokens": int(getattr(usage, "output_tokens", 0) or 0),
+                "streamed": True,
+            }
+        )
+        return final
+
+
 def _is_transient(exc: Exception) -> bool:
     name = type(exc).__name__
     status = getattr(exc, "status_code", None)
@@ -39,7 +71,7 @@ def _is_transient(exc: Exception) -> bool:
 
 
 def run_once(index: int, client_factory: Callable[[], Any], jd: str, brief: str) -> Dict[str, Any]:
-    client = RecordingClient(client_factory())
+    client = StreamingRecordingClient(client_factory())
     started = time.perf_counter()
     record: Dict[str, Any] = {"run": index, "error": None, "transient_retries": []}
     for attempt in range(MAX_TRANSIENT_RETRIES + 1):

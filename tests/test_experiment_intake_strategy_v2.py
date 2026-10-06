@@ -100,7 +100,7 @@ def evaluate(raw: dict):
 def test_a_correct_intent_passes_every_assertion() -> None:
     _, r, v = evaluate(good())
     assert {k: x["status"] for k, x in r.items() if x["status"] != gold.PASS} == {}
-    assert v["diagnostics"] == []
+    assert [d for d in v["diagnostics"] if d["code"] != "quote_weakly_related"] == []  # that one is informational only
     assert {a["status"] for a in v["atoms"]} <= {"verified", "lexical"}
 
 
@@ -246,6 +246,16 @@ def test_labels_are_derived_from_what_code_verified() -> None:
     assert labels["paths[A].skills[0]"] == "waived_by_brief"
 
 
+def test_a_real_but_unrelated_quote_is_flagged_informationally_and_never_changes_a_verdict() -> None:
+    raw = good()
+    raw["skills"][3]["basis"] = b("jd", "Maintain accurate documentation, procedures, audit trails, and quality records in accordance with organizational and client requirements.")
+    _, r, v = evaluate(raw)
+    atom = next(a for a in v["atoms"] if a["ref"] == "skills[3]")
+    assert atom["status"] == "verified" and atom["quote_overlap"] == 0.0   # the quote exists; it just does not support Relativity
+    assert "quote_weakly_related" in {d["code"] for d in v["diagnostics"]}
+    assert r["provenance_preserved"]["status"] == gold.PASS               # informational: the known limit of a lexical check
+
+
 def test_reconciliation_quotes_are_checked_against_the_right_source() -> None:
     raw = good()
     raw["reconciliations"][0]["brief_quote"] = "The recruiter said security monitoring is fine."
@@ -355,10 +365,12 @@ class _Fake:
 
     def create(self, **kwargs):
         self.calls += 1
+        assert kwargs.get("stream") is True  # the experimental arm streams (see run_experimental)
         item = self._payloads.pop(0)
         if isinstance(item, Exception):
             raise item
-        return SimpleNamespace(output_text=item, usage=SimpleNamespace(input_tokens=5, output_tokens=3))
+        final = SimpleNamespace(output_text=item, usage=SimpleNamespace(input_tokens=5, output_tokens=3))
+        return iter([SimpleNamespace(type="response.output_text.delta"), SimpleNamespace(type="response.completed", response=final)])
 
 
 class InternalServerError(Exception):
@@ -368,9 +380,19 @@ class InternalServerError(Exception):
 def test_harness_records_intent_gold_and_validation_and_keeps_model_config() -> None:
     fake = _Fake([json.dumps(good())])
     record = exp.run_once(1, lambda: fake, JD, BRIEF)
-    assert record["error"] is None and record["gold"]["validation"]["diagnostics"] == []
+    assert record["error"] is None
+    assert [d for d in record["gold"]["validation"]["diagnostics"] if d["code"] != "quote_weakly_related"] == []
     assert record["model_calls"][0]["model"] == "gpt-6.1-sol" and record["model_calls"][0]["reasoning"] == {"effort": "medium"}
     assert "compiled" not in record  # the compiler is not part of this arm
+
+
+def test_a_stream_that_never_completes_is_an_error_not_an_empty_intent() -> None:
+    class Cut(_Fake):
+        def create(self, **kwargs):
+            return iter([SimpleNamespace(type="response.output_text.delta")])
+
+    record = exp.run_once(1, lambda: Cut([]), JD, BRIEF)
+    assert "without response.completed" in record["error"] and "intent" not in record
 
 
 def test_only_transient_errors_are_retried(monkeypatch: pytest.MonkeyPatch) -> None:
