@@ -223,3 +223,158 @@ so it misses a JD item whose surviving atom comes from different sentences than 
 
 ## Not added (as instructed)
 Scoring, query text, provider fields, ranking, taxonomy, embeddings, probes, candidate evidence, feedback, line numbers, ontology.
+
+---
+
+# FROZEN: Role 1 final status and architectural conclusions
+
+**ROLE 1 REPRESENTATION ACCEPTED FOR CROSS-ROLE VALIDATION**
+
+This is an owner decision made after the hardening pass. It means the representation is expressive enough for Role 1 to justify
+testing whether the design generalises. It does NOT authorize compiler or retrieval implementation, and it is not a claim that
+the acceptance gate in `RESULTS_HARDENING.md` was met 5/5 (it was not; see "Unresolved risks"). The experiment is frozen: no
+further Role 1 tuning, no Role 2, no live retrieval, no production change.
+
+## Locked recruiter decisions (ground truth; the evaluator in `gold_experimental.py` encodes them)
+| | Path A: domain-led | Path B: capability-led / hybrid |
+|---|---|---|
+| Seniority | Lead OR Senior (brief: "Lead / Senior Data Analyst identity"; `Senior` stays) | Lead |
+| Experience | none | 6+ years (NOT global, NOT on Path A) |
+| SQL / Python | hands-on | hands-on |
+| Power Query | not required | working knowledge (required) |
+| Domain | Cyber Incident Review / Data Breach Analysis, **preferred, not required** (the brief says "Ideally"); legal-tech / LPO / legal-solutions background preferred | not required |
+| Geography | country India, remote allowed | cities Hyderabad OR Pune |
+| Leadership | "Lead" = people OR technical leadership (both paths) | same |
+
+Global: the security-operations negative (below) and the JD's formal items the brief does not address (Relativity/Canopy, degree
+streams, review / QA / compliance / audit, frameworks and privacy), retained at the JD's strength.
+
+## Final Role 1 representation (what the experimental intent must say)
+    role_family: Data Analyst                    archetype: hybrid
+    seniority (global): Lead, required, leadership [people, technical]
+    skills (global): SQL hands_on required; Python hands_on required; Power Query working_knowledge required;
+                     Relativity, Canopy preferred
+    domain (global): Cyber Incident Review / Data Breach Analysis (legal-tech context), preferred
+    semantic_exclusions: security-operations work (cybersecurity operations, SOC, security operations, SIEM, threat detection);
+                         "a strong SQL/Python analyst working at a security firm" (subordinate to the first, see below)
+    sourcing_paths:
+      Path A (domain_led):   seniority Lead + alternative Senior, preferred;
+                             location countries [India], entries [], remote allowed;
+                             skills: Power Query not required (waived); domain: preferred
+      Path B (capability_led): experience 6+ required; location entries [Hyderabad, Telangana, India; Pune, Maharashtra, India]
+                             (inherits Lead, SQL/Python hands-on, Power Query working knowledge, no required domain)
+    reconciliations: security monitoring contradicted; Power Query waived on Path A; "Lead" widened to people OR technical
+    experience (global): absent      company exclusions: none      radius: none
+
+## Leadership
+The existing `seniority.leadership = [people, technical]` already represents "acceptable types: people, technical", so **no new
+field is added** (the owner's `acceptable_types` is this same list under its existing name). The JD sentence "Lead, mentor,
+support Cyber Incident Review Analysts" stays contextual evidence (`context`), never an implicit direct-reports requirement. The
+evaluator fails (PARTIAL, RECONCILIATION) when it survives as a *required* people-only atom.
+
+## Cyber / security distinction
+The semantic negative is about work identity: security-operations-style work (cybersecurity operations, SOC, security operations,
+and equivalent). The recruiter's statement that a strong SQL/Python analyst working at a security firm is to be excluded is kept
+as a qualified semantic concept in the recruiter's own words, **subordinate to the work-identity negative**: it applies when the
+evidence shows the person's actual work is security operations, not on employer industry alone. The evaluator requires the firm
+statement to sit beside the work-identity negative and fails any company-name exclusion. Honest limit: the schema has no field
+that says "this negative is conditional on that one"; today that subordination is a convention the compiler and judge must
+honour (see risks).
+
+## 6+ years
+It belongs to Path B only: not global, not on Path A. The generic `path_requirement_leakage` validator stays. The 1 leak in 5 runs
+(run 1: placed globally, so inherited by Path A) is recorded as an extraction/reconciliation instability that the validator
+correctly caught. No further tuning to reach 5/5.
+
+## PROVEN FOR ROLE 1
+- the current (production) representation could not express the sourcing strategy (baseline: 14 of 16 critical assertions non-PASS,
+  12 of them REPRESENTATION by schema introspection)
+- `sourcing_paths` are justified
+- path-scoped requirements are justified (override semantics)
+- path-scoped geography is justified
+- proficiency (`hands_on` / `working_knowledge`) is justified
+- semantic exclusions are justified (the baseline's only expressible negative was a company, which compiled to a meaningless filter)
+- typed country / remote geography is justified (`location.countries`, `location.remote`)
+- provenance and reconciliation are justified (code can verify the model's quotes; reconciliations make narrowing visible)
+- the recruiter brief must be able to explicitly narrow or waive JD meaning (the production prompt's "treat the brief exactly like JD
+  requirements, not as corrections" produced the reconciliation failures)
+- intake and compiler need separate responsibilities (the baseline compiled India as a city and a work-type negative as a company
+  string, from intents that were otherwise understandable)
+
+## NOT YET PROVEN GENERALLY
+- that this schema generalises across role families
+- that these exact fields are sufficient for all difficult recruiter workflows
+- that compiler behaviour is correct against the new representation (the compiler was never run on it)
+- that retrieval quality improves
+- that semantic exclusions can be reliably enforced by providers
+
+"Sufficient for this class of role" is **not** claimed: one role is one data point. An earlier wording to that effect in
+`RESULTS.md` is withdrawn.
+
+## Architectural boundary
+    JD + Recruiter/HM Brief
+            |
+            v
+    StructuredHiringIntent          (intake: understand and reconcile; preserve strategy)
+            |
+            v
+    Deterministic Compiler          (translate APPROVED intent into provider constraints)
+            |
+            v
+    Provider-executable plan
+            |
+            v
+    CrustData retrieval
+            |
+            v
+    Evidence / Judge                (semantic facts a provider cannot reliably enforce)
+            |
+            v
+    Recruiter decision
+
+| layer | responsibility |
+|---|---|
+| Intake | understand and reconcile hiring intent from two sources with different authority |
+| StructuredHiringIntent | preserve recruiter strategy, alternatives, scope, strengths, provenance and exclusions; meaning only, never provider mechanics |
+| Compiler | translate approved intent into executable provider constraints; decides what a provider can enforce, what needs verification, what stays semantic |
+| Taxonomy / knowledge | approved equivalences, role-family mappings and provider capability knowledge |
+| Evidence / Judge | evaluate semantic facts provider search cannot reliably enforce (work identity, depth of skill, leadership kind) |
+
+Two rules that follow, and are not negotiable: do not move compiler logic into the LLM, and do not move semantic judgment into
+provider filters merely because a field is filterable.
+
+## Negative decisions (explicitly NOT being added)
+- a second search contract
+- a separate Task C
+- LLM-generated provider query text
+- candidate scoring
+- retrieval ranking changes
+- a universal role ontology
+- provider-specific fields in `StructuredHiringIntent`
+- automatic company-industry exclusions
+- automatic people-manager requirements
+- invented geographic radius
+
+## Unresolved risks
+1. **Extraction instability remains.** Over the 5 v3 runs scored against the locked ground truth: Path A domain `preferred` in 2,
+   `required` in 3 (extraction; the schema can express the right answer); 6+ years leaked into Path A in 1 (caught by the
+   validator); a required people-only leadership atom survived in 1 (not caught at runtime). The representation is accepted; the
+   reliability of extraction into it is not established.
+2. **Runtime validation covers less than the evaluator.** The generic validators are structural and lexical. The evaluator holds
+   Role 1's truth; nothing at runtime would have known the run-4 leadership atom was wrong.
+3. **Provenance "verified" means the quote exists in the cited source, not that it entails the atom.**
+4. **The security-firm subordination is a convention, not a field.** A compiler or judge that reads the firm statement as an
+   employer-industry rule would violate the recruiter's decision with no schema error.
+5. **The compiler has never run against the new representation.** Per-path compilation, countries vs entries, remote,
+   proficiency and semantic exclusions are all unimplemented downstream; the baseline already showed the compiler corrupts
+   country-level intent.
+6. **Semantic exclusions may not be provider-enforceable.** Whether a provider can enforce "security-operations work" is untested.
+7. **The prompt is shaped by this class of role** and the evaluator by this role's truth. Neither is neutral evidence of
+   generality. One model, one JD, five runs per arm.
+
+## Recommended next experiment
+A differently shaped real role, not another Role 1 cycle: run `prompt_v3` and the unchanged schema and validators once on a role
+with a different structure (for example a single path with a hard negative and a numeric experience band, or a title-defined
+role with company preferences and no paths), with the recruiter's ground truth written down **before** the run, and report
+which fields were exercised, which were not needed, and what was missing. Compiler and retrieval work stay out of scope until
+that result is in.

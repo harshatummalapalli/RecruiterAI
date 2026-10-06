@@ -1,5 +1,10 @@
 # HANDOFF — Role 1 intake-strategy experiment
 
+> **FROZEN. Final status: ROLE 1 REPRESENTATION ACCEPTED FOR CROSS-ROLE VALIDATION.** Read the FROZEN section at the end of
+> `DESIGN.md` first (locked recruiter decisions, final representation, proven vs not proven, architecture boundary, risks), then
+> `RESULTS_HARDENING.md`. This does not authorize compiler or retrieval work. Do not tune Role 1 further; the next experiment is a
+> differently shaped real role. The text below is the original handoff and is partly superseded.
+
 Written for a fresh session that has none of the prior conversation. Read this fully before doing anything.
 Branch: `claude/sleepy-clarke-5ueovf`. Role 2 is deliberately deferred: work ONLY with Role 1.
 
@@ -18,8 +23,8 @@ requirements; hard negatives; proficiency differences; leadership semantics; dom
 cyber-incident-review != cybersecurity/SOC; explicit-vs-inferred provenance.)
 
 ## Ground truth (recruiter brief is authoritative where it narrows/clarifies/corrects the JD)
-Inputs are verbatim in `inputs/role1_jd.txt` and `inputs/role1_recruiter_brief.txt`. Key points: two paths.
-Path A domain-led (Cyber Incident Review / Data Breach Analysis; Legal Tech/LPO preferred; India-wide/remote; Power
+Inputs are verbatim in `inputs/role1_jd.txt` and `inputs/role1_recruiter_brief.txt`. Key points (LOCKED, see DESIGN.md FROZEN): two paths.
+Path A domain-led (Cyber Incident Review / Data Breach Analysis PREFERRED not required; Lead OR Senior; Legal Tech/LPO preferred; India-wide/remote; Power
 Query NOT required). Path B capability-led/hybrid (Lead level, 6+ yrs, hands-on SQL+Python, Power Query working
 knowledge, Hyderabad OR Pune, domain NOT required). Hard negative: cybersecurity/SOC/security operations, including
 a strong SQL/Python analyst at a security firm. "Lead" = people OR technical leadership. Power Query is a lower bar than
@@ -37,7 +42,7 @@ compliance/audit, security frameworks) must not be silently discarded: reconcile
 
 ## UPDATE (later session): baseline AND experimental arm are done
 The baseline was run (5/5 parsed) and the experimental representation was designed and run 5x. Read `RESULTS.md` first and
-`DESIGN.md` second. Verdict recorded there: INTAKE REPRESENTATION SUFFICIENT FOR THIS CLASS OF ROLE, with the live-retrieval gate
+`DESIGN.md` second. Wording withdrawn: one role cannot show sufficiency for a class. The original verdict recorded there, with the live-retrieval gate
 NOT met (reconciliation reliability: leadership PARTIAL x3, Path B domain leak x1). Operational notes learnt: the injected OpenAI
 credential works with `OPENAI_API_KEY=placeholder` (the proxy replaces Authorization); non-streaming calls past ~90 s are cut
 upstream. Open owner decisions are listed in RESULTS.md. The "What is NOT done" list below is the original, now superseded.

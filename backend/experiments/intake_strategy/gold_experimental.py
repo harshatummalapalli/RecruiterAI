@@ -8,6 +8,14 @@ Paths are found by STRATEGY (domain_led vs capability_led/hybrid), never by the 
 requirement is judged on its EFFECTIVE value for a path (global + the path's overrides), so a model may put Power Query,
 6+ years or Lead either globally or on Path B and be judged on what each path actually means.
 
+LOCKED RECRUITER DECISIONS (owner, after the hardening pass; this is the ground truth, not something the model is tuned to):
+    Path A (domain-led):  Lead OR Senior (the brief says "Lead / Senior Data Analyst identity"); domain PREFERRED, not required;
+                          Power Query not required; India, remote allowed.
+    Path B (capability):  Lead; 6+ years; SQL and Python hands-on; Power Query working knowledge; Hyderabad OR Pune; domain not required.
+    Global:               6+ years is NOT global and NOT on Path A. "Lead" means people OR technical leadership; a JD responsibility
+                          to lead/mentor is context, never an implicit direct-reports requirement. The security-operations negative
+                          is about work identity; the security-firm statement is subordinate to it, never an employer-industry rule.
+
 Failure classes: EXTRACTION (the schema could say it, the model did not), RECONCILIATION (JD and brief merged or
 prioritised wrongly), VALIDATION (a provenance claim is not supported). REPRESENTATION never applies here: whether the
 schema can hold a concept is `experimental_schema.schema_concepts()`, decided from the schema alone.
@@ -271,6 +279,20 @@ def evaluate_critical(intent: ExperimentalHiringIntent, jd: str, brief: str) -> 
     add("path_b_requirements_not_in_path_a", "Path B's 6+ years is not applied to Path A", FAIL if a_exp_required else PASS, EXTRACTION,
         f"Path A effective experience={(a_exp.minimum_years, a_exp.strength) if a_exp else None}" + (" (inherited from the global intent)" if a_exp_required and path_a and path_a.experience is None else ""))
 
+    # Locked: Path A's domain is PREFERRED (the brief says "Ideal"), never required; and 6+ years is not a global requirement
+    dom_a_pos = [d for d in (va["domain"] if va else []) if POSITIVE_DOMAIN.search(d.name)]
+    if va is None:
+        add("path_a_domain_preferred", "Path A domain is preferred, not required (locked)", FAIL, EXTRACTION, "no Path A")
+    elif any(d.strength == "required" for d in dom_a_pos):
+        add("path_a_domain_preferred", "Path A domain is preferred, not required (locked)", FAIL, EXTRACTION,
+            f"Path A effective domain is stronger than the ground truth: {[(d.name[:60], d.strength) for d in dom_a_pos]}")
+    elif not any(d.strength == "preferred" for d in dom_a_pos):
+        add("path_a_domain_preferred", "Path A domain is preferred, not required (locked)", FAIL, EXTRACTION, f"no preferred domain on Path A: {[(d.name[:60], d.strength) for d in dom_a_pos]}")
+    else:
+        add("path_a_domain_preferred", "Path A domain is preferred, not required (locked)", PASS, None, f"{[(d.name[:60], d.strength) for d in dom_a_pos]}")
+    add("experience_not_global", "6+ years is not a global requirement (locked)", FAIL if intent.experience else PASS, EXTRACTION,
+        f"global experience={(intent.experience.minimum_years, intent.experience.strength) if intent.experience else None}")
+
     # Seniority levels: only what the source states, for the path it states it for
     def levels(view):
         sen = view["seniority"] if view else None
@@ -278,14 +300,17 @@ def evaluate_critical(intent: ExperimentalHiringIntent, jd: str, brief: str) -> 
     la, lb = levels(va), levels(vb)
     all_levels = {x for x in la + lb}
     if lb != ["lead"]:
-        add("seniority_levels_source_supported", "Levels are source-supported: Path B Lead only; Path A includes Lead", FAIL, EXTRACTION,
+        add("seniority_levels_source_supported", "Levels are source-supported: Path A Lead or Senior; Path B Lead only", FAIL, EXTRACTION,
             f"Path B levels={lb} (the source states only Lead for Path B); Path A levels={la}")
-    elif "lead" not in la or not set(la) <= {"lead", "senior"}:
-        add("seniority_levels_source_supported", "Levels are source-supported: Path B Lead only; Path A includes Lead", FAIL, EXTRACTION,
-            f"Path A levels={la} (must include Lead; the source states only Lead / Senior for Path A); Path B levels={lb}")
+    elif set(la) == {"lead", "senior"}:
+        add("seniority_levels_source_supported", "Levels are source-supported: Path A Lead or Senior; Path B Lead only", PASS, None,
+            f"Path A levels={la} (the brief states Lead / Senior for Path A only); Path B levels={lb}")
+    elif la == ["lead"]:
+        add("seniority_levels_source_supported", "Levels are source-supported: Path A Lead or Senior; Path B Lead only", PARTIAL, EXTRACTION,
+            f"Path A levels={la}: drops Senior, which the brief states for Path A (locked decision: Lead OR Senior)")
     else:
-        add("seniority_levels_source_supported", "Levels are source-supported: Path B Lead only; Path A includes Lead", PASS, None,
-            f"Path A levels={la} (Senior is stated in the source for Path A only); Path B levels={lb}")
+        add("seniority_levels_source_supported", "Levels are source-supported: Path A Lead or Senior; Path B Lead only", FAIL, EXTRACTION,
+            f"Path A levels={la} (must be Lead and Senior); Path B levels={lb}")
 
     # Security-firm statement: kept, semantic, qualified as the recruiter qualified it, never a company filter
     firm = [x for x in intent.semantic_exclusions if re.search(r"security (firm|compan)", " ".join([x.concept, *x.includes]), re.I)]
@@ -298,8 +323,12 @@ def evaluate_critical(intent: ExperimentalHiringIntent, jd: str, brief: str) -> 
     elif re.search(r"\bcurrent", firm_text, re.I) and not re.search(r"\bcurrent", brief, re.I):
         add("security_firm_exclusion_semantic", "Recruiter's security-firm exclusion kept as a qualified semantic negative", PARTIAL, EXTRACTION,
             f"adds a temporal qualifier the brief does not state: {firm_text!r}")
+    elif not secops_neg:
+        add("security_firm_exclusion_semantic", "Recruiter's security-firm exclusion kept as a qualified semantic negative", PARTIAL, EXTRACTION,
+            f"the firm statement stands without the work-identity negative it is subordinate to: {firm_text!r}")
     else:
-        add("security_firm_exclusion_semantic", "Recruiter's security-firm exclusion kept as a qualified semantic negative", PASS, None, f"{firm_text!r}")
+        add("security_firm_exclusion_semantic", "Recruiter's security-firm exclusion kept as a qualified semantic negative", PASS, None,
+            f"{firm_text!r} (beside the work-identity negative {[x.concept for x in secops_neg]})")
 
     # Generic deterministic validators (no Role 1 knowledge): any ERROR is a failure
     errors = {c: n for c, n in report["errors"].items()}

@@ -1,5 +1,7 @@
 # RESULTS — Role 1 intake experiment: baseline vs experimental representation
 
+> Superseded in part: see `RESULTS_HARDENING.md` (v3) and the FROZEN section of `DESIGN.md`. The three owner questions at the end of this file were decided; they are listed under "Locked recruiter decisions" there.
+
 Config for both arms: `gpt-6.1-sol`, reasoning effort `medium`, same JD, same brief, 5 runs each. Raw per-run evidence is in
 `results/` (model prompts stripped; they are the committed inputs plus `prompt_v2.txt`). Reproduce the table offline with
 `python -m backend.experiments.intake_strategy.compare_arms`. Design rationale is in `DESIGN.md`.
@@ -117,7 +119,7 @@ fabricated or misattributed quote is caught, that production is unchanged and th
 rules 1-10 verbatim and adds no Role 1 terms, and the harness (streaming, retry only on transient errors, a cut stream is an error).
 
 ## F/I/K. Architectural decision
-**INTAKE REPRESENTATION SUFFICIENT FOR THIS CLASS OF ROLE** (one role with alternative sourcing paths and a brief that narrows the JD).
+**WITHDRAWN WORDING.** This section originally concluded that the representation was sufficient for "this class of role". One role cannot support a claim about a class; see `DESIGN.md` (FROZEN) for what Role 1 proved and did not prove. The evidence below stands; the generalisation does not.
 
 Evidence: every path/geography/requirement/strength/proficiency/negative/provenance/reconciliation assertion that FAILed or was
 PARTIAL at baseline is PASS 5/5, and the two that are not were produced by a model leaving a JD item at the wrong strength while the

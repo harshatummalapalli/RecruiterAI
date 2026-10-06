@@ -1,5 +1,9 @@
 # Intake-strategy experiment — Role 1 (offline, experiment-only)
 
+**FROZEN. Status: ROLE 1 REPRESENTATION ACCEPTED FOR CROSS-ROLE VALIDATION.** This does not authorize compiler or retrieval work. The
+conclusions, locked recruiter decisions, proven / not-proven lists, architecture boundary and risks are in the FROZEN section of
+`DESIGN.md`.
+
 Question: can the existing `StructuredHiringIntent` / intake representation express the recruiter's real sourcing
 strategy for Role 1? Upstream of retrieval: no provider, Harvest, judge, ranking or production code is touched, and
 `tests/test_experiment_intake_strategy.py` enforces that these files never import them.

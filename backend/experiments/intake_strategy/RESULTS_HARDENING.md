@@ -1,6 +1,10 @@
 # RESULTS — Role 1 hardening pass (experimental v3)
 
-**ROLE 1 INTAKE REPRESENTATION STILL NEEDS CORRECTION**
+**STATUS (owner decision, final): ROLE 1 REPRESENTATION ACCEPTED FOR CROSS-ROLE VALIDATION.** This does not authorize compiler or
+retrieval implementation, and it is not a claim of 5/5 stability. See the FROZEN section of `DESIGN.md`.
+
+*Gate verdict as originally written at the end of the hardening pass (kept for the record, superseded by the status above):
+"ROLE 1 INTAKE REPRESENTATION STILL NEEDS CORRECTION".*
 
 The schema now holds everything the gate asks about, but the acceptance gate is not met: Path B's "6+ years" leaked into Path A
 in 1 of 5 runs, a people-only leadership requirement survived in 1 of 5, and the Path A domain's strength and granularity vary.
@@ -83,10 +87,24 @@ Typed results in all 5 v3 runs: Path A `countries=[India]`, `entries=[]`, `remot
 - **PROVENANCE**: none. **REPRESENTATION**: none observed in v3.
 - Not model failures: attempt-1 id-length parse failures (prompt wording); `cyber_review_not_secops` x2 (evaluator false positive, corrected).
 
-## Owner decisions needed
-1. Is Path A `[Lead, Senior]`, as the brief says, or Lead only? (If Lead only, the brief and the gold assertion change.)
-2. Is the Path A domain `required` or `preferred`? The source says "Ideal"; the model splits 3/2.
-3. How should a JD responsibility ("Lead, mentor, support analysts") be held when the brief widens "Lead"? `context`, or dropped when the brief waives it?
+## Owner decisions (answered; now locked ground truth)
+1. Path A is Lead OR Senior. Senior stays (the brief says "Lead / Senior Data Analyst identity").
+2. Path A's domain is **preferred**, not required (the brief says "Ideally"); never a global requirement.
+3. The JD responsibility "Lead, mentor, support analysts" stays contextual; "Lead" means people OR technical. No new field.
+4. 6+ years belongs to Path B only: not global, not Path A. The leakage validator stays; the 1/5 leak is documented, not tuned away.
+5. The security-firm statement is kept as a qualified semantic concept, subordinate to the work-identity (security operations)
+   negative; never an employer-industry exclusion.
+
+## Re-scored under the locked decisions (offline, no new model call)
+The stored v3 runs were re-evaluated with the locked ground truth (`path_a_domain_preferred`, `experience_not_global`, Path A levels
+must be Lead and Senior, firm statement must sit beside the work-identity negative):
+- `path_a_domain_preferred`: PASS x2 (runs 1-2), **FAIL x3** (runs 3-5 hold the Path A domain as `required`). EXTRACTION: the schema
+  can express the decided answer; the model does not reliably produce it.
+- `experience_not_global`: PASS x4, FAIL x1 (run 1, the same leak the validator caught).
+- `seniority_levels_source_supported`: PASS x5 (Path A `[Lead, Senior]`, Path B `[Lead]`).
+- `security_firm_exclusion_semantic`: PASS x5. `lead_people_or_technical`: PASS x4, PARTIAL x1 (RECONCILIATION).
+So against the locked truth, the 5 runs deviate in three extraction ways (domain strength 3/5, 6+ leak 1/5, leadership 1/5). They are
+accepted as known instability for cross-role validation, not fixed here.
 
 ## Smallest next step (not run)
 Do not tune Role 1 further. Candidate, to be argued before it is built: let a reconciliation name the atoms it retires and have
@@ -94,7 +112,7 @@ code verify none remains required, which would catch the run-4 pattern without l
 is NOT added). Then run the unchanged v3 on a differently shaped real role.
 
 ## Tests
-Full suite 836 passed, 4 skipped (822 before this pass). The new tests are offline and cover: leakage on an unrelated role with
+Full suite: 842 passed, 4 skipped (836 before the locked-decision tests were added; 789 at the original handoff). The new tests are offline and cover: leakage on an unrelated role with
 other path names and numbers; the Senior-for-Path-A-only rule; a model-generated level; typed country/city/remote misuse; the
 qualified security-firm exclusion; scope-aware reconciliation conflict (and that `unresolved` is never flagged); denial vs promotion;
 quote independence; and that both prompts keep production rules 1-10 verbatim with no Role 1 terms in the added text.

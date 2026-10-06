@@ -173,9 +173,29 @@
       }
     },
     {
-      "id": "seniority_levels_source_supported",
+      "id": "path_a_domain_preferred",
       "baseline": "not expressible",
       "v2_reevaluated": "PASSx2 FAILx3",
+      "v3_as_run": "n/a",
+      "v3": "PASSx2 FAILx3",
+      "v3_failure_class": {
+        "EXTRACTION": 3
+      }
+    },
+    {
+      "id": "experience_not_global",
+      "baseline": "not expressible",
+      "v2_reevaluated": "FAILx5",
+      "v3_as_run": "n/a",
+      "v3": "PASSx4 FAILx1",
+      "v3_failure_class": {
+        "EXTRACTION": 1
+      }
+    },
+    {
+      "id": "seniority_levels_source_supported",
+      "baseline": "not expressible",
+      "v2_reevaluated": "PARTIALx2 FAILx3",
       "v3_as_run": "PASSx5",
       "v3": "PASSx5",
       "v3_failure_class": {}
@@ -930,6 +950,14 @@
         "PASS": 5
       },
       "path_b_requirements_not_in_path_a": {
+        "FAIL": 1,
+        "PASS": 4
+      },
+      "path_a_domain_preferred": {
+        "PASS": 2,
+        "FAIL": 3
+      },
+      "experience_not_global": {
         "FAIL": 1,
         "PASS": 4
       },

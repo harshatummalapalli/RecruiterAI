@@ -77,7 +77,7 @@ def good() -> dict:
              "location": {"countries": ["India"], "remote": "allowed", "strength": "required",
                           "basis": b("recruiter_brief", "remote resources across India are acceptable")},
              "skills": [{"name": "Power Query", "strength": "preferred", "proficiency": "working_knowledge", "basis": b("recruiter_brief", "Path A does NOT require Power Query.")}],
-             "domain": [{"name": "Cyber Incident Review / Data Breach Analysis in a Legal Tech environment", "strength": "required", "basis": b("recruiter_brief", DOMAIN_Q)}]},
+             "domain": [{"name": "Cyber Incident Review / Data Breach Analysis in a Legal Tech environment", "strength": "preferred", "basis": b("recruiter_brief", DOMAIN_Q)}]},
             {"id": "Path B", "label": "Capability-led", "strategy": "capability_led", "basis": b("recruiter_brief", "PATH B — CAPABILITY-LED DATA ANALYST"),
              "experience": {"minimum_years": 6, "strength": "required", "basis": b("recruiter_brief", "Path B requires Lead level and 6+ years.")},
              "location": {"entries": ["Hyderabad, Telangana, India", "Pune, Maharashtra, India"], "strength": "required", "basis": b("recruiter_brief", "location should be Hyderabad OR Pune")}},
@@ -261,6 +261,89 @@ def test_a_path_b_requirement_inherited_by_path_a_is_flagged_generically() -> No
     assert leak and "Path A" in leak[0]["detail"] and "only for ['Path B']" in leak[0]["detail"]
     assert (r["path_b_requirements_not_in_path_a"]["status"], r["path_b_requirements_not_in_path_a"]["failure_class"]) == (gold.FAIL, gold.EXTRACTION)
     assert r["generic_validators_clean"]["status"] == gold.FAIL
+
+
+# ---------------------------------------------------------------------------- locked recruiter decisions
+
+
+def test_locked_ground_truth_path_a_domain_is_preferred_never_required() -> None:
+    _, r, _ = evaluate(good())
+    assert r["path_a_domain_preferred"]["status"] == gold.PASS
+    raw = good()
+    raw["sourcing_paths"][0]["domain"][0]["strength"] = "required"
+    _, r, _ = evaluate(raw)
+    assert (r["path_a_domain_preferred"]["status"], r["path_a_domain_preferred"]["failure_class"]) == (gold.FAIL, gold.EXTRACTION)
+    assert r["path_a_domain_led"]["status"] == gold.PASS          # the strategy is still domain-led; only the strength is wrong
+    raw = good()
+    raw["domain"][0]["strength"] = "required"                      # a global domain requirement is also wrong, and reaches Path B
+    raw["sourcing_paths"][0]["domain"] = []
+    _, r, _ = evaluate(raw)
+    assert r["path_a_domain_preferred"]["status"] == gold.FAIL and r["path_b_domain_not_required"]["status"] == gold.FAIL
+
+
+def test_locked_ground_truth_six_years_is_neither_global_nor_path_a() -> None:
+    _, r, _ = evaluate(good())
+    assert r["experience_not_global"]["status"] == gold.PASS and r["path_b_requirements_not_in_path_a"]["status"] == gold.PASS
+    raw = good()
+    raw["experience"] = raw["sourcing_paths"][1]["experience"]     # global (and so inherited by Path A)
+    _, r, v = evaluate(raw)
+    assert r["experience_not_global"]["status"] == gold.FAIL
+    assert r["path_b_requirements_not_in_path_a"]["status"] == gold.FAIL
+    assert "path_requirement_leakage" in {d["code"] for d in v["diagnostics"]}   # the generic validator still catches it
+    raw = good()
+    raw["sourcing_paths"][0]["experience"] = {"minimum_years": 6, "strength": "required", "basis": b("recruiter_brief", "Path B requires Lead level and 6+ years.")}
+    _, r, v = evaluate(raw)
+    assert r["path_b_requirements_not_in_path_a"]["status"] == gold.FAIL
+    assert "path_requirement_leakage" in {d["code"] for d in v["diagnostics"]}   # placed in the wrong path
+
+
+def test_locked_ground_truth_path_a_is_lead_or_senior_and_path_b_is_lead() -> None:
+    raw = good()
+    raw["sourcing_paths"][0]["seniority"]["alternatives"] = []
+    _, r, _ = evaluate(raw)
+    assert r["seniority_levels_source_supported"]["status"] == gold.PARTIAL    # Senior is the recruiter's decision; do not remove it
+    raw = good()
+    raw["sourcing_paths"][1]["seniority"] = {"value": "Senior", "strength": "required", "basis": b("recruiter_brief", "Path B requires Lead level and 6+ years.")}
+    _, r, _ = evaluate(raw)
+    assert r["seniority_levels_source_supported"]["status"] == gold.FAIL
+
+
+def test_locked_ground_truth_leadership_means_people_or_technical_and_responsibilities_stay_context() -> None:
+    _, r, _ = evaluate(good())
+    assert r["lead_people_or_technical"]["status"] == gold.PASS
+    raw = good()
+    raw["evidence_signals"].append({"name": "Lead, mentor and support the review analysts", "strength": "context", "basis": b("jd", TEAMS)})
+    _, r, _ = evaluate(raw)
+    assert r["lead_people_or_technical"]["status"] == gold.PASS      # the responsibility as CONTEXT is exactly what was decided
+    raw["evidence_signals"][-1]["strength"] = "required"
+    _, r, _ = evaluate(raw)
+    assert (r["lead_people_or_technical"]["status"], r["lead_people_or_technical"]["failure_class"]) == (gold.PARTIAL, gold.RECONCILIATION)
+
+
+def test_locked_ground_truth_the_firm_statement_is_subordinate_to_the_work_identity_negative() -> None:
+    raw = good()
+    del raw["semantic_exclusions"][0]                                # firm statement with no security-operations work negative
+    _, r, _ = evaluate(raw)
+    assert r["security_firm_exclusion_semantic"]["status"] == gold.PARTIAL
+    assert r["hard_negative_secops_preserved"]["status"] == gold.FAIL
+    raw = good()
+    raw["exclusions"] = [{"kind": "exclude_current_company", "value": "Security firms", "basis": b("recruiter_brief", "A strong SQL/Python analyst working at a security firm should be excluded.")}]
+    _, r, _ = evaluate(raw)
+    assert r["no_invented_company_exclusion"]["status"] == gold.FAIL  # never an employer-industry rule
+
+
+def test_the_experiment_docs_record_the_frozen_status_and_do_not_claim_generality() -> None:
+    root = Path(gold.__file__).parent
+    texts = {n: (root / n).read_text(encoding="utf-8") for n in ("DESIGN.md", "RESULTS.md", "RESULTS_HARDENING.md")}
+    assert "ROLE 1 REPRESENTATION ACCEPTED FOR CROSS-ROLE VALIDATION" in texts["RESULTS_HARDENING.md"]
+    assert "ROLE 1 REPRESENTATION ACCEPTED FOR CROSS-ROLE VALIDATION" in texts["DESIGN.md"]
+    for name, text in texts.items():
+        assert "INTAKE REPRESENTATION SUFFICIENT FOR THIS CLASS OF ROLE" not in text, name   # withdrawn: one role proves nothing about a class
+    for needle in ("PROVEN FOR ROLE 1", "NOT YET PROVEN GENERALLY", "does NOT authorize compiler or retrieval implementation"):
+        assert needle in texts["DESIGN.md"], needle
+    for negative in ("second search contract", "Task C", "LLM-generated provider query text", "candidate scoring", "universal role ontology",
+                     "automatic company-industry exclusions", "automatic people-manager requirements", "invented geographic radius"):
+        assert negative in texts["DESIGN.md"], negative
 
 
 def test_the_leakage_validator_knows_no_role_content() -> None:
