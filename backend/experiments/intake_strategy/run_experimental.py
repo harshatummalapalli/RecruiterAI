@@ -29,7 +29,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from backend.experiments.intake_strategy import gold_experimental as gold
-from backend.experiments.intake_strategy.experimental_extractor import extract_experimental_intent
+from backend.experiments.intake_strategy.experimental_extractor import DEFAULT_PROMPT, PROMPTS, extract_experimental_intent
 from backend.experiments.intake_strategy.experimental_schema import ExperimentalHiringIntent, effective_view
 from backend.experiments.intake_strategy.run_baseline import DEFAULT_OUT, RecordingClient, load_inputs
 from backend.services.structured_intent_extractor import _INTAKE_MODEL, _INTAKE_REASONING_EFFORT
@@ -70,13 +70,13 @@ def _is_transient(exc: Exception) -> bool:
     return name in ("APIConnectionError", "APITimeoutError", "InternalServerError") or (isinstance(status, int) and status >= 500)
 
 
-def run_once(index: int, client_factory: Callable[[], Any], jd: str, brief: str) -> Dict[str, Any]:
+def run_once(index: int, client_factory: Callable[[], Any], jd: str, brief: str, prompt: str = DEFAULT_PROMPT) -> Dict[str, Any]:
     client = StreamingRecordingClient(client_factory())
     started = time.perf_counter()
     record: Dict[str, Any] = {"run": index, "error": None, "transient_retries": []}
     for attempt in range(MAX_TRANSIENT_RETRIES + 1):
         try:
-            intent = extract_experimental_intent(jd, brief, client)
+            intent = extract_experimental_intent(jd, brief, client, prompt)
             record.update({"intent": intent.model_dump(), "gold": gold.evaluate(intent, jd, brief)})
             record["error"] = None
             break
@@ -158,13 +158,13 @@ def stability(records: List[Dict[str, Any]]) -> Dict[str, Any]:
     return out
 
 
-def write_outputs(out_dir: Path, records: List[Dict[str, Any]]) -> Dict[str, Any]:
+def write_outputs(out_dir: Path, records: List[Dict[str, Any]], prompt: str = DEFAULT_PROMPT) -> Dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
     for r in records:
         (out_dir / f"experimental_run{r['run']}.json").write_text(json.dumps(r, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
     summary = {
         "arm": "experimental",
-        "config": {"model": _INTAKE_MODEL, "reasoning_effort": _INTAKE_REASONING_EFFORT, "prompt": "prompt_v2.txt"},
+        "config": {"model": _INTAKE_MODEL, "reasoning_effort": _INTAKE_REASONING_EFFORT, "prompt": f"prompt_{prompt}.txt"},
         "tokens": {
             "input": sum(c["input_tokens"] for r in records for c in r["model_calls"]),
             "output": sum(c["output_tokens"] for r in records for c in r["model_calls"]),
@@ -178,8 +178,10 @@ def write_outputs(out_dir: Path, records: List[Dict[str, Any]]) -> Dict[str, Any
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runs", type=int, default=5)
-    parser.add_argument("--out", type=Path, default=DEFAULT_OUT / "experimental")
+    parser.add_argument("--prompt", choices=sorted(PROMPTS), default=DEFAULT_PROMPT)
+    parser.add_argument("--out", type=Path, default=None)
     args = parser.parse_args(argv)
+    out_dir = args.out or DEFAULT_OUT / ("experimental" if args.prompt == "v2" else f"experimental_{args.prompt}")
 
     if not os.environ.get("OPENAI_API_KEY"):
         print("OPENAI_API_KEY is not set; refusing to run. No network call was made.", file=sys.stderr)
@@ -189,10 +191,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     inputs = load_inputs()
     factory = lambda: OpenAI(api_key=os.environ["OPENAI_API_KEY"])  # noqa: E731
     with ThreadPoolExecutor(max_workers=args.runs) as pool:
-        records = list(pool.map(lambda i: run_once(i, factory, inputs["jd"], inputs["brief"]), range(1, args.runs + 1)))
-    summary = write_outputs(args.out, records)
+        records = list(pool.map(lambda i: run_once(i, factory, inputs["jd"], inputs["brief"], args.prompt), range(1, args.runs + 1)))
+    summary = write_outputs(out_dir, records, args.prompt)
     print(json.dumps(summary["stability"].get("assertion_statuses", {}), indent=2))
-    print(f"wrote {len(records)} runs to {args.out}; errors={summary['stability']['errors']}")
+    print(f"wrote {len(records)} runs to {out_dir}; errors={summary['stability']['errors']}")
     return 0
 
 

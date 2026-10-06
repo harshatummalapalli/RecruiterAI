@@ -8,7 +8,8 @@ Each addition exists because a baseline assertion failed without it (see DESIGN.
 justification and the alternatives rejected). In short:
 
     sourcing_paths        alternative legitimate ways to source the role; each carries ONLY what differs from the
-                          global intent (override semantics, see `effective_view`)
+                          global intent (override semantics, see `effective_view`). A path's `id` is the name the
+                          SOURCE gives it ("Path B"), which is what lets code check requirement leakage between paths
     domain                the work domain a candidate's evidence should show, with its own strength
     semantic_exclusions   a negative CONCEPT (work type), not a company or a title
     reconciliations       explicit JD-vs-brief decisions that leave no surviving atom (a dropped/narrowed/waived
@@ -16,6 +17,10 @@ justification and the alternatives rejected). In short:
     basis (on each atom)  who claims the atom: sources + a short verbatim quote. The model's claim only; code verifies
     proficiency           on a skill: hands_on | working_knowledge (strength says how much it is wanted, not how well)
     leadership            on seniority: which kinds of leadership satisfy "Lead" (people / technical)
+    alternatives          on seniority: OTHER levels the source accepts for the same scope (an OR list). Every level,
+                          including these, must be stated in the source for that scope; code checks it
+    countries / remote    on location: country-wide areas by name (never in `entries`), and whether remote work is
+                          allowed. `entries` stays for places below country level ("City, State, Country")
 
 Nothing here names a provider field, an operator or a routing decision, and the production leak validator still runs
 over every new string.
@@ -43,6 +48,7 @@ from backend.models.structured_intent import (
 
 SOURCES = ("jd", "recruiter_brief", "approved_knowledge", "inferred")
 PROFICIENCIES = ("hands_on", "working_knowledge")
+REMOTE_VALUES = ("allowed", "not_allowed")
 STRATEGIES = ("domain_led", "capability_led", "hybrid")
 LEADERSHIP_MODES = ("people", "technical")
 # What a reconciliation says the recruiter brief did to a JD item. "unresolved" = the sources conflict and the brief
@@ -101,6 +107,8 @@ class XEducation(Education, _Based):
 class XSeniority(Seniority, _Based):
     # Which kinds of leadership satisfy the level. ["people","technical"] means people OR technical.
     leadership: List[str] = Field(default_factory=list)
+    # Other levels the source accepts for this same scope ("Lead / Senior" -> value Lead, alternatives [Senior]).
+    alternatives: List[str] = Field(default_factory=list)
 
     @field_validator("leadership")
     @classmethod
@@ -115,7 +123,15 @@ class XExperience(Experience, _Based):
 
 
 class XLocationReq(LocationReq, _Based):
-    pass
+    """`entries` = places below country level; `countries` = country-wide areas, by name only. Keeping them apart is what
+    stops a country being read as a city. `remote` is whether remote work is acceptable for this scope (None = unstated)."""
+    countries: List[str] = Field(default_factory=list)
+    remote: Optional[str] = None
+
+    @field_validator("remote")
+    @classmethod
+    def _remote(cls, v: Optional[str]) -> Optional[str]:
+        return v if v is None else _member(v, REMOTE_VALUES, "remote")
 
 
 class XEvidenceSignal(EvidenceSignal, _Based):
@@ -240,4 +256,7 @@ def schema_concepts() -> Dict[str, bool]:
         "domain": "domain" in fields,
         "provenance": "basis" in XSkillReq.model_fields and "basis" in SourcingPath.model_fields,
         "reconciliations": "reconciliations" in fields,
+        "typed_country": "countries" in XLocationReq.model_fields,
+        "typed_remote": "remote" in XLocationReq.model_fields,
+        "level_alternatives": "alternatives" in XSeniority.model_fields,
     }

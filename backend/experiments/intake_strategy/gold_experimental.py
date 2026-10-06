@@ -39,7 +39,7 @@ from backend.experiments.intake_strategy.gold_assertions import (
     VALIDATION,
     AssertionResult,
 )
-from backend.experiments.intake_strategy.validators import iter_atoms, validate
+from backend.experiments.intake_strategy.validators import ERROR_CODES, iter_atoms, validate
 
 COUNTRIES = {"india", "united states", "usa", "uk", "united kingdom"}
 _JD_ITEMS: List[Tuple[str, "re.Pattern[str]"]] = [
@@ -52,7 +52,23 @@ _DEGREES = ("Cybersecurity", "Information Technology", "Computer Science", "Info
 
 
 def _heads(loc) -> List[str]:
-    return sorted({e.split(",")[0].strip().lower() for e in (loc.entries if loc else [])})
+    """Every place a location names, countries and cities alike (kept for the stability summary)."""
+    return sorted({*(c.strip().lower() for c in (loc.countries if loc else [])), *(e.split(",")[0].strip().lower() for e in (loc.entries if loc else []))})
+
+
+def _typed(loc) -> Tuple[List[str], List[str]]:
+    """(country-wide areas, places below country level), read ONLY from the typed fields."""
+    if loc is None:
+        return [], []
+    return sorted(c.strip().lower() for c in loc.countries), sorted(e.split(",")[0].strip().lower() for e in loc.entries)
+
+
+def _all_locations(intent: ExperimentalHiringIntent):
+    if intent.location:
+        yield "location", intent.location, None
+    for p in intent.sourcing_paths:
+        if p.location:
+            yield f"paths[{p.id}].location", p.location, p.id
 
 
 def find_paths(intent: ExperimentalHiringIntent) -> Tuple[Optional[SourcingPath], Optional[SourcingPath]]:
@@ -121,15 +137,16 @@ def evaluate_critical(intent: ExperimentalHiringIntent, jd: str, brief: str) -> 
     add("path_b_capability_led", "Path B is capability-led / hybrid", PASS if path_b else FAIL, EXTRACTION, f"strategies={strategies}")
 
     a_loc, b_loc = (va["location"] if va else None), (vb["location"] if vb else None)
-    a_heads, b_heads = _heads(a_loc), _heads(b_loc)
-    if a_heads == ["india"] and b_heads == ["hyderabad", "pune"]:
-        add("path_geography_differs", "Path A geography differs from Path B", PASS, None, f"A={a_heads} B={b_heads}")
+    (a_countries, a_cities), (b_countries, b_cities) = _typed(a_loc), _typed(b_loc)
+    detail = f"A: countries={a_countries} cities={a_cities} remote={a_loc.remote if a_loc else None} | B: countries={b_countries} cities={b_cities} remote={b_loc.remote if b_loc else None}"
+    if a_countries == ["india"] and not a_cities and b_cities == ["hyderabad", "pune"] and not b_countries:
+        add("path_geography_differs", "Path A geography differs from Path B (typed)", PASS, None, detail)
     elif not (a_loc and b_loc):
-        add("path_geography_differs", "Path A geography differs from Path B", FAIL, EXTRACTION, f"A={a_heads} B={b_heads} (a path has no effective location)")
-    elif a_heads != b_heads:
-        add("path_geography_differs", "Path A geography differs from Path B", PARTIAL, EXTRACTION, f"geography differs but is not India / Hyderabad+Pune: A={a_heads} B={b_heads}")
+        add("path_geography_differs", "Path A geography differs from Path B (typed)", FAIL, EXTRACTION, f"a path has no effective location. {detail}")
+    elif (a_countries, a_cities) != (b_countries, b_cities):
+        add("path_geography_differs", "Path A geography differs from Path B (typed)", PARTIAL, EXTRACTION, f"differs but is not typed country India / cities Hyderabad+Pune. {detail}")
     else:
-        add("path_geography_differs", "Path A geography differs from Path B", FAIL, EXTRACTION, f"same geography on both paths: {a_heads}")
+        add("path_geography_differs", "Path A geography differs from Path B (typed)", FAIL, EXTRACTION, f"same geography on both paths. {detail}")
 
     # 5-6 Power Query
     pq_a = _skill(va, POWER_QUERY) if va else []
@@ -232,12 +249,64 @@ def evaluate_critical(intent: ExperimentalHiringIntent, jd: str, brief: str) -> 
     else:
         add("path_b_domain_not_required", "Path B does not require the cyber-incident domain", FAIL if b_domain_required else PASS, RECONCILIATION,
             f"required domain atoms applying to B: {[(a['ref'], a['text']) for a in b_domain_required]}")
-    a_entries = [e.strip().lower() for e in (a_loc.entries if a_loc else [])]
-    if a_entries and all(e in COUNTRIES for e in a_entries):
-        add("intent_country_level_geography", "India stays country-level in the intent (not a city)", PASS, None, f"Path A entries={a_entries}")
+    every_entry = [e.split(",")[0].strip().lower() for _, loc, _ in _all_locations(intent) for e in loc.entries]
+    if "india" in a_countries and "india" not in every_entry:
+        add("intent_country_level_geography", "India is a typed country, never a city entry", PASS, None, f"A countries={a_countries}; no entry named india")
     else:
-        add("intent_country_level_geography", "India stays country-level in the intent (not a city)", FAIL if not a_entries else PARTIAL, EXTRACTION,
-            f"Path A entries={a_entries} (expected only the country)")
+        add("intent_country_level_geography", "India is a typed country, never a city entry", FAIL, EXTRACTION if "india" not in every_entry else EXTRACTION,
+            f"A countries={a_countries}; india appears in a places-below-country entry: {'india' in every_entry}")
+    a_remote, b_remote = (a_loc.remote if a_loc else None), (b_loc.remote if b_loc else None)
+    if a_remote == "allowed" and b_remote != "allowed":
+        add("remote_typed", "Remote is a typed fact: allowed on Path A, not asserted for Path B", PASS, None, f"A.remote={a_remote} B.remote={b_remote}")
+    else:
+        add("remote_typed", "Remote is a typed fact: allowed on Path A, not asserted for Path B", FAIL, EXTRACTION, f"A.remote={a_remote} B.remote={b_remote}")
+
+    # Path B's requirements must not be applied to Path A (judged on the EFFECTIVE value, typed fields only)
+    a_exp = va["experience"] if va else None
+    a_exp_required = bool(a_exp and a_exp.strength == "required" and a_exp.minimum_years)
+    add("path_b_requirements_not_in_path_a", "Path B's 6+ years is not applied to Path A", FAIL if a_exp_required else PASS, EXTRACTION,
+        f"Path A effective experience={(a_exp.minimum_years, a_exp.strength) if a_exp else None}" + (" (inherited from the global intent)" if a_exp_required and path_a and path_a.experience is None else ""))
+
+    # Seniority levels: only what the source states, for the path it states it for
+    def levels(view):
+        sen = view["seniority"] if view else None
+        return [] if sen is None else [x.strip().lower() for x in [sen.value, *sen.alternatives]]
+    la, lb = levels(va), levels(vb)
+    all_levels = {x for x in la + lb}
+    if lb != ["lead"]:
+        add("seniority_levels_source_supported", "Levels are source-supported: Path B Lead only; Path A includes Lead", FAIL, EXTRACTION,
+            f"Path B levels={lb} (the source states only Lead for Path B); Path A levels={la}")
+    elif "lead" not in la or not set(la) <= {"lead", "senior"}:
+        add("seniority_levels_source_supported", "Levels are source-supported: Path B Lead only; Path A includes Lead", FAIL, EXTRACTION,
+            f"Path A levels={la} (must include Lead; the source states only Lead / Senior for Path A); Path B levels={lb}")
+    else:
+        add("seniority_levels_source_supported", "Levels are source-supported: Path B Lead only; Path A includes Lead", PASS, None,
+            f"Path A levels={la} (Senior is stated in the source for Path A only); Path B levels={lb}")
+
+    # Security-firm statement: kept, semantic, qualified as the recruiter qualified it, never a company filter
+    firm = [x for x in intent.semantic_exclusions if re.search(r"security (firm|compan)", " ".join([x.concept, *x.includes]), re.I)]
+    firm_text = " ".join(" ".join([x.concept, *x.includes]) for x in firm)
+    if not firm:
+        add("security_firm_exclusion_semantic", "Recruiter's security-firm exclusion kept as a qualified semantic negative", FAIL, EXTRACTION, "no semantic exclusion carries the recruiter's security-firm statement")
+    elif not re.search(r"\b(analyst|sql|python)\b", firm_text, re.I):
+        add("security_firm_exclusion_semantic", "Recruiter's security-firm exclusion kept as a qualified semantic negative", PARTIAL, EXTRACTION,
+            f"generalised into a blanket exclusion (the analyst / SQL / Python qualifier is gone): {firm_text!r}")
+    elif re.search(r"\bcurrent", firm_text, re.I) and not re.search(r"\bcurrent", brief, re.I):
+        add("security_firm_exclusion_semantic", "Recruiter's security-firm exclusion kept as a qualified semantic negative", PARTIAL, EXTRACTION,
+            f"adds a temporal qualifier the brief does not state: {firm_text!r}")
+    else:
+        add("security_firm_exclusion_semantic", "Recruiter's security-firm exclusion kept as a qualified semantic negative", PASS, None, f"{firm_text!r}")
+
+    # Generic deterministic validators (no Role 1 knowledge): any ERROR is a failure
+    errors = {c: n for c, n in report["errors"].items()}
+    add("generic_validators_clean", "Generic validators: no leakage, conflict, unsupported level, country/city or place error", FAIL if errors else PASS, VALIDATION,
+        f"errors={errors}" if errors else "none of the six error validators fired")
+    located = [p.id for p in intent.sourcing_paths if report.get("paths_located", {}).get(p.id)]
+    if len(intent.sourcing_paths) >= 2 and len(located) < len(intent.sourcing_paths):
+        add("path_leakage_checkable", "Every path is located in the sources, so the leakage check could run", PARTIAL, VALIDATION,
+            f"located={located} of {[p.id for p in intent.sourcing_paths]}: a path id that is not the source's own name cannot be checked")
+    else:
+        add("path_leakage_checkable", "Every path is located in the sources, so the leakage check could run", PASS, None, f"located={located}")
 
     recs = intent.reconciliations
     rr = report["reconciliations"]
@@ -248,7 +317,7 @@ def evaluate_critical(intent: ExperimentalHiringIntent, jd: str, brief: str) -> 
         "lead_leadership_widened": any(r.action in ("narrowed", "waived", "contradicted") and re.search(r"lead|people", r.topic, re.I) for r in recs),
     }
     quote_issues = [x["ref"] for x in rr if not (x["jd_quote_verified"] and x["brief_quote_verified"])]
-    waiver_codes = [d for d in report["diagnostics"] if d["code"] in ("waiver_not_applied", "contradicted_item_survives")]
+    waiver_codes = [d for d in report["diagnostics"] if d["code"] == "reconciliation_conflict"]
     if all(seen.values()) and not quote_issues and not waiver_codes:
         add("reconciliation_visible", "JD-vs-brief reconciliations explicit and verified", PASS, None, f"{seen}; {len(recs)} reconciliation(s)")
     elif any(seen.values()):

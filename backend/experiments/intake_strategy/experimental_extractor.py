@@ -20,18 +20,22 @@ from backend.services.structured_intent_extractor import (
 )
 
 PROMPT_V2 = Path(__file__).parent / "prompt_v2.txt"
+PROMPT_V3 = Path(__file__).parent / "prompt_v3.txt"  # hardening pass: scope, levels, typed geography, qualifier fidelity
+PROMPTS = {"v2": PROMPT_V2, "v3": PROMPT_V3}
+DEFAULT_PROMPT = "v3"
 
 
-def build_prompt(job_description: str, recruiter_brief: Optional[str] = None) -> str:
-    text = PROMPT_V2.read_text(encoding="utf-8")
+def build_prompt(job_description: str, recruiter_brief: Optional[str] = None, version: str = DEFAULT_PROMPT) -> str:
+    text = PROMPTS[version].read_text(encoding="utf-8")
     text = text.replace("{job_description}", job_description or "(none provided)")
     return text.replace("{recruiter_brief}", recruiter_brief or "(none provided)")
 
 
-def extract_experimental_intent(job_description: str, recruiter_brief: Optional[str], client: Any) -> ExperimentalHiringIntent:
+def extract_experimental_intent(job_description: str, recruiter_brief: Optional[str], client: Any,
+                                version: str = DEFAULT_PROMPT) -> ExperimentalHiringIntent:
     response = client.responses.create(
         model=_INTAKE_MODEL,
-        input=[{"role": "user", "content": build_prompt(job_description, recruiter_brief)}],
+        input=[{"role": "user", "content": build_prompt(job_description, recruiter_brief, version)}],
         text={"format": {"type": "json_object"}},
         reasoning={"effort": _INTAKE_REASONING_EFFORT},
     )

@@ -60,7 +60,6 @@ def good() -> dict:
         "education": {"strength": "preferred", "degrees": ["Bachelor's degree"],
                       "streams": ["Cybersecurity", "Information Technology", "Computer Science", "Information Systems", "Data Analytics"],
                       "basis": b("jd", "Bachelor's degree in Cybersecurity, Information Technology, Computer Science, Information Systems, Data Analytics, or a related discipline preferred.")},
-        "experience": {"minimum_years": 6, "strength": "required", "basis": b("recruiter_brief", "6+ years of experience")},
         "evidence_signals": [
             {"name": "Review, quality assurance, compliance or audit experience", "strength": "required", "basis": b("jd", SECMON)},
             {"name": "Security frameworks, data privacy and regulatory compliance standards", "strength": "preferred",
@@ -68,19 +67,25 @@ def good() -> dict:
         ],
         "domain": [{"name": "Cyber Incident Review / Data Breach Analysis in a Legal Tech environment", "strength": "preferred", "basis": b("recruiter_brief", DOMAIN_Q)}],
         "semantic_exclusions": [{"concept": "cybersecurity operations work", "includes": ["SOC", "Security Operations", "SIEM", "Threat Detection"],
-                                 "basis": b("recruiter_brief", "This is NOT cybersecurity operations.")}],
+                                 "basis": b("recruiter_brief", "This is NOT cybersecurity operations.")},
+                                {"concept": "A strong SQL/Python analyst working at a security firm", "includes": [],
+                                 "basis": b("recruiter_brief", "A strong SQL/Python analyst working at a security firm should be excluded.")}],
         "sourcing_paths": [
-            {"id": "A", "label": "Domain-led", "strategy": "domain_led", "basis": b("recruiter_brief", "PATH A — DOMAIN-LED CANDIDATE"),
-             "location": {"entries": ["India"], "strength": "required", "basis": b("recruiter_brief", "India-wide location is acceptable")},
+            {"id": "Path A", "label": "Domain-led", "strategy": "domain_led", "basis": b("recruiter_brief", "PATH A — DOMAIN-LED CANDIDATE"),
+             "seniority": {"value": "Lead", "alternatives": ["Senior"], "strength": "preferred", "leadership": ["people", "technical"],
+                           "basis": b("recruiter_brief", "Lead / Senior Data Analyst identity")},
+             "location": {"countries": ["India"], "remote": "allowed", "strength": "required",
+                          "basis": b("recruiter_brief", "remote resources across India are acceptable")},
              "skills": [{"name": "Power Query", "strength": "preferred", "proficiency": "working_knowledge", "basis": b("recruiter_brief", "Path A does NOT require Power Query.")}],
              "domain": [{"name": "Cyber Incident Review / Data Breach Analysis in a Legal Tech environment", "strength": "required", "basis": b("recruiter_brief", DOMAIN_Q)}]},
-            {"id": "B", "label": "Capability-led", "strategy": "capability_led", "basis": b("recruiter_brief", "PATH B — CAPABILITY-LED DATA ANALYST"),
+            {"id": "Path B", "label": "Capability-led", "strategy": "capability_led", "basis": b("recruiter_brief", "PATH B — CAPABILITY-LED DATA ANALYST"),
+             "experience": {"minimum_years": 6, "strength": "required", "basis": b("recruiter_brief", "Path B requires Lead level and 6+ years.")},
              "location": {"entries": ["Hyderabad, Telangana, India", "Pune, Maharashtra, India"], "strength": "required", "basis": b("recruiter_brief", "location should be Hyderabad OR Pune")}},
         ],
         "reconciliations": [
             {"topic": "security monitoring", "action": "contradicted", "jd_quote": SECMON, "brief_quote": "This is NOT a conventional security-operations role.",
              "result": "Security monitoring is not a requirement; security-operations work is a negative."},
-            {"topic": "Power Query", "action": "waived", "path_id": "A", "jd_quote": PQ_JD, "brief_quote": "Path A does NOT require Power Query.",
+            {"topic": "Power Query", "action": "waived", "path_id": "Path A", "jd_quote": PQ_JD, "brief_quote": "Path A does NOT require Power Query.",
              "result": "Power Query is preferred, not required, on the domain-led path."},
             {"topic": "Lead leadership", "action": "waived", "jd_quote": TEAMS, "brief_quote": LEAD_BRIEF,
              "result": "Lead is satisfied by people OR technical leadership."},
@@ -119,7 +124,7 @@ def test_power_query_required_everywhere_fails_as_reconciliation() -> None:
     assert (r["pq_not_mandatory_path_a"]["status"], r["pq_not_mandatory_path_a"]["failure_class"]) == (gold.FAIL, gold.RECONCILIATION)
     assert r["pq_working_knowledge_path_b"]["status"] == gold.PASS
     # the model said it was waived on A but did not apply it: code notices
-    assert "waiver_not_applied" in {d["code"] for d in v["diagnostics"]}
+    assert "reconciliation_conflict" in {d["code"] for d in v["diagnostics"]}
     assert r["reconciliation_visible"]["status"] == gold.PARTIAL
 
 
@@ -155,12 +160,46 @@ def test_a_work_type_turned_into_a_company_exclusion_is_caught() -> None:
     assert r["hard_negative_secops_preserved"]["status"] == gold.PASS  # the semantic negative is still there
 
 
-def test_country_expanded_into_cities_fails_the_intent_level_geography_check() -> None:
+def test_cities_invented_for_a_country_wide_path_are_caught() -> None:
     raw = good()
-    raw["sourcing_paths"][0]["location"]["entries"] = ["India", "Mumbai, Maharashtra, India"]
-    _, r, _ = evaluate(raw)
-    assert r["intent_country_level_geography"]["status"] == gold.PARTIAL
+    raw["sourcing_paths"][0]["location"]["entries"] = ["Mumbai, Maharashtra, India"]
+    _, r, v = evaluate(raw)
     assert r["path_geography_differs"]["status"] == gold.PARTIAL
+    assert "place_not_in_source" in {d["code"] for d in v["diagnostics"]}  # Mumbai is in neither source
+
+
+def test_a_country_written_as_a_city_entry_is_caught_twice() -> None:
+    raw = good()
+    raw["sourcing_paths"][0]["location"].update(countries=[], entries=["India"])
+    _, r, v = evaluate(raw)
+    assert r["intent_country_level_geography"]["status"] == gold.FAIL
+    assert r["path_geography_differs"]["status"] != gold.PASS
+    # structural check: India is the trailing component of Path B's "Hyderabad, Telangana, India", so it is a country
+    assert "country_city_misrepresentation" in {d["code"] for d in v["diagnostics"]}
+    assert r["generic_validators_clean"]["status"] == gold.FAIL and r["generic_validators_clean"]["failure_class"] == gold.VALIDATION
+
+
+def test_a_city_in_the_countries_field_is_caught() -> None:
+    raw = good()
+    raw["sourcing_paths"][1]["location"].update(countries=["Hyderabad"])
+    _, _, v = evaluate(raw)
+    assert "country_city_misrepresentation" in {d["code"] for d in v["diagnostics"]}
+
+
+def test_remote_is_typed_and_not_invented_for_the_other_path() -> None:
+    raw = good()
+    raw["sourcing_paths"][0]["location"]["remote"] = None
+    _, r, _ = evaluate(raw)
+    assert r["remote_typed"]["status"] == gold.FAIL           # remote must not survive only in quote text
+    raw = good()
+    raw["sourcing_paths"][1]["location"]["remote"] = "allowed"
+    _, r, v = evaluate(raw)
+    assert r["remote_typed"]["status"] == gold.FAIL
+    assert "remote_unsupported" in {d["code"] for d in v["diagnostics"]}  # the sources state remote only for Path A
+    bad = good()
+    bad["sourcing_paths"][0]["location"]["remote"] = "sometimes"
+    with pytest.raises(ValidationError):
+        ExperimentalHiringIntent.model_validate(bad)
 
 
 def test_domain_required_on_path_b_fails() -> None:
@@ -195,7 +234,126 @@ def test_paths_are_found_by_strategy_not_by_label() -> None:
     raw["sourcing_paths"][1].update(id="x2", label="Track two", strategy="hybrid")
     raw["reconciliations"][1]["path_id"] = "x1"
     _, r, _ = evaluate(raw)
-    assert {k: x["status"] for k, x in r.items() if x["status"] != gold.PASS} == {}
+    # only the leakage check cannot run: x1 / x2 are not the source's names for the paths
+    assert {k: x["status"] for k, x in r.items() if x["status"] != gold.PASS} == {"path_leakage_checkable": gold.PARTIAL}
+    assert r["path_leakage_checkable"]["failure_class"] == gold.VALIDATION
+
+
+# ---------------------------------------------------------------------------- hardening: leakage, levels, firm exclusion
+
+
+def test_a_path_b_requirement_inherited_by_path_a_is_flagged_generically() -> None:
+    raw = good()
+    raw["experience"] = raw["sourcing_paths"][1].pop("experience")      # the model lifts 6+ years into the global intent
+    _, r, v = evaluate(raw)
+    leak = [d for d in v["diagnostics"] if d["code"] == "path_requirement_leakage"]
+    assert leak and "Path A" in leak[0]["detail"] and "only for ['Path B']" in leak[0]["detail"]
+    assert (r["path_b_requirements_not_in_path_a"]["status"], r["path_b_requirements_not_in_path_a"]["failure_class"]) == (gold.FAIL, gold.EXTRACTION)
+    assert r["generic_validators_clean"]["status"] == gold.FAIL
+
+
+def test_the_leakage_validator_knows_no_role_content() -> None:
+    """Same structure, unrelated words: the check must not depend on '6+ years' or 'Path B'."""
+    from backend.experiments.intake_strategy.validators import scope_checks, validate  # noqa: F401
+    jd = "Claims handler role.\n"
+    brief = ("Overview: we want claims handlers with 9 years of experience.\n\n"
+             "OPTION ONE\n- marine claims\n- Lisbon or Porto\n\nOPTION TWO\n- any claims background\n- 9 years of experience\n"
+             "Option Two requires fluent Portuguese.\n")
+    raw = {"role_archetype": {"value": "hybrid", "confidence": 0.5, "rationale": "x"}, "role_family": ["Claims Handler"],
+           "experience": {"minimum_years": 9, "strength": "required"},
+           "sourcing_paths": [{"id": "Option One", "label": "marine", "strategy": "domain_led"},
+                              {"id": "Option Two", "label": "generalist", "strategy": "capability_led"}]}
+    v = validate(ExperimentalHiringIntent.model_validate(raw), jd, brief)
+    leaks = [d for d in v["diagnostics"] if d["code"] == "path_requirement_leakage"]
+    assert len(leaks) == 1 and "Option One" in leaks[0]["detail"] and "Option Two" in leaks[0]["detail"]
+
+
+def test_a_requirement_stated_for_every_path_is_not_flagged() -> None:
+    _, _, v = evaluate(good())
+    assert "path_requirement_leakage" not in {d["code"] for d in v["diagnostics"]}   # SQL/Python are stated in both paths' sections
+
+
+def test_senior_is_source_supported_for_path_a_only() -> None:
+    _, r, v = evaluate(good())
+    assert r["seniority_levels_source_supported"]["status"] == gold.PASS            # "Lead / Senior" is the brief's own Path A wording
+    assert "unsupported_level" not in {d["code"] for d in v["diagnostics"]}
+    raw = good()
+    raw["sourcing_paths"][1]["seniority"] = {"value": "Lead", "alternatives": ["Senior"], "strength": "required", "basis": b("recruiter_brief", "Path B requires Lead level and 6+ years.")}
+    _, r, v = evaluate(raw)
+    assert r["seniority_levels_source_supported"]["status"] == gold.FAIL
+    assert any(d["code"] == "unsupported_level" and "Path B" in d["ref"] for d in v["diagnostics"])
+
+
+def test_a_model_generated_level_is_never_promoted() -> None:
+    raw = good()
+    raw["sourcing_paths"][0]["seniority"]["alternatives"] = ["Senior", "Principal"]
+    _, _, v = evaluate(raw)
+    assert any(d["code"] == "unsupported_level" and "Principal" in d["detail"] and "nowhere" in d["detail"] for d in v["diagnostics"])
+    raw = good()
+    raw["sourcing_paths"][0]["seniority"].update(value="Senior", alternatives=[])
+    _, r, _ = evaluate(raw)
+    assert r["seniority_levels_source_supported"]["status"] == gold.FAIL     # drops the stated target, Lead
+
+
+def test_security_firm_exclusion_must_stay_qualified_semantic_and_not_a_company_filter() -> None:
+    _, r, _ = evaluate(good())
+    assert r["security_firm_exclusion_semantic"]["status"] == gold.PASS and r["no_invented_company_exclusion"]["status"] == gold.PASS
+    raw = good()
+    raw["semantic_exclusions"][1]["concept"] = "Anyone employed by a security firm"
+    _, r, _ = evaluate(raw)
+    assert r["security_firm_exclusion_semantic"]["status"] == gold.PARTIAL        # generalised into a blanket exclusion
+    raw = good()
+    raw["semantic_exclusions"][1]["concept"] = "A strong SQL/Python analyst currently working at a security firm"
+    _, r, _ = evaluate(raw)
+    assert r["security_firm_exclusion_semantic"]["status"] == gold.PARTIAL        # an invented temporal qualifier
+    raw = good()
+    del raw["semantic_exclusions"][1]
+    _, r, _ = evaluate(raw)
+    assert r["security_firm_exclusion_semantic"]["status"] == gold.FAIL
+
+
+def test_reconciliation_conflict_is_generic_and_scope_aware() -> None:
+    raw = good()
+    raw["skills"][2]["strength"] = "required"
+    raw["sourcing_paths"][0]["skills"] = []                              # Power Query inherited as required by the waived path
+    _, _, v = evaluate(raw)
+    assert [d for d in v["diagnostics"] if d["code"] == "reconciliation_conflict" and "Power Query" in d["detail"] and "Path A" in d["detail"]]
+    # the same required atom is fine for the path the waiver does not name: only Path A is flagged
+    assert not [d for d in v["diagnostics"] if d["code"] == "reconciliation_conflict" and "Path B" in d["detail"] and "Power Query" in d["detail"]]
+    # a waiver recorded for an item the intent no longer carries is not a conflict
+    _, _, clean = evaluate(good())
+    assert "reconciliation_conflict" not in {d["code"] for d in clean["diagnostics"]}
+    # an unresolved conflict is surfaced, never flagged
+    raw = good()
+    raw["reconciliations"][0]["action"] = "unresolved"
+    raw["evidence_signals"].append({"name": "security monitoring", "strength": "required", "basis": b("jd", SECMON)})
+    _, _, v = evaluate(raw)
+    assert "reconciliation_conflict" not in {d["code"] for d in v["diagnostics"]}
+
+
+def test_no_assertion_depends_only_on_quote_text() -> None:
+    """Strip every quote: the content assertions must not change. Only provenance/validation may react to quotes."""
+    full = evaluate(good())[1]
+    raw = good()
+
+    def strip(o):
+        if isinstance(o, dict):
+            if "quote" in o:
+                o["quote"] = None
+            for k in ("jd_quote", "brief_quote"):
+                if k in o:
+                    o[k] = None
+            for v in o.values():
+                strip(v)
+        elif isinstance(o, list):
+            for v in o:
+                strip(v)
+    strip(raw)
+    stripped = evaluate(raw)[1]
+    quote_aware = {"provenance_preserved", "reconciliation_visible"}
+    for id_, row in full.items():
+        if id_ not in quote_aware:
+            assert stripped[id_]["status"] == row["status"], id_
 
 
 # ---------------------------------------------------------------------------- provenance is verified by code
@@ -241,9 +399,9 @@ def test_labels_are_derived_from_what_code_verified() -> None:
     labels = {a["ref"]: a["label"] for a in v["atoms"]}
     assert labels["skills[0]"] == "stated_in_both"      # SQL: the model cited the JD, code also finds the brief stating it
     assert labels["skills[3]"] == "retained_from_jd"    # Relativity: only the JD
-    assert labels["experience"] == "added_by_brief"     # 6+ years: only the brief
+    assert labels["paths[Path B].experience"] == "added_by_brief"   # 6+ years: only the brief
     assert labels["semantic_exclusions[0]"] == "added_by_brief"
-    assert labels["paths[A].skills[0]"] == "waived_by_brief"
+    assert labels["paths[Path A].skills[0]"] == "waived_by_brief"
 
 
 def test_a_real_but_unrelated_quote_is_flagged_informationally_and_never_changes_a_verdict() -> None:
@@ -268,7 +426,7 @@ def test_contradicted_item_that_still_stands_is_flagged() -> None:
     raw = good()
     raw["evidence_signals"].append({"name": "security monitoring", "strength": "required", "basis": b("jd", SECMON)})
     _, _, v = evaluate(raw)
-    assert "contradicted_item_survives" in {d["code"] for d in v["diagnostics"]}
+    assert "reconciliation_conflict" in {d["code"] for d in v["diagnostics"]}
 
 
 def test_quote_matching_is_forgiving_of_layout_not_of_content() -> None:
@@ -285,10 +443,12 @@ def test_quote_matching_is_forgiving_of_layout_not_of_content() -> None:
 
 def test_override_semantics_global_plus_path() -> None:
     intent = ExperimentalHiringIntent.model_validate(good())
-    a, bb = effective_view(intent, "A"), effective_view(intent, "B")
+    a, bb = effective_view(intent, "Path A"), effective_view(intent, "Path B")
     assert {s.name: s.strength for s in a["skills"]}["Power Query"] == "preferred"
     assert {s.name: s.strength for s in bb["skills"]}["Power Query"] == "required"
-    assert a["location"].entries == ["India"] and bb["experience"].minimum_years == 6  # inherited
+    assert a["location"].countries == ["India"] and a["location"].remote == "allowed" and bb["location"].countries == []
+    assert bb["experience"].minimum_years == 6 and a["experience"] is None          # path-scoped: Path A does not inherit it
+    assert a["seniority"].alternatives == ["Senior"] and bb["seniority"].alternatives == []  # Path B inherits the global Lead only
     with pytest.raises(KeyError):
         effective_view(intent, "nope")
 
@@ -335,20 +495,33 @@ def test_enums_and_the_provider_leak_guard_cover_the_new_fields() -> None:
 # ---------------------------------------------------------------------------- the prompt is generic
 
 
-def test_prompt_keeps_production_rules_verbatim_and_adds_no_role_specific_text() -> None:
+_ROLE_TERMS = ("power query", "sql", "python", "soc", "cyber", "hyderabad", "pune", "india", "legal", "lpo", "security", "data analyst",
+               "relativity", "canopy", "breach", "path a", "path b", "incident", "siem", "lead data")
+
+
+@pytest.mark.parametrize("version", ["v2", "v3"])
+def test_prompt_keeps_production_rules_verbatim_and_adds_no_role_specific_text(version: str) -> None:
+    from backend.experiments.intake_strategy.experimental_extractor import PROMPTS
     prod = (REPO / "prompts" / "structured_intent.txt").read_text(encoding="utf-8")
-    v2 = PROMPT_V2.read_text(encoding="utf-8")
+    text = PROMPTS[version].read_text(encoding="utf-8")
     rules = prod[prod.index("RULES — these are hiring-intent semantics"):prod.index("There are two sources of hiring intent")]
-    assert rules in v2
-    added = v2[v2.index("11. SOURCE ROLES AND PRIORITY"):v2.index("Job description / notes:")]
-    for term in ("power query", "sql", "python", "soc", "cyber", "hyderabad", "pune", "india", "legal", "lpo", "security", "data analyst",
-                 "relativity", "canopy", "breach", "path a", "path b", "incident", "siem", "lead data"):
+    assert rules in text
+    added = text[text.index("11. SOURCE ROLES AND PRIORITY"):text.index("Job description / notes:")]
+    terms = _ROLE_TERMS + (("senior", "firm", "6+", "marine claims 6") if version == "v3" else ())
+    for term in terms:
         assert not re.search(rf"\b{re.escape(term)}\b", added, re.I), term
-    assert "{job_description}" in v2 and "{recruiter_brief}" in v2
+    assert "{job_description}" in text and "{recruiter_brief}" in text
+
+
+def test_v3_prompt_states_the_hardening_rules_generically() -> None:
+    text = (PROMPT_V2.parent / "prompt_v3.txt").read_text(encoding="utf-8")
+    for needle in ("belongs to THAT path only", "copied verbatim", "location.countries", "location.remote", "seniority.alternatives",
+                   "Keep the source's own qualifiers", "check every required atom against your reconciliations"):
+        assert needle in text, needle
 
 
 def test_prompt_never_receives_gold_assertions() -> None:
-    text = build_prompt(JD, BRIEF)
+    text = build_prompt(JD, BRIEF, "v3")
     assert JD[:60] in text and BRIEF[:40] in text
     for gold_text in ("two_paths_preserved", "pq_not_mandatory_path_a", "PASS", "PARTIAL", "gold"):
         assert gold_text not in text

@@ -12,6 +12,22 @@ Also checked, deterministically: the quote sits in the source the model named (e
 narrowing the model recorded was actually applied to the path it names; a JD item the brief contradicted does not
 survive as a required atom; an inferred atom is never required; path ids are unique and referenced paths exist.
 
+Generic structural checks (no role, path name or number is known to the code; they run from the two source texts and the
+intent alone). Each emits an ERROR diagnostic:
+
+    path_requirement_leakage      a REQUIRED requirement is applied to a path (inherited from the global intent, or placed in
+                                  the wrong path) although the sources state it only for other paths. A path is located in
+                                  the sources by its `id`, which is the name the source gives it; a source line is attributed
+                                  to a path when it names the path, or sits under a heading that does, and negated lines
+                                  ("does NOT require") never count as stating a requirement. An unnamed path is not checked.
+    reconciliation_conflict       the intent records that the brief waived / narrowed / contradicted a JD item but still
+                                  carries a matching REQUIRED atom for the scope concerned
+    unsupported_level             a seniority level (value or alternative) is stated nowhere in the sources, or only for
+                                  other paths: a model-generated alternative, never promoted
+    country_city_misrepresentation  a country in `entries` (a place below country level) or a city in `countries`
+    place_not_in_source           a place named in a location appears in neither source
+    remote_unsupported            remote "allowed" with no non-negated source line about remote work for that scope
+
 "verified" means the quote exists verbatim in the cited source and was cited to the right one. It does NOT mean the quote
 entails the atom: `quote_overlap` (share of the atom's meaningful words found in its quote) is reported per atom as an
 informational signal only, because a faithful paraphrase scores low and a deterministic check cannot tell it from a
@@ -34,6 +50,8 @@ from backend.experiments.intake_strategy.experimental_schema import (
 from backend.services.requirement_provenance import _meaningful, _present, _sentences, _tokens, stated_evidence
 
 WEAK_OVERLAP = 0.34  # informational threshold only
+ERROR_CODES = {"path_requirement_leakage", "reconciliation_conflict", "unsupported_level", "country_city_misrepresentation",
+               "place_not_in_source", "remote_unsupported"}
 _QUOTE_MARKS = str.maketrans({"‘": "'", "’": "'", "“": '"', "”": '"', "–": "-", "—": "-", " ": " "})
 _ELLIPSIS = re.compile(r"…|\.\.\.")
 
@@ -84,7 +102,7 @@ def iter_atoms(intent: ExperimentalHiringIntent) -> Iterator[Dict[str, Any]]:
         return row(ref, "experience", years, e.strength, e.basis, scope)
 
     def location(loc, ref, scope):
-        return row(ref, "location", ", ".join(loc.entries), loc.strength, loc.basis, scope)
+        return row(ref, "location", ", ".join([*loc.countries, *loc.entries]), loc.strength, loc.basis, scope)
 
     scopes: List[Tuple[Optional[str], str, Any]] = [(None, "", intent)]
     for p in intent.sourcing_paths:
@@ -217,18 +235,6 @@ def validate(intent: ExperimentalHiringIntent, jd: str, brief: str) -> Dict[str,
             diag("reconciliation_jd_quote_unverified", ref, f"{rec.topic!r}: jd_quote not verbatim in the JD")
         if not brief_ok:
             diag("reconciliation_brief_quote_unverified", ref, f"{rec.topic!r}: brief_quote not verbatim in the brief")
-        # A waiver/narrowing the model recorded must actually be applied where it says.
-        if rec.action in ("waived", "narrowed") and rec.path_id in ids:
-            view = effective_view(intent, rec.path_id)
-            still = [s for s in view["skills"] if _topic_matches(rec.topic, s.name) and s.strength == "required"]
-            if still:
-                diag("waiver_not_applied", ref, f"{rec.action} {rec.topic!r} on path {rec.path_id!r} but the path still requires {[s.name for s in still]}")
-        # A JD item the brief contradicted must not survive as a required atom.
-        if rec.action == "contradicted":
-            alive = [a for a in rows if a["strength"] == "required" and a["kind"] in ("skill", "domain", "evidence_signal")
-                     and _topic_matches(rec.topic, a["text"])]
-            if alive:
-                diag("contradicted_item_survives", ref, f"{rec.topic!r} contradicted but still required: {[a['text'] for a in alive]}")
 
     # derived reconciliation label for atoms an explicit reconciliation touches
     for r in rows:
@@ -238,7 +244,189 @@ def validate(intent: ExperimentalHiringIntent, jd: str, brief: str) -> Dict[str,
                 r["label"] = f"{rec.action}_by_brief"
                 break
 
+    for code, ref, detail in scope_checks(intent, jd, brief, rows):
+        diag(code, ref, detail)
+
     counts: Dict[str, int] = {}
     for r in rows:
         counts[r["status"]] = counts.get(r["status"], 0) + 1
-    return {"atoms": rows, "status_counts": counts, "reconciliations": rec_rows, "diagnostics": diags}
+    errors: Dict[str, int] = {}
+    for d in diags:
+        if d["code"] in ERROR_CODES:
+            errors[d["code"]] = errors.get(d["code"], 0) + 1
+    located = {p.id: bool(_word(p.id).search(jd) or _word(p.id).search(brief)) for p in intent.sourcing_paths}
+    return {"atoms": rows, "status_counts": counts, "reconciliations": rec_rows, "diagnostics": diags, "errors": errors, "paths_located": located}
+
+
+# ---------------------------------------------------------------------------- generic scope checks
+
+_NEGATION = re.compile(r"\b(not|no|never|without|neither|nor|cannot)\b|n't\b", re.I)
+_BULLET = re.compile(r"^\s*(?:[-*\u2022\u00b7]|\d+[.)])\s*")
+_REMOTE = re.compile(r"\b(remote|remotely|work[- ]from[- ]home|wfh|telecommut\w*)\b", re.I)
+_SCOPED_KINDS = ("skill", "experience", "seniority", "location", "domain")
+
+
+def _word(term: str) -> "re.Pattern[str]":
+    """Whole-word, case-insensitive. Separators in a slug-style id ("path-b") match any run of space / - / _ so a model's
+    slug of the source's own name ("Path B") still locates it."""
+    parts = [re.escape(t) for t in re.split(r"[-_\s]+", term.strip()) if t]
+    return re.compile(rf"(?<![A-Za-z0-9]){'[-_ ]+'.join(parts)}(?![A-Za-z0-9])", re.I)
+
+
+def source_lines(text: str, names: Dict[str, "re.Pattern[str]"]) -> List[Dict[str, Any]]:
+    """Each non-empty source line with the paths it is attributed to (None = unscoped overview). A line is attributed to a
+    path when it names it; a short heading that opens with a path's name keeps attributing the lines below it until the next
+    path heading or an ALL-CAPS heading. The heuristic is deliberately plain and its limits are documented, not hidden: prose
+    below a path's section that is not marked as a new section stays attributed to that path."""
+    out: List[Dict[str, Any]] = []
+    current: Optional[Set[str]] = None
+    for raw in (text or "").splitlines():
+        line = _BULLET.sub("", raw).strip()
+        if not line:
+            continue
+        named = {pid for pid, rx in names.items() if rx.search(line)}
+        letters = [c for c in line if c.isalpha()]
+        caps = len(letters) >= 6 and sum(c.isupper() for c in letters) / len(letters) >= 0.8
+        if named and len(line) <= 100 and not line.endswith(".") and any(names[pid].match(line) for pid in named):
+            current, attributed = set(named), set(named)
+        elif named:
+            attributed = set(named)
+        elif caps:
+            current, attributed = None, None
+        else:
+            attributed = set(current) if current else None
+        out.append({"text": line, "paths": attributed, "negated": bool(_NEGATION.search(line))})
+    return out
+
+
+def _probe(atom: Dict[str, Any]) -> List[str]:
+    """Words that must appear for a source line to state this atom (any one probe is enough)."""
+    if atom["kind"] == "location":
+        return [p.split(",")[0].strip() for p in atom["text"].split(", ") if p.strip()]
+    return [atom["text"]]
+
+
+def _stated_for(atom: Dict[str, Any], lines: List[Dict[str, Any]]) -> Set[str]:
+    """The named paths whose own (non-negated) source lines state the atom."""
+    found: Set[str] = set()
+    for ln in lines:
+        if ln["negated"] or not ln["paths"]:
+            continue
+        for probe in _probe(atom):
+            if atom["kind"] in ("seniority", "location"):
+                hit = bool(_word(probe).search(ln["text"]))
+            else:
+                hit = bool(stated_evidence(probe, [ln["text"]]))
+            if hit:
+                found |= ln["paths"]
+                break
+    return found
+
+
+def _inherits(intent: ExperimentalHiringIntent, atom: Dict[str, Any]) -> Set[str]:
+    """The path ids an atom actually applies to once overrides are resolved."""
+    ids = {p.id for p in intent.sourcing_paths}
+    if atom["scope"] is not None:
+        return {atom["scope"]}
+    out = set()
+    for p in intent.sourcing_paths:
+        overridden = {
+            "skill": any(sk.name.strip().lower() == atom["text"].strip().lower() for sk in p.skills),
+            "domain": any(d.name.strip().lower() == atom["text"].strip().lower() for d in p.domain),
+            "seniority": p.seniority is not None, "experience": p.experience is not None, "location": p.location is not None,
+        }.get(atom["kind"], False)
+        if not overridden:
+            out.add(p.id)
+    return out & ids
+
+
+def scope_checks(intent: ExperimentalHiringIntent, jd: str, brief: str, rows: List[Dict[str, Any]]) -> List[Tuple[str, str, str]]:
+    found: List[Tuple[str, str, str]] = []
+    paths = list(intent.sourcing_paths)
+    names = {p.id: _word(p.id) for p in paths if _word(p.id).search(jd) or _word(p.id).search(brief)}
+    lines = source_lines(jd, names) + source_lines(brief, names)
+    sources = jd + "\n" + brief
+    atoms = list(iter_atoms(intent))
+
+    # --- path requirement leakage / unsupported levels (need >= 2 paths located in the sources)
+    for a in atoms:
+        applies = _inherits(intent, a) & set(names) if paths else set()
+        if a["kind"] in _SCOPED_KINDS and a["constraint"] and a["kind"] != "seniority" and len(names) >= 2:
+            stated = _stated_for(a, lines)
+            leaked = sorted(applies - stated) if stated else []
+            if leaked:
+                found.append(("path_requirement_leakage", a["ref"],
+                              f"{a['kind']} {a['text']!r} is required for {sorted(applies)} but the sources state it only for {sorted(stated)}; leaked to {leaked}"))
+    for ref, sen, scope in _seniority_holders(intent):
+        for level in [sen.value, *sen.alternatives]:
+            pat = _word(level)
+            mentions = [ln for ln in source_lines(jd, names) + source_lines(brief, names) if pat.search(ln["text"]) and not ln["negated"]]
+            if not mentions:
+                found.append(("unsupported_level", ref, f"level {level!r} is stated nowhere in the sources (model-generated)"))
+                continue
+            stated = set().union(*[ln["paths"] for ln in mentions if ln["paths"]]) if any(ln["paths"] for ln in mentions) else set()
+            applies = ({scope} if scope else {p.id for p in paths if p.seniority is None}) & set(names)
+            if stated and len(names) >= 2 and applies - stated:
+                found.append(("unsupported_level", ref, f"level {level!r} is stated only for {sorted(stated)} but is used for {sorted(applies - stated)}"))
+
+    # --- geography typing and support
+    components = {part.strip().casefold() for loc in _locations(intent) for e in loc[1].entries if "," in e for part in [e.split(",")[-1]]}
+    cities = {e.split(",")[0].strip().casefold() for loc in _locations(intent) for e in loc[1].entries if "," in e}
+    countries_all = {c.strip().casefold() for loc in _locations(intent) for c in loc[1].countries}
+    for ref, loc, scope in _locations(intent):
+        for e in loc.entries:
+            if "," not in e and e.strip().casefold() in (components | countries_all):
+                found.append(("country_city_misrepresentation", ref, f"{e!r} is a country but sits in `entries` (places below country level)"))
+        for c in loc.countries:
+            if "," in c or c.strip().casefold() in cities:
+                found.append(("country_city_misrepresentation", ref, f"{c!r} is not a country-wide area but sits in `countries`"))
+        for place in [*(e.split(",")[0] for e in loc.entries), *loc.countries]:
+            if place.strip() and not _word(place).search(sources):
+                found.append(("place_not_in_source", ref, f"{place!r} appears in neither source"))
+        if loc.remote == "allowed":
+            remote_lines = [ln for ln in lines_all(jd, brief, names) if _REMOTE.search(ln["text"]) and not ln["negated"]]
+            stated = set().union(*[ln["paths"] for ln in remote_lines if ln["paths"]]) if any(ln["paths"] for ln in remote_lines) else set()
+            if not remote_lines:
+                found.append(("remote_unsupported", ref, "remote is 'allowed' but no source line says remote work is acceptable"))
+            elif scope and stated and scope in names and scope not in stated:
+                found.append(("remote_unsupported", ref, f"remote is 'allowed' for {scope!r} but the sources state it only for {sorted(stated)}"))
+
+    # --- reconciliation conflicts
+    for i, rec in enumerate(intent.reconciliations):
+        if rec.action == "unresolved" or not quote_in(rec.jd_quote, jd):
+            continue  # an unresolved conflict is surfaced, not silently resolved; an unverified quote is reported elsewhere
+        for a in atoms:
+            if a["kind"] not in ("skill", "skill_any_of", "domain", "evidence_signal", "seniority", "experience", "education") or a["strength"] != "required":
+                continue
+            if rec.path_id is not None:
+                scope_ok = a["scope"] == rec.path_id or (a["scope"] is None and rec.path_id in _inherits(intent, a))
+            else:
+                scope_ok = True
+            if not scope_ok or not _topic_matches(rec.topic, a["text"]):
+                continue
+            if rec.action == "narrowed" and a["basis"] is not None and "recruiter_brief" in a["basis"].sources:
+                continue  # the atom already cites the brief: it is the narrowed form
+            found.append(("reconciliation_conflict", a["ref"],
+                          f"reconciliations[{i}] records {rec.topic!r} as {rec.action}" + (f" for {rec.path_id!r}" if rec.path_id else "") +
+                          f" but {a['kind']} {a['text']!r} is still a required atom for that scope"))
+    return found
+
+
+def lines_all(jd: str, brief: str, names: Dict[str, "re.Pattern[str]"]) -> List[Dict[str, Any]]:
+    return source_lines(jd, names) + source_lines(brief, names)
+
+
+def _seniority_holders(intent: ExperimentalHiringIntent):
+    if intent.seniority:
+        yield "seniority", intent.seniority, None
+    for p in intent.sourcing_paths:
+        if p.seniority:
+            yield f"paths[{p.id}].seniority", p.seniority, p.id
+
+
+def _locations(intent: ExperimentalHiringIntent):
+    if intent.location:
+        yield "location", intent.location, None
+    for p in intent.sourcing_paths:
+        if p.location:
+            yield f"paths[{p.id}].location", p.location, p.id
