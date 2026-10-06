@@ -119,11 +119,11 @@ Fields on a path: `seniority`, `experience`, `location` (replace the global valu
 ## Considered and NOT added
 | Candidate | Why not |
 |---|---|
-| `remote` / work-mode flag | Observed: "remote resources across India" lives only in a quote/label in 5/5 runs (no typed place). No gold assertion fails on it, so per the rule it is not added; it is flagged for the owner. |
-| Multi-valued seniority ("Lead / Senior") | Observed: Path A's "Lead / Senior" is held as one value, `Senior` 3/5 and `Lead` 2/5. Not gated; flagged for the owner. |
+| `remote` / work-mode flag | RESOLVED in the hardening pass: added as `location.remote` (see below). |
+| Multi-valued seniority ("Lead / Senior") | RESOLVED in the hardening pass as `seniority.alternatives`, only because the brief literally states "Lead / Senior" for Path A (see below). |
 | Path priority / ranking ("domain-led strongest, capability-led acceptable") | Ranking, which the owner excluded. The model keeps it as a `context` evidence signal. |
 | Path-scoped negatives | Role 1's negative is global. Add only when a role needs one. |
-| An explicit location-level field (country vs city) | Country-only entries are representable by form (`"India"`); the corruption is in the compiler (see RESULTS). Not changed, per the owner. |
+| An explicit location-level field (country vs city) | RESOLVED in the hardening pass as `location.countries` (see below). |
 | More proficiency levels, a leadership taxonomy, an archetype taxonomy, an ontology | Not demonstrated by any failure. |
 | A `retained/added` enum asked of the model | Derived by code instead; asking would be unverifiable. |
 | Line numbers | Forbidden; fabrication risk. |
@@ -162,3 +162,64 @@ file; `rm -r backend/experiments/intake_strategy` removes it completely.
   `approved_knowledge` verification (cannot be checked today).
 - **Must NOT be added**: a second intent/contract, a path-priority/ranking field, provider fields, a boolean expression DSL,
   per-path copies of the whole intent, model-supplied verification flags, line-number sources.
+
+---
+
+# Hardening pass (second extension; three typed additions, one rejected field)
+
+Trigger: five correctness issues from the first experiment (Path B's 6+ years inherited by Path A; "Senior" appearing for Path
+A; "remote" surviving only in quote text; India held as a city-style entry; reconciliation conflicts that no runtime check
+could see). Rule applied: broaden the schema only where the representation, not model variability, is what fails.
+
+## What the source actually says (it matters for item 2)
+`inputs/role1_recruiter_brief.txt` line 50, under Path A: "Lead / Senior Data Analyst identity". "Senior" appears nowhere
+else in either source. So "Senior" is **source-supported for Path A and unsupported for Path B and globally**. The previous
+Lead/Senior variation was an instability *and* a single-valued `seniority.value` forced to drop one of two source-stated
+alternatives. Both are recorded in RESULTS_HARDENING.md.
+
+## New fields (same template)
+
+### A. `location.countries` + `location.remote` (on the experimental location)
+- **WHY NEEDED**: "India-wide / remote" (Path A) must be distinguishable from city-level Hyderabad/Pune (Path B), typed.
+- **BASELINE EVIDENCE**: v2 held India as `entries: ["India"]` in 5/5 runs (country-ness only by string form; the compiler later
+  read it as `city IN ["India"]`), and "remote resources across India" appeared in no typed field in 5/5 runs.
+- **WHY CURRENT SCHEMA FAILS**: `entries` is one list of strings with no level; there is no remote member.
+- **WHY THE SMALLEST FIX**: `countries` (country-wide areas, name only) kept apart from `entries` (places below country);
+  `remote` is `allowed | not_allowed | null`. `not_allowed` is the only value beyond "allowed" and exists so a recruiter's "no
+  remote" is not forced into silence; "remote only" is not invented. Radius is untouched.
+- **ALTERNATIVES**: a `level` tag per entry (cannot hold a country plus a preferred city); a boolean `remote_allowed` (cannot
+  say "not allowed" vs unstated without a tri-state, so an enum reads better); a remote flag on the path rather than the
+  location (rejected: remote is a property of where, and the path override already moves the whole location).
+- **DECISION**: ADD. No provider compilation is implemented.
+
+### B. `seniority.alternatives: [str]`
+- **WHY NEEDED**: a source that states more than one acceptable level for the same scope ("Lead / Senior").
+- **BASELINE EVIDENCE**: v2 Path A level was `Senior` x3 and `Lead` x2: one value forced a choice between two stated levels.
+- **WHY THE SMALLEST FIX**: an OR-list on the existing record; no seniority taxonomy. Each level (value or alternative) must be
+  stated in the source for that scope, checked by code (`unsupported_level`), so a model-generated level is flagged, never promoted.
+- **ALTERNATIVES**: a list-valued `value` (breaks every consumer of the production type); free text "Lead / Senior" (unverifiable).
+- **DECISION**: ADD as a generic capability, as the owner allowed. Role 1's Path B and global level stay single-valued.
+
+### C. Rejected: a new field to locate a path in the source
+Leakage checking needs to know which source lines belong to which path. A `source_name` field was considered and **rejected**:
+the existing `SourcingPath.id` already carries a name, and the v3 prompt asks for the source's own short designation ("Path B").
+Code verifies that some source line opens with it; a path that cannot be located is reported (`path_leakage_checkable`) and not
+silently skipped. Limit: a descriptive id that happens to open some unrelated line can be mis-located.
+
+## Generic deterministic validators added (no Role 1 content; unit-tested on an unrelated role)
+`path_requirement_leakage`, `reconciliation_conflict` (replaces the two narrower checks), `unsupported_level`,
+`country_city_misrepresentation`, `place_not_in_source`, `remote_unsupported`. Definitions are in the `validators.py` docstring.
+
+**On "unless explicitly marked global".** In this representation, placing a requirement at the top level IS the marker that it
+applies to every path. The leakage check tests that claim against the sources: a REQUIRED requirement is flagged when the sources
+state it only for some paths, whether it was inherited from the global intent or placed in the wrong path. A genuinely global
+requirement is one the sources state for every path (SQL and Python here) or for none. This is why an overview line such as "6+
+years of experience" does not exempt a requirement that only one path's section restates.
+
+Known limits (reported, not tuned away): section attribution is a plain heuristic (prose below a path heading stays attributed to
+it until the next heading); negated lines never count as stating a requirement; strength other than `required` is not checked;
+`reconciliation_conflict` fires only for reconciliations whose `jd_quote` is verbatim in the JD and matches an atom by topic words,
+so it misses a JD item whose surviving atom comes from different sentences than the quoted one (the leadership case).
+
+## Not added (as instructed)
+Scoring, query text, provider fields, ranking, taxonomy, embeddings, probes, candidate evidence, feedback, line numbers, ontology.

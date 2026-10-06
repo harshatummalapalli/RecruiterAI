@@ -144,6 +144,17 @@ def test_security_operations_kept_as_a_requirement_fails_as_reconciliation() -> 
     assert (r["cyber_review_not_secops"]["status"], r["cyber_review_not_secops"]["failure_class"]) == (gold.FAIL, gold.RECONCILIATION)
 
 
+def test_denying_security_operations_is_not_promoting_it() -> None:
+    raw = good()
+    raw["evidence_signals"].append({"name": "Review, QA, compliance or audit experience, rather than cybersecurity operations", "strength": "required", "basis": b("jd", SECMON)})
+    raw["evidence_signals"].append({"name": "Review experience; security monitoring alone is not equivalent", "strength": "required", "basis": b("jd", SECMON)})
+    _, r, _ = evaluate(raw)
+    assert r["cyber_review_not_secops"]["status"] == gold.PASS      # a denial is a faithful narrowing
+    raw["evidence_signals"].append({"name": "security monitoring and SOC experience", "strength": "required", "basis": b("jd", SECMON)})
+    _, r, _ = evaluate(raw)
+    assert r["cyber_review_not_secops"]["status"] == gold.FAIL      # a bare positive still fails
+
+
 def test_a_missing_semantic_negative_is_partial_then_fail() -> None:
     raw = good()
     raw["semantic_exclusions"] = []

@@ -41,6 +41,7 @@ from backend.experiments.intake_strategy.gold_assertions import (
 )
 from backend.experiments.intake_strategy.validators import ERROR_CODES, iter_atoms, validate
 
+_DENIES = re.compile(r"\b(not|no|never|without|rather than|instead of|other than|excluding|except|nor)\b|n't\b", re.I)
 COUNTRIES = {"india", "united states", "usa", "uk", "united kingdom"}
 _JD_ITEMS: List[Tuple[str, "re.Pattern[str]"]] = [
     ("Relativity", re.compile(r"relativity", re.I)),
@@ -197,8 +198,11 @@ def evaluate_critical(intent: ExperimentalHiringIntent, jd: str, brief: str) -> 
 
     # 11-12 domain vs security operations; semantic hard negative
     atoms = list(iter_atoms(intent))
+    # A required/preferred atom that NAMES security-operations vocabulary only to deny it ("... rather than cybersecurity
+    # operations", "security monitoring alone is not equivalent") is a faithful narrowing, not a promotion. Added after the
+    # first v3 run, where this check misread two such atoms; the before/after counts are reported in RESULTS_HARDENING.md.
     promoted = [a for a in atoms if a["kind"] in ("skill", "skill_any_of", "evidence_signal", "domain", "path")
-                and a["strength"] in ("required", "preferred") and HARD_SECOPS.search(a["text"])]
+                and a["strength"] in ("required", "preferred") and HARD_SECOPS.search(a["text"]) and not _DENIES.search(a["text"])]
     secops_neg = [x for x in intent.semantic_exclusions if HARD_SECOPS.search(" ".join([x.concept, *x.includes]))]
     if promoted:
         add("cyber_review_not_secops", "Cyber incident review kept distinct from cybersecurity/SOC", FAIL, RECONCILIATION,

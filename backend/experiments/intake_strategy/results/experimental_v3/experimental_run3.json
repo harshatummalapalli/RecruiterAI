@@ -1,0 +1,1532 @@
+{
+ "run": 3,
+ "error": null,
+ "transient_retries": [],
+ "intent": {
+  "role_archetype": {
+   "value": "hybrid",
+   "confidence": 0.97,
+   "rationale": "The role combines a Lead Data Analyst identity with substantive SQL/Python capability and path-dependent Cyber Incident Review domain experience."
+  },
+  "role_family": [
+   "Data Analyst"
+  ],
+  "seniority": {
+   "basis": {
+    "sources": [
+     "jd",
+     "recruiter_brief"
+    ],
+    "quote": "\"Lead\" may mean people leadership OR technical leadership."
+   },
+   "strength": "required",
+   "value": "Lead",
+   "leadership": [
+    "people",
+    "technical"
+   ],
+   "alternatives": []
+  },
+  "skills": [
+   {
+    "basis": {
+     "sources": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "quote": "Hands-on experience with SQL and Python for data querying, analysis, automation, and reporting."
+    },
+    "strength": "required",
+    "name": "SQL",
+    "relationship": "any",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "quote": "Hands-on experience with SQL and Python for data querying, analysis, automation, and reporting."
+    },
+    "strength": "required",
+    "name": "Python",
+    "relationship": "any",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "a solid understanding of cybersecurity review processes, data privacy, information security principles, and data analytics."
+    },
+    "strength": "required",
+    "name": "Data Privacy",
+    "relationship": "any",
+    "proficiency": "working_knowledge"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "a solid understanding of cybersecurity review processes, data privacy, information security principles, and data analytics."
+    },
+    "strength": "required",
+    "name": "Information Security Principles",
+    "relationship": "any",
+    "proficiency": "working_knowledge"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience working with security frameworks, data privacy requirements, and regulatory compliance standards is highly desirable."
+    },
+    "strength": "preferred",
+    "name": "Security Frameworks",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience working with security frameworks, data privacy requirements, and regulatory compliance standards is highly desirable."
+    },
+    "strength": "preferred",
+    "name": "Regulatory Compliance Standards",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience with Relativity and Canopy platforms is preferred."
+    },
+    "strength": "preferred",
+    "name": "Relativity",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience with Relativity and Canopy platforms is preferred."
+    },
+    "strength": "preferred",
+    "name": "Canopy",
+    "relationship": "any",
+    "proficiency": null
+   }
+  ],
+  "skill_any_of": [],
+  "companies": [],
+  "company_scale": null,
+  "education": {
+   "basis": {
+    "sources": [
+     "jd"
+    ],
+    "quote": "Bachelor's degree in Cybersecurity, Information Technology, Computer Science, Information Systems, Data Analytics, or a related discipline preferred."
+   },
+   "strength": "preferred",
+   "degrees": [
+    "Bachelor's degree"
+   ],
+   "streams": [
+    "Cybersecurity",
+    "Information Technology",
+    "Computer Science",
+    "Information Systems",
+    "Data Analytics",
+    "Related discipline"
+   ]
+  },
+  "experience": null,
+  "location": null,
+  "exclusions": [],
+  "evidence_signals": [
+   {
+    "basis": {
+     "sources": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "quote": "Hands-on experience with SQL and Python for data querying, analysis, automation, and reporting."
+    },
+    "strength": "required",
+    "name": "Data querying, analysis, automation, and reporting using SQL and Python"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "quote": "Experience performing review, quality assurance, compliance, audit, or security monitoring activities."
+    },
+    "strength": "required",
+    "name": "Review, quality assurance, compliance, or audit experience"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "quote": "\"Lead\" may mean people leadership OR technical leadership."
+    },
+    "strength": "required",
+    "name": "People leadership or technical leadership"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "The role requires strong analytical capabilities, leadership skills, attention to detail"
+    },
+    "strength": "required",
+    "name": "Strong analytical capabilities and attention to detail"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Review, analyse, and interpret large datasets to identify trends, anomalies, and potential security risks."
+    },
+    "strength": "required",
+    "name": "Large-dataset analysis to identify trends, anomalies, and potential security risks"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "ensuring the delivery of high-quality review services, adherence to security standards, and compliance with established protocols."
+    },
+    "strength": "required",
+    "name": "Quality oversight, security-standard adherence, and protocol compliance"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Collaborate with technology, security, legal, compliance, and business stakeholders to address review findings and support remediation efforts."
+    },
+    "strength": "required",
+    "name": "Cross-functional collaboration on review findings and remediation"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Prepare management reports, dashboards, and performance metrics to support operational and business decisions."
+    },
+    "strength": "required",
+    "name": "Management reports, dashboards, and performance metrics"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Maintain accurate documentation, procedures, audit trails, and quality records in accordance with organizational and client requirements."
+    },
+    "strength": "required",
+    "name": "Accurate documentation, procedures, audit trails, and quality records"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Assist the Review Manager with administrative activities, resource planning, workflow management, and team coordination."
+    },
+    "strength": "required",
+    "name": "Operational coordination, resource planning, workflow management, and support for the Review Manager"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Drive continuous improvement initiatives to enhance operational efficiency, quality, and compliance outcomes."
+    },
+    "strength": "required",
+    "name": "Continuous improvement of operational efficiency, quality, and compliance"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience working with security frameworks, data privacy requirements, and regulatory compliance standards is highly desirable."
+    },
+    "strength": "preferred",
+    "name": "Experience with data privacy requirements"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience managing cyber incident reviews, breach investigations, or data privacy review workflows is an advantage."
+    },
+    "strength": "preferred",
+    "name": "Managing cyber incident reviews, breach investigations, or data privacy review workflows"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Equivalent combination of education and relevant professional experience will be considered."
+    },
+    "strength": "context",
+    "name": "Equivalent combination of education and relevant professional experience is acceptable"
+   },
+   {
+    "basis": {
+     "sources": [
+      "recruiter_brief"
+     ],
+     "quote": "1. Domain-led + tools + experience = strongest target\n2. Capability-led + tools + experience = acceptable alternative"
+    },
+    "strength": "context",
+    "name": "Domain-led candidates are the strongest target; capability-led candidates are an acceptable alternative"
+   }
+  ],
+  "domain": [
+   {
+    "basis": {
+     "sources": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "quote": "The team analyses:\n- Cyber Incidents\n- Data Breaches\n- Cyber Incident Review\n- Data Breach Analysis"
+    },
+    "strength": "context",
+    "name": "Cyber Incident Review and Data Breach Analysis"
+   },
+   {
+    "basis": {
+     "sources": [
+      "recruiter_brief"
+     ],
+     "quote": "This is for a \"Cyber Incident Review\" team within a Legal Tech / Legal Solutions environment."
+    },
+    "strength": "context",
+    "name": "Legal Tech / Legal Solutions"
+   }
+  ],
+  "semantic_exclusions": [
+   {
+    "basis": {
+     "sources": [
+      "recruiter_brief"
+     ],
+     "quote": "3. Generic cybersecurity/SOC/security profiles = NOT equivalent"
+    },
+    "concept": "Generic cybersecurity or security-operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+    "includes": [
+     "Cyber Security",
+     "SOC",
+     "Security Operations",
+     "Security Analyst",
+     "SIEM",
+     "Threat Detection",
+     "security incident response",
+     "other cybersecurity operations work"
+    ]
+   },
+   {
+    "basis": {
+     "sources": [
+      "recruiter_brief"
+     ],
+     "quote": "A strong SQL/Python analyst working at a security firm should be excluded."
+    },
+    "concept": "A strong SQL/Python analyst working at a security firm",
+    "includes": [
+     "A strong SQL/Python analyst working at a security firm"
+    ]
+   },
+   {
+    "basis": {
+     "sources": [
+      "recruiter_brief"
+     ],
+     "quote": "A candidate should not become relevant merely because a profile contains the word \"cyber\" or \"incident\"."
+    },
+    "concept": "Cyber or incident wording alone without relevant substantive evidence",
+    "includes": [
+     "Profiles containing the word cyber or incident alone"
+    ]
+   }
+  ],
+  "sourcing_paths": [
+   {
+    "basis": {
+     "sources": [
+      "recruiter_brief"
+     ],
+     "quote": "PATH A — DOMAIN-LED CANDIDATE"
+    },
+    "id": "PATH A",
+    "label": "Domain-led candidate",
+    "strategy": "domain_led",
+    "seniority": {
+     "basis": {
+      "sources": [
+       "recruiter_brief"
+      ],
+      "quote": "Ideal:\n- Lead / Senior Data Analyst identity"
+     },
+     "strength": "preferred",
+     "value": "Lead",
+     "leadership": [
+      "people",
+      "technical"
+     ],
+     "alternatives": [
+      "Senior"
+     ]
+    },
+    "experience": null,
+    "location": {
+     "basis": {
+      "sources": [
+       "recruiter_brief"
+      ],
+      "quote": "For this path:\n- India-wide location is acceptable\n- remote resources across India are acceptable"
+     },
+     "strength": "required",
+     "entries": [],
+     "radius": null,
+     "countries": [
+      "India"
+     ],
+     "remote": "allowed"
+    },
+    "skills": [],
+    "domain": [
+     {
+      "basis": {
+       "sources": [
+        "recruiter_brief"
+       ],
+       "quote": "- Cyber Incident Review and/or Data Breach Analysis experience"
+      },
+      "strength": "required",
+      "name": "Cyber Incident Review and/or Data Breach Analysis"
+     },
+     {
+      "basis": {
+       "sources": [
+        "recruiter_brief"
+       ],
+       "quote": "- preferably from Legal Tech / LPO / Legal Solutions / legal-services technology / Data Breach Analysis environments"
+      },
+      "strength": "preferred",
+      "name": "Legal Tech / LPO / Legal Solutions / legal-services technology / Data Breach Analysis environments"
+     }
+    ]
+   },
+   {
+    "basis": {
+     "sources": [
+      "recruiter_brief"
+     ],
+     "quote": "PATH B — CAPABILITY-LED DATA ANALYST"
+    },
+    "id": "PATH B",
+    "label": "Capability-led Data Analyst",
+    "strategy": "capability_led",
+    "seniority": null,
+    "experience": {
+     "basis": {
+      "sources": [
+       "recruiter_brief"
+      ],
+      "quote": "Path B requires Lead level and 6+ years."
+     },
+     "strength": "required",
+     "minimum_years": 6,
+     "maximum_years": null
+    },
+    "location": {
+     "basis": {
+      "sources": [
+       "recruiter_brief"
+      ],
+      "quote": "Path B geography is Hyderabad OR Pune."
+     },
+     "strength": "required",
+     "entries": [
+      "Hyderabad, Telangana, India",
+      "Pune, Maharashtra, India"
+     ],
+     "radius": null,
+     "countries": [],
+     "remote": null
+    },
+    "skills": [
+     {
+      "basis": {
+       "sources": [
+        "jd",
+        "recruiter_brief"
+       ],
+       "quote": "Path B requires working knowledge of Power Query."
+      },
+      "strength": "required",
+      "name": "Power Query",
+      "relationship": "any",
+      "proficiency": "working_knowledge"
+     }
+    ],
+    "domain": []
+   }
+  ],
+  "reconciliations": [
+   {
+    "topic": "Cybersecurity operations versus legal-domain incident review",
+    "action": "narrowed",
+    "jd_quote": "a solid understanding of cybersecurity review processes, data privacy, information security principles, and data analytics.",
+    "brief_quote": "This is NOT cybersecurity operations.",
+    "result": "Cybersecurity review processes mean legal-domain Cyber Incident Review rather than cybersecurity operations; data privacy and information security principles remain relevant qualifications.",
+    "path_id": null
+   },
+   {
+    "topic": "Security monitoring as qualifying experience",
+    "action": "narrowed",
+    "jd_quote": "Experience performing review, quality assurance, compliance, audit, or security monitoring activities.",
+    "brief_quote": "Generic cybersecurity/SOC/security profiles = NOT equivalent",
+    "result": "Review, quality assurance, compliance, or audit experience remains qualifying, but security monitoring alone is not an equivalent background.",
+    "path_id": null
+   },
+   {
+    "topic": "Leadership type",
+    "action": "narrowed",
+    "jd_quote": "Experience leading teams, mentoring analysts, and coordinating operational workflows.",
+    "brief_quote": "\"Lead\" may mean people leadership OR technical leadership.",
+    "result": "Either people leadership, including mentoring and team development, or technical leadership satisfies the leadership qualification; people-management experience is not mandatory for every candidate.",
+    "path_id": null
+   },
+   {
+    "topic": "Path A seniority",
+    "action": "narrowed",
+    "jd_quote": "Data Analyst Lead – Cyber Incident Review",
+    "brief_quote": "Ideal:\n- Lead / Senior Data Analyst identity",
+    "result": "Path A accepts Lead or Senior Data Analyst identity as the stated ideal rather than requiring Lead level exclusively.",
+    "path_id": "PATH A"
+   },
+   {
+    "topic": "Power Query",
+    "action": "waived",
+    "jd_quote": "Working knowledge of Power Query for data transformation, preparation, and reporting.",
+    "brief_quote": "Path A does NOT require Power Query.",
+    "result": "Power Query is not a requirement for Path A and remains required at working-knowledge depth for Path B.",
+    "path_id": "PATH A"
+   },
+   {
+    "topic": "Cyber-incident domain experience",
+    "action": "waived",
+    "jd_quote": "a solid understanding of cybersecurity review processes",
+    "brief_quote": "Path B does not require the cyber-incident domain.",
+    "result": "Path B does not require prior Cyber Incident Review or Data Breach Analysis domain knowledge or experience.",
+    "path_id": "PATH B"
+   }
+  ]
+ },
+ "gold": {
+  "schema_concepts": {
+   "sourcing_paths": true,
+   "path_strategy": true,
+   "path_scoped_location": true,
+   "path_scoped_requirements": true,
+   "proficiency": true,
+   "semantic_exclusions": true,
+   "leadership": true,
+   "domain": true,
+   "provenance": true,
+   "reconciliations": true,
+   "typed_country": true,
+   "typed_remote": true,
+   "level_alternatives": true
+  },
+  "critical": [
+   {
+    "id": "two_paths_preserved",
+    "title": "Two sourcing paths preserved",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "strategies=['domain_led', 'capability_led']"
+   },
+   {
+    "id": "path_a_domain_led",
+    "title": "Path A is domain-led",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "strategy=domain_led; domain=[('Cyber Incident Review and/or Data Breach Analysis', 'required'), ('Legal Tech / LPO / Legal Solutions / legal-services technology / Data Breach Analysis environments', 'preferred')]"
+   },
+   {
+    "id": "path_b_capability_led",
+    "title": "Path B is capability-led / hybrid",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "strategies=['domain_led', 'capability_led']"
+   },
+   {
+    "id": "path_geography_differs",
+    "title": "Path A geography differs from Path B (typed)",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "A: countries=['india'] cities=[] remote=allowed | B: countries=[] cities=['hyderabad', 'pune'] remote=None"
+   },
+   {
+    "id": "pq_not_mandatory_path_a",
+    "title": "Power Query not mandatory on Path A",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "Path A effective: absent"
+   },
+   {
+    "id": "pq_working_knowledge_path_b",
+    "title": "Power Query is working knowledge on Path B",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "Path B effective: 'Power Query'/required/working_knowledge"
+   },
+   {
+    "id": "sql_hands_on",
+    "title": "SQL is hands-on",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "B='SQL'/required/hands_on A='SQL'/required/hands_on"
+   },
+   {
+    "id": "python_hands_on",
+    "title": "Python is hands-on",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "B='Python'/required/hands_on A='Python'/required/hands_on"
+   },
+   {
+    "id": "path_b_min_6_years",
+    "title": "Path B requires 6+ years",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "Path B effective: 6+ required. Path A effective: None (brief does not say whether A inherits it)"
+   },
+   {
+    "id": "path_b_lead_requirement",
+    "title": "Path B requires Lead level",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "Path B effective: Lead/required"
+   },
+   {
+    "id": "cyber_review_not_secops",
+    "title": "Cyber incident review kept distinct from cybersecurity/SOC",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "domain=['Cyber Incident Review and/or Data Breach Analysis', 'Legal Tech / LPO / Legal Solutions / legal-services technology / Data Breach Analysis environments']; negative=['Generic cybersecurity or security-operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis']; no security-operations atom promoted"
+   },
+   {
+    "id": "hard_negative_secops_preserved",
+    "title": "Security-operations hard negative preserved",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "semantic_exclusions=[('Generic cybersecurity or security-operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis', ['Cyber Security', 'SOC', 'Security Operations', 'Security Analyst', 'SIEM', 'Threat Detection', 'security incident response', 'other cybersecurity operations work'])]"
+   },
+   {
+    "id": "lead_people_or_technical",
+    "title": "'Lead' supports people OR technical leadership",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "leadership=['people', 'technical']; no people-only requirement remains"
+   },
+   {
+    "id": "no_invented_radius",
+    "title": "No radius invented",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "radius on 0 location(s)"
+   },
+   {
+    "id": "no_invented_company_filter",
+    "title": "No current-company hard filter invented",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "required companies=[] scale=False"
+   },
+   {
+    "id": "no_invented_company_exclusion",
+    "title": "No company exclusion invented (no source names a company)",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "company exclusions=[]"
+   },
+   {
+    "id": "provenance_preserved",
+    "title": "Explicit vs inferred provenance preserved and verified",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "39 atoms; status={'verified': 39}; missing_basis=0 (constraint-bearing 0); unsupported/misattributed=0"
+   },
+   {
+    "id": "path_b_domain_not_required",
+    "title": "Path B does not require the cyber-incident domain",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "required domain atoms applying to B: []"
+   },
+   {
+    "id": "intent_country_level_geography",
+    "title": "India is a typed country, never a city entry",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "A countries=['india']; no entry named india"
+   },
+   {
+    "id": "remote_typed",
+    "title": "Remote is a typed fact: allowed on Path A, not asserted for Path B",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "A.remote=allowed B.remote=None"
+   },
+   {
+    "id": "path_b_requirements_not_in_path_a",
+    "title": "Path B's 6+ years is not applied to Path A",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "Path A effective experience=None"
+   },
+   {
+    "id": "seniority_levels_source_supported",
+    "title": "Levels are source-supported: Path B Lead only; Path A includes Lead",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "Path A levels=['lead', 'senior'] (Senior is stated in the source for Path A only); Path B levels=['lead']"
+   },
+   {
+    "id": "security_firm_exclusion_semantic",
+    "title": "Recruiter's security-firm exclusion kept as a qualified semantic negative",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "'A strong SQL/Python analyst working at a security firm A strong SQL/Python analyst working at a security firm'"
+   },
+   {
+    "id": "generic_validators_clean",
+    "title": "Generic validators: no leakage, conflict, unsupported level, country/city or place error",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "none of the six error validators fired"
+   },
+   {
+    "id": "path_leakage_checkable",
+    "title": "Every path is located in the sources, so the leakage check could run",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "located=['PATH A', 'PATH B']"
+   },
+   {
+    "id": "reconciliation_visible",
+    "title": "JD-vs-brief reconciliations explicit and verified",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "{'security_ops_item': True, 'power_query_waived_on_A': True, 'lead_leadership_widened': True}; 6 reconciliation(s)"
+   },
+   {
+    "id": "jd_not_silently_discarded",
+    "title": "Formal JD items not silently discarded",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "all retained somewhere"
+   }
+  ],
+  "validation": {
+   "atoms": [
+    {
+     "ref": "paths[PATH A]",
+     "kind": "path",
+     "text": "Domain-led candidate",
+     "strength": "required",
+     "scope": "PATH A",
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "recruiter_brief"
+     ],
+     "verified": [
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "added_by_brief"
+    },
+    {
+     "ref": "paths[PATH B]",
+     "kind": "path",
+     "text": "Capability-led Data Analyst",
+     "strength": "required",
+     "scope": "PATH B",
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "recruiter_brief"
+     ],
+     "verified": [
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "added_by_brief"
+    },
+    {
+     "ref": "seniority",
+     "kind": "seniority",
+     "text": "Lead",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "verified": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "stated_in_both"
+    },
+    {
+     "ref": "skills[0]",
+     "kind": "skill",
+     "text": "SQL",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "verified": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "stated_in_both"
+    },
+    {
+     "ref": "skills[1]",
+     "kind": "skill",
+     "text": "Python",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "verified": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "stated_in_both"
+    },
+    {
+     "ref": "skills[2]",
+     "kind": "skill",
+     "text": "Data Privacy",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[3]",
+     "kind": "skill",
+     "text": "Information Security Principles",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[4]",
+     "kind": "skill",
+     "text": "Security Frameworks",
+     "strength": "preferred",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[5]",
+     "kind": "skill",
+     "text": "Regulatory Compliance Standards",
+     "strength": "preferred",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[6]",
+     "kind": "skill",
+     "text": "Relativity",
+     "strength": "preferred",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[7]",
+     "kind": "skill",
+     "text": "Canopy",
+     "strength": "preferred",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "domain[0]",
+     "kind": "domain",
+     "text": "Cyber Incident Review and Data Breach Analysis",
+     "strength": "context",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "verified": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "stated_in_both"
+    },
+    {
+     "ref": "domain[1]",
+     "kind": "domain",
+     "text": "Legal Tech / Legal Solutions",
+     "strength": "context",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "recruiter_brief"
+     ],
+     "verified": [
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "stated_in_both"
+    },
+    {
+     "ref": "paths[PATH A].seniority",
+     "kind": "seniority",
+     "text": "Lead",
+     "strength": "preferred",
+     "scope": "PATH A",
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "recruiter_brief"
+     ],
+     "verified": [
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "stated_in_both"
+    },
+    {
+     "ref": "paths[PATH A].location",
+     "kind": "location",
+     "text": "India",
+     "strength": "required",
+     "scope": "PATH A",
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "recruiter_brief"
+     ],
+     "verified": [
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "added_by_brief"
+    },
+    {
+     "ref": "paths[PATH A].domain[0]",
+     "kind": "domain",
+     "text": "Cyber Incident Review and/or Data Breach Analysis",
+     "strength": "required",
+     "scope": "PATH A",
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "recruiter_brief"
+     ],
+     "verified": [
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "added_by_brief"
+    },
+    {
+     "ref": "paths[PATH A].domain[1]",
+     "kind": "domain",
+     "text": "Legal Tech / LPO / Legal Solutions / legal-services technology / Data Breach Analysis environments",
+     "strength": "preferred",
+     "scope": "PATH A",
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "recruiter_brief"
+     ],
+     "verified": [
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "added_by_brief"
+    },
+    {
+     "ref": "paths[PATH B].experience",
+     "kind": "experience",
+     "text": "6+ years",
+     "strength": "required",
+     "scope": "PATH B",
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "recruiter_brief"
+     ],
+     "verified": [
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "added_by_brief"
+    },
+    {
+     "ref": "paths[PATH B].location",
+     "kind": "location",
+     "text": "Hyderabad, Telangana, India, Pune, Maharashtra, India",
+     "strength": "required",
+     "scope": "PATH B",
+     "constraint": true,
+     "quote_overlap": 0.33,
+     "claimed": [
+      "recruiter_brief"
+     ],
+     "verified": [
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "added_by_brief"
+    },
+    {
+     "ref": "paths[PATH B].skills[0]",
+     "kind": "skill",
+     "text": "Power Query",
+     "strength": "required",
+     "scope": "PATH B",
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "verified": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "stated_in_both"
+    },
+    {
+     "ref": "education",
+     "kind": "education",
+     "text": "Bachelor's degree, Cybersecurity, Information Technology, Computer Science, Information Systems, Data Analytics, Related discipline",
+     "strength": "preferred",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "semantic_exclusions[0]",
+     "kind": "semantic_exclusion",
+     "text": "Generic cybersecurity or security-operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.42,
+     "claimed": [
+      "recruiter_brief"
+     ],
+     "verified": [
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "added_by_brief"
+    },
+    {
+     "ref": "semantic_exclusions[1]",
+     "kind": "semantic_exclusion",
+     "text": "A strong SQL/Python analyst working at a security firm",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "recruiter_brief"
+     ],
+     "verified": [
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "added_by_brief"
+    },
+    {
+     "ref": "semantic_exclusions[2]",
+     "kind": "semantic_exclusion",
+     "text": "Cyber or incident wording alone without relevant substantive evidence",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.29,
+     "claimed": [
+      "recruiter_brief"
+     ],
+     "verified": [
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "added_by_brief"
+    },
+    {
+     "ref": "evidence_signals[0]",
+     "kind": "evidence_signal",
+     "text": "Data querying, analysis, automation, and reporting using SQL and Python",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[1]",
+     "kind": "evidence_signal",
+     "text": "Review, quality assurance, compliance, or audit experience",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[2]",
+     "kind": "evidence_signal",
+     "text": "People leadership or technical leadership",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "verified": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "stated_in_both"
+    },
+    {
+     "ref": "evidence_signals[3]",
+     "kind": "evidence_signal",
+     "text": "Strong analytical capabilities and attention to detail",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[4]",
+     "kind": "evidence_signal",
+     "text": "Large-dataset analysis to identify trends, anomalies, and potential security risks",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.75,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[5]",
+     "kind": "evidence_signal",
+     "text": "Quality oversight, security-standard adherence, and protocol compliance",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.5,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[6]",
+     "kind": "evidence_signal",
+     "text": "Cross-functional collaboration on review findings and remediation",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.6,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[7]",
+     "kind": "evidence_signal",
+     "text": "Management reports, dashboards, and performance metrics",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[8]",
+     "kind": "evidence_signal",
+     "text": "Accurate documentation, procedures, audit trails, and quality records",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[9]",
+     "kind": "evidence_signal",
+     "text": "Operational coordination, resource planning, workflow management, and support for the Review Manager",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.78,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[10]",
+     "kind": "evidence_signal",
+     "text": "Continuous improvement of operational efficiency, quality, and compliance",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[11]",
+     "kind": "evidence_signal",
+     "text": "Experience with data privacy requirements",
+     "strength": "preferred",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[12]",
+     "kind": "evidence_signal",
+     "text": "Managing cyber incident reviews, breach investigations, or data privacy review workflows",
+     "strength": "preferred",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[13]",
+     "kind": "evidence_signal",
+     "text": "Equivalent combination of education and relevant professional experience is acceptable",
+     "strength": "context",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 0.75,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[14]",
+     "kind": "evidence_signal",
+     "text": "Domain-led candidates are the strongest target; capability-led candidates are an acceptable alternative",
+     "strength": "context",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 0.75,
+     "claimed": [
+      "recruiter_brief"
+     ],
+     "verified": [
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "added_by_brief"
+    }
+   ],
+   "status_counts": {
+    "verified": 39
+   },
+   "reconciliations": [
+    {
+     "ref": "reconciliations[0]",
+     "topic": "Cybersecurity operations versus legal-domain incident review",
+     "action": "narrowed",
+     "path_id": null,
+     "result": "Cybersecurity review processes mean legal-domain Cyber Incident Review rather than cybersecurity operations; data privacy and information security principles remain relevant qualifications.",
+     "jd_quote_verified": true,
+     "brief_quote_verified": true
+    },
+    {
+     "ref": "reconciliations[1]",
+     "topic": "Security monitoring as qualifying experience",
+     "action": "narrowed",
+     "path_id": null,
+     "result": "Review, quality assurance, compliance, or audit experience remains qualifying, but security monitoring alone is not an equivalent background.",
+     "jd_quote_verified": true,
+     "brief_quote_verified": true
+    },
+    {
+     "ref": "reconciliations[2]",
+     "topic": "Leadership type",
+     "action": "narrowed",
+     "path_id": null,
+     "result": "Either people leadership, including mentoring and team development, or technical leadership satisfies the leadership qualification; people-management experience is not mandatory for every candidate.",
+     "jd_quote_verified": true,
+     "brief_quote_verified": true
+    },
+    {
+     "ref": "reconciliations[3]",
+     "topic": "Path A seniority",
+     "action": "narrowed",
+     "path_id": "PATH A",
+     "result": "Path A accepts Lead or Senior Data Analyst identity as the stated ideal rather than requiring Lead level exclusively.",
+     "jd_quote_verified": true,
+     "brief_quote_verified": true
+    },
+    {
+     "ref": "reconciliations[4]",
+     "topic": "Power Query",
+     "action": "waived",
+     "path_id": "PATH A",
+     "result": "Power Query is not a requirement for Path A and remains required at working-knowledge depth for Path B.",
+     "jd_quote_verified": true,
+     "brief_quote_verified": true
+    },
+    {
+     "ref": "reconciliations[5]",
+     "topic": "Cyber-incident domain experience",
+     "action": "waived",
+     "path_id": "PATH B",
+     "result": "Path B does not require prior Cyber Incident Review or Data Breach Analysis domain knowledge or experience.",
+     "jd_quote_verified": true,
+     "brief_quote_verified": true
+    }
+   ],
+   "diagnostics": [
+    {
+     "code": "quote_weakly_related",
+     "ref": "paths[PATH B].location",
+     "detail": "'Hyderabad, Telangana, India, Pune, Maharashtra, India': only 33% of its words appear in its quote (informational)"
+    },
+    {
+     "code": "quote_weakly_related",
+     "ref": "semantic_exclusions[2]",
+     "detail": "'Cyber or incident wording alone without relevant substantive evidence': only 29% of its words appear in its quote (informational)"
+    }
+   ],
+   "errors": {},
+   "paths_located": {
+    "PATH A": true,
+    "PATH B": true
+   }
+  }
+ },
+ "model_calls": [
+  {
+   "model": "gpt-6.1-sol",
+   "reasoning": {
+    "effort": "medium"
+   },
+   "raw_text": "{\n  \"role_archetype\": {\n    \"value\": \"hybrid\",\n    \"confidence\": 0.97,\n    \"rationale\": \"The role combines a Lead Data Analyst identity with substantive SQL/Python capability and path-dependent Cyber Incident Review domain experience.\"\n  },\n  \"role_family\": [\n    \"Data Analyst\"\n  ],\n  \"seniority\": {\n    \"value\": \"Lead\",\n    \"strength\": \"required\",\n    \"leadership\": [\n      \"people\",\n      \"technical\"\n    ],\n    \"alternatives\": [],\n    \"basis\": {\n      \"sources\": [\n        \"jd\",\n        \"recruiter_brief\"\n      ],\n      \"quote\": \"\\\"Lead\\\" may mean people leadership OR technical leadership.\"\n    }\n  },\n  \"skills\": [\n    {\n      \"name\": \"SQL\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\n          \"jd\",\n          \"recruiter_brief\"\n        ],\n        \"quote\": \"Hands-on experience with SQL and Python for data querying, analysis, automation, and reporting.\"\n      }\n    },\n    {\n      \"name\": \"Python\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\n          \"jd\",\n          \"recruiter_brief\"\n        ],\n        \"quote\": \"Hands-on experience with SQL and Python for data querying, analysis, automation, and reporting.\"\n      }\n    },\n    {\n      \"name\": \"Data Privacy\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": \"working_knowledge\",\n      \"basis\": {\n        \"sources\": [\n          \"jd\"\n        ],\n        \"quote\": \"a solid understanding of cybersecurity review processes, data privacy, information security principles, and data analytics.\"\n      }\n    },\n    {\n      \"name\": \"Information Security Principles\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": \"working_knowledge\",\n      \"basis\": {\n        \"sources\": [\n          \"jd\"\n        ],\n        \"quote\": \"a solid understanding of cybersecurity review processes, data privacy, information security principles, and data analytics.\"\n      }\n    },\n    {\n      \"name\": \"Security Frameworks\",\n      \"relationship\": \"any\",\n      \"strength\": \"preferred\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\n          \"jd\"\n        ],\n        \"quote\": \"Experience working with security frameworks, data privacy requirements, and regulatory compliance standards is highly desirable.\"\n      }\n    },\n    {\n      \"name\": \"Regulatory Compliance Standards\",\n      \"relationship\": \"any\",\n      \"strength\": \"preferred\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\n          \"jd\"\n        ],\n        \"quote\": \"Experience working with security frameworks, data privacy requirements, and regulatory compliance standards is highly desirable.\"\n      }\n    },\n    {\n      \"name\": \"Relativity\",\n      \"relationship\": \"any\",\n      \"strength\": \"preferred\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\n          \"jd\"\n        ],\n        \"quote\": \"Experience with Relativity and Canopy platforms is preferred.\"\n      }\n    },\n    {\n      \"name\": \"Canopy\",\n      \"relationship\": \"any\",\n      \"strength\": \"preferred\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\n          \"jd\"\n        ],\n        \"quote\": \"Experience with Relativity and Canopy platforms is preferred.\"\n      }\n    }\n  ],\n  \"education\": {\n    \"degrees\": [\n      \"Bachelor's degree\"\n    ],\n    \"streams\": [\n      \"Cybersecurity\",\n      \"Information Technology\",\n      \"Computer Science\",\n      \"Information Systems\",\n      \"Data Analytics\",\n      \"Related discipline\"\n    ],\n    \"strength\": \"preferred\",\n    \"basis\": {\n      \"sources\": [\n        \"jd\"\n      ],\n      \"quote\": \"Bachelor's degree in Cybersecurity, Information Technology, Computer Science, Information Systems, Data Analytics, or a related discipline preferred.\"\n    }\n  },\n  \"evidence_signals\": [\n    {\n      \"name\": \"Data querying, analysis, automation, and reporting using SQL and Python\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\n          \"jd\",\n          \"recruiter_brief\"\n        ],\n        \"quote\": \"Hands-on experience with SQL and Python for data querying, analysis, automation, and reporting.\"\n      }\n    },\n    {\n      \"name\": \"Review, quality assurance, compliance, or audit experience\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\n          \"jd\",\n          \"recruiter_brief\"\n        ],\n        \"quote\": \"Experience performing review, quality assurance, compliance, audit, or security monitoring activities.\"\n      }\n    },\n    {\n      \"name\": \"People leadership or technical leadership\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\n          \"jd\",\n          \"recruiter_brief\"\n        ],\n        \"quote\": \"\\\"Lead\\\" may mean people leadership OR technical leadership.\"\n      }\n    },\n    {\n      \"name\": \"Strong analytical capabilities and attention to detail\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\n          \"jd\"\n        ],\n        \"quote\": \"The role requires strong analytical capabilities, leadership skills, attention to detail\"\n      }\n    },\n    {\n      \"name\": \"Large-dataset analysis to identify trends, anomalies, and potential security risks\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\n          \"jd\"\n        ],\n        \"quote\": \"Review, analyse, and interpret large datasets to identify trends, anomalies, and potential security risks.\"\n      }\n    },\n    {\n      \"name\": \"Quality oversight, security-standard adherence, and protocol compliance\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\n          \"jd\"\n        ],\n        \"quote\": \"ensuring the delivery of high-quality review services, adherence to security standards, and compliance with established protocols.\"\n      }\n    },\n    {\n      \"name\": \"Cross-functional collaboration on review findings and remediation\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\n          \"jd\"\n        ],\n        \"quote\": \"Collaborate with technology, security, legal, compliance, and business stakeholders to address review findings and support remediation efforts.\"\n      }\n    },\n    {\n      \"name\": \"Management reports, dashboards, and performance metrics\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\n          \"jd\"\n        ],\n        \"quote\": \"Prepare management reports, dashboards, and performance metrics to support operational and business decisions.\"\n      }\n    },\n    {\n      \"name\": \"Accurate documentation, procedures, audit trails, and quality records\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\n          \"jd\"\n        ],\n        \"quote\": \"Maintain accurate documentation, procedures, audit trails, and quality records in accordance with organizational and client requirements.\"\n      }\n    },\n    {\n      \"name\": \"Operational coordination, resource planning, workflow management, and support for the Review Manager\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\n          \"jd\"\n        ],\n        \"quote\": \"Assist the Review Manager with administrative activities, resource planning, workflow management, and team coordination.\"\n      }\n    },\n    {\n      \"name\": \"Continuous improvement of operational efficiency, quality, and compliance\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\n          \"jd\"\n        ],\n        \"quote\": \"Drive continuous improvement initiatives to enhance operational efficiency, quality, and compliance outcomes.\"\n      }\n    },\n    {\n      \"name\": \"Experience with data privacy requirements\",\n      \"strength\": \"preferred\",\n      \"basis\": {\n        \"sources\": [\n          \"jd\"\n        ],\n        \"quote\": \"Experience working with security frameworks, data privacy requirements, and regulatory compliance standards is highly desirable.\"\n      }\n    },\n    {\n      \"name\": \"Managing cyber incident reviews, breach investigations, or data privacy review workflows\",\n      \"strength\": \"preferred\",\n      \"basis\": {\n        \"sources\": [\n          \"jd\"\n        ],\n        \"quote\": \"Experience managing cyber incident reviews, breach investigations, or data privacy review workflows is an advantage.\"\n      }\n    },\n    {\n      \"name\": \"Equivalent combination of education and relevant professional experience is acceptable\",\n      \"strength\": \"context\",\n      \"basis\": {\n        \"sources\": [\n          \"jd\"\n        ],\n        \"quote\": \"Equivalent combination of education and relevant professional experience will be considered.\"\n      }\n    },\n    {\n      \"name\": \"Domain-led candidates are the strongest target; capability-led candidates are an acceptable alternative\",\n      \"strength\": \"context\",\n      \"basis\": {\n        \"sources\": [\n          \"recruiter_brief\"\n        ],\n        \"quote\": \"1. Domain-led + tools + experience = strongest target\\n2. Capability-led + tools + experience = acceptable alternative\"\n      }\n    }\n  ],\n  \"domain\": [\n    {\n      \"name\": \"Cyber Incident Review and Data Breach Analysis\",\n      \"strength\": \"context\",\n      \"basis\": {\n        \"sources\": [\n          \"jd\",\n          \"recruiter_brief\"\n        ],\n        \"quote\": \"The team analyses:\\n- Cyber Incidents\\n- Data Breaches\\n- Cyber Incident Review\\n- Data Breach Analysis\"\n      }\n    },\n    {\n      \"name\": \"Legal Tech / Legal Solutions\",\n      \"strength\": \"context\",\n      \"basis\": {\n        \"sources\": [\n          \"recruiter_brief\"\n        ],\n        \"quote\": \"This is for a \\\"Cyber Incident Review\\\" team within a Legal Tech / Legal Solutions environment.\"\n      }\n    }\n  ],\n  \"semantic_exclusions\": [\n    {\n      \"concept\": \"Generic cybersecurity or security-operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis\",\n      \"includes\": [\n        \"Cyber Security\",\n        \"SOC\",\n        \"Security Operations\",\n        \"Security Analyst\",\n        \"SIEM\",\n        \"Threat Detection\",\n        \"security incident response\",\n        \"other cybersecurity operations work\"\n      ],\n      \"basis\": {\n        \"sources\": [\n          \"recruiter_brief\"\n        ],\n        \"quote\": \"3. Generic cybersecurity/SOC/security profiles = NOT equivalent\"\n      }\n    },\n    {\n      \"concept\": \"A strong SQL/Python analyst working at a security firm\",\n      \"includes\": [\n        \"A strong SQL/Python analyst working at a security firm\"\n      ],\n      \"basis\": {\n        \"sources\": [\n          \"recruiter_brief\"\n        ],\n        \"quote\": \"A strong SQL/Python analyst working at a security firm should be excluded.\"\n      }\n    },\n    {\n      \"concept\": \"Cyber or incident wording alone without relevant substantive evidence\",\n      \"includes\": [\n        \"Profiles containing the word cyber or incident alone\"\n      ],\n      \"basis\": {\n        \"sources\": [\n          \"recruiter_brief\"\n        ],\n        \"quote\": \"A candidate should not become relevant merely because a profile contains the word \\\"cyber\\\" or \\\"incident\\\".\"\n      }\n    }\n  ],\n  \"sourcing_paths\": [\n    {\n      \"id\": \"PATH A\",\n      \"label\": \"Domain-led candidate\",\n      \"strategy\": \"domain_led\",\n      \"seniority\": {\n        \"value\": \"Lead\",\n        \"strength\": \"preferred\",\n        \"leadership\": [\n          \"people\",\n          \"technical\"\n        ],\n        \"alternatives\": [\n          \"Senior\"\n        ],\n        \"basis\": {\n          \"sources\": [\n            \"recruiter_brief\"\n          ],\n          \"quote\": \"Ideal:\\n- Lead / Senior Data Analyst identity\"\n        }\n      },\n      \"location\": {\n        \"countries\": [\n          \"India\"\n        ],\n        \"entries\": [],\n        \"remote\": \"allowed\",\n        \"strength\": \"required\",\n        \"basis\": {\n          \"sources\": [\n            \"recruiter_brief\"\n          ],\n          \"quote\": \"For this path:\\n- India-wide location is acceptable\\n- remote resources across India are acceptable\"\n        }\n      },\n      \"domain\": [\n        {\n          \"name\": \"Cyber Incident Review and/or Data Breach Analysis\",\n          \"strength\": \"required\",\n          \"basis\": {\n            \"sources\": [\n              \"recruiter_brief\"\n            ],\n            \"quote\": \"- Cyber Incident Review and/or Data Breach Analysis experience\"\n          }\n        },\n        {\n          \"name\": \"Legal Tech / LPO / Legal Solutions / legal-services technology / Data Breach Analysis environments\",\n          \"strength\": \"preferred\",\n          \"basis\": {\n            \"sources\": [\n              \"recruiter_brief\"\n            ],\n            \"quote\": \"- preferably from Legal Tech / LPO / Legal Solutions / legal-services technology / Data Breach Analysis environments\"\n          }\n        }\n      ],\n      \"basis\": {\n        \"sources\": [\n          \"recruiter_brief\"\n        ],\n        \"quote\": \"PATH A — DOMAIN-LED CANDIDATE\"\n      }\n    },\n    {\n      \"id\": \"PATH B\",\n      \"label\": \"Capability-led Data Analyst\",\n      \"strategy\": \"capability_led\",\n      \"experience\": {\n        \"minimum_years\": 6,\n        \"maximum_years\": null,\n        \"strength\": \"required\",\n        \"basis\": {\n          \"sources\": [\n            \"recruiter_brief\"\n          ],\n          \"quote\": \"Path B requires Lead level and 6+ years.\"\n        }\n      },\n      \"location\": {\n        \"countries\": [],\n        \"entries\": [\n          \"Hyderabad, Telangana, India\",\n          \"Pune, Maharashtra, India\"\n        ],\n        \"remote\": null,\n        \"strength\": \"required\",\n        \"basis\": {\n          \"sources\": [\n            \"recruiter_brief\"\n          ],\n          \"quote\": \"Path B geography is Hyderabad OR Pune.\"\n        }\n      },\n      \"skills\": [\n        {\n          \"name\": \"Power Query\",\n          \"relationship\": \"any\",\n          \"strength\": \"required\",\n          \"proficiency\": \"working_knowledge\",\n          \"basis\": {\n            \"sources\": [\n              \"jd\",\n              \"recruiter_brief\"\n            ],\n            \"quote\": \"Path B requires working knowledge of Power Query.\"\n          }\n        }\n      ],\n      \"basis\": {\n        \"sources\": [\n          \"recruiter_brief\"\n        ],\n        \"quote\": \"PATH B — CAPABILITY-LED DATA ANALYST\"\n      }\n    }\n  ],\n  \"reconciliations\": [\n    {\n      \"topic\": \"Cybersecurity operations versus legal-domain incident review\",\n      \"action\": \"narrowed\",\n      \"jd_quote\": \"a solid understanding of cybersecurity review processes, data privacy, information security principles, and data analytics.\",\n      \"brief_quote\": \"This is NOT cybersecurity operations.\",\n      \"result\": \"Cybersecurity review processes mean legal-domain Cyber Incident Review rather than cybersecurity operations; data privacy and information security principles remain relevant qualifications.\",\n      \"path_id\": null\n    },\n    {\n      \"topic\": \"Security monitoring as qualifying experience\",\n      \"action\": \"narrowed\",\n      \"jd_quote\": \"Experience performing review, quality assurance, compliance, audit, or security monitoring activities.\",\n      \"brief_quote\": \"Generic cybersecurity/SOC/security profiles = NOT equivalent\",\n      \"result\": \"Review, quality assurance, compliance, or audit experience remains qualifying, but security monitoring alone is not an equivalent background.\",\n      \"path_id\": null\n    },\n    {\n      \"topic\": \"Leadership type\",\n      \"action\": \"narrowed\",\n      \"jd_quote\": \"Experience leading teams, mentoring analysts, and coordinating operational workflows.\",\n      \"brief_quote\": \"\\\"Lead\\\" may mean people leadership OR technical leadership.\",\n      \"result\": \"Either people leadership, including mentoring and team development, or technical leadership satisfies the leadership qualification; people-management experience is not mandatory for every candidate.\",\n      \"path_id\": null\n    },\n    {\n      \"topic\": \"Path A seniority\",\n      \"action\": \"narrowed\",\n      \"jd_quote\": \"Data Analyst Lead – Cyber Incident Review\",\n      \"brief_quote\": \"Ideal:\\n- Lead / Senior Data Analyst identity\",\n      \"result\": \"Path A accepts Lead or Senior Data Analyst identity as the stated ideal rather than requiring Lead level exclusively.\",\n      \"path_id\": \"PATH A\"\n    },\n    {\n      \"topic\": \"Power Query\",\n      \"action\": \"waived\",\n      \"jd_quote\": \"Working knowledge of Power Query for data transformation, preparation, and reporting.\",\n      \"brief_quote\": \"Path A does NOT require Power Query.\",\n      \"result\": \"Power Query is not a requirement for Path A and remains required at working-knowledge depth for Path B.\",\n      \"path_id\": \"PATH A\"\n    },\n    {\n      \"topic\": \"Cyber-incident domain experience\",\n      \"action\": \"waived\",\n      \"jd_quote\": \"a solid understanding of cybersecurity review processes\",\n      \"brief_quote\": \"Path B does not require the cyber-incident domain.\",\n      \"result\": \"Path B does not require prior Cyber Incident Review or Data Breach Analysis domain knowledge or experience.\",\n      \"path_id\": \"PATH B\"\n    }\n  ]\n}",
+   "input_tokens": 5013,
+   "output_tokens": 4097,
+   "streamed": true
+  }
+ ],
+ "elapsed_s": 62.87
+}

@@ -254,7 +254,10 @@ def validate(intent: ExperimentalHiringIntent, jd: str, brief: str) -> Dict[str,
     for d in diags:
         if d["code"] in ERROR_CODES:
             errors[d["code"]] = errors.get(d["code"], 0) + 1
-    located = {p.id: bool(_word(p.id).search(jd) or _word(p.id).search(brief)) for p in intent.sourcing_paths}
+    # "located" = some source line OPENS with the path's designator (a heading, or "Path B requires ..."). Merely appearing
+    # in the text is not enough: a descriptive slug such as "domain-led" appears in prose but is not how the source names a path.
+    openers = [_BULLET.sub("", raw).strip() for raw in (jd + "\n" + brief).splitlines()]
+    located = {p.id: any(_word(p.id).match(line) for line in openers if line) for p in intent.sourcing_paths}
     return {"atoms": rows, "status_counts": counts, "reconciliations": rec_rows, "diagnostics": diags, "errors": errors, "paths_located": located}
 
 
@@ -343,7 +346,8 @@ def _inherits(intent: ExperimentalHiringIntent, atom: Dict[str, Any]) -> Set[str
 def scope_checks(intent: ExperimentalHiringIntent, jd: str, brief: str, rows: List[Dict[str, Any]]) -> List[Tuple[str, str, str]]:
     found: List[Tuple[str, str, str]] = []
     paths = list(intent.sourcing_paths)
-    names = {p.id: _word(p.id) for p in paths if _word(p.id).search(jd) or _word(p.id).search(brief)}
+    openers = [_BULLET.sub("", raw).strip() for raw in (jd + "\n" + brief).splitlines()]
+    names = {p.id: _word(p.id) for p in paths if any(_word(p.id).match(line) for line in openers if line)}
     lines = source_lines(jd, names) + source_lines(brief, names)
     sources = jd + "\n" + brief
     atoms = list(iter_atoms(intent))

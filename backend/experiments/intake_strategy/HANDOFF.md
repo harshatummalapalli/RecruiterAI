@@ -42,6 +42,12 @@ NOT met (reconciliation reliability: leadership PARTIAL x3, Path B domain leak x
 credential works with `OPENAI_API_KEY=placeholder` (the proxy replaces Authorization); non-streaming calls past ~90 s are cut
 upstream. Open owner decisions are listed in RESULTS.md. The "What is NOT done" list below is the original, now superseded.
 
+## UPDATE 2 (hardening pass): read `RESULTS_HARDENING.md` first
+Verdict there: ROLE 1 INTAKE REPRESENTATION STILL NEEDS CORRECTION (6+ years leaked to Path A 1/5; leadership responsibility left
+required 1/5). Added: `location.countries` + `location.remote`, `seniority.alternatives`, six generic validators, `prompt_v3.txt`.
+The brief literally says "Lead / Senior" for Path A, so Senior there is source-supported. Next: do not tune Role 1 further; run
+v3 unchanged on a differently shaped real role. Compiler/retrieval are untouched and out of scope.
+
 ## What is NOT done (original, superseded)
 1. The baseline has NEVER been run: no OpenAI key was available. There are no results and no verdict yet.
 2. The experimental schema extension (design only AFTER the baseline), the 5-run experimental arm, the five-run

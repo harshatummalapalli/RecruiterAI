@@ -33,7 +33,8 @@ reasoning effort are whatever `structured_intent_extractor` already uses; nothin
 - `gold_experimental.py` — evaluator for the new shape (same assertion ids where the question is the same).
 - `run_experimental.py` — five-run harness. Streams, because the larger reply exceeds the ~90 s non-streaming upstream cutoff.
 - `compare_arms.py` — offline baseline-vs-experimental table. `results/` — compact stripped run snapshots.
-- `RESULTS.md` — tables, caveats, verdict.
+- `RESULTS.md` — first experimental run, tables, caveats. `RESULTS_HARDENING.md` — hardening pass (v3), verdict, gate.
+- `prompt_v3.txt` — hardening prompt (`--prompt v3`, default); `prompt_v2.txt` stays reproducible.
 
     OPENAI_API_KEY=... python -m backend.experiments.intake_strategy.run_experimental --runs 5
     python -m backend.experiments.intake_strategy.compare_arms
