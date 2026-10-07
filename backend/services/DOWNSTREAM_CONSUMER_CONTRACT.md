@@ -240,3 +240,18 @@ Targeted matrix only (5 evidence levels x 3 required depths x 6 runs = 90 cells,
 | required depth ever sent to the model; provider / compiler tokens | none; none |
 
 The structure (representation, comparison, binding, retry) holds. The remaining problem is mostly model capability (over-crediting adjacent depths: `worked on X` read as working knowledge for two of three skills, against an explicit rule) plus one ambiguous boundary (working knowledge vs hands-on for a ubiquitous tool). No further tuning and no stronger model was run; both are for review.
+
+
+## 13. Stronger-model comparison on the frozen depth matrix (summary; the evidence is `RESULTS_STRONGER_MODEL_DEPTH.md`)
+Architecture decisions in force: the Evidence Check representation, observed depth + deterministic comparison and quote binding are accepted; `working_knowledge` stays binding; the recruiter requirement is never weakened to accommodate a model; **if the observed depth cannot be reliably determined the result stays insufficient / unverified, never a silent pass.** Semantics: `unspecified < working_knowledge < hands_on < advanced`; `observed >= required` satisfied; `observed < required` not satisfied (`partly`); `unspecified` insufficient evidence (`not_evidenced`).
+
+The same 90 cells, checks, prompts, verifier and evaluator, with ONE variable, the Judge model: gpt-4o-mini (frozen) vs gpt-4.1 (temperature 0, same API configuration).
+
+| measure | gpt-4o-mini | gpt-4.1 |
+|---|---|---|
+| observed-depth accuracy | 70/90 | 66/90 |
+| wrong observations (all one level; direction) | 20 (18 too deep, 2 too shallow) | 24 (all too deep) |
+| deterministic comparison / quote gate / binding / check_id violations | 0 | 0 |
+| run-to-run disagreement (cells of 15) | 1 | 0 (the errors repeat identically) |
+
+**Result: the stronger model does not materially improve the depth failures. Classification: EVIDENCE-INTERPRETATION CONTRACT LIMITATION** (not model capability): both models over-credit the same two pieces of evidence, a generic "worked on X projects" read as working knowledge and "uses X for everyday tasks such as sums, simple formulas and charts" read as hands-on, and the stronger model does so on every run. Do not replace the Judge model on this evidence. Smallest proposed contract change (not implemented): the depth observation also returns the `action` words of the quote (what the candidate did with the skill), verified by code to be part of the verified quote and not only a generic involvement phrase (an observation with no concrete action is `unspecified`); and one closed-set rubric defining working_knowledge / hands_on / advanced by what was done and its stated scope rather than frequency of use. To be validated once on this same matrix before any further model decision.

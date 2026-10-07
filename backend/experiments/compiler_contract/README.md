@@ -37,4 +37,6 @@ Tests: `tests/test_evidence_check.py` (offline). Reproduce: `python -m backend.e
 
 Depth contract (final hardening pass): `RESULTS_DEPTH_CONTRACT_VALIDATION.md` (generated), `depth_matrix.py` (5 evidence levels x 3 required depths x 6 runs, real model, synthetic; `run`, `analyze`), `build_depth_report.py`, `results/depth_matrix/`. Tests: `tests/test_evidence_check.py` (morphology `MO_*`, depth `DP_*`, exclusions `EX_*`).
 
+Stronger-model comparison: `RESULTS_STRONGER_MODEL_DEPTH.md` (generated), `depth_compare.py` (both models on the frozen matrix; the same evaluator), `build_stronger_model_report.py`, `results/depth_matrix/raw_gpt-4.1/` and `comparison.json`. Classified: EVIDENCE-INTERPRETATION CONTRACT LIMITATION.
+
 Status: Evidence Check contract validated on synthetic candidates with the real Judge model; not 6/6 on every scenario (see the results); no CrustData, no retrieval, no deployment; waiting for architecture review.

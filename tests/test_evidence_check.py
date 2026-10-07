@@ -692,3 +692,43 @@ def test_the_truth_table_of_the_matrix_is_the_ordinal_comparison():
             v = dm.expected_verdict(level, required)
             assert (v == "met") == (ORDER.index(level) >= ORDER.index(required))
             assert v == ("not_evidenced" if level == "unspecified" else ("met" if ORDER.index(level) >= ORDER.index(required) else "partly"))
+
+
+# ------------------------------------------------------------------------------------------------------ the stronger-model comparison (committed runs)
+
+
+def test_the_stronger_model_runs_are_the_same_matrix_with_one_variable_the_model():
+    from backend.experiments.compiler_contract import depth_compare as dc
+    from backend.experiments.compiler_contract import depth_matrix as dm
+    from backend.services import requirement_judge as rj
+    a, b = dm.load(dc.MODELS["gpt-4o-mini"]), dm.load(dc.MODELS["gpt-4.1"])
+    key = lambda js: {(j["candidate"], j["run"]) for j in js}                                       # noqa: E731
+    assert key(a) == key(b) == {(p.key, k) for p in dm.PROFILES for k in range(1, 7)}
+    assert {j["model"] for j in a} == {rj.JUDGE_MODEL} and {j["model"] for j in b} == {"gpt-4.1"}
+    for js in (a, b):
+        assert {str(r["temperature"]) for j in js for r in j["requests"]} == {"0"} and not [j for j in js if j["failed"]]
+    # identical checks and identical prompts for both models: nothing but the model differs
+    assert [c for j in sorted(a, key=lambda j: (j["candidate"], j["run"]))[:1] for c in j["checks"]] == [c for j in sorted(b, key=lambda j: (j["candidate"], j["run"]))[:1] for c in j["checks"]]
+    for j in b:
+        for r in j["requests"]:
+            if r["system"].startswith("You read a candidate's profile and report how deeply"):
+                assert r["system"] == rj._DEPTH_PROMPT
+
+
+def test_the_comparison_is_what_the_code_produces_and_the_report_is_current():
+    from backend.experiments.compiler_contract import build_stronger_model_report as bs
+    from backend.experiments.compiler_contract import depth_compare as dc
+    from backend.experiments.compiler_contract import depth_matrix as dm
+    fresh = dc.analyze(write=False)
+    committed = json.loads((dm.RESULTS / "comparison.json").read_text(encoding="utf-8"))
+    assert json.loads(json.dumps(fresh, sort_keys=True)) == committed
+    text = (ROOT / "backend" / "experiments" / "compiler_contract" / "RESULTS_STRONGER_MODEL_DEPTH.md").read_text(encoding="utf-8")
+    assert bs.build() == text and "No CrustData" in text and "{{" not in text
+    a, b, cmp = committed["gpt-4o-mini"], committed["gpt-4.1"], committed["comparison"]
+    # the structural parts hold for both models; the depth classification is the part under test
+    for m in (a, b):
+        assert m["B_code_comparison"]["correct"] == 90 and m["D_quote_gate"]["accepted_depths_failing_the_gate"] == 0
+        assert m["E_binding"]["unknown_or_duplicate_check_id"] == m["E_binding"]["accepted_not_naming_own_skill"] == m["E_binding"]["accepted_not_work_evidence"] == 0
+        assert m["error_profile"]["two_or_more"] == 0 and m["depth_payload_violations"] == 0 and m["leak_token_hits"] == 0
+    assert cmp["materially_improves"] is (cmp["relative_reduction"] is not None and cmp["relative_reduction"] >= 0.5 and cmp["violations_after"] <= cmp["violations_before"])
+    assert "EVIDENCE-INTERPRETATION CONTRACT LIMITATION" in text if not cmp["materially_improves"] else "MODEL CAPABILITY LIMITATION" in text

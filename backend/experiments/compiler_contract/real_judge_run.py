@@ -116,15 +116,15 @@ def scenario_table() -> Dict[str, Dict[str, Any]]:
 # ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-def run_one(group: str, profile: sc.Profile, ctx_label: str, intent: SearchIntent, run: int) -> Dict[str, Any]:
+def run_one(group: str, profile: sc.Profile, ctx_label: str, intent: SearchIntent, run: int, model: Optional[str] = None) -> Dict[str, Any]:
     cand, harvest = build_profile(profile)
     last: Optional[Dict[str, Any]] = None
     for attempt in range(3):                                   # infrastructure retries only (an API error); a verdict is never retried
         rc = RecordingClient(openai_client())
         t0 = time.time()
-        out = RequirementJudge(client=rc).judge_detailed(cand, intent, harvest)
+        out = RequirementJudge(client=rc, model=model or JUDGE_MODEL).judge_detailed(cand, intent, harvest)
         last = {
-            "group": group, "candidate": profile.key, "context": ctx_label, "run": run, "attempt": attempt + 1, "model": JUDGE_MODEL,
+            "group": group, "candidate": profile.key, "context": ctx_label, "run": run, "attempt": attempt + 1, "model": model or JUDGE_MODEL,
             "judgments": out.judgments, "failed": out.failed, "review_failed": out.review_failed, "downgraded_by_review": out.downgraded_by_review,
             "re_asked_missing": out.re_asked_missing, "exclusion_judgments": out.exclusion_judgments, "exclusion_failed": out.exclusion_failed,
             "input_source": out.input_source, "checklist": out.checklist, "disagreements": out.disagreements,

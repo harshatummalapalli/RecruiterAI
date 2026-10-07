@@ -95,17 +95,20 @@ def _path(key: str, run: int) -> Path:
     return RAW / f"DM__{key}__run{run}.json"
 
 
-def run(runs: int = 6, workers: int = 6) -> None:
-    RAW.mkdir(parents=True, exist_ok=True)
+def run(runs: int = 6, workers: int = 6, model: str = None, raw: Path = None) -> None:
+    """`model` / `raw` select a different Judge model and result directory; the matrix, the checks, the prompts and the evaluator are the same."""
+    raw = raw or RAW
+    raw.mkdir(parents=True, exist_ok=True)
     intent = depth_intent()
-    tasks = [(p, k) for p in PROFILES for k in range(1, runs + 1) if not _path(p.key, k).exists()]
-    print(f"{len(tasks)} judge runs to do", flush=True)
+    path = lambda key, run_: raw / f"DM__{key}__run{run_}.json"                                   # noqa: E731
+    tasks = [(p, k) for p in PROFILES for k in range(1, runs + 1) if not path(p.key, k).exists()]
+    print(f"{len(tasks)} judge runs to do (model {model or 'production default'})", flush=True)
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        futs = {pool.submit(rr.run_one, "DM", p, "depth", intent, k): (p, k) for p, k in tasks}
+        futs = {pool.submit(rr.run_one, "DM", p, "depth", intent, k, model): (p, k) for p, k in tasks}
         for i, f in enumerate(as_completed(futs), 1):
             j = f.result()
             p, k = futs[f]
-            _path(p.key, k).write_text(json.dumps(j, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+            path(p.key, k).write_text(json.dumps(j, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
             print(f"[{i}/{len(tasks)}] {p.key} run{k} failed={j['failed']} {j['seconds']}s", flush=True)
 
 
