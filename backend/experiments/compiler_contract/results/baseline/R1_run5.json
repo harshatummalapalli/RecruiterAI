@@ -1,0 +1,581 @@
+{
+  "role": "R1",
+  "run": 5,
+  "filter_tree": {
+    "op": "and",
+    "conditions": [
+      {
+        "field": "experience.employment_details.current.title",
+        "type": "(.)",
+        "value": "Data Analyst"
+      }
+    ]
+  },
+  "leaves": [
+    [
+      "experience.employment_details.current.title",
+      "(.)",
+      "\"Data Analyst\""
+    ]
+  ],
+  "retrieval_title_family": [
+    "Data Analyst"
+  ],
+  "audit": [
+    {
+      "source": "role_family",
+      "strength": "required",
+      "route": "provider_hard_filter",
+      "provider_fields": [
+        "experience.employment_details.current.title"
+      ],
+      "temporal": null,
+      "capability": null,
+      "note": "'Data Analyst' -> no taxonomy entry; used source title verbatim (no expansion)"
+    },
+    {
+      "source": "skill:SQL",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Python",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Data privacy",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Information security principles",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Data analytics",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Relativity",
+      "strength": "preferred",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Canopy",
+      "strength": "preferred",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "evidence:Data querying, analysis, automation, and reporting using SQL and Python",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Review, quality assurance, compliance, or audit experience; security monitoring alone is not equivalent",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Quality oversight and delivery in accordance with security standards and established protocols",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Strong analytical capability and attention to detail",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Analysis of large datasets to identify trends, anomalies, and potential security risks",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Collaboration with technology, security, legal, compliance, and business stakeholders on findings and remediation",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Management reporting, dashboards, and performance metrics supporting operational and business decisions",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Accurate documentation, procedures, audit trails, and quality records",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Operational coordination, resource planning, and workflow management",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Continuous improvement of operational efficiency, quality, and compliance outcomes",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Experience with security frameworks, data privacy requirements, and regulatory compliance standards",
+      "strength": "preferred",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Equivalent education and relevant professional experience may substitute for the preferred degree",
+      "strength": "context",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Domain-led candidates with tools and experience are the strongest target; capability-led candidates are an acceptable alternative",
+      "strength": "context",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Role responsibilities include Cyber Incident Review Analyst and Quality Control Analyst work, team mentoring, coaching, and development",
+      "strength": "context",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    }
+  ],
+  "warnings": [],
+  "normalizations": [],
+  "downstream_checklist": [
+    {
+      "tier": "core",
+      "requirement": "SQL"
+    },
+    {
+      "tier": "core",
+      "requirement": "Python"
+    },
+    {
+      "tier": "core",
+      "requirement": "Data privacy"
+    },
+    {
+      "tier": "core",
+      "requirement": "Information security principles"
+    },
+    {
+      "tier": "core",
+      "requirement": "Data analytics"
+    },
+    {
+      "tier": "supporting",
+      "requirement": "Relativity"
+    },
+    {
+      "tier": "supporting",
+      "requirement": "Canopy"
+    },
+    {
+      "tier": "core",
+      "requirement": "Data querying, analysis, automation, and reporting using SQL and Python"
+    },
+    {
+      "tier": "core",
+      "requirement": "Review, quality assurance, compliance, or audit experience; security monitoring alone is not equivalent"
+    },
+    {
+      "tier": "core",
+      "requirement": "Quality oversight and delivery in accordance with security standards and established protocols"
+    },
+    {
+      "tier": "core",
+      "requirement": "Strong analytical capability and attention to detail"
+    },
+    {
+      "tier": "core",
+      "requirement": "Analysis of large datasets to identify trends, anomalies, and potential security risks"
+    },
+    {
+      "tier": "core",
+      "requirement": "Collaboration with technology, security, legal, compliance, and business stakeholders on findings and remediation"
+    },
+    {
+      "tier": "core",
+      "requirement": "Management reporting, dashboards, and performance metrics supporting operational and business decisions"
+    },
+    {
+      "tier": "core",
+      "requirement": "Accurate documentation, procedures, audit trails, and quality records"
+    },
+    {
+      "tier": "core",
+      "requirement": "Operational coordination, resource planning, and workflow management"
+    },
+    {
+      "tier": "core",
+      "requirement": "Continuous improvement of operational efficiency, quality, and compliance outcomes"
+    },
+    {
+      "tier": "supporting",
+      "requirement": "Experience with security frameworks, data privacy requirements, and regulatory compliance standards"
+    },
+    {
+      "tier": "differentiator",
+      "requirement": "Equivalent education and relevant professional experience may substitute for the preferred degree"
+    },
+    {
+      "tier": "differentiator",
+      "requirement": "Domain-led candidates with tools and experience are the strongest target; capability-led candidates are an acceptable alternative"
+    },
+    {
+      "tier": "differentiator",
+      "requirement": "Role responsibilities include Cyber Incident Review Analyst and Quality Control Analyst work, team mentoring, coaching, and development"
+    }
+  ],
+  "audit_record": {
+    "search_id": "R1-run5",
+    "confirmation_id": null,
+    "intent_hash": "b3f2e8f501353bc1",
+    "plan_hash": "3a2e5e98e5e96a4b",
+    "compiler_version": "v1-2026-10-02",
+    "capability_map_version": "v1-2026-10-01",
+    "taxonomy_version": "v1-2026-10-02",
+    "retrieval_title_family": [
+      "Data Analyst"
+    ],
+    "compiled_provider_plan": {
+      "op": "and",
+      "conditions": [
+        {
+          "field": "experience.employment_details.current.title",
+          "type": "(.)",
+          "value": "Data Analyst"
+        }
+      ]
+    },
+    "requirements": {
+      "provider_enforced": [
+        "role_family"
+      ],
+      "admission_enforced": [],
+      "downstream_verified": [
+        "skill:SQL",
+        "skill:Python",
+        "skill:Data privacy",
+        "skill:Information security principles",
+        "skill:Data analytics",
+        "skill:Relativity",
+        "skill:Canopy",
+        "evidence:Data querying, analysis, automation, and reporting using SQL and Python",
+        "evidence:Review, quality assurance, compliance, or audit experience; security monitoring alone is not equivalent",
+        "evidence:Quality oversight and delivery in accordance with security standards and established protocols",
+        "evidence:Strong analytical capability and attention to detail",
+        "evidence:Analysis of large datasets to identify trends, anomalies, and potential security risks",
+        "evidence:Collaboration with technology, security, legal, compliance, and business stakeholders on findings and remediation",
+        "evidence:Management reporting, dashboards, and performance metrics supporting operational and business decisions",
+        "evidence:Accurate documentation, procedures, audit trails, and quality records",
+        "evidence:Operational coordination, resource planning, and workflow management",
+        "evidence:Continuous improvement of operational efficiency, quality, and compliance outcomes",
+        "evidence:Experience with security frameworks, data privacy requirements, and regulatory compliance standards",
+        "evidence:Equivalent education and relevant professional experience may substitute for the preferred degree",
+        "evidence:Domain-led candidates with tools and experience are the strongest target; capability-led candidates are an acceptable alternative",
+        "evidence:Role responsibilities include Cyber Incident Review Analyst and Quality Control Analyst work, team mentoring, coaching, and development"
+      ],
+      "context_only": [],
+      "unverifiable": []
+    },
+    "downstream_checklist": [
+      {
+        "tier": "core",
+        "requirement": "SQL"
+      },
+      {
+        "tier": "core",
+        "requirement": "Python"
+      },
+      {
+        "tier": "core",
+        "requirement": "Data privacy"
+      },
+      {
+        "tier": "core",
+        "requirement": "Information security principles"
+      },
+      {
+        "tier": "core",
+        "requirement": "Data analytics"
+      },
+      {
+        "tier": "supporting",
+        "requirement": "Relativity"
+      },
+      {
+        "tier": "supporting",
+        "requirement": "Canopy"
+      },
+      {
+        "tier": "core",
+        "requirement": "Data querying, analysis, automation, and reporting using SQL and Python"
+      },
+      {
+        "tier": "core",
+        "requirement": "Review, quality assurance, compliance, or audit experience; security monitoring alone is not equivalent"
+      },
+      {
+        "tier": "core",
+        "requirement": "Quality oversight and delivery in accordance with security standards and established protocols"
+      },
+      {
+        "tier": "core",
+        "requirement": "Strong analytical capability and attention to detail"
+      },
+      {
+        "tier": "core",
+        "requirement": "Analysis of large datasets to identify trends, anomalies, and potential security risks"
+      },
+      {
+        "tier": "core",
+        "requirement": "Collaboration with technology, security, legal, compliance, and business stakeholders on findings and remediation"
+      },
+      {
+        "tier": "core",
+        "requirement": "Management reporting, dashboards, and performance metrics supporting operational and business decisions"
+      },
+      {
+        "tier": "core",
+        "requirement": "Accurate documentation, procedures, audit trails, and quality records"
+      },
+      {
+        "tier": "core",
+        "requirement": "Operational coordination, resource planning, and workflow management"
+      },
+      {
+        "tier": "core",
+        "requirement": "Continuous improvement of operational efficiency, quality, and compliance outcomes"
+      },
+      {
+        "tier": "supporting",
+        "requirement": "Experience with security frameworks, data privacy requirements, and regulatory compliance standards"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Equivalent education and relevant professional experience may substitute for the preferred degree"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Domain-led candidates with tools and experience are the strongest target; capability-led candidates are an acceptable alternative"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Role responsibilities include Cyber Incident Review Analyst and Quality Control Analyst work, team mentoring, coaching, and development"
+      }
+    ],
+    "warnings": []
+  },
+  "fields_read_by_compiler": [
+    "companies",
+    "company_scale",
+    "education",
+    "education.degrees",
+    "education.streams",
+    "education.strength",
+    "evidence_signals",
+    "evidence_signals[].name",
+    "evidence_signals[].strength",
+    "exclusions",
+    "experience",
+    "location",
+    "role_family",
+    "seniority",
+    "skill_any_of",
+    "skills",
+    "skills[].name",
+    "skills[].relationship",
+    "skills[].strength"
+  ],
+  "fields_present_but_never_read": [
+    "domain",
+    "domain[].basis",
+    "domain[].basis.quote",
+    "domain[].basis.sources",
+    "domain[].name",
+    "domain[].strength",
+    "education.basis",
+    "education.basis.quote",
+    "education.basis.sources",
+    "evidence_signals[].basis",
+    "evidence_signals[].basis.quote",
+    "evidence_signals[].basis.sources",
+    "reconciliations",
+    "reconciliations[].action",
+    "reconciliations[].brief_quote",
+    "reconciliations[].jd_quote",
+    "reconciliations[].path_id",
+    "reconciliations[].result",
+    "reconciliations[].topic",
+    "role_archetype",
+    "role_archetype.confidence",
+    "role_archetype.rationale",
+    "role_archetype.value",
+    "semantic_exclusions",
+    "semantic_exclusions[].basis",
+    "semantic_exclusions[].basis.quote",
+    "semantic_exclusions[].basis.sources",
+    "semantic_exclusions[].concept",
+    "semantic_exclusions[].includes",
+    "skills[].basis",
+    "skills[].basis.quote",
+    "skills[].basis.sources",
+    "skills[].proficiency",
+    "sourcing_paths",
+    "sourcing_paths[].basis",
+    "sourcing_paths[].basis.quote",
+    "sourcing_paths[].basis.sources",
+    "sourcing_paths[].domain",
+    "sourcing_paths[].domain[].basis",
+    "sourcing_paths[].domain[].basis.quote",
+    "sourcing_paths[].domain[].basis.sources",
+    "sourcing_paths[].domain[].name",
+    "sourcing_paths[].domain[].strength",
+    "sourcing_paths[].experience",
+    "sourcing_paths[].experience.basis",
+    "sourcing_paths[].experience.basis.quote",
+    "sourcing_paths[].experience.basis.sources",
+    "sourcing_paths[].experience.minimum_years",
+    "sourcing_paths[].experience.strength",
+    "sourcing_paths[].id",
+    "sourcing_paths[].label",
+    "sourcing_paths[].location",
+    "sourcing_paths[].location.basis",
+    "sourcing_paths[].location.basis.quote",
+    "sourcing_paths[].location.basis.sources",
+    "sourcing_paths[].location.countries",
+    "sourcing_paths[].location.entries",
+    "sourcing_paths[].location.remote",
+    "sourcing_paths[].location.strength",
+    "sourcing_paths[].seniority",
+    "sourcing_paths[].seniority.alternatives",
+    "sourcing_paths[].seniority.basis",
+    "sourcing_paths[].seniority.basis.quote",
+    "sourcing_paths[].seniority.basis.sources",
+    "sourcing_paths[].seniority.leadership",
+    "sourcing_paths[].seniority.strength",
+    "sourcing_paths[].seniority.value",
+    "sourcing_paths[].skills",
+    "sourcing_paths[].skills[].basis",
+    "sourcing_paths[].skills[].basis.quote",
+    "sourcing_paths[].skills[].basis.sources",
+    "sourcing_paths[].skills[].name",
+    "sourcing_paths[].skills[].proficiency",
+    "sourcing_paths[].skills[].relationship",
+    "sourcing_paths[].skills[].strength",
+    "sourcing_paths[].strategy"
+  ]
+}

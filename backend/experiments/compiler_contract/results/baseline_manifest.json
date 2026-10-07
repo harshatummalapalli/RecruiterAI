@@ -1,0 +1,83 @@
+{
+  "compiler_version": "v1-2026-10-02",
+  "capability_map_version": "v1-2026-10-01",
+  "taxonomy_version": "v1-2026-10-02",
+  "compiler_side_file_sha256": {
+    "backend/services/search_compiler.py": "38d0fc14ac659e47835cc195e816502b5dddd01fa2049e0eec7f962b0df781cd",
+    "backend/services/compiler_audit.py": "ccda5898f4da48dce185dffbc65cd3781df6930299fab38ac0dec0664d58b86d",
+    "backend/services/crustdata_capabilities.py": "c2038c5754ab26e4d5fdaed60da2ac27a32e36271202863963554611524a6148",
+    "backend/services/role_family_taxonomy.py": "8d828121ffa8a8fe334cafee92642837bd4272c4a745d836a7c34b123eebca25",
+    "backend/models/structured_intent.py": "fe765fd1071de88e12933d047c08f7599eb4e597a3255757dcdfa80de694b924",
+    "backend/knowledge/seniority.json": "106b55214b6b91c18573e5a63b8fb81755811a92c6cae9f20e937b20972f4534"
+  },
+  "source_run_file_sha256": {
+    "R1/1": "ba4fcba1c8993fe743cbc5028385f62bc38f0a63bb0550a0db254d05f422fd12",
+    "R1/2": "9df7736d1417aedf6b7a82f3fac580f897d1dc1ee35467a83cf86dcb1ef5bfce",
+    "R1/3": "78aaf8db9053303d34081f31444d74711ca27bfaa54633d7130e1cf2e91e2f70",
+    "R1/4": "bd77e7353e393e3066a1f4631a0a2edc9939ad169a5f00f9e97013ca200fb7a5",
+    "R1/5": "539b0136178e9377990ba1c2a26e94218a446c81cd1b609b27deff2dd57c65ff",
+    "R2/1": "48b37f140acf7a89fbe58113767596941f89b975cc81d74a8321606c19878016",
+    "R2/2": "042d4e30acef5a44a96b6c26f7acf96c8aabdadb1435d9bcd47ae6c7fd2493f2",
+    "R2/3": "96f49cd7d5939113c214c20818adf82aeecf9dc319a4b214ce84c388b423032a",
+    "R2/4": "e47f62d8c76c06730389062f5153d4f51a17a3102c2c467fe46da972b30f49af",
+    "R2/5": "a2ff94c90696d3c607891cf929ae032f83d0e8d5e2a0c8c7842ecfe1d722e98b",
+    "R3/1": "cb2e963a8e4b1414c3568666c9562ccb68d2f459ca0f407a733bac36b1774c4a",
+    "R3/2": "9519fe402998d8477f19727e1126db02d6e386738656ae89cbbb1308d133283b",
+    "R3/3": "1173c65b21c17ea14962daeac029b2d3c43f7c243efa386ea3f686ad3593ea43",
+    "R3/4": "9ff7b8db090c42ac1b1fd088b7cf4e5123f2f3e5949812ed3b8224684b62078a",
+    "R3/5": "39e828cfd0ff696ed5aa1124bfa9c2919600cc7833e10647c8175830f322a1d0"
+  },
+  "relationship_omission_in_raw_model_output": {
+    "available": true,
+    "per_role": {
+      "R1": {
+        "atoms": 42,
+        "relationship_omitted_in_raw_output": 0
+      },
+      "R2": {
+        "atoms": 214,
+        "relationship_omitted_in_raw_output": 0
+      },
+      "R3": {
+        "atoms": 87,
+        "relationship_omitted_in_raw_output": 0
+      }
+    }
+  },
+  "note": "compiled with the UNCHANGED compiler; no model, no provider, no network",
+  "fields_read_by_compiler_union": [
+    "companies",
+    "companies[].name",
+    "companies[].relationship",
+    "companies[].strength",
+    "company_scale",
+    "education",
+    "education.degrees",
+    "education.streams",
+    "education.strength",
+    "evidence_signals",
+    "evidence_signals[].name",
+    "evidence_signals[].strength",
+    "exclusions",
+    "experience",
+    "experience.maximum_years",
+    "experience.minimum_years",
+    "experience.strength",
+    "location",
+    "location.entries",
+    "location.radius",
+    "location.strength",
+    "role_family",
+    "seniority",
+    "seniority.strength",
+    "seniority.value",
+    "skill_any_of",
+    "skill_any_of[].any_of",
+    "skill_any_of[].relationship",
+    "skill_any_of[].strength",
+    "skills",
+    "skills[].name",
+    "skills[].relationship",
+    "skills[].strength"
+  ]
+}

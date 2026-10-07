@@ -1,0 +1,2119 @@
+{
+  "role": "R2",
+  "run": 5,
+  "filter_tree": {
+    "op": "and",
+    "conditions": [
+      {
+        "field": "basic_profile.location.country",
+        "type": "in",
+        "value": [
+          "India"
+        ]
+      },
+      {
+        "field": "basic_profile.location.state",
+        "type": "in",
+        "value": [
+          "Telangana"
+        ]
+      },
+      {
+        "field": "basic_profile.location.city",
+        "type": "in",
+        "value": [
+          "Hyderabad"
+        ]
+      },
+      {
+        "field": "years_of_experience_raw",
+        "type": "=>",
+        "value": 12
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.title",
+            "type": "(.)",
+            "value": "Software Engineer"
+          },
+          {
+            "field": "experience.employment_details.current.title",
+            "type": "(.)",
+            "value": "Backend Engineer"
+          },
+          {
+            "field": "experience.employment_details.current.title",
+            "type": "(.)",
+            "value": "Backend Developer"
+          },
+          {
+            "field": "experience.employment_details.current.title",
+            "type": "(.)",
+            "value": "Python Developer"
+          },
+          {
+            "field": "experience.employment_details.current.title",
+            "type": "(.)",
+            "value": "Solution Architect"
+          },
+          {
+            "field": "experience.employment_details.current.title",
+            "type": "(.)",
+            "value": "Forward Deployed Engineer"
+          }
+        ]
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.description",
+            "type": "(.)",
+            "value": "Large Language Models"
+          },
+          {
+            "field": "basic_profile.headline",
+            "type": "(.)",
+            "value": "Large Language Models"
+          },
+          {
+            "field": "basic_profile.summary",
+            "type": "(.)",
+            "value": "Large Language Models"
+          }
+        ]
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.description",
+            "type": "(.)",
+            "value": "Retrieval-Augmented Generation"
+          },
+          {
+            "field": "basic_profile.headline",
+            "type": "(.)",
+            "value": "Retrieval-Augmented Generation"
+          },
+          {
+            "field": "basic_profile.summary",
+            "type": "(.)",
+            "value": "Retrieval-Augmented Generation"
+          }
+        ]
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.description",
+            "type": "(.)",
+            "value": "Agentic AI"
+          },
+          {
+            "field": "basic_profile.headline",
+            "type": "(.)",
+            "value": "Agentic AI"
+          },
+          {
+            "field": "basic_profile.summary",
+            "type": "(.)",
+            "value": "Agentic AI"
+          }
+        ]
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.description",
+            "type": "(.)",
+            "value": "AI Orchestration Patterns"
+          },
+          {
+            "field": "basic_profile.headline",
+            "type": "(.)",
+            "value": "AI Orchestration Patterns"
+          },
+          {
+            "field": "basic_profile.summary",
+            "type": "(.)",
+            "value": "AI Orchestration Patterns"
+          }
+        ]
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.description",
+            "type": "(.)",
+            "value": "Prompt Engineering"
+          },
+          {
+            "field": "basic_profile.headline",
+            "type": "(.)",
+            "value": "Prompt Engineering"
+          },
+          {
+            "field": "basic_profile.summary",
+            "type": "(.)",
+            "value": "Prompt Engineering"
+          }
+        ]
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.description",
+            "type": "(.)",
+            "value": "Data Integration"
+          },
+          {
+            "field": "basic_profile.headline",
+            "type": "(.)",
+            "value": "Data Integration"
+          },
+          {
+            "field": "basic_profile.summary",
+            "type": "(.)",
+            "value": "Data Integration"
+          }
+        ]
+      },
+      {
+        "op": "all_of",
+        "conditions": [
+          {
+            "op": "or",
+            "conditions": [
+              {
+                "field": "education.schools.degree",
+                "type": "(.)",
+                "value": "Bachelor's"
+              },
+              {
+                "field": "education.schools.degree",
+                "type": "(.)",
+                "value": "Master's"
+              }
+            ]
+          },
+          {
+            "op": "or",
+            "conditions": [
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Computer Science"
+              },
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Information Technology"
+              },
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Software Engineering"
+              },
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Related field"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "leaves": [
+    [
+      "basic_profile.headline",
+      "(.)",
+      "\"AI Orchestration Patterns\""
+    ],
+    [
+      "basic_profile.headline",
+      "(.)",
+      "\"Agentic AI\""
+    ],
+    [
+      "basic_profile.headline",
+      "(.)",
+      "\"Data Integration\""
+    ],
+    [
+      "basic_profile.headline",
+      "(.)",
+      "\"Large Language Models\""
+    ],
+    [
+      "basic_profile.headline",
+      "(.)",
+      "\"Prompt Engineering\""
+    ],
+    [
+      "basic_profile.headline",
+      "(.)",
+      "\"Retrieval-Augmented Generation\""
+    ],
+    [
+      "basic_profile.location.city",
+      "in",
+      "[\"Hyderabad\"]"
+    ],
+    [
+      "basic_profile.location.country",
+      "in",
+      "[\"India\"]"
+    ],
+    [
+      "basic_profile.location.state",
+      "in",
+      "[\"Telangana\"]"
+    ],
+    [
+      "basic_profile.summary",
+      "(.)",
+      "\"AI Orchestration Patterns\""
+    ],
+    [
+      "basic_profile.summary",
+      "(.)",
+      "\"Agentic AI\""
+    ],
+    [
+      "basic_profile.summary",
+      "(.)",
+      "\"Data Integration\""
+    ],
+    [
+      "basic_profile.summary",
+      "(.)",
+      "\"Large Language Models\""
+    ],
+    [
+      "basic_profile.summary",
+      "(.)",
+      "\"Prompt Engineering\""
+    ],
+    [
+      "basic_profile.summary",
+      "(.)",
+      "\"Retrieval-Augmented Generation\""
+    ],
+    [
+      "education.schools.degree",
+      "(.)",
+      "\"Bachelor's\""
+    ],
+    [
+      "education.schools.degree",
+      "(.)",
+      "\"Master's\""
+    ],
+    [
+      "education.schools.field_of_study",
+      "(.)",
+      "\"Computer Science\""
+    ],
+    [
+      "education.schools.field_of_study",
+      "(.)",
+      "\"Information Technology\""
+    ],
+    [
+      "education.schools.field_of_study",
+      "(.)",
+      "\"Related field\""
+    ],
+    [
+      "education.schools.field_of_study",
+      "(.)",
+      "\"Software Engineering\""
+    ],
+    [
+      "experience.employment_details.current.description",
+      "(.)",
+      "\"AI Orchestration Patterns\""
+    ],
+    [
+      "experience.employment_details.current.description",
+      "(.)",
+      "\"Agentic AI\""
+    ],
+    [
+      "experience.employment_details.current.description",
+      "(.)",
+      "\"Data Integration\""
+    ],
+    [
+      "experience.employment_details.current.description",
+      "(.)",
+      "\"Large Language Models\""
+    ],
+    [
+      "experience.employment_details.current.description",
+      "(.)",
+      "\"Prompt Engineering\""
+    ],
+    [
+      "experience.employment_details.current.description",
+      "(.)",
+      "\"Retrieval-Augmented Generation\""
+    ],
+    [
+      "experience.employment_details.current.title",
+      "(.)",
+      "\"Backend Developer\""
+    ],
+    [
+      "experience.employment_details.current.title",
+      "(.)",
+      "\"Backend Engineer\""
+    ],
+    [
+      "experience.employment_details.current.title",
+      "(.)",
+      "\"Forward Deployed Engineer\""
+    ],
+    [
+      "experience.employment_details.current.title",
+      "(.)",
+      "\"Python Developer\""
+    ],
+    [
+      "experience.employment_details.current.title",
+      "(.)",
+      "\"Software Engineer\""
+    ],
+    [
+      "experience.employment_details.current.title",
+      "(.)",
+      "\"Solution Architect\""
+    ],
+    [
+      "years_of_experience_raw",
+      "=>",
+      "12"
+    ]
+  ],
+  "retrieval_title_family": [
+    "Software Engineer",
+    "Backend Engineer",
+    "Backend Developer",
+    "Python Developer",
+    "Solution Architect",
+    "Forward Deployed Engineer"
+  ],
+  "audit": [
+    {
+      "source": "location",
+      "strength": "required",
+      "route": "provider_hard_filter",
+      "provider_fields": [
+        "basic_profile.location.*"
+      ],
+      "temporal": null,
+      "capability": null,
+      "note": "entries=['Hyderabad, Telangana, India']"
+    },
+    {
+      "source": "experience",
+      "strength": "required",
+      "route": "provider_hard_filter",
+      "provider_fields": [
+        "years_of_experience_raw"
+      ],
+      "temporal": null,
+      "capability": null,
+      "note": ""
+    },
+    {
+      "source": "role_family",
+      "strength": "required",
+      "route": "provider_hard_filter",
+      "provider_fields": [
+        "experience.employment_details.current.title"
+      ],
+      "temporal": null,
+      "capability": null,
+      "note": "'Software Engineer' -> Software Engineer [skill_defined/backend] (v1-2026-10-02); 'Solution Architect' -> no taxonomy entry; used source title verbatim (no expansion); 'Forward Deployed Engineer' -> no taxonomy entry; used source title verbatim (no expansion)"
+    },
+    {
+      "source": "skill:Full Stack Software Development",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Data Engineering",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:AI/ML Implementation",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Python",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Java",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:API Development",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Service Development",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Distributed Systems",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Generative AI",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Large Language Models",
+      "strength": "required",
+      "route": "provider_hard_filter",
+      "provider_fields": [
+        "experience.employment_details.current.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "current",
+      "capability": "enforce_but_not_verifiable",
+      "note": ""
+    },
+    {
+      "source": "skill:Retrieval-Augmented Generation",
+      "strength": "required",
+      "route": "provider_hard_filter",
+      "provider_fields": [
+        "experience.employment_details.current.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "current",
+      "capability": "enforce_but_not_verifiable",
+      "note": ""
+    },
+    {
+      "source": "skill:Agentic AI",
+      "strength": "required",
+      "route": "provider_hard_filter",
+      "provider_fields": [
+        "experience.employment_details.current.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "current",
+      "capability": "enforce_but_not_verifiable",
+      "note": ""
+    },
+    {
+      "source": "skill:AI Orchestration Patterns",
+      "strength": "required",
+      "route": "provider_hard_filter",
+      "provider_fields": [
+        "experience.employment_details.current.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "current",
+      "capability": "enforce_but_not_verifiable",
+      "note": ""
+    },
+    {
+      "source": "skill:Prompt Engineering",
+      "strength": "required",
+      "route": "provider_hard_filter",
+      "provider_fields": [
+        "experience.employment_details.current.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "current",
+      "capability": "enforce_but_not_verifiable",
+      "note": ""
+    },
+    {
+      "source": "skill:MCP",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:A2A",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:AI Application Development Patterns",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:NLP Frameworks",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:DevOps",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:CI/CD",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Terraform",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:AKS",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:EKS",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:GitHub Actions",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Containerized Deployments",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:React",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Bootstrap",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Related User Interface Frameworks",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Azure DevOps",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Jira",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Snowflake",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Databricks",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Modern Data Platforms",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Data Integration",
+      "strength": "required",
+      "route": "provider_hard_filter",
+      "provider_fields": [
+        "experience.employment_details.current.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "current",
+      "capability": "enforce_but_not_verifiable",
+      "note": ""
+    },
+    {
+      "source": "skill:ETL",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Data Quality",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Data Discovery",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Enterprise Data Management",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Third-Party and Enterprise API Integration",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Metadata Management Tools",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Data Governance",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill_any_of:TensorFlow|PyTorch|scikit-learn|Similar Machine Learning Libraries",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": ""
+    },
+    {
+      "source": "skill_any_of:Azure|AWS",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": ""
+    },
+    {
+      "source": "education",
+      "strength": "required",
+      "route": "provider_hard_filter",
+      "provider_fields": [
+        "education.schools.degree",
+        "education.schools.field_of_study"
+      ],
+      "temporal": null,
+      "capability": "enforce_but_not_verifiable",
+      "note": "degree + stream grouped on the same school entry (all_of)"
+    },
+    {
+      "source": "evidence:Staff-level engineering role",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Individual contributor engineering profile",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Client-facing solution design: understand client problems and requirements, build proofs of concept, and design systems",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Collaborate with existing teams to enhance existing products and features",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Ability to work on a hybrid basis",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Recent experience building and deploying AI-powered applications",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Proven hands-on design and development of enterprise-scale applications",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Production implementation and deployment of generative AI solutions",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Partner with business and product stakeholders on requirements, end-to-end solution design, user stories, and technical deliverables",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Design scalable, secure, maintainable solutions integrated into existing products and strategic offerings",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Active software development, code review, technical design, architecture review, and technical decision-making",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Own solution design decisions aligned with security, compliance, performance, and operational requirements",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Champion engineering practices, coding standards, testing strategies, and quality metrics",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Collaborate with data engineers and data scientists on data quality, availability, and successful AI/ML deployment",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Evaluate and adopt emerging technologies to improve application and AI system scalability, maintainability, performance, and reliability",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Stay current with software engineering, AI, machine learning, and cloud advances and recommend practical innovations",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Technical leadership, mentoring, complex technical problem resolution, and collaborative engineering culture",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Strong analytical, problem-solving, and troubleshooting ability",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering teams",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Communicate technical solutions, risks, and recommendations to leadership, business stakeholders, and clients",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Working familiarity with modern software delivery practices",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Apply AI best practices to improve generative AI solution quality and reliability",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    }
+  ],
+  "warnings": [
+    "skill 'Large Language Models': filtered on response-gated text; not displayable from the provider",
+    "skill 'Retrieval-Augmented Generation': filtered on response-gated text; not displayable from the provider",
+    "skill 'Agentic AI': filtered on response-gated text; not displayable from the provider",
+    "skill 'AI Orchestration Patterns': filtered on response-gated text; not displayable from the provider",
+    "skill 'Prompt Engineering': filtered on response-gated text; not displayable from the provider",
+    "skill 'Data Integration': filtered on response-gated text; not displayable from the provider",
+    "education stream: filterable but response-gated (not displayable); verify via Harvest if needed"
+  ],
+  "normalizations": [],
+  "downstream_checklist": [
+    {
+      "tier": "core",
+      "requirement": "Full Stack Software Development"
+    },
+    {
+      "tier": "core",
+      "requirement": "Data Engineering"
+    },
+    {
+      "tier": "core",
+      "requirement": "AI/ML Implementation"
+    },
+    {
+      "tier": "core",
+      "requirement": "Python"
+    },
+    {
+      "tier": "core",
+      "requirement": "Java"
+    },
+    {
+      "tier": "core",
+      "requirement": "API Development"
+    },
+    {
+      "tier": "core",
+      "requirement": "Service Development"
+    },
+    {
+      "tier": "core",
+      "requirement": "Distributed Systems"
+    },
+    {
+      "tier": "core",
+      "requirement": "Generative AI"
+    },
+    {
+      "tier": "core",
+      "requirement": "MCP"
+    },
+    {
+      "tier": "core",
+      "requirement": "A2A"
+    },
+    {
+      "tier": "core",
+      "requirement": "AI Application Development Patterns"
+    },
+    {
+      "tier": "core",
+      "requirement": "NLP Frameworks"
+    },
+    {
+      "tier": "core",
+      "requirement": "DevOps"
+    },
+    {
+      "tier": "core",
+      "requirement": "CI/CD"
+    },
+    {
+      "tier": "core",
+      "requirement": "Terraform"
+    },
+    {
+      "tier": "core",
+      "requirement": "AKS"
+    },
+    {
+      "tier": "core",
+      "requirement": "EKS"
+    },
+    {
+      "tier": "core",
+      "requirement": "GitHub Actions"
+    },
+    {
+      "tier": "core",
+      "requirement": "Containerized Deployments"
+    },
+    {
+      "tier": "core",
+      "requirement": "React"
+    },
+    {
+      "tier": "core",
+      "requirement": "Bootstrap"
+    },
+    {
+      "tier": "core",
+      "requirement": "Related User Interface Frameworks"
+    },
+    {
+      "tier": "core",
+      "requirement": "Azure DevOps"
+    },
+    {
+      "tier": "core",
+      "requirement": "Jira"
+    },
+    {
+      "tier": "core",
+      "requirement": "Snowflake"
+    },
+    {
+      "tier": "core",
+      "requirement": "Databricks"
+    },
+    {
+      "tier": "core",
+      "requirement": "Modern Data Platforms"
+    },
+    {
+      "tier": "core",
+      "requirement": "ETL"
+    },
+    {
+      "tier": "core",
+      "requirement": "Data Quality"
+    },
+    {
+      "tier": "core",
+      "requirement": "Data Discovery"
+    },
+    {
+      "tier": "core",
+      "requirement": "Enterprise Data Management"
+    },
+    {
+      "tier": "core",
+      "requirement": "Third-Party and Enterprise API Integration"
+    },
+    {
+      "tier": "core",
+      "requirement": "Metadata Management Tools"
+    },
+    {
+      "tier": "core",
+      "requirement": "Data Governance"
+    },
+    {
+      "tier": "core",
+      "requirement": "TensorFlow|PyTorch|scikit-learn|Similar Machine Learning Libraries"
+    },
+    {
+      "tier": "core",
+      "requirement": "Azure|AWS"
+    },
+    {
+      "tier": "core",
+      "requirement": "Staff-level engineering role"
+    },
+    {
+      "tier": "core",
+      "requirement": "Individual contributor engineering profile"
+    },
+    {
+      "tier": "core",
+      "requirement": "Client-facing solution design: understand client problems and requirements, build proofs of concept, and design systems"
+    },
+    {
+      "tier": "core",
+      "requirement": "Collaborate with existing teams to enhance existing products and features"
+    },
+    {
+      "tier": "core",
+      "requirement": "Ability to work on a hybrid basis"
+    },
+    {
+      "tier": "core",
+      "requirement": "Recent experience building and deploying AI-powered applications"
+    },
+    {
+      "tier": "core",
+      "requirement": "Proven hands-on design and development of enterprise-scale applications"
+    },
+    {
+      "tier": "core",
+      "requirement": "Production implementation and deployment of generative AI solutions"
+    },
+    {
+      "tier": "core",
+      "requirement": "Partner with business and product stakeholders on requirements, end-to-end solution design, user stories, and technical deliverables"
+    },
+    {
+      "tier": "core",
+      "requirement": "Design scalable, secure, maintainable solutions integrated into existing products and strategic offerings"
+    },
+    {
+      "tier": "core",
+      "requirement": "Active software development, code review, technical design, architecture review, and technical decision-making"
+    },
+    {
+      "tier": "core",
+      "requirement": "Own solution design decisions aligned with security, compliance, performance, and operational requirements"
+    },
+    {
+      "tier": "core",
+      "requirement": "Champion engineering practices, coding standards, testing strategies, and quality metrics"
+    },
+    {
+      "tier": "core",
+      "requirement": "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads"
+    },
+    {
+      "tier": "core",
+      "requirement": "Collaborate with data engineers and data scientists on data quality, availability, and successful AI/ML deployment"
+    },
+    {
+      "tier": "core",
+      "requirement": "Evaluate and adopt emerging technologies to improve application and AI system scalability, maintainability, performance, and reliability"
+    },
+    {
+      "tier": "core",
+      "requirement": "Stay current with software engineering, AI, machine learning, and cloud advances and recommend practical innovations"
+    },
+    {
+      "tier": "core",
+      "requirement": "Technical leadership, mentoring, complex technical problem resolution, and collaborative engineering culture"
+    },
+    {
+      "tier": "core",
+      "requirement": "Strong analytical, problem-solving, and troubleshooting ability"
+    },
+    {
+      "tier": "core",
+      "requirement": "Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering teams"
+    },
+    {
+      "tier": "core",
+      "requirement": "Communicate technical solutions, risks, and recommendations to leadership, business stakeholders, and clients"
+    },
+    {
+      "tier": "core",
+      "requirement": "Working familiarity with modern software delivery practices"
+    },
+    {
+      "tier": "core",
+      "requirement": "Apply AI best practices to improve generative AI solution quality and reliability"
+    }
+  ],
+  "audit_record": {
+    "search_id": "R2-run5",
+    "confirmation_id": null,
+    "intent_hash": "9eb9e1881f135d25",
+    "plan_hash": "23870b2b22b94b53",
+    "compiler_version": "v1-2026-10-02",
+    "capability_map_version": "v1-2026-10-01",
+    "taxonomy_version": "v1-2026-10-02",
+    "retrieval_title_family": [
+      "Software Engineer",
+      "Backend Engineer",
+      "Backend Developer",
+      "Python Developer",
+      "Solution Architect",
+      "Forward Deployed Engineer"
+    ],
+    "compiled_provider_plan": {
+      "op": "and",
+      "conditions": [
+        {
+          "field": "basic_profile.location.country",
+          "type": "in",
+          "value": [
+            "India"
+          ]
+        },
+        {
+          "field": "basic_profile.location.state",
+          "type": "in",
+          "value": [
+            "Telangana"
+          ]
+        },
+        {
+          "field": "basic_profile.location.city",
+          "type": "in",
+          "value": [
+            "Hyderabad"
+          ]
+        },
+        {
+          "field": "years_of_experience_raw",
+          "type": "=>",
+          "value": 12
+        },
+        {
+          "op": "or",
+          "conditions": [
+            {
+              "field": "experience.employment_details.current.title",
+              "type": "(.)",
+              "value": "Software Engineer"
+            },
+            {
+              "field": "experience.employment_details.current.title",
+              "type": "(.)",
+              "value": "Backend Engineer"
+            },
+            {
+              "field": "experience.employment_details.current.title",
+              "type": "(.)",
+              "value": "Backend Developer"
+            },
+            {
+              "field": "experience.employment_details.current.title",
+              "type": "(.)",
+              "value": "Python Developer"
+            },
+            {
+              "field": "experience.employment_details.current.title",
+              "type": "(.)",
+              "value": "Solution Architect"
+            },
+            {
+              "field": "experience.employment_details.current.title",
+              "type": "(.)",
+              "value": "Forward Deployed Engineer"
+            }
+          ]
+        },
+        {
+          "op": "or",
+          "conditions": [
+            {
+              "field": "experience.employment_details.current.description",
+              "type": "(.)",
+              "value": "Large Language Models"
+            },
+            {
+              "field": "basic_profile.headline",
+              "type": "(.)",
+              "value": "Large Language Models"
+            },
+            {
+              "field": "basic_profile.summary",
+              "type": "(.)",
+              "value": "Large Language Models"
+            }
+          ]
+        },
+        {
+          "op": "or",
+          "conditions": [
+            {
+              "field": "experience.employment_details.current.description",
+              "type": "(.)",
+              "value": "Retrieval-Augmented Generation"
+            },
+            {
+              "field": "basic_profile.headline",
+              "type": "(.)",
+              "value": "Retrieval-Augmented Generation"
+            },
+            {
+              "field": "basic_profile.summary",
+              "type": "(.)",
+              "value": "Retrieval-Augmented Generation"
+            }
+          ]
+        },
+        {
+          "op": "or",
+          "conditions": [
+            {
+              "field": "experience.employment_details.current.description",
+              "type": "(.)",
+              "value": "Agentic AI"
+            },
+            {
+              "field": "basic_profile.headline",
+              "type": "(.)",
+              "value": "Agentic AI"
+            },
+            {
+              "field": "basic_profile.summary",
+              "type": "(.)",
+              "value": "Agentic AI"
+            }
+          ]
+        },
+        {
+          "op": "or",
+          "conditions": [
+            {
+              "field": "experience.employment_details.current.description",
+              "type": "(.)",
+              "value": "AI Orchestration Patterns"
+            },
+            {
+              "field": "basic_profile.headline",
+              "type": "(.)",
+              "value": "AI Orchestration Patterns"
+            },
+            {
+              "field": "basic_profile.summary",
+              "type": "(.)",
+              "value": "AI Orchestration Patterns"
+            }
+          ]
+        },
+        {
+          "op": "or",
+          "conditions": [
+            {
+              "field": "experience.employment_details.current.description",
+              "type": "(.)",
+              "value": "Prompt Engineering"
+            },
+            {
+              "field": "basic_profile.headline",
+              "type": "(.)",
+              "value": "Prompt Engineering"
+            },
+            {
+              "field": "basic_profile.summary",
+              "type": "(.)",
+              "value": "Prompt Engineering"
+            }
+          ]
+        },
+        {
+          "op": "or",
+          "conditions": [
+            {
+              "field": "experience.employment_details.current.description",
+              "type": "(.)",
+              "value": "Data Integration"
+            },
+            {
+              "field": "basic_profile.headline",
+              "type": "(.)",
+              "value": "Data Integration"
+            },
+            {
+              "field": "basic_profile.summary",
+              "type": "(.)",
+              "value": "Data Integration"
+            }
+          ]
+        },
+        {
+          "op": "all_of",
+          "conditions": [
+            {
+              "op": "or",
+              "conditions": [
+                {
+                  "field": "education.schools.degree",
+                  "type": "(.)",
+                  "value": "Bachelor's"
+                },
+                {
+                  "field": "education.schools.degree",
+                  "type": "(.)",
+                  "value": "Master's"
+                }
+              ]
+            },
+            {
+              "op": "or",
+              "conditions": [
+                {
+                  "field": "education.schools.field_of_study",
+                  "type": "(.)",
+                  "value": "Computer Science"
+                },
+                {
+                  "field": "education.schools.field_of_study",
+                  "type": "(.)",
+                  "value": "Information Technology"
+                },
+                {
+                  "field": "education.schools.field_of_study",
+                  "type": "(.)",
+                  "value": "Software Engineering"
+                },
+                {
+                  "field": "education.schools.field_of_study",
+                  "type": "(.)",
+                  "value": "Related field"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "requirements": {
+      "provider_enforced": [
+        "location",
+        "experience",
+        "role_family",
+        "skill:Large Language Models",
+        "skill:Retrieval-Augmented Generation",
+        "skill:Agentic AI",
+        "skill:AI Orchestration Patterns",
+        "skill:Prompt Engineering",
+        "skill:Data Integration",
+        "education"
+      ],
+      "admission_enforced": [],
+      "downstream_verified": [
+        "skill:Full Stack Software Development",
+        "skill:Data Engineering",
+        "skill:AI/ML Implementation",
+        "skill:Python",
+        "skill:Java",
+        "skill:API Development",
+        "skill:Service Development",
+        "skill:Distributed Systems",
+        "skill:Generative AI",
+        "skill:MCP",
+        "skill:A2A",
+        "skill:AI Application Development Patterns",
+        "skill:NLP Frameworks",
+        "skill:DevOps",
+        "skill:CI/CD",
+        "skill:Terraform",
+        "skill:AKS",
+        "skill:EKS",
+        "skill:GitHub Actions",
+        "skill:Containerized Deployments",
+        "skill:React",
+        "skill:Bootstrap",
+        "skill:Related User Interface Frameworks",
+        "skill:Azure DevOps",
+        "skill:Jira",
+        "skill:Snowflake",
+        "skill:Databricks",
+        "skill:Modern Data Platforms",
+        "skill:ETL",
+        "skill:Data Quality",
+        "skill:Data Discovery",
+        "skill:Enterprise Data Management",
+        "skill:Third-Party and Enterprise API Integration",
+        "skill:Metadata Management Tools",
+        "skill:Data Governance",
+        "skill_any_of:TensorFlow|PyTorch|scikit-learn|Similar Machine Learning Libraries",
+        "skill_any_of:Azure|AWS",
+        "evidence:Staff-level engineering role",
+        "evidence:Individual contributor engineering profile",
+        "evidence:Client-facing solution design: understand client problems and requirements, build proofs of concept, and design systems",
+        "evidence:Collaborate with existing teams to enhance existing products and features",
+        "evidence:Ability to work on a hybrid basis",
+        "evidence:Recent experience building and deploying AI-powered applications",
+        "evidence:Proven hands-on design and development of enterprise-scale applications",
+        "evidence:Production implementation and deployment of generative AI solutions",
+        "evidence:Partner with business and product stakeholders on requirements, end-to-end solution design, user stories, and technical deliverables",
+        "evidence:Design scalable, secure, maintainable solutions integrated into existing products and strategic offerings",
+        "evidence:Active software development, code review, technical design, architecture review, and technical decision-making",
+        "evidence:Own solution design decisions aligned with security, compliance, performance, and operational requirements",
+        "evidence:Champion engineering practices, coding standards, testing strategies, and quality metrics",
+        "evidence:Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads",
+        "evidence:Collaborate with data engineers and data scientists on data quality, availability, and successful AI/ML deployment",
+        "evidence:Evaluate and adopt emerging technologies to improve application and AI system scalability, maintainability, performance, and reliability",
+        "evidence:Stay current with software engineering, AI, machine learning, and cloud advances and recommend practical innovations",
+        "evidence:Technical leadership, mentoring, complex technical problem resolution, and collaborative engineering culture",
+        "evidence:Strong analytical, problem-solving, and troubleshooting ability",
+        "evidence:Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering teams",
+        "evidence:Communicate technical solutions, risks, and recommendations to leadership, business stakeholders, and clients",
+        "evidence:Working familiarity with modern software delivery practices",
+        "evidence:Apply AI best practices to improve generative AI solution quality and reliability"
+      ],
+      "context_only": [],
+      "unverifiable": []
+    },
+    "downstream_checklist": [
+      {
+        "tier": "core",
+        "requirement": "Full Stack Software Development"
+      },
+      {
+        "tier": "core",
+        "requirement": "Data Engineering"
+      },
+      {
+        "tier": "core",
+        "requirement": "AI/ML Implementation"
+      },
+      {
+        "tier": "core",
+        "requirement": "Python"
+      },
+      {
+        "tier": "core",
+        "requirement": "Java"
+      },
+      {
+        "tier": "core",
+        "requirement": "API Development"
+      },
+      {
+        "tier": "core",
+        "requirement": "Service Development"
+      },
+      {
+        "tier": "core",
+        "requirement": "Distributed Systems"
+      },
+      {
+        "tier": "core",
+        "requirement": "Generative AI"
+      },
+      {
+        "tier": "core",
+        "requirement": "MCP"
+      },
+      {
+        "tier": "core",
+        "requirement": "A2A"
+      },
+      {
+        "tier": "core",
+        "requirement": "AI Application Development Patterns"
+      },
+      {
+        "tier": "core",
+        "requirement": "NLP Frameworks"
+      },
+      {
+        "tier": "core",
+        "requirement": "DevOps"
+      },
+      {
+        "tier": "core",
+        "requirement": "CI/CD"
+      },
+      {
+        "tier": "core",
+        "requirement": "Terraform"
+      },
+      {
+        "tier": "core",
+        "requirement": "AKS"
+      },
+      {
+        "tier": "core",
+        "requirement": "EKS"
+      },
+      {
+        "tier": "core",
+        "requirement": "GitHub Actions"
+      },
+      {
+        "tier": "core",
+        "requirement": "Containerized Deployments"
+      },
+      {
+        "tier": "core",
+        "requirement": "React"
+      },
+      {
+        "tier": "core",
+        "requirement": "Bootstrap"
+      },
+      {
+        "tier": "core",
+        "requirement": "Related User Interface Frameworks"
+      },
+      {
+        "tier": "core",
+        "requirement": "Azure DevOps"
+      },
+      {
+        "tier": "core",
+        "requirement": "Jira"
+      },
+      {
+        "tier": "core",
+        "requirement": "Snowflake"
+      },
+      {
+        "tier": "core",
+        "requirement": "Databricks"
+      },
+      {
+        "tier": "core",
+        "requirement": "Modern Data Platforms"
+      },
+      {
+        "tier": "core",
+        "requirement": "ETL"
+      },
+      {
+        "tier": "core",
+        "requirement": "Data Quality"
+      },
+      {
+        "tier": "core",
+        "requirement": "Data Discovery"
+      },
+      {
+        "tier": "core",
+        "requirement": "Enterprise Data Management"
+      },
+      {
+        "tier": "core",
+        "requirement": "Third-Party and Enterprise API Integration"
+      },
+      {
+        "tier": "core",
+        "requirement": "Metadata Management Tools"
+      },
+      {
+        "tier": "core",
+        "requirement": "Data Governance"
+      },
+      {
+        "tier": "core",
+        "requirement": "TensorFlow|PyTorch|scikit-learn|Similar Machine Learning Libraries"
+      },
+      {
+        "tier": "core",
+        "requirement": "Azure|AWS"
+      },
+      {
+        "tier": "core",
+        "requirement": "Staff-level engineering role"
+      },
+      {
+        "tier": "core",
+        "requirement": "Individual contributor engineering profile"
+      },
+      {
+        "tier": "core",
+        "requirement": "Client-facing solution design: understand client problems and requirements, build proofs of concept, and design systems"
+      },
+      {
+        "tier": "core",
+        "requirement": "Collaborate with existing teams to enhance existing products and features"
+      },
+      {
+        "tier": "core",
+        "requirement": "Ability to work on a hybrid basis"
+      },
+      {
+        "tier": "core",
+        "requirement": "Recent experience building and deploying AI-powered applications"
+      },
+      {
+        "tier": "core",
+        "requirement": "Proven hands-on design and development of enterprise-scale applications"
+      },
+      {
+        "tier": "core",
+        "requirement": "Production implementation and deployment of generative AI solutions"
+      },
+      {
+        "tier": "core",
+        "requirement": "Partner with business and product stakeholders on requirements, end-to-end solution design, user stories, and technical deliverables"
+      },
+      {
+        "tier": "core",
+        "requirement": "Design scalable, secure, maintainable solutions integrated into existing products and strategic offerings"
+      },
+      {
+        "tier": "core",
+        "requirement": "Active software development, code review, technical design, architecture review, and technical decision-making"
+      },
+      {
+        "tier": "core",
+        "requirement": "Own solution design decisions aligned with security, compliance, performance, and operational requirements"
+      },
+      {
+        "tier": "core",
+        "requirement": "Champion engineering practices, coding standards, testing strategies, and quality metrics"
+      },
+      {
+        "tier": "core",
+        "requirement": "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads"
+      },
+      {
+        "tier": "core",
+        "requirement": "Collaborate with data engineers and data scientists on data quality, availability, and successful AI/ML deployment"
+      },
+      {
+        "tier": "core",
+        "requirement": "Evaluate and adopt emerging technologies to improve application and AI system scalability, maintainability, performance, and reliability"
+      },
+      {
+        "tier": "core",
+        "requirement": "Stay current with software engineering, AI, machine learning, and cloud advances and recommend practical innovations"
+      },
+      {
+        "tier": "core",
+        "requirement": "Technical leadership, mentoring, complex technical problem resolution, and collaborative engineering culture"
+      },
+      {
+        "tier": "core",
+        "requirement": "Strong analytical, problem-solving, and troubleshooting ability"
+      },
+      {
+        "tier": "core",
+        "requirement": "Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering teams"
+      },
+      {
+        "tier": "core",
+        "requirement": "Communicate technical solutions, risks, and recommendations to leadership, business stakeholders, and clients"
+      },
+      {
+        "tier": "core",
+        "requirement": "Working familiarity with modern software delivery practices"
+      },
+      {
+        "tier": "core",
+        "requirement": "Apply AI best practices to improve generative AI solution quality and reliability"
+      }
+    ],
+    "warnings": [
+      "skill 'Large Language Models': filtered on response-gated text; not displayable from the provider",
+      "skill 'Retrieval-Augmented Generation': filtered on response-gated text; not displayable from the provider",
+      "skill 'Agentic AI': filtered on response-gated text; not displayable from the provider",
+      "skill 'AI Orchestration Patterns': filtered on response-gated text; not displayable from the provider",
+      "skill 'Prompt Engineering': filtered on response-gated text; not displayable from the provider",
+      "skill 'Data Integration': filtered on response-gated text; not displayable from the provider",
+      "education stream: filterable but response-gated (not displayable); verify via Harvest if needed"
+    ]
+  },
+  "fields_read_by_compiler": [
+    "companies",
+    "company_scale",
+    "education",
+    "education.degrees",
+    "education.streams",
+    "education.strength",
+    "evidence_signals",
+    "evidence_signals[].name",
+    "evidence_signals[].strength",
+    "exclusions",
+    "experience",
+    "experience.maximum_years",
+    "experience.minimum_years",
+    "experience.strength",
+    "location",
+    "location.entries",
+    "location.radius",
+    "location.strength",
+    "role_family",
+    "seniority",
+    "skill_any_of",
+    "skill_any_of[].any_of",
+    "skill_any_of[].relationship",
+    "skill_any_of[].strength",
+    "skills",
+    "skills[].name",
+    "skills[].relationship",
+    "skills[].strength"
+  ],
+  "fields_present_but_never_read": [
+    "domain",
+    "domain[].basis",
+    "domain[].basis.quote",
+    "domain[].basis.sources",
+    "domain[].name",
+    "domain[].strength",
+    "education.basis",
+    "education.basis.quote",
+    "education.basis.sources",
+    "evidence_signals[].basis",
+    "evidence_signals[].basis.quote",
+    "evidence_signals[].basis.sources",
+    "experience.basis",
+    "experience.basis.quote",
+    "experience.basis.sources",
+    "location.basis",
+    "location.basis.quote",
+    "location.basis.sources",
+    "role_archetype",
+    "role_archetype.confidence",
+    "role_archetype.rationale",
+    "role_archetype.value",
+    "skill_any_of[].basis",
+    "skill_any_of[].basis.quote",
+    "skill_any_of[].basis.sources",
+    "skills[].basis",
+    "skills[].basis.quote",
+    "skills[].basis.sources",
+    "skills[].proficiency"
+  ]
+}

@@ -1,0 +1,1083 @@
+{
+  "role": "R3",
+  "run": 5,
+  "filter_tree": {
+    "op": "and",
+    "conditions": [
+      {
+        "field": "basic_profile.location.country",
+        "type": "in",
+        "value": [
+          "India"
+        ]
+      },
+      {
+        "field": "basic_profile.location.state",
+        "type": "in",
+        "value": [
+          "Telangana"
+        ]
+      },
+      {
+        "field": "basic_profile.location.city",
+        "type": "in",
+        "value": [
+          "Hyderabad"
+        ]
+      },
+      {
+        "field": "years_of_experience_raw",
+        "type": "=>",
+        "value": 8
+      },
+      {
+        "field": "years_of_experience_raw",
+        "type": "=<",
+        "value": 12
+      },
+      {
+        "field": "experience.employment_details.current.title",
+        "type": "(.)",
+        "value": "FP&A and Business Finance"
+      },
+      {
+        "op": "all_of",
+        "conditions": [
+          {
+            "field": "education.schools.degree",
+            "type": "(.)",
+            "value": "Bachelor’s degree"
+          },
+          {
+            "op": "or",
+            "conditions": [
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Finance"
+              },
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Accounting"
+              },
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Economics"
+              },
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Business"
+              },
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Related discipline"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "leaves": [
+    [
+      "basic_profile.location.city",
+      "in",
+      "[\"Hyderabad\"]"
+    ],
+    [
+      "basic_profile.location.country",
+      "in",
+      "[\"India\"]"
+    ],
+    [
+      "basic_profile.location.state",
+      "in",
+      "[\"Telangana\"]"
+    ],
+    [
+      "education.schools.degree",
+      "(.)",
+      "\"Bachelor’s degree\""
+    ],
+    [
+      "education.schools.field_of_study",
+      "(.)",
+      "\"Accounting\""
+    ],
+    [
+      "education.schools.field_of_study",
+      "(.)",
+      "\"Business\""
+    ],
+    [
+      "education.schools.field_of_study",
+      "(.)",
+      "\"Economics\""
+    ],
+    [
+      "education.schools.field_of_study",
+      "(.)",
+      "\"Finance\""
+    ],
+    [
+      "education.schools.field_of_study",
+      "(.)",
+      "\"Related discipline\""
+    ],
+    [
+      "experience.employment_details.current.title",
+      "(.)",
+      "\"FP&A and Business Finance\""
+    ],
+    [
+      "years_of_experience_raw",
+      "=<",
+      "12"
+    ],
+    [
+      "years_of_experience_raw",
+      "=>",
+      "8"
+    ]
+  ],
+  "retrieval_title_family": [
+    "FP&A and Business Finance"
+  ],
+  "audit": [
+    {
+      "source": "location",
+      "strength": "required",
+      "route": "provider_hard_filter",
+      "provider_fields": [
+        "basic_profile.location.*"
+      ],
+      "temporal": null,
+      "capability": null,
+      "note": "entries=['Hyderabad, Telangana, India']"
+    },
+    {
+      "source": "experience",
+      "strength": "required",
+      "route": "provider_hard_filter",
+      "provider_fields": [
+        "years_of_experience_raw"
+      ],
+      "temporal": null,
+      "capability": null,
+      "note": ""
+    },
+    {
+      "source": "role_family",
+      "strength": "required",
+      "route": "provider_hard_filter",
+      "provider_fields": [
+        "experience.employment_details.current.title"
+      ],
+      "temporal": null,
+      "capability": null,
+      "note": "'FP&A and Business Finance' -> no taxonomy entry; used source title verbatim (no expansion)"
+    },
+    {
+      "source": "seniority",
+      "strength": "required",
+      "route": "admission_level_fit",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "value=Senior Manager; enforced by Phase-1a admission gate"
+    },
+    {
+      "source": "skill:Financial analysis",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Financial planning",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Budgeting",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Forecasting",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Variance analysis",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Financial modeling",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Scenario analysis",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Sensitivity analysis",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:Microsoft Excel",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill:ERP systems",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": "preferred/unverified -> judge/context, no hard filter"
+    },
+    {
+      "source": "skill_any_of:Power BI|Similar business intelligence/reporting platform",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": ""
+    },
+    {
+      "source": "skill_any_of:SAP|Oracle|Comparable ERP platforms",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary"
+      ],
+      "temporal": "any",
+      "capability": "disclose",
+      "note": ""
+    },
+    {
+      "source": "education",
+      "strength": "required",
+      "route": "provider_hard_filter",
+      "provider_fields": [
+        "education.schools.degree",
+        "education.schools.field_of_study"
+      ],
+      "temporal": null,
+      "capability": "enforce_but_not_verifiable",
+      "note": "degree + stream grouped on the same school entry (all_of)"
+    },
+    {
+      "source": "company:Unilever",
+      "strength": "preferred",
+      "route": "context_or_evidence",
+      "provider_fields": [
+        "experience.employment_details.company_name"
+      ],
+      "temporal": "any",
+      "capability": "context_or_evidence",
+      "note": "no verified provider preference mechanism -> context/evidence, not a filter"
+    },
+    {
+      "source": "company:Procter & Gamble",
+      "strength": "preferred",
+      "route": "context_or_evidence",
+      "provider_fields": [
+        "experience.employment_details.company_name"
+      ],
+      "temporal": "any",
+      "capability": "context_or_evidence",
+      "note": "no verified provider preference mechanism -> context/evidence, not a filter"
+    },
+    {
+      "source": "company:PepsiCo",
+      "strength": "preferred",
+      "route": "context_or_evidence",
+      "provider_fields": [
+        "experience.employment_details.company_name"
+      ],
+      "temporal": "any",
+      "capability": "context_or_evidence",
+      "note": "no verified provider preference mechanism -> context/evidence, not a filter"
+    },
+    {
+      "source": "company:Nestlé",
+      "strength": "preferred",
+      "route": "context_or_evidence",
+      "provider_fields": [
+        "experience.employment_details.company_name"
+      ],
+      "temporal": "any",
+      "capability": "context_or_evidence",
+      "note": "no verified provider preference mechanism -> context/evidence, not a filter"
+    },
+    {
+      "source": "company:Coca-Cola",
+      "strength": "preferred",
+      "route": "context_or_evidence",
+      "provider_fields": [
+        "experience.employment_details.company_name"
+      ],
+      "temporal": "any",
+      "capability": "context_or_evidence",
+      "note": "no verified provider preference mechanism -> context/evidence, not a filter"
+    },
+    {
+      "source": "company:Mondelez International",
+      "strength": "preferred",
+      "route": "context_or_evidence",
+      "provider_fields": [
+        "experience.employment_details.company_name"
+      ],
+      "temporal": "any",
+      "capability": "context_or_evidence",
+      "note": "no verified provider preference mechanism -> context/evidence, not a filter"
+    },
+    {
+      "source": "evidence:Meaningful FP&A or business-finance ownership",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Commercial judgment",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Stakeholder management",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Strong business partnering and communication",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Experience presenting financial analysis and recommendations to senior stakeholders",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Working knowledge of Power BI or a similar business intelligence/reporting platform",
+      "strength": "required",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Professional qualification such as CA, CMA, ACCA, or MBA Finance",
+      "strength": "preferred",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Experience supporting commercial, operations, or business-unit leadership",
+      "strength": "preferred",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Lead annual budgeting, forecasting, and long-range planning for assigned business areas",
+      "strength": "context",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Develop and maintain financial models supporting planning, scenario analysis, investment decisions, and business performance reviews",
+      "strength": "context",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Analyze actuals against budget and forecast, identify variance drivers, and recommend actions",
+      "strength": "context",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Prepare monthly and quarterly management reporting with clear business-performance commentary",
+      "strength": "context",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Partner with business and functional leaders on financial implications of strategic and operational initiatives",
+      "strength": "context",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Develop scenario and sensitivity models for revenue, cost, headcount, and investment decisions",
+      "strength": "context",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Improve financial planning and reporting through automation, standardization, and data-driven analysis",
+      "strength": "context",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Present financial insights and recommendations to senior leadership",
+      "strength": "context",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Work cross-functionally with Accounting, Commercial, Operations, and other business teams",
+      "strength": "context",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Support ad hoc financial analysis and strategic projects",
+      "strength": "context",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    },
+    {
+      "source": "evidence:Translate financial information into actionable insights, improve forecasting accuracy, and support strategic and operational decisions",
+      "strength": "context",
+      "route": "downstream_evidence",
+      "provider_fields": [],
+      "temporal": null,
+      "capability": null,
+      "note": "verified by RequirementJudge; never a provider filter"
+    }
+  ],
+  "warnings": [
+    "education stream: filterable but response-gated (not displayable); verify via Harvest if needed"
+  ],
+  "normalizations": [],
+  "downstream_checklist": [
+    {
+      "tier": "core",
+      "requirement": "Financial analysis"
+    },
+    {
+      "tier": "core",
+      "requirement": "Financial planning"
+    },
+    {
+      "tier": "core",
+      "requirement": "Budgeting"
+    },
+    {
+      "tier": "core",
+      "requirement": "Forecasting"
+    },
+    {
+      "tier": "core",
+      "requirement": "Variance analysis"
+    },
+    {
+      "tier": "core",
+      "requirement": "Financial modeling"
+    },
+    {
+      "tier": "core",
+      "requirement": "Scenario analysis"
+    },
+    {
+      "tier": "core",
+      "requirement": "Sensitivity analysis"
+    },
+    {
+      "tier": "core",
+      "requirement": "Microsoft Excel"
+    },
+    {
+      "tier": "core",
+      "requirement": "ERP systems"
+    },
+    {
+      "tier": "core",
+      "requirement": "Power BI|Similar business intelligence/reporting platform"
+    },
+    {
+      "tier": "core",
+      "requirement": "SAP|Oracle|Comparable ERP platforms"
+    },
+    {
+      "tier": "core",
+      "requirement": "Meaningful FP&A or business-finance ownership"
+    },
+    {
+      "tier": "core",
+      "requirement": "Commercial judgment"
+    },
+    {
+      "tier": "core",
+      "requirement": "Stakeholder management"
+    },
+    {
+      "tier": "core",
+      "requirement": "Strong business partnering and communication"
+    },
+    {
+      "tier": "core",
+      "requirement": "Experience presenting financial analysis and recommendations to senior stakeholders"
+    },
+    {
+      "tier": "core",
+      "requirement": "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+    },
+    {
+      "tier": "supporting",
+      "requirement": "Professional qualification such as CA, CMA, ACCA, or MBA Finance"
+    },
+    {
+      "tier": "supporting",
+      "requirement": "Experience supporting commercial, operations, or business-unit leadership"
+    },
+    {
+      "tier": "differentiator",
+      "requirement": "Lead annual budgeting, forecasting, and long-range planning for assigned business areas"
+    },
+    {
+      "tier": "differentiator",
+      "requirement": "Develop and maintain financial models supporting planning, scenario analysis, investment decisions, and business performance reviews"
+    },
+    {
+      "tier": "differentiator",
+      "requirement": "Analyze actuals against budget and forecast, identify variance drivers, and recommend actions"
+    },
+    {
+      "tier": "differentiator",
+      "requirement": "Prepare monthly and quarterly management reporting with clear business-performance commentary"
+    },
+    {
+      "tier": "differentiator",
+      "requirement": "Partner with business and functional leaders on financial implications of strategic and operational initiatives"
+    },
+    {
+      "tier": "differentiator",
+      "requirement": "Develop scenario and sensitivity models for revenue, cost, headcount, and investment decisions"
+    },
+    {
+      "tier": "differentiator",
+      "requirement": "Improve financial planning and reporting through automation, standardization, and data-driven analysis"
+    },
+    {
+      "tier": "differentiator",
+      "requirement": "Present financial insights and recommendations to senior leadership"
+    },
+    {
+      "tier": "differentiator",
+      "requirement": "Work cross-functionally with Accounting, Commercial, Operations, and other business teams"
+    },
+    {
+      "tier": "differentiator",
+      "requirement": "Support ad hoc financial analysis and strategic projects"
+    },
+    {
+      "tier": "differentiator",
+      "requirement": "Translate financial information into actionable insights, improve forecasting accuracy, and support strategic and operational decisions"
+    }
+  ],
+  "audit_record": {
+    "search_id": "R3-run5",
+    "confirmation_id": null,
+    "intent_hash": "2c3ab0f5b1ad99e4",
+    "plan_hash": "4110eb2e8afa1ba7",
+    "compiler_version": "v1-2026-10-02",
+    "capability_map_version": "v1-2026-10-01",
+    "taxonomy_version": "v1-2026-10-02",
+    "retrieval_title_family": [
+      "FP&A and Business Finance"
+    ],
+    "compiled_provider_plan": {
+      "op": "and",
+      "conditions": [
+        {
+          "field": "basic_profile.location.country",
+          "type": "in",
+          "value": [
+            "India"
+          ]
+        },
+        {
+          "field": "basic_profile.location.state",
+          "type": "in",
+          "value": [
+            "Telangana"
+          ]
+        },
+        {
+          "field": "basic_profile.location.city",
+          "type": "in",
+          "value": [
+            "Hyderabad"
+          ]
+        },
+        {
+          "field": "years_of_experience_raw",
+          "type": "=>",
+          "value": 8
+        },
+        {
+          "field": "years_of_experience_raw",
+          "type": "=<",
+          "value": 12
+        },
+        {
+          "field": "experience.employment_details.current.title",
+          "type": "(.)",
+          "value": "FP&A and Business Finance"
+        },
+        {
+          "op": "all_of",
+          "conditions": [
+            {
+              "field": "education.schools.degree",
+              "type": "(.)",
+              "value": "Bachelor’s degree"
+            },
+            {
+              "op": "or",
+              "conditions": [
+                {
+                  "field": "education.schools.field_of_study",
+                  "type": "(.)",
+                  "value": "Finance"
+                },
+                {
+                  "field": "education.schools.field_of_study",
+                  "type": "(.)",
+                  "value": "Accounting"
+                },
+                {
+                  "field": "education.schools.field_of_study",
+                  "type": "(.)",
+                  "value": "Economics"
+                },
+                {
+                  "field": "education.schools.field_of_study",
+                  "type": "(.)",
+                  "value": "Business"
+                },
+                {
+                  "field": "education.schools.field_of_study",
+                  "type": "(.)",
+                  "value": "Related discipline"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "requirements": {
+      "provider_enforced": [
+        "location",
+        "experience",
+        "role_family",
+        "education"
+      ],
+      "admission_enforced": [
+        "seniority"
+      ],
+      "downstream_verified": [
+        "skill:Financial analysis",
+        "skill:Financial planning",
+        "skill:Budgeting",
+        "skill:Forecasting",
+        "skill:Variance analysis",
+        "skill:Financial modeling",
+        "skill:Scenario analysis",
+        "skill:Sensitivity analysis",
+        "skill:Microsoft Excel",
+        "skill:ERP systems",
+        "skill_any_of:Power BI|Similar business intelligence/reporting platform",
+        "skill_any_of:SAP|Oracle|Comparable ERP platforms",
+        "evidence:Meaningful FP&A or business-finance ownership",
+        "evidence:Commercial judgment",
+        "evidence:Stakeholder management",
+        "evidence:Strong business partnering and communication",
+        "evidence:Experience presenting financial analysis and recommendations to senior stakeholders",
+        "evidence:Working knowledge of Power BI or a similar business intelligence/reporting platform",
+        "evidence:Professional qualification such as CA, CMA, ACCA, or MBA Finance",
+        "evidence:Experience supporting commercial, operations, or business-unit leadership",
+        "evidence:Lead annual budgeting, forecasting, and long-range planning for assigned business areas",
+        "evidence:Develop and maintain financial models supporting planning, scenario analysis, investment decisions, and business performance reviews",
+        "evidence:Analyze actuals against budget and forecast, identify variance drivers, and recommend actions",
+        "evidence:Prepare monthly and quarterly management reporting with clear business-performance commentary",
+        "evidence:Partner with business and functional leaders on financial implications of strategic and operational initiatives",
+        "evidence:Develop scenario and sensitivity models for revenue, cost, headcount, and investment decisions",
+        "evidence:Improve financial planning and reporting through automation, standardization, and data-driven analysis",
+        "evidence:Present financial insights and recommendations to senior leadership",
+        "evidence:Work cross-functionally with Accounting, Commercial, Operations, and other business teams",
+        "evidence:Support ad hoc financial analysis and strategic projects",
+        "evidence:Translate financial information into actionable insights, improve forecasting accuracy, and support strategic and operational decisions"
+      ],
+      "context_only": [
+        "company:Unilever",
+        "company:Procter & Gamble",
+        "company:PepsiCo",
+        "company:Nestlé",
+        "company:Coca-Cola",
+        "company:Mondelez International"
+      ],
+      "unverifiable": []
+    },
+    "downstream_checklist": [
+      {
+        "tier": "core",
+        "requirement": "Financial analysis"
+      },
+      {
+        "tier": "core",
+        "requirement": "Financial planning"
+      },
+      {
+        "tier": "core",
+        "requirement": "Budgeting"
+      },
+      {
+        "tier": "core",
+        "requirement": "Forecasting"
+      },
+      {
+        "tier": "core",
+        "requirement": "Variance analysis"
+      },
+      {
+        "tier": "core",
+        "requirement": "Financial modeling"
+      },
+      {
+        "tier": "core",
+        "requirement": "Scenario analysis"
+      },
+      {
+        "tier": "core",
+        "requirement": "Sensitivity analysis"
+      },
+      {
+        "tier": "core",
+        "requirement": "Microsoft Excel"
+      },
+      {
+        "tier": "core",
+        "requirement": "ERP systems"
+      },
+      {
+        "tier": "core",
+        "requirement": "Power BI|Similar business intelligence/reporting platform"
+      },
+      {
+        "tier": "core",
+        "requirement": "SAP|Oracle|Comparable ERP platforms"
+      },
+      {
+        "tier": "core",
+        "requirement": "Meaningful FP&A or business-finance ownership"
+      },
+      {
+        "tier": "core",
+        "requirement": "Commercial judgment"
+      },
+      {
+        "tier": "core",
+        "requirement": "Stakeholder management"
+      },
+      {
+        "tier": "core",
+        "requirement": "Strong business partnering and communication"
+      },
+      {
+        "tier": "core",
+        "requirement": "Experience presenting financial analysis and recommendations to senior stakeholders"
+      },
+      {
+        "tier": "core",
+        "requirement": "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+      },
+      {
+        "tier": "supporting",
+        "requirement": "Professional qualification such as CA, CMA, ACCA, or MBA Finance"
+      },
+      {
+        "tier": "supporting",
+        "requirement": "Experience supporting commercial, operations, or business-unit leadership"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Lead annual budgeting, forecasting, and long-range planning for assigned business areas"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Develop and maintain financial models supporting planning, scenario analysis, investment decisions, and business performance reviews"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Analyze actuals against budget and forecast, identify variance drivers, and recommend actions"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Prepare monthly and quarterly management reporting with clear business-performance commentary"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Partner with business and functional leaders on financial implications of strategic and operational initiatives"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Develop scenario and sensitivity models for revenue, cost, headcount, and investment decisions"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Improve financial planning and reporting through automation, standardization, and data-driven analysis"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Present financial insights and recommendations to senior leadership"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Work cross-functionally with Accounting, Commercial, Operations, and other business teams"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Support ad hoc financial analysis and strategic projects"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Translate financial information into actionable insights, improve forecasting accuracy, and support strategic and operational decisions"
+      }
+    ],
+    "warnings": [
+      "education stream: filterable but response-gated (not displayable); verify via Harvest if needed"
+    ]
+  },
+  "fields_read_by_compiler": [
+    "companies",
+    "companies[].name",
+    "companies[].relationship",
+    "companies[].strength",
+    "company_scale",
+    "education",
+    "education.degrees",
+    "education.streams",
+    "education.strength",
+    "evidence_signals",
+    "evidence_signals[].name",
+    "evidence_signals[].strength",
+    "exclusions",
+    "experience",
+    "experience.maximum_years",
+    "experience.minimum_years",
+    "experience.strength",
+    "location",
+    "location.entries",
+    "location.radius",
+    "location.strength",
+    "role_family",
+    "seniority",
+    "seniority.strength",
+    "seniority.value",
+    "skill_any_of",
+    "skill_any_of[].any_of",
+    "skill_any_of[].relationship",
+    "skill_any_of[].strength",
+    "skills",
+    "skills[].name",
+    "skills[].relationship",
+    "skills[].strength"
+  ],
+  "fields_present_but_never_read": [
+    "companies[].basis",
+    "companies[].basis.quote",
+    "companies[].basis.sources",
+    "domain",
+    "domain[].basis",
+    "domain[].basis.quote",
+    "domain[].basis.sources",
+    "domain[].name",
+    "domain[].strength",
+    "education.basis",
+    "education.basis.quote",
+    "education.basis.sources",
+    "evidence_signals[].basis",
+    "evidence_signals[].basis.quote",
+    "evidence_signals[].basis.sources",
+    "experience.basis",
+    "experience.basis.quote",
+    "experience.basis.sources",
+    "location.basis",
+    "location.basis.quote",
+    "location.basis.sources",
+    "location.work_mode",
+    "role_archetype",
+    "role_archetype.confidence",
+    "role_archetype.rationale",
+    "role_archetype.value",
+    "semantic_exclusions",
+    "semantic_exclusions[].basis",
+    "semantic_exclusions[].basis.quote",
+    "semantic_exclusions[].basis.sources",
+    "semantic_exclusions[].concept",
+    "semantic_exclusions[].includes",
+    "seniority.basis",
+    "seniority.basis.quote",
+    "seniority.basis.sources",
+    "skill_any_of[].basis",
+    "skill_any_of[].basis.quote",
+    "skill_any_of[].basis.sources",
+    "skills[].basis",
+    "skills[].basis.quote",
+    "skills[].basis.sources",
+    "skills[].proficiency"
+  ]
+}
