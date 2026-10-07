@@ -38,8 +38,8 @@ from backend.models.candidate_evidence import HarvestEvidence, TextSource
 from backend.models.search_intent import SearchIntent
 from backend.services.candidate_evidence_builder import build_candidate_evidence
 from backend.services.consumer_input import resolve as resolve_consumer_input
-from backend.services.evidence_check import (DEPTH_ORDER, EvidenceCheck, INSUFFICIENT_EVIDENCE, NOT_PRESENT, OBSERVED_DEPTHS, PRESENT, RETRIABLE_QUOTE_FAILURES, WORK_EVIDENCE_TYPES,
-                                             meets_depth, model_predicate, negative_checks, positive_checks, validate_binding, verify_quote)
+from backend.services.evidence_check import (DEPTH_ORDER, EVIDENCE_BASES, EvidenceCheck, INSUFFICIENT_EVIDENCE, NOT_PRESENT, OBSERVED_DEPTHS, PRESENT, RETRIABLE_QUOTE_FAILURES, WORK_EVIDENCE_TYPES,
+                                             effective_depth, maximum_supported_depth, meets_depth, model_predicate, negative_checks, positive_checks, validate_binding, verify_quote)
 from backend.services.requirement_semantics import evaluate as evaluate_recognized_requirement, recognize_requirement
 
 logger = logging.getLogger(__name__)
@@ -171,7 +171,14 @@ Rules:
 4. If you cannot give such a quote, answer "unspecified".
 5. If several passages differ, report the deepest depth that has a valid quote.
 
-Return only JSON: {"results":[{"d":<skill number>,"observed_depth":"unspecified|working_knowledge|hands_on|advanced","p":<passage number or null>,"quote":"<exact quote or empty>"}]}
+For every skill also report the evidence_basis: what KIND of evidence the quote is.
+- "explicit_depth": the quote itself states a proficiency level for the skill (for example "advanced", "expert", "hands-on", "working knowledge").
+- "concrete_skill_use": the quote describes the candidate actually building, creating, operating, implementing, analysing or performing work directly with the skill.
+- "routine_skill_use": the quote describes ordinary, repeated or basic use of the skill.
+- "generic_involvement": the quote says the candidate worked on, took part in, was involved with or was responsible for something that involves the skill, without describing concrete use of the skill and without stating a depth.
+- "no_depth_evidence": the skill is only listed, appears in a title, or is otherwise not demonstrated.
+
+Return only JSON: {"results":[{"d":<skill number>,"observed_depth":"unspecified|working_knowledge|hands_on|advanced","evidence_basis":"explicit_depth|concrete_skill_use|routine_skill_use|generic_involvement|no_depth_evidence","p":<passage number or null>,"quote":"<exact quote or empty>"}]}
 Include every skill exactly once."""
 
 
@@ -645,15 +652,23 @@ class RequirementJudge:
         requirement but demonstrated is `partly`; undemonstrated is `not_evidenced`."""
         required = check.proficiency
         base = {"tier": check.tier, "signal_text": check.label, "check_id": check.check_id, "criterion": check.criterion, "verdict": "not_evidenced",
-                "observed_depth": "unspecified", "required_depth": required, "claimed_depth": None}
+                "observed_depth": "unspecified", "required_depth": required, "claimed_depth": None, "evidence_basis": None, "maximum_supported_depth": "unspecified",
+                "capped": False}
         if not row:
             return base, None
         claimed = str(row.get("observed_depth") or "").strip().casefold().replace("-", "_").replace(" ", "_")
+        basis = str(row.get("evidence_basis") or "").strip().casefold().replace("-", "_").replace(" ", "_")
+        basis = basis if basis in EVIDENCE_BASES else None
+        base.update(evidence_basis=basis)
         if claimed not in OBSERVED_DEPTHS:
             base.update(claimed_depth=claimed or None, discard_reason="unrecognised_observed_depth")
             return base, None
         base["claimed_depth"] = claimed
         if claimed == "unspecified":
+            return base, None
+        if basis is None:
+            # no recognised evidence basis: nothing is supported, so the claim cannot be credited (never silently passes)
+            base.update(discard_reason="missing_evidence_basis", capped=True)
             return base, None
         quote = str(row.get("quote") or "").strip()
         try:
@@ -670,9 +685,17 @@ class RequirementJudge:
             base.update(discard_reason=bind, discarded_quote=quote[:240])
             outcome.binding_discards.append({"check_id": check.check_id, "reason": bind, "quote": quote[:240]})
             return base, bind
-        met = meets_depth(claimed, required)
-        base.update(verdict="met" if met else "partly", observed_depth=claimed, quote=quote, term=check.subject, source=passage.label, evidence_detail=passage.detail,
-                    evidence_type=passage.evidence_type, strength=passage.strength, depth_rule="observed_depth >= required_depth (unspecified < working_knowledge < hands_on < advanced)")
+        # the CEILING: the deepest depth the cited evidence can support, decided by code from the evidence basis. The model can never raise the depth above it.
+        ceiling = maximum_supported_depth(basis, quote, check.subject_terms)
+        effective = effective_depth(claimed, ceiling)
+        base.update(maximum_supported_depth=ceiling, capped=DEPTH_ORDER[effective] < DEPTH_ORDER[claimed])
+        if effective == "unspecified":
+            base.update(discard_reason="evidence_basis_supports_no_depth", discarded_quote=quote[:240])
+            return base, None
+        met = meets_depth(effective, required)
+        base.update(verdict="met" if met else "partly", observed_depth=effective, quote=quote, term=check.subject, source=passage.label, evidence_detail=passage.detail,
+                    evidence_type=passage.evidence_type, strength=passage.strength,
+                    depth_rule="effective_depth = min(claimed, ceiling(evidence_basis)); effective_depth >= required_depth (unspecified < working_knowledge < hands_on < advanced)")
         return base, None
 
     @staticmethod

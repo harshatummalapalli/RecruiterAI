@@ -1,8 +1,8 @@
-# RESULTS — observed-depth contract and binding morphology (real Judge model; synthetic profiles; targeted test only)
+# RESULTS — observed-depth contract, binding morphology and the evidence-basis ceiling (real Judge model; synthetic profiles; targeted test only)
 
 Final Evidence Check hardening pass. **Not called:** CrustData, Harvest, any provider, any retrieval; **not deployed; `StructuredHiringIntent`, the compiler, admission and ranking unchanged.** Only the Judge's own model ran (gpt-4o-mini, temperature 0) on 30 synthetic judge runs (125 calls, about $0.0152). The full earlier synthetic suite was not re-run. Contract: `backend/services/DOWNSTREAM_CONSUMER_CONTRACT.md` (§3c-3f). Raw runs: `results/depth_matrix/raw/`.
 
-## Verdict
+## Verdict of the observed-depth pass (superseded by the final pass in §6)
 **FAIL: observed-depth extraction is not reliable.** Declared before the run: PASS only if (A) the model's observed depth is the expected one in every cell and run, (B) the deterministic comparison is right in every cell and (C) every accepted observation has a gate-passing, skill-naming quote from demonstrated work. Result: **A 70/90**, **B (code) 90/90**, **B (end-to-end verdict) 82/90**, **C 90/90**. Per the escalation rule this is where the work stops: no prompt tuning, no stronger model was run.
 
 ## 1. What changed
@@ -73,5 +73,65 @@ Per cell (6 runs; A = the model reported the expected depth, B' = end-to-end ver
 
 **Decision.** Observed-depth extraction is NOT yet reliable enough to pass the declared bar, and the remaining problem is mostly model capability, with one ambiguous boundary. Nothing was tuned and no stronger model was run. For review, in order of cost: (1) decide the working_knowledge / hands_on boundary for ubiquitous tools (a contract decision, no code); (2) only then evaluate a stronger model on this same matrix with the contract unchanged, as a single comparison; (3) if a depth requirement is critical, treat `working_knowledge` as non-binding (it is the level the small model over-credits) and keep hands_on / advanced as the binding depths.
 
-## 6. Hard stop
+## 6. Final pass: evidence basis and the deterministic ceiling
+Declared before the run, in `depth_basis.py`: the **hard gate** is that no evidence is credited above the maximum depth the contract allows and no named-only / familiar cell is `met`; the quality bar is zero quote-gate / binding / check-id / comparison violations and at least 50% fewer false-positive depth cases than the frozen baseline. Model agreement was not the bar.
+
+**What changed (and nothing else).** The depth pass now also returns an `evidence_basis` per skill: `explicit_depth` / `concrete_skill_use` / `routine_skill_use` / `generic_involvement` / `no_depth_evidence`. Code maps the basis to a CEILING (`no_depth_evidence`, `generic_involvement` -> unspecified; `routine_skill_use` -> working_knowledge; `concrete_skill_use` -> hands_on; `explicit_depth` -> the depth the quote itself states about the skill, else unspecified) and credits `min(model's observed_depth, ceiling)`; a missing or unrecognised basis supports nothing. The depth prompt gained only the basis definitions and output field; the matrix, evidence texts, checks, requirement / exclusion prompts, quote gate, binding, verifier and model (gpt-4o-mini, temperature 0) are the same (30 runs, 126 calls, about $0.0167). Raw runs: `results/depth_matrix/raw_basis/`; baseline: `results/depth_matrix/raw/`.
+
+| measure | result |
+|---|---|
+| A. evidence_basis in the acceptable set for its level | 66/90 |
+| B. observed_depth: model's own report / credited after the ceiling | 78/90 / 63/90 |
+| C. maximum_supported_depth equals the evidence level | 63/90 |
+| D. deterministic comparison right given the credited depth | 90/90 |
+| E. final verdict: met / not met correct / three-way correct | 81/90 / 80/90 |
+| F. quote gate: credited depths failing the gate / first-pass claims failing it / retried and recovered | 0 / 5 of 60 / 9 and 7 |
+| G. binding: unknown or duplicate check_id / credited quote not naming its skill / not demonstrated work / discarded by binding | 0 / 0 / 0 / 4 |
+| payload violations / provider or compiler tokens in any request / failed runs | 0 / 0 / 0 |
+
+**The gate.**
+| check | result | note |
+|---|---|---|
+| credited above the ceiling of its own evidence basis | 0 | 0 required |
+| `met` on a named-only or familiar profile (36 cells) | 0 | 0 required |
+| named-only / familiar verdicts | not_evidenced×36 | all insufficient |
+| false-positive `met` (requirement not met by the evidence): baseline -> now | 6 -> 0 | unspecified\|Power BI\|required working_knowledge (baseline) |
+| credited above the evidence's true level: baseline -> now | 18 -> 6 | working_knowledge\|Microsoft Excel\|credited hands_on |
+| model claimed a depth above the evidence: baseline -> now (the model's own report) | 18 -> 12 |  |
+| of today's model over-claims: capped by the ceiling / still credited too deep | 6 / 6 |  |
+| of the baseline's 18 too-deep cells (same profile, skill, run): now credited at or below the evidence / not credited at all / still too deep | 12 / 12 / 6 |  |
+| stronger-than-required cells met | 17/18 |  |
+
+**Acceptance: ACCEPTED.** No evidence was credited above the ceiling (0), no named-only or familiar profile satisfied a depth requirement (0 of 36; every one is `not_evidenced`, i.e. insufficient evidence), structural violations 0, and false-positive depth cases fell 6 -> 0 (100% fewer). The depth contract is therefore accepted and is not to be tuned further.
+
+Per cell (6 runs each; every column is a distribution over the 6 runs):
+
+| evidence level | skill | required | evidence_basis | model's observed depth | ceiling | credited | verdicts | truth |
+|---|---|---|---|---|---|---|---|---|
+| unspecified (none) | Java | hands_on | no_depth_evidence×6 | unspecified×6 | unspecified×6 | unspecified×6 | not_evidenced×6 | not_evidenced |
+| unspecified (none) | Microsoft Excel | advanced | no_depth_evidence×6 | unspecified×6 | unspecified×6 | unspecified×6 | not_evidenced×6 | not_evidenced |
+| unspecified (none) | Power BI | working_knowledge | generic_involvement×6 | working_knowledge×6 | unspecified×6 | unspecified×6 | not_evidenced×6 | not_evidenced |
+| unspecified (familiar) | Java | hands_on | no_depth_evidence×6 | unspecified×6 | unspecified×6 | unspecified×6 | not_evidenced×6 | not_evidenced |
+| unspecified (familiar) | Microsoft Excel | advanced | no_depth_evidence×6 | unspecified×6 | unspecified×6 | unspecified×6 | not_evidenced×6 | not_evidenced |
+| unspecified (familiar) | Power BI | working_knowledge | no_depth_evidence×6 | unspecified×6 | unspecified×6 | unspecified×6 | not_evidenced×6 | not_evidenced |
+| working_knowledge (working_knowledge) | Java | hands_on | explicit_depth×1, routine_skill_use×5 | working_knowledge×6 | unspecified×1, working_knowledge×5 | unspecified×1, working_knowledge×5 | not_evidenced×1, partly×5 | partly |
+| working_knowledge (working_knowledge) | Microsoft Excel | advanced | concrete_skill_use×6 | hands_on×6 | hands_on×6 | hands_on×6 | partly×6 | partly |
+| working_knowledge (working_knowledge) | Power BI | working_knowledge | explicit_depth×2, routine_skill_use×4 | working_knowledge×6 | unspecified×2, working_knowledge×4 | unspecified×2, working_knowledge×4 | met×4, not_evidenced×2 | met |
+| hands_on (hands_on) | Java | hands_on | concrete_skill_use×6 | hands_on×6 | hands_on×6 | hands_on×6 | met×6 | met |
+| hands_on (hands_on) | Microsoft Excel | advanced | concrete_skill_use×6 | hands_on×6 | hands_on×6 | hands_on×6 | partly×6 | partly |
+| hands_on (hands_on) | Power BI | working_knowledge | concrete_skill_use×6 | hands_on×6 | hands_on×6 | hands_on×6 | met×6 | met |
+| advanced (advanced) | Java | hands_on | concrete_skill_use×6 | advanced×6 | hands_on×5, unspecified×1 | hands_on×5, unspecified×1 | met×5, not_evidenced×1 | met |
+| advanced (advanced) | Microsoft Excel | advanced | concrete_skill_use×6 | advanced×6 | hands_on×6 | hands_on×6 | partly×6 | met |
+| advanced (advanced) | Power BI | working_knowledge | concrete_skill_use×6 | advanced×6 | hands_on×6 | hands_on×6 | met×6 | met |
+
+**What the ceiling did.** 23 of 90 observations were capped or voided by the ceiling or the missing-basis rule. It removed the exact failure of the previous pass: the "named only" profile ("worked on Java, Power BI and Microsoft Excel projects") is labelled `generic_involvement` / `no_depth_evidence` and the model's `working_knowledge` for Power BI is voided (6 of 6), and "advanced" claims resting on concrete use are limited to hands_on.
+
+**What it did not fix, and what it costs (9 false negatives, all on the safe side):**
+* **Over-crediting is not eliminated, only bounded by the model's own basis label.** The "working knowledge" profile's Excel text ("everyday tasks such as sums, simple formulas and charts") is labelled `concrete_skill_use` on 6 of 6 runs, so the ceiling allows hands_on; the result is still not a false positive only because the Excel requirement is `advanced`. A hands_on requirement on that evidence would have been over-credited. This is a model labelling limitation (the model treats everyday use as concrete use); it is not corrected by a further schema layer.
+* **Genuinely advanced evidence is under-credited.** The advanced profile is labelled `concrete_skill_use` (not `explicit_depth`) on 18 of 18 observations although it contains "Advanced Java expert" / "Advanced Microsoft Excel user", so the ceiling is hands_on: the advanced Excel requirement is `partly` (6 of 6), not `met`. Under the contract an `advanced` requirement is satisfiable only when the model labels the evidence `explicit_depth` AND the quote itself states advanced proficiency ("advanced", "expert", "highly proficient", "mastery"); sophisticated concrete work alone is capped at hands_on by design.
+* **Conservative voiding.** 4 observations were voided by the existing binding rule (the quote did not name its skill: "...with working knowledge of each"); they are insufficient evidence, not false positives.
+
+Every under-credit lands in `partly` or `not_evidenced`. A recruiter sees "demonstrated but below the requirement" or "insufficient evidence", never a silent pass.
+
+## 7. Hard stop
 No CrustData. No retrieval. No deployment. Live retrieval is not to run until this is reviewed.

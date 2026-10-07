@@ -101,6 +101,48 @@ def meets_depth(observed: Optional[str], required: Optional[str]) -> bool:
     return DEPTH_ORDER.get(observed or "unspecified", 0) >= DEPTH_ORDER[required]
 
 
+# ----------------------------------------------------------------------------------------------------------------------
+# EVIDENCE BASIS and the deterministic CEILING. The model may interpret the evidence; code defines the MAXIMUM depth that evidence can support.
+# ----------------------------------------------------------------------------------------------------------------------
+EVIDENCE_BASES = ("explicit_depth", "concrete_skill_use", "routine_skill_use", "generic_involvement", "no_depth_evidence")
+# generic and skill-agnostic. explicit_depth is not in this table: its ceiling is the strongest depth the quote EXPLICITLY states (explicit_ceiling).
+BASIS_CEILING = {"no_depth_evidence": "unspecified", "generic_involvement": "unspecified", "routine_skill_use": "working_knowledge", "concrete_skill_use": "hands_on"}
+# An explicit depth statement is recognised only from this closed, generic list. Any other adjective ("proficient", "solid", "rockstar") is NOT mapped to a depth.
+_EXPLICIT_CUES = (
+    ("advanced", re.compile(r"\badvanced\b|\bexpert(?:ise)?\b|\bhighly proficient\b|\bmastery\b", _I)),
+    ("hands_on", re.compile(r"\bhands[- ]on\b", _I)),
+    ("working_knowledge", re.compile(r"\bworking knowledge\b", _I)),
+)
+
+
+def explicit_ceiling(quote: str, subject_terms: Tuple[str, ...] = ()) -> str:
+    """The strongest depth the quote EXPLICITLY states about the skill: a recognised cue (advanced / expert; hands-on; working knowledge) in a clause that also names the
+    skill. A quote with no recognised cue states no depth: `unspecified`. When the check has no lexical subject, the whole quote is the clause."""
+    clauses = [c for c in re.split(r"[.;:\n]", quote or "") if c.strip()]
+    scope = [c for c in clauses if not subject_terms or subject_in(c, subject_terms)] or []
+    best = "unspecified"
+    for c in scope:
+        for depth, rx in _EXPLICIT_CUES:
+            if rx.search(c) and DEPTH_ORDER[depth] > DEPTH_ORDER[best]:
+                best = depth
+    return best
+
+
+def maximum_supported_depth(basis: Optional[str], quote: str, subject_terms: Tuple[str, ...] = ()) -> str:
+    """The CEILING: the deepest depth the cited evidence can be credited with, decided by code from the evidence basis the model reported.
+    no_depth_evidence / generic_involvement -> unspecified; routine_skill_use -> working_knowledge; concrete_skill_use -> hands_on; explicit_depth -> the depth the quote
+    explicitly states. A missing or unrecognised basis supports nothing (unspecified)."""
+    if basis == "explicit_depth":
+        return explicit_ceiling(quote, subject_terms)
+    return BASIS_CEILING.get(basis or "", "unspecified")
+
+
+def effective_depth(claimed: Optional[str], ceiling: str) -> str:
+    """min(the model's observed depth, the ceiling) on the ordinal ladder. The model can never claim a depth above the ceiling."""
+    c = claimed if claimed in DEPTH_ORDER else "unspecified"
+    return c if DEPTH_ORDER[c] <= DEPTH_ORDER[ceiling] else ceiling
+
+
 _STOP = {"the", "and", "of", "or", "a", "an", "in", "for", "to", "with", "microsoft", "ms"}
 _GENERIC_ALT = re.compile(r"^\s*(?:similar|comparable|equivalent|related|other|any|modern)\b", _I)
 

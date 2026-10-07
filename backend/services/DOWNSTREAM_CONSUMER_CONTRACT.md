@@ -96,11 +96,13 @@ unspecified < working_knowledge < hands_on < advanced        (observed_depth)
 ```
 with a quote. The model is **never told the required depth** (its payload is the passages and the skill names only). Then code applies `meets_depth(observed, required)` = `observed_depth >= required_depth`: **met** if so; **partly** if a depth is demonstrated but below the requirement (never counts as evidence); **not_evidenced** if `unspecified`. Stronger evidence therefore meets a weaker requirement by construction.
 
+**Final depth contract (§14): the model also reports an `evidence_basis`, and CODE caps the credited depth at the ceiling that basis allows: `effective_depth = min(observed_depth, maximum_supported_depth(evidence_basis))`. The verdict is `meets_depth(effective_depth, required_depth)`. The model's own `observed_depth` can never raise the credited depth above the ceiling.**
+
 * `unspecified` = absent, or only named (a skills list, a title, a headline, years of experience, a description with no account of the work), or only studied / "familiar" without use in real work. **A depth is never inferred from a title, a generic verb ("worked on", "responsible for") or years alone.**
 * An observed depth above `unspecified` is accepted only with a quote that passes the quote gate (§3f), names the skill (§3c) and comes from demonstrated work or a certification. Otherwise the observation is recorded as `unspecified` with the model's `claimed_depth` and the `discard_reason`; a quote-gate failure gets the one narrow retry (§3f).
 * The review pass does not apply to a depth judgment (a second model comparison would defeat the point). The plain skill ("Java") remains a separate check asked and reviewed as before.
 * The depth text of a source-stated phrase ("Working knowledge of X") is lifted into the check's required depth only from an explicit leading phrase; an unsupported depth stays `UNRESOLVED` and is never a check.
-* Judgment fields: `observed_depth`, `claimed_depth`, `required_depth`, `depth_rule`, plus the usual quote / source / evidence type.
+* Judgment fields: `observed_depth` (the CREDITED depth, after the ceiling), `claimed_depth` (what the model said), `evidence_basis`, `maximum_supported_depth`, `capped`, `required_depth`, `depth_rule`, plus the usual quote / source / evidence type.
 
 ## 3e. Exclusions: explicit predicates and three states
 An exclusion is built into a predicate; the Judge does not infer it from recruiter prose.
@@ -229,7 +231,7 @@ Open items for review: a depth-comparison design that does not rely on the small
 
 
 ## 12. Observed-depth validation (summary; the evidence is `RESULTS_DEPTH_CONTRACT_VALIDATION.md`)
-Targeted matrix only (5 evidence levels x 3 required depths x 6 runs = 90 cells, real model, synthetic profiles, nothing tuned). **Not passed.**
+Targeted matrix only (5 evidence levels x 3 required depths x 6 runs = 90 cells, real model, synthetic profiles, nothing tuned). **Not passed (superseded by the final evidence-basis pass, §14).**
 
 | measure | result |
 |---|---|
@@ -255,3 +257,59 @@ The same 90 cells, checks, prompts, verifier and evaluator, with ONE variable, t
 | run-to-run disagreement (cells of 15) | 1 | 0 (the errors repeat identically) |
 
 **Result: the stronger model does not materially improve the depth failures. Classification: EVIDENCE-INTERPRETATION CONTRACT LIMITATION** (not model capability): both models over-credit the same two pieces of evidence, a generic "worked on X projects" read as working knowledge and "uses X for everyday tasks such as sums, simple formulas and charts" read as hands-on, and the stronger model does so on every run. Do not replace the Judge model on this evidence. Smallest proposed contract change (not implemented): the depth observation also returns the `action` words of the quote (what the candidate did with the skill), verified by code to be part of the verified quote and not only a generic involvement phrase (an observation with no concrete action is `unspecified`); and one closed-set rubric defining working_knowledge / hands_on / advanced by what was done and its stated scope rather than frequency of use. To be validated once on this same matrix before any further model decision.
+
+
+## 14. FINAL Evidence Depth contract (evidence basis + deterministic ceiling) and live-readiness (the evidence is `RESULTS_DEPTH_CONTRACT_VALIDATION.md` §6)
+Decisions in force: do not switch the Judge model; `working_knowledge` stays binding; no domain-specific depth rules; `StructuredHiringIntent`, the compiler, admission thresholds and ranking are unchanged; recruiter requirements are never weakened to accommodate a model; **unknown / unverified / ambiguous depth is INSUFFICIENT EVIDENCE, never a pass.**
+
+### 14.1 The contract
+For each skill + depth check the depth pass returns `observed_depth`, an `evidence_basis`, a passage number and an exact quote. The model is never told the required depth.
+
+| `evidence_basis` | meaning | maximum supported depth (code) |
+|---|---|---|
+| `explicit_depth` | the quote itself states a proficiency level for the skill | the strongest depth the quote states about the skill, else `unspecified` |
+| `concrete_skill_use` | the candidate builds / creates / operates / implements / analyses / performs work directly with the skill | `hands_on` |
+| `routine_skill_use` | ordinary, repeated or basic use | `working_knowledge` |
+| `generic_involvement` | "worked on", "took part in", "responsible for" with no concrete use or stated depth | `unspecified` |
+| `no_depth_evidence` | the skill is only listed, in a title, or not demonstrated | `unspecified` |
+| missing / unrecognised | not a basis | `unspecified` (recorded as `discard_reason = missing_evidence_basis`) |
+
+* **Credited depth** = `min(observed_depth, maximum_supported_depth)` on `unspecified < working_knowledge < hands_on < advanced`. The model can never exceed the ceiling (`hands_on` + `routine_skill_use` -> `working_knowledge`; `advanced` + `concrete_skill_use` -> `hands_on`).
+* **Explicit depth** is read by code from the quote and only in a clause (split at `.` `;` `:` newline) that also names the skill: `advanced` (advanced, expert / expertise, highly proficient, mastery), `hands_on` ("hands-on"), `working_knowledge` ("working knowledge"). Anything else ("proficient", "strong", "skilled", "very good", "familiar", "basic", "studied") states no depth and maps to nothing. A weak explicit statement can never become `advanced`, and a cue in another skill's clause is not this skill's.
+* **Routine use stays `working_knowledge`** unless the quote shows concrete ownership / creation / operation of skill-specific artifacts (that is the model's basis call, `concrete_skill_use`). "Uses Excel every day" is not automatically `hands_on`; "worked on X projects" is never `working_knowledge`.
+* **Verdicts (code only):** `credited >= required` -> `met` (satisfied); `credited < required` and a depth is credited -> `partly` (not satisfied); credited `unspecified` -> `not_evidenced` (INSUFFICIENT EVIDENCE). The Judge never decides the final verdict.
+* **Validation order:** unknown depth -> unspecified; no basis -> void; quote gate (§3f, one retry for failed quotes only); binding (§3c); then the ceiling. A quote that fails the gate or binding is never credited, whatever the basis.
+
+### 14.2 Final acceptance result (same frozen 90 cells, gpt-4o-mini, temperature 0, nothing else changed)
+Acceptance was declared before the run: **no evidence credited above its ceiling; no `met` on named-only / familiar evidence; zero quote-gate / binding / check-id / comparison violations; at least 50% fewer false-positive depth cases than the baseline.** Not 100% model agreement.
+
+| measure | result |
+|---|---|
+| A. `evidence_basis` in the acceptable set for its level | 66/90 |
+| B. observed depth: the model's own report / credited after the ceiling | 78/90 (baseline 70/90) / 63/90 |
+| C. `maximum_supported_depth` equals the evidence level | 63/90 |
+| D. deterministic comparison right | 90/90 |
+| E. final verdict (met / not met; three-way) | 81/90; 80/90 |
+| F. credited depths failing the quote gate | 0 (5 of 60 first-pass claims failed it; 9 checks retried, 7 recovered) |
+| G. binding: unknown / duplicate check_id, quote not naming its skill, not demonstrated work | 0 / 0 / 0 |
+| credited above the ceiling | **0** |
+| `met` on named-only or familiar evidence | **0 of 36** (all `not_evidenced`) |
+| false-positive `met` | **6 -> 0** |
+| credited above the evidence's true level | 18 -> 6 |
+| the baseline's 18 "too deep" cells now credited at or below the evidence | 12 (12 not credited at all; 6 still too deep) |
+
+**ACCEPTED.** The depth contract is accepted as the final contract; it is not to be tuned further and no further schema layer is added.
+
+### 14.3 Known limitations (all recorded, none hidden)
+1. **The ceiling is only as good as the model's basis label.** If the model labels weak use as `concrete_skill_use`, the ceiling allows `hands_on`. This still happens: the "everyday tasks such as sums, simple formulas and charts" Excel text is labelled `concrete_skill_use` on 6 of 6 runs and is credited `hands_on` (6 observations above its true level). It produced no false positive in this matrix only because the Excel requirement is `advanced`; a `hands_on` requirement on that evidence would have been over-credited. Model labelling limitation, not corrected by a further layer.
+2. **`advanced` requirements are hard to meet.** Evidence the model labels `concrete_skill_use` is capped at `hands_on` by design, including genuinely advanced profiles. On the advanced profile the model labelled `concrete_skill_use` on 18 of 18 observations although the text states "Advanced Java expert" / "Advanced Microsoft Excel user": the advanced Excel requirement is `partly` on 6 of 6 runs. The result is conservative (recruiter sees "demonstrated, below the requirement"), never a pass; expect a lower hit rate on `advanced` requirements.
+3. **9 safe-side false negatives of 90** (advanced Excel x6 `partly`; two Power BI working-knowledge runs and one advanced-Java run voided by the binding rule "quote does not name its skill"). Insufficient evidence / `partly`, not wrong passes.
+4. The explicit-depth cue list is closed and generic (no skill-specific rules). Other phrasings of proficiency ("senior-level", "specialist", "power user") are not mapped and state no depth.
+5. Multi-word category skills remain subject to the binding scope question (a quote lacking a token of a category skill is discarded; recorded in the Evidence Check phase; unchanged).
+6. All depth evidence is synthetic (5 profiles, 3 skills, 1 model). The contract is validated for structure and for the safe direction of error, not for recall on real profiles.
+7. `RECOMMENDATION` for live use: a depth verdict should be shown with its `claimed_depth`, `evidence_basis`, `maximum_supported_depth` and quote so a recruiter can see why a depth was credited or capped.
+
+### 14.4 Live-readiness
+* **Ready for the first controlled live retrieval experiment** as far as the depth contract is concerned: the hard gate held (nothing credited above its ceiling; no false positive on named-only / familiar evidence), the structural checks are clean, and an unverified or ambiguous depth degrades to INSUFFICIENT EVIDENCE.
+* **Not covered by this phase** (still open, from §8): what a `PRESENT` exclusion does downstream (limit 1); per-path pipeline execution is not wired (§9, limit 2); the quote-gate collapse on mass-ellipsis (limit 6); the multi-word category-skill binding scope (14.3 item 5).
+* **Stop conditions kept:** no more synthetic roles, no more Judge-model experiments, no more depth schema layers. Nothing in this phase called CrustData, Harvest or any provider, ran retrieval or deployed.

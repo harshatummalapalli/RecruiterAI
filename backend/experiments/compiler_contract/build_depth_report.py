@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict
 
+from backend.experiments.compiler_contract import depth_basis as db
 from backend.experiments.compiler_contract import depth_matrix as dm
 from backend.experiments.compiler_contract.build_report import md
 from backend.services.evidence_check import subject_in
@@ -32,6 +33,62 @@ def previous_binding_discards() -> Dict[str, Any]:
     return {"total": total, "now_accepted": now_ok, "still_discarded": still}
 
 
+def _dist(d: Dict[str, int]) -> str:
+    return ", ".join(f"{k}×{v}" for k, v in sorted(d.items())) or "-"
+
+
+def final_pass() -> str:
+    f = json.loads(db.ANALYSIS.read_text(encoding="utf-8"))
+    g, b, a, c, n = f["gate"], f["baseline"], f["acceptance"], f["ceiling"], f["cells"]
+    cells = [[x["level"] + " (" + x["profile"] + ")", x["skill"], x["required"], _dist(x["basis"]), _dist(x["claimed"]), _dist(x["ceiling"]), _dist(x["accepted"]), _dist(x["verdicts"]), x["truth"]]
+             for x in f["per_cell"]]
+    fn = g["false_negative_not_met_though_the_evidence_suffices"]
+    cell = lambda lvl, skill: next(x for x in f["per_cell"] if x["profile"] == lvl and x["skill"] == skill)                  # noqa: E731
+    wk_excel, adv_excel, none_pbi = cell("working_knowledge", "Microsoft Excel"), cell("advanced", "Microsoft Excel"), cell("none", "Power BI")
+    adv_concrete = sum(x["basis"].get("concrete_skill_use", 0) for x in f["per_cell"] if x["profile"] == "advanced")
+    adv_total = sum(x["runs"] for x in f["per_cell"] if x["profile"] == "advanced")
+    gate_n = sum(x["runs"] for x in f["per_cell"] if x["profile"] in ("none", "familiar"))
+    return f"""## 6. Final pass: evidence basis and the deterministic ceiling
+Declared before the run, in `depth_basis.py`: the **hard gate** is that no evidence is credited above the maximum depth the contract allows and no named-only / familiar cell is `met`; the quality bar is zero quote-gate / binding / check-id / comparison violations and at least 50% fewer false-positive depth cases than the frozen baseline. Model agreement was not the bar.
+
+**What changed (and nothing else).** The depth pass now also returns an `evidence_basis` per skill: `explicit_depth` / `concrete_skill_use` / `routine_skill_use` / `generic_involvement` / `no_depth_evidence`. Code maps the basis to a CEILING (`no_depth_evidence`, `generic_involvement` -> unspecified; `routine_skill_use` -> working_knowledge; `concrete_skill_use` -> hands_on; `explicit_depth` -> the depth the quote itself states about the skill, else unspecified) and credits `min(model's observed_depth, ceiling)`; a missing or unrecognised basis supports nothing. The depth prompt gained only the basis definitions and output field; the matrix, evidence texts, checks, requirement / exclusion prompts, quote gate, binding, verifier and model ({", ".join(f["model"])}, temperature 0) are the same ({f["jobs"]} runs, {f["calls"]} calls, about ${f["estimated_cost_usd"]}). Raw runs: `results/depth_matrix/raw_basis/`; baseline: `results/depth_matrix/raw/`.
+
+{md([["A. evidence_basis in the acceptable set for its level", f"{f['A_evidence_basis']['correct']}/{n}"], ["B. observed_depth: model's own report / credited after the ceiling", f"{f['B_observed_depth']['model_claim_correct']}/{n} / {f['B_observed_depth']['credited_correct']}/{n}"],
+     ["C. maximum_supported_depth equals the evidence level", f"{f['C_maximum_supported_depth']['correct']}/{n}"], ["D. deterministic comparison right given the credited depth", f"{f['D_deterministic_comparison']['correct']}/{n}"],
+     ["E. final verdict: met / not met correct / three-way correct", f"{f['E_final_verdict']['met_vs_not_correct']}/{n} / {f['E_final_verdict']['three_way_correct']}/{n}"],
+     ["F. quote gate: credited depths failing the gate / first-pass claims failing it / retried and recovered", f"{f['F_quote_gate']['accepted_depths_failing_the_gate']} / {f['F_quote_gate']['failed_gate']} of {f['F_quote_gate']['claims']} / {f['F_quote_gate']['retried_checks']} and {f['F_quote_gate']['retries_recovered']}"],
+     ["G. binding: unknown or duplicate check_id / credited quote not naming its skill / not demonstrated work / discarded by binding", f"{f['G_binding']['unknown_or_duplicate_check_id']} / {f['G_binding']['accepted_not_naming_own_skill']} / {f['G_binding']['accepted_not_work_evidence']} / {f['G_binding']['discarded_by_binding']}"],
+     ["payload violations / provider or compiler tokens in any request / failed runs", f"{f['depth_payload_violations']} / {f['leak_token_hits']} / {f['failed_jobs']}"]], ["measure", "result"])}
+
+**The gate.**
+{md([["credited above the ceiling of its own evidence basis", g["credited_above_ceiling"], "0 required"], [f"`met` on a named-only or familiar profile ({gate_n} cells)", g["met_on_named_only_or_familiar"], "0 required"],
+     ["named-only / familiar verdicts", _dist(g["named_only_or_familiar_verdicts"]), "all insufficient"],
+     ["false-positive `met` (requirement not met by the evidence): baseline -> now", f"{b['false_positive_met']} -> {g['false_positive_met']}", f"{', '.join(b['false_positive_cells'])} (baseline)"],
+     ["credited above the evidence's true level: baseline -> now", f"{b['credited_above_the_evidence_level']} -> {g['credited_above_the_evidence_level']}", ", ".join(g["credited_above_the_evidence_level_cells"]) or "-"],
+     ["model claimed a depth above the evidence: baseline -> now (the model's own report)", f"{b['model_claimed_too_deep']} -> {c['model_claimed_too_deep']}", ""],
+     ["of today's model over-claims: capped by the ceiling / still credited too deep", f"{c['of_which_capped_by_the_ceiling']} / {c['of_which_still_credited_too_deep']}", ""],
+     ["of the baseline's {0} too-deep cells (same profile, skill, run): now credited at or below the evidence / not credited at all / still too deep".format(b["model_claimed_too_deep"]),
+      f"{b['previously_too_deep_cells_now_credited_at_or_below_the_evidence']} / {b['previously_too_deep_cells_now_not_credited_at_all']} / {b['previously_too_deep_cells_now_still_credited_too_deep']}", ""],
+     ["stronger-than-required cells met", f"{f['stronger_than_required']['met']}/{f['stronger_than_required']['of']}", ""]], ["check", "result", "note"])}
+
+**Acceptance: {"ACCEPTED" if a["accepted"] else "NOT ACCEPTED"}.** No evidence was credited above the ceiling (0), no named-only or familiar profile satisfied a depth requirement (0 of {gate_n}; every one is `not_evidenced`, i.e. insufficient evidence), structural violations {a["structural_violations"]}, and false-positive depth cases fell {a["false_positive_before"]} -> {a["false_positive_after"]} ({"" if a["false_positive_reduction"] is None else f"{a['false_positive_reduction']:.0%} fewer"}). {"The depth contract is therefore accepted and is not to be tuned further." if a["accepted"] else "The contract is not accepted; the remaining failure is classified below and no further schema layer is added."}
+
+Per cell (6 runs each; every column is a distribution over the 6 runs):
+
+{md(cells, ["evidence level", "skill", "required", "evidence_basis", "model's observed depth", "ceiling", "credited", "verdicts", "truth"])}
+
+**What the ceiling did.** {c["cells_capped"]} of {n} observations were capped or voided by the ceiling or the missing-basis rule. It removed the exact failure of the previous pass: the "named only" profile ("worked on Java, Power BI and Microsoft Excel projects") is labelled `generic_involvement` / `no_depth_evidence` and the model's `working_knowledge` for Power BI is voided ({none_pbi['accepted'].get('unspecified', 0)} of {none_pbi['runs']}), and "advanced" claims resting on concrete use are limited to hands_on.
+
+**What it did not fix, and what it costs ({fn} false negatives, all on the safe side):**
+* **Over-crediting is not eliminated, only bounded by the model's own basis label.** The "working knowledge" profile's Excel text ("everyday tasks such as sums, simple formulas and charts") is labelled `concrete_skill_use` on {wk_excel['basis'].get('concrete_skill_use', 0)} of {wk_excel['runs']} runs, so the ceiling allows hands_on; the result is still not a false positive only because the Excel requirement is `advanced`. A hands_on requirement on that evidence would have been over-credited. This is a model labelling limitation (the model treats everyday use as concrete use); it is not corrected by a further schema layer.
+* **Genuinely advanced evidence is under-credited.** The advanced profile is labelled `concrete_skill_use` (not `explicit_depth`) on {adv_concrete} of {adv_total} observations although it contains "Advanced Java expert" / "Advanced Microsoft Excel user", so the ceiling is hands_on: the advanced Excel requirement is `partly` ({adv_excel['verdicts'].get('partly', 0)} of {adv_excel['runs']}), not `met`. Under the contract an `advanced` requirement is satisfiable only when the model labels the evidence `explicit_depth` AND the quote itself states advanced proficiency (\"advanced\", \"expert\", \"highly proficient\", \"mastery\"); sophisticated concrete work alone is capped at hands_on by design.
+* **Conservative voiding.** {f['G_binding']['discarded_by_binding']} observations were voided by the existing binding rule (the quote did not name its skill: "...with working knowledge of each"); they are insufficient evidence, not false positives.
+
+Every under-credit lands in `partly` or `not_evidenced`. A recruiter sees "demonstrated but below the requirement" or "insufficient evidence", never a silent pass.
+
+"""
+
+
 def build() -> str:
     a = json.loads((RES / "analysis.json").read_text(encoding="utf-8"))
     t, ep = a["totals"], a["error_profile"]
@@ -40,11 +97,11 @@ def build() -> str:
     cells = [[c["expected_depth"] + " (" + c["profile"] + ")", c["skill"], c["required"], ", ".join(f"{k}×{v}" for k, v in sorted(c["claimed"].items())), ", ".join(f"{k}×{v}" for k, v in sorted(c["verdicts"].items())),
               c["truth"], f"{c['A']}/{c['runs']}", f"{c['B_e2e']}/{c['runs']}", f"{c['C']}/{c['runs']}"] for c in a["cells"]]
     wrong = [c for c in a["cells"] if c["A"] != c["runs"]]
-    return f"""# RESULTS — observed-depth contract and binding morphology (real Judge model; synthetic profiles; targeted test only)
+    return f"""# RESULTS — observed-depth contract, binding morphology and the evidence-basis ceiling (real Judge model; synthetic profiles; targeted test only)
 
 Final Evidence Check hardening pass. **Not called:** CrustData, Harvest, any provider, any retrieval; **not deployed; `StructuredHiringIntent`, the compiler, admission and ranking unchanged.** Only the Judge's own model ran (gpt-4o-mini, temperature {", ".join(t["temperatures"])}) on {t["jobs"]} synthetic judge runs ({t["calls"]} calls, about ${t["estimated_cost_usd"]}). The full earlier synthetic suite was not re-run. Contract: `backend/services/DOWNSTREAM_CONSUMER_CONTRACT.md` (§3c-3f). Raw runs: `results/depth_matrix/raw/`.
 
-## Verdict
+## Verdict of the observed-depth pass (superseded by the final pass in §6)
 **{"PASS" if a["passed"] else "FAIL: observed-depth extraction is not reliable"}.** Declared before the run: PASS only if (A) the model's observed depth is the expected one in every cell and run, (B) the deterministic comparison is right in every cell and (C) every accepted observation has a gate-passing, skill-naming quote from demonstrated work. Result: **A {a["A_model_observed_depth"]["correct"]}/{n}**, **B (code) {a["B_code_comparison"]["correct"]}/{n}**, **B (end-to-end verdict) {a["B_end_to_end_verdict"]["correct"]}/{n}**, **C {a["C_quote_binding"]["ok"]}/{n}**. Per the escalation rule this is where the work stops: no prompt tuning, no stronger model was run.
 
 ## 1. What changed
@@ -89,7 +146,7 @@ Per cell (6 runs; A = the model reported the expected depth, B' = end-to-end ver
 
 **Decision.** Observed-depth extraction is NOT yet reliable enough to pass the declared bar, and the remaining problem is mostly model capability, with one ambiguous boundary. Nothing was tuned and no stronger model was run. For review, in order of cost: (1) decide the working_knowledge / hands_on boundary for ubiquitous tools (a contract decision, no code); (2) only then evaluate a stronger model on this same matrix with the contract unchanged, as a single comparison; (3) if a depth requirement is critical, treat `working_knowledge` as non-binding (it is the level the small model over-credits) and keep hands_on / advanced as the binding depths.
 
-## 6. Hard stop
+{final_pass()}## 7. Hard stop
 No CrustData. No retrieval. No deployment. Live retrieval is not to run until this is reviewed.
 """
 

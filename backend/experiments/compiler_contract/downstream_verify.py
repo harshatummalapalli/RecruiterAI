@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import copy
 import json
+import re
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Dict, List, Optional, Tuple
@@ -29,6 +30,7 @@ from backend.models.search_intent import SearchIntent
 from backend.services.consumer_input import (ChecklistItem, JudgeChecklist, PathAttribution, attribute_path, judge_checklist_for, resolve,
                                              search_intents_from_contexts)
 from backend.services.downstream_context import DownstreamContext, build_downstream_contexts
+from backend.services.evidence_check import explicit_ceiling
 from backend.services.requirement_judge import RequirementJudge
 from backend.services.search_compiler import compile_intent
 from backend.services.source_provenance import SourceTexts
@@ -74,18 +76,20 @@ class ScriptedModel:
                     start = p_["text"].casefold().index(ph.casefold())
                     out.append({"x": x["x"], "verdict": "present", "p": p_["p"], "quote": p_["text"][start:start + len(ph)]})
             return SimpleNamespace(output_text=json.dumps({"results": out}), usage=usage)
-        if "skills" in body:                           # the depth pass: the scripted stand-in reports `advanced` iff the skill is named in a passage (it meets any depth)
+        if "skills" in body:                           # the depth pass: the scripted stand-in reports the depth a passage naming the skill explicitly states
             self.depth_asked.append([x["skill"] for x in body["skills"]])
             out = []
             for x in body["skills"]:
                 needles = [x["skill"]] + [part.strip() for part in x["skill"].split(" or ") if part.strip()]
-                found = next(((p_, n) for p_ in body["passages"] for n in needles if n.casefold() in p_["text"].casefold()), None)
+                # the stand-in reports a depth only where a passage naming the skill STATES one ("hands-on SQL", "advanced proficiency in Microsoft Excel"): an explicit_depth
+                # basis whose ceiling is exactly that statement; a bare mention is no depth evidence
+                found = next(((p_, c.strip(), explicit_ceiling(c)) for p_ in body["passages"] for c in re.findall(r"[^.]+", p_["text"])
+                              if explicit_ceiling(c) != "unspecified" and any(n.casefold() in c.casefold() for n in needles)), None)
                 if found is None:
-                    out.append({"d": x["d"], "observed_depth": "unspecified", "p": None, "quote": ""})
+                    out.append({"d": x["d"], "observed_depth": "unspecified", "evidence_basis": "no_depth_evidence", "p": None, "quote": ""})
                 else:
-                    p_, n = found
-                    start = p_["text"].casefold().index(n.casefold())
-                    out.append({"d": x["d"], "observed_depth": "advanced", "p": p_["p"], "quote": p_["text"][start:start + len(n)]})
+                    p_, clause, stated = found
+                    out.append({"d": x["d"], "observed_depth": stated, "evidence_basis": "explicit_depth", "p": p_["p"], "quote": clause[:220]})
             return SimpleNamespace(output_text=json.dumps({"results": out}), usage=usage)
         self.payloads.append(body)
         self.asked.append([r["text"] for r in body["requirements"]])

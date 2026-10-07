@@ -1,0 +1,540 @@
+{
+ "A_evidence_basis": {
+  "acceptable": {
+   "advanced": [
+    "explicit_depth"
+   ],
+   "familiar": [
+    "explicit_depth",
+    "generic_involvement",
+    "no_depth_evidence"
+   ],
+   "hands_on": [
+    "concrete_skill_use"
+   ],
+   "none": [
+    "generic_involvement",
+    "no_depth_evidence"
+   ],
+   "working_knowledge": [
+    "explicit_depth",
+    "routine_skill_use"
+   ]
+  },
+  "correct": 66,
+  "distribution": {
+   "advanced": {
+    "concrete_skill_use": 18
+   },
+   "familiar": {
+    "no_depth_evidence": 18
+   },
+   "hands_on": {
+    "concrete_skill_use": 18
+   },
+   "none": {
+    "generic_involvement": 6,
+    "no_depth_evidence": 12
+   },
+   "working_knowledge": {
+    "concrete_skill_use": 6,
+    "explicit_depth": 3,
+    "routine_skill_use": 9
+   }
+  },
+  "missing_or_unrecognised": 0,
+  "of": 90
+ },
+ "B_observed_depth": {
+  "credited_correct": 63,
+  "model_claim_correct": 78,
+  "of": 90
+ },
+ "C_maximum_supported_depth": {
+  "by_level": {
+   "advanced": {
+    "ceiling": {
+     "hands_on": 17,
+     "unspecified": 1
+    }
+   },
+   "familiar": {
+    "ceiling": {
+     "unspecified": 18
+    }
+   },
+   "hands_on": {
+    "ceiling": {
+     "hands_on": 18
+    }
+   },
+   "none": {
+    "ceiling": {
+     "unspecified": 18
+    }
+   },
+   "working_knowledge": {
+    "ceiling": {
+     "hands_on": 6,
+     "unspecified": 3,
+     "working_knowledge": 9
+    }
+   }
+  },
+  "correct": 63,
+  "of": 90
+ },
+ "D_deterministic_comparison": {
+  "correct": 90,
+  "of": 90
+ },
+ "E_final_verdict": {
+  "met_vs_not_correct": 81,
+  "of": 90,
+  "three_way_correct": 80
+ },
+ "F_quote_gate": {
+  "accepted_depths_failing_the_gate": 0,
+  "claims": 60,
+  "ellipsis": 5,
+  "failed_gate": 5,
+  "retried_checks": 9,
+  "retries_recovered": 7
+ },
+ "G_binding": {
+  "accepted_not_naming_own_skill": 0,
+  "accepted_not_work_evidence": 0,
+  "cross_check_attempts": 4,
+  "discarded_by_binding": 4,
+  "judgments": 90,
+  "unknown_or_duplicate_check_id": 0
+ },
+ "acceptance": {
+  "accepted": true,
+  "false_positive_after": 0,
+  "false_positive_before": 6,
+  "false_positive_reduction": 1.0,
+  "no_credit_above_ceiling": true,
+  "no_met_on_named_only_or_familiar": true,
+  "rule": "hard gate: nothing credited above its ceiling, no `met` on named-only/familiar evidence; quality: zero structural violations and false-positive depth cases reduced by >= 50% against the frozen baseline",
+  "structural_violations": 0
+ },
+ "baseline": {
+  "credited_above_the_evidence_level": 18,
+  "false_positive_cells": [
+   "unspecified|Power BI|required working_knowledge"
+  ],
+  "false_positive_met": 6,
+  "model_claimed_too_deep": 18,
+  "observed_depth_correct": 70,
+  "of": 90,
+  "previously_too_deep_cells_now_credited_at_or_below_the_evidence": 12,
+  "previously_too_deep_cells_now_not_credited_at_all": 12,
+  "previously_too_deep_cells_now_still_credited_too_deep": 6
+ },
+ "calls": 126,
+ "ceiling": {
+  "capped_cells": [
+   "advanced|Java|advanced->hands_on|concrete_skill_use",
+   "advanced|Microsoft Excel|advanced->hands_on|concrete_skill_use",
+   "advanced|Power BI|advanced->hands_on|concrete_skill_use",
+   "unspecified|Power BI|working_knowledge->unspecified|generic_involvement"
+  ],
+  "cells_capped": 23,
+  "model_claimed_too_deep": 12,
+  "of_which_capped_by_the_ceiling": 6,
+  "of_which_still_credited_too_deep": 6
+ },
+ "cells": 90,
+ "depth_payload_violations": 0,
+ "estimated_cost_usd": 0.0167,
+ "failed_jobs": 0,
+ "gate": {
+  "credited_above_ceiling": 0,
+  "credited_above_the_evidence_level": 6,
+  "credited_above_the_evidence_level_cells": [
+   "working_knowledge|Microsoft Excel|credited hands_on"
+  ],
+  "false_negative_cells": [
+   "advanced|Java|required hands_on|not_evidenced",
+   "advanced|Microsoft Excel|required advanced|partly",
+   "working_knowledge|Power BI|required working_knowledge|not_evidenced"
+  ],
+  "false_negative_not_met_though_the_evidence_suffices": 9,
+  "false_positive_cells": [],
+  "false_positive_met": 0,
+  "insufficient_instead_of_false_positive": 36,
+  "met_on_named_only_or_familiar": 0,
+  "named_only_or_familiar_verdicts": {
+   "not_evidenced": 36
+  }
+ },
+ "jobs": 30,
+ "leak_token_hits": 0,
+ "missing_basis_discards": 0,
+ "model": [
+  "gpt-4o-mini"
+ ],
+ "per_cell": [
+  {
+   "accepted": {
+    "unspecified": 6
+   },
+   "basis": {
+    "no_depth_evidence": 6
+   },
+   "ceiling": {
+    "unspecified": 6
+   },
+   "claimed": {
+    "unspecified": 6
+   },
+   "level": "unspecified",
+   "profile": "none",
+   "required": "hands_on",
+   "runs": 6,
+   "skill": "Java",
+   "truth": "not_evidenced",
+   "verdicts": {
+    "not_evidenced": 6
+   }
+  },
+  {
+   "accepted": {
+    "unspecified": 6
+   },
+   "basis": {
+    "no_depth_evidence": 6
+   },
+   "ceiling": {
+    "unspecified": 6
+   },
+   "claimed": {
+    "unspecified": 6
+   },
+   "level": "unspecified",
+   "profile": "none",
+   "required": "advanced",
+   "runs": 6,
+   "skill": "Microsoft Excel",
+   "truth": "not_evidenced",
+   "verdicts": {
+    "not_evidenced": 6
+   }
+  },
+  {
+   "accepted": {
+    "unspecified": 6
+   },
+   "basis": {
+    "generic_involvement": 6
+   },
+   "ceiling": {
+    "unspecified": 6
+   },
+   "claimed": {
+    "working_knowledge": 6
+   },
+   "level": "unspecified",
+   "profile": "none",
+   "required": "working_knowledge",
+   "runs": 6,
+   "skill": "Power BI",
+   "truth": "not_evidenced",
+   "verdicts": {
+    "not_evidenced": 6
+   }
+  },
+  {
+   "accepted": {
+    "unspecified": 6
+   },
+   "basis": {
+    "no_depth_evidence": 6
+   },
+   "ceiling": {
+    "unspecified": 6
+   },
+   "claimed": {
+    "unspecified": 6
+   },
+   "level": "unspecified",
+   "profile": "familiar",
+   "required": "hands_on",
+   "runs": 6,
+   "skill": "Java",
+   "truth": "not_evidenced",
+   "verdicts": {
+    "not_evidenced": 6
+   }
+  },
+  {
+   "accepted": {
+    "unspecified": 6
+   },
+   "basis": {
+    "no_depth_evidence": 6
+   },
+   "ceiling": {
+    "unspecified": 6
+   },
+   "claimed": {
+    "unspecified": 6
+   },
+   "level": "unspecified",
+   "profile": "familiar",
+   "required": "advanced",
+   "runs": 6,
+   "skill": "Microsoft Excel",
+   "truth": "not_evidenced",
+   "verdicts": {
+    "not_evidenced": 6
+   }
+  },
+  {
+   "accepted": {
+    "unspecified": 6
+   },
+   "basis": {
+    "no_depth_evidence": 6
+   },
+   "ceiling": {
+    "unspecified": 6
+   },
+   "claimed": {
+    "unspecified": 6
+   },
+   "level": "unspecified",
+   "profile": "familiar",
+   "required": "working_knowledge",
+   "runs": 6,
+   "skill": "Power BI",
+   "truth": "not_evidenced",
+   "verdicts": {
+    "not_evidenced": 6
+   }
+  },
+  {
+   "accepted": {
+    "unspecified": 1,
+    "working_knowledge": 5
+   },
+   "basis": {
+    "explicit_depth": 1,
+    "routine_skill_use": 5
+   },
+   "ceiling": {
+    "unspecified": 1,
+    "working_knowledge": 5
+   },
+   "claimed": {
+    "working_knowledge": 6
+   },
+   "level": "working_knowledge",
+   "profile": "working_knowledge",
+   "required": "hands_on",
+   "runs": 6,
+   "skill": "Java",
+   "truth": "partly",
+   "verdicts": {
+    "not_evidenced": 1,
+    "partly": 5
+   }
+  },
+  {
+   "accepted": {
+    "hands_on": 6
+   },
+   "basis": {
+    "concrete_skill_use": 6
+   },
+   "ceiling": {
+    "hands_on": 6
+   },
+   "claimed": {
+    "hands_on": 6
+   },
+   "level": "working_knowledge",
+   "profile": "working_knowledge",
+   "required": "advanced",
+   "runs": 6,
+   "skill": "Microsoft Excel",
+   "truth": "partly",
+   "verdicts": {
+    "partly": 6
+   }
+  },
+  {
+   "accepted": {
+    "unspecified": 2,
+    "working_knowledge": 4
+   },
+   "basis": {
+    "explicit_depth": 2,
+    "routine_skill_use": 4
+   },
+   "ceiling": {
+    "unspecified": 2,
+    "working_knowledge": 4
+   },
+   "claimed": {
+    "working_knowledge": 6
+   },
+   "level": "working_knowledge",
+   "profile": "working_knowledge",
+   "required": "working_knowledge",
+   "runs": 6,
+   "skill": "Power BI",
+   "truth": "met",
+   "verdicts": {
+    "met": 4,
+    "not_evidenced": 2
+   }
+  },
+  {
+   "accepted": {
+    "hands_on": 6
+   },
+   "basis": {
+    "concrete_skill_use": 6
+   },
+   "ceiling": {
+    "hands_on": 6
+   },
+   "claimed": {
+    "hands_on": 6
+   },
+   "level": "hands_on",
+   "profile": "hands_on",
+   "required": "hands_on",
+   "runs": 6,
+   "skill": "Java",
+   "truth": "met",
+   "verdicts": {
+    "met": 6
+   }
+  },
+  {
+   "accepted": {
+    "hands_on": 6
+   },
+   "basis": {
+    "concrete_skill_use": 6
+   },
+   "ceiling": {
+    "hands_on": 6
+   },
+   "claimed": {
+    "hands_on": 6
+   },
+   "level": "hands_on",
+   "profile": "hands_on",
+   "required": "advanced",
+   "runs": 6,
+   "skill": "Microsoft Excel",
+   "truth": "partly",
+   "verdicts": {
+    "partly": 6
+   }
+  },
+  {
+   "accepted": {
+    "hands_on": 6
+   },
+   "basis": {
+    "concrete_skill_use": 6
+   },
+   "ceiling": {
+    "hands_on": 6
+   },
+   "claimed": {
+    "hands_on": 6
+   },
+   "level": "hands_on",
+   "profile": "hands_on",
+   "required": "working_knowledge",
+   "runs": 6,
+   "skill": "Power BI",
+   "truth": "met",
+   "verdicts": {
+    "met": 6
+   }
+  },
+  {
+   "accepted": {
+    "hands_on": 5,
+    "unspecified": 1
+   },
+   "basis": {
+    "concrete_skill_use": 6
+   },
+   "ceiling": {
+    "hands_on": 5,
+    "unspecified": 1
+   },
+   "claimed": {
+    "advanced": 6
+   },
+   "level": "advanced",
+   "profile": "advanced",
+   "required": "hands_on",
+   "runs": 6,
+   "skill": "Java",
+   "truth": "met",
+   "verdicts": {
+    "met": 5,
+    "not_evidenced": 1
+   }
+  },
+  {
+   "accepted": {
+    "hands_on": 6
+   },
+   "basis": {
+    "concrete_skill_use": 6
+   },
+   "ceiling": {
+    "hands_on": 6
+   },
+   "claimed": {
+    "advanced": 6
+   },
+   "level": "advanced",
+   "profile": "advanced",
+   "required": "advanced",
+   "runs": 6,
+   "skill": "Microsoft Excel",
+   "truth": "met",
+   "verdicts": {
+    "partly": 6
+   }
+  },
+  {
+   "accepted": {
+    "hands_on": 6
+   },
+   "basis": {
+    "concrete_skill_use": 6
+   },
+   "ceiling": {
+    "hands_on": 6
+   },
+   "claimed": {
+    "advanced": 6
+   },
+   "level": "advanced",
+   "profile": "advanced",
+   "required": "working_knowledge",
+   "runs": 6,
+   "skill": "Power BI",
+   "truth": "met",
+   "verdicts": {
+    "met": 6
+   }
+  }
+ ],
+ "stronger_than_required": {
+  "met": 17,
+  "of": 18
+ }
+}
