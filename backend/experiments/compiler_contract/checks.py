@@ -38,6 +38,8 @@ def _routed(atoms: List[Dict]) -> bool:
 
 
 def check(cid: str, role: str, text: str, carries: Optional[bool], result: str, gap: Optional[str], evidence: Any) -> Dict[str, Any]:
+    if result in ("PASS", "NOT_TESTABLE"):
+        gap = None  # a gap type only describes a failure
     return {"id": cid, "role": role, "check": text, "intent_carries": carries, "result": result, "gap_type": gap, "evidence": evidence}
 
 
@@ -66,7 +68,8 @@ def role1(intent: ExperimentalHiringIntent, A: List[Dict], paths: Dict[str, Any]
     pq_path = [a for a in A if a["scope"] != "global" and a["concept"] == "skill" and _has(a["value"], "power query")]
     pq_global = _a(A, "skill", "global", lambda a: _has(a["value"], "power query"))
     out.append(check("R1-04", R, "Power Query waiver on Path A is honoured (global Power Query must not bind Path A)",
-                     bool(pq_waiver or pq_path), "FAIL" if (pq_waiver or pq_path) else "NOT_TESTABLE", "COMPILER LOGIC",
+                     bool(pq_waiver or pq_path),
+                     ("PASS" if (any(a["fate"] not in DROPPED for a in _a(A, "reconciliation")) or _routed(pq_path)) else "FAIL") if (pq_waiver or pq_path) else "NOT_TESTABLE", "COMPILER LOGIC",
                      {"waiver_reconciliations": len(pq_waiver), "path_level_power_query_atoms": [(a["scope"], a["strength"], a["fate"]) for a in pq_path],
                       "global_power_query_atoms": [(a["strength"], a["relationship"], a["fate"]) for a in pq_global],
                       "waiver_has_destination": any(a["fate"] not in DROPPED for a in _a(A, "reconciliation")) or _routed(pq_path)}))
@@ -188,4 +191,8 @@ def role3(intent: ExperimentalHiringIntent, A: List[Dict], plan: Dict[str, Any])
     ok = bool(sen) and sen[0]["fate"] == "VERIFIED_DOWNSTREAM" and (_has(sen[0]["value"], "manager") or any(_has(t, "manager") for t in rf))
     out.append(check("R3-08", R, "'Senior Manager' role identity is carried (level verbatim or Manager kept in the title)", bool(sen), "PASS" if ok else "FAIL", None,
                      {"seniority": sen[0]["value"] if sen else None, "role_family": rf, "audit_note": notes[:1]}))
+    edu = [l for l in plan["leaves"] if l[0].startswith("education.")]
+    out.append(check("R3-09", R, "Education values are provider-usable strings (observation only: the provider is not called offline)", True, "OBSERVATION", "TAXONOMY",
+                     {"education_leaves": [(l[0].split(".")[-1], l[2]) for l in edu],
+                      "reading": "the degree is the literal 'Bachelor’s degree' (curly apostrophe) and a stream is the literal 'Related discipline'; degree surface forms are only expanded for B.Tech/B.E/M.Tech. Whether the provider matches them cannot be known offline"}))
     return out

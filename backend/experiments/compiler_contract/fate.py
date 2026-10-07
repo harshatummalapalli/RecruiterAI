@@ -39,9 +39,13 @@ def classify(atom: Atom, dl: Dict[str, Any], base_plan: CompiledPlan) -> Dict[st
     routes = sorted({r[2] for r in rows})
     flags: List[str] = []
     if dl["empty"]:
-        # justified only if the compiler output itself states a reason mentioning the atom (never expected)
+        # DROPPED_WITH_JUSTIFICATION needs an explicit audit statement that THIS atom was dropped on purpose: a note or warning that names the
+        # atom AND says it is dropped / ignored / not enforced. A note that merely contains the same word (a global row for the same value) is not
+        # a justification. The compiler emits no such statement, so none is expected.
         needle = atom.label.lower()
-        reasoned = any(needle and needle in (c.note or "").lower() for c in base_plan.audit) or any(needle in w.lower() for w in base_plan.warnings)
+        marker = ("dropped", "ignored", "discard", "not enforced", "not used")
+        texts = [(c.note or "").lower() for c in base_plan.audit] + [w.lower() for w in base_plan.warnings]
+        reasoned = any(needle and needle in t and any(m in t for m in marker) for t in texts)
         fate = "DROPPED_WITH_JUSTIFICATION" if reasoned else "SILENTLY_DROPPED"
         return {"fate": fate, "routes": routes, "flags": flags, "destination": None, "delta": dl}
     if dl["leaves_lost"]:

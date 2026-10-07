@@ -181,3 +181,40 @@ def role2_overlay(n: int = 1) -> Dict[str, Any]:
     d["seniority"] = {"value": "Staff", "strength": "required", "basis": None, "leadership": [], "alternatives": []}
     ov = ExperimentalHiringIntent.model_validate(d)
     return {"overlay": ["Python/Java proficiency=advanced", "location.work_mode=hybrid", "seniority=Staff"], "intent": ov}
+
+
+def omission_exposure() -> List[Dict[str, Any]]:
+    """Counterfactual for the temporal risk: if the model had OMITTED `relationship` on every skill and group (the production default is `current`),
+    how many provider hard leaves would each stored intent compile to? The stored raw outputs show the model never omitted it in these 15 runs,
+    so this is exposure, not an observed failure."""
+    out = []
+    for (role, n), it in loader.load_all().items():
+        d = it.model_dump()
+        actual = len(S.leaves(compile_intent(it).filter_tree))
+        for s in d["skills"]:
+            s.pop("relationship", None)
+        for g in d["skill_any_of"]:
+            g.pop("relationship", None)
+        omitted = len(S.leaves(compile_intent(ExperimentalHiringIntent.model_validate(d)).filter_tree))
+        out.append({"role": role, "run": n, "hard_leaves_actual": actual, "hard_leaves_if_relationship_omitted": omitted})
+    return out
+
+
+def hash_sensitivity() -> Dict[str, Any]:
+    """The audit record carries `intent_hash` and `plan_hash`. Does an unread (dropped) atom change the intent hash but not the plan hash?"""
+    it = loader.load_intent("R3", 1)
+    d = it.model_dump()
+    d["semantic_exclusions"][0]["concept"] = "CHANGED CONCEPT TEXT"
+    d["location"]["work_mode"] = "onsite"
+    changed = ExperimentalHiringIntent.model_validate(d)
+    p0, p1 = compile_intent(it), compile_intent(changed)
+    return {"intent_hash_changes": compiler_audit.intent_hash(it) != compiler_audit.intent_hash(changed),
+            "plan_hash_changes": compiler_audit.plan_hash(p0) != compiler_audit.plan_hash(p1),
+            "reading": "an unread atom changes the intent hash and nothing in the plan, the audit rows or the checklist: provenance is bound by hash only"}
+
+
+def checklist_sample(role: str = "R3", n: int = 1) -> Dict[str, Any]:
+    it = loader.load_intent(role, n)
+    plan = compile_intent(it)
+    return {"downstream_checklist": [{"tier": t, "requirement": r} for t, r in compiler_audit.judge_checklist(plan)],
+            "excel_rows": [(t, r) for t, r in compiler_audit.judge_checklist(plan) if "xcel" in r]}

@@ -102,6 +102,9 @@ def analyse() -> Dict[str, Any]:
             "exclusions": probes.exclusion_probes(),
             "descriptive_terms": probes.descriptive_term_probe(),
             "capability_notes": probes.capability_notes(),
+            "omission_exposure": probes.omission_exposure(),
+            "hash_sensitivity": probes.hash_sensitivity(),
+            "checklist_sample_R3": probes.checklist_sample("R3", 1),
         },
     }
     (OUT / "contract_analysis.json").write_text(json.dumps(out, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
