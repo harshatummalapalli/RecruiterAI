@@ -362,7 +362,9 @@ def test_JC_the_judge_asks_exactly_the_checklist_and_never_reconstructs_from_pro
     out = RequirementJudge(client=model).judge_detailed(cand, dataclasses.replace(legacy, compiled_context=ctx), harvest)
     asked = {t for call in model.asked for t in call}
     labels = {c["label"] for c in out.checks if c["polarity"] == "positive"}
-    assert labels == set(dv.judged_texts(ctx)) and asked == {c["criterion"] for c in out.checks if c["polarity"] == "positive"}      # one Evidence Check per requirement
+    depth = {c["subject"] for c in out.checks if c["polarity"] == "positive" and c["proficiency"] and c["subject"]}
+    assert labels == set(dv.judged_texts(ctx)) and asked == {c["criterion"] for c in out.checks if c["polarity"] == "positive" and c["check_id"] and not (c["proficiency"] and c["subject"])}
+    assert {t for call in model.depth_asked for t in call} == depth                                    # a depth check is asked as a SKILL, in the depth pass
     assert "Some legacy prose requirement" not in asked
     assert out.input_source == "compiled" and out.checklist["path_id"] == ctx.path_id
     assert {i["text"] for i in out.checklist["exclusions"]} == {i.text for i in ci.judge_checklist_for(ctx).exclusions}

@@ -1,0 +1,389 @@
+{
+ "A_final_observed_depth": {
+  "correct": 70,
+  "of": 90
+ },
+ "A_model_observed_depth": {
+  "correct": 70,
+  "of": 90
+ },
+ "B_code_comparison": {
+  "correct": 90,
+  "of": 90
+ },
+ "B_end_to_end_verdict": {
+  "correct": 82,
+  "of": 90
+ },
+ "B_stronger_than_required": {
+  "correct": 18,
+  "of": 18
+ },
+ "C_quote_binding": {
+  "of": 90,
+  "ok": 90,
+  "violations": []
+ },
+ "cells": [
+  {
+   "A": 6,
+   "B_code": 6,
+   "B_e2e": 6,
+   "C": 6,
+   "accepted": {
+    "unspecified": 6
+   },
+   "claimed": {
+    "unspecified": 6
+   },
+   "expected_depth": "unspecified",
+   "profile": "familiar",
+   "required": "hands_on",
+   "runs": 6,
+   "skill": "Java",
+   "truth": "not_evidenced",
+   "verdicts": {
+    "not_evidenced": 6
+   }
+  },
+  {
+   "A": 6,
+   "B_code": 6,
+   "B_e2e": 6,
+   "C": 6,
+   "accepted": {
+    "unspecified": 6
+   },
+   "claimed": {
+    "unspecified": 6
+   },
+   "expected_depth": "unspecified",
+   "profile": "none",
+   "required": "hands_on",
+   "runs": 6,
+   "skill": "Java",
+   "truth": "not_evidenced",
+   "verdicts": {
+    "not_evidenced": 6
+   }
+  },
+  {
+   "A": 6,
+   "B_code": 6,
+   "B_e2e": 6,
+   "C": 6,
+   "accepted": {
+    "unspecified": 6
+   },
+   "claimed": {
+    "unspecified": 6
+   },
+   "expected_depth": "unspecified",
+   "profile": "familiar",
+   "required": "advanced",
+   "runs": 6,
+   "skill": "Microsoft Excel",
+   "truth": "not_evidenced",
+   "verdicts": {
+    "not_evidenced": 6
+   }
+  },
+  {
+   "A": 0,
+   "B_code": 6,
+   "B_e2e": 6,
+   "C": 6,
+   "accepted": {
+    "working_knowledge": 6
+   },
+   "claimed": {
+    "working_knowledge": 6
+   },
+   "expected_depth": "unspecified",
+   "profile": "none",
+   "required": "advanced",
+   "runs": 6,
+   "skill": "Microsoft Excel",
+   "truth": "not_evidenced",
+   "verdicts": {
+    "partly": 6
+   }
+  },
+  {
+   "A": 6,
+   "B_code": 6,
+   "B_e2e": 6,
+   "C": 6,
+   "accepted": {
+    "unspecified": 6
+   },
+   "claimed": {
+    "unspecified": 6
+   },
+   "expected_depth": "unspecified",
+   "profile": "familiar",
+   "required": "working_knowledge",
+   "runs": 6,
+   "skill": "Power BI",
+   "truth": "not_evidenced",
+   "verdicts": {
+    "not_evidenced": 6
+   }
+  },
+  {
+   "A": 0,
+   "B_code": 6,
+   "B_e2e": 0,
+   "C": 6,
+   "accepted": {
+    "working_knowledge": 6
+   },
+   "claimed": {
+    "working_knowledge": 6
+   },
+   "expected_depth": "unspecified",
+   "profile": "none",
+   "required": "working_knowledge",
+   "runs": 6,
+   "skill": "Power BI",
+   "truth": "not_evidenced",
+   "verdicts": {
+    "met": 6
+   }
+  },
+  {
+   "A": 6,
+   "B_code": 6,
+   "B_e2e": 6,
+   "C": 6,
+   "accepted": {
+    "working_knowledge": 6
+   },
+   "claimed": {
+    "working_knowledge": 6
+   },
+   "expected_depth": "working_knowledge",
+   "profile": "working_knowledge",
+   "required": "hands_on",
+   "runs": 6,
+   "skill": "Java",
+   "truth": "partly",
+   "verdicts": {
+    "partly": 6
+   }
+  },
+  {
+   "A": 0,
+   "B_code": 6,
+   "B_e2e": 6,
+   "C": 6,
+   "accepted": {
+    "hands_on": 6
+   },
+   "claimed": {
+    "hands_on": 6
+   },
+   "expected_depth": "working_knowledge",
+   "profile": "working_knowledge",
+   "required": "advanced",
+   "runs": 6,
+   "skill": "Microsoft Excel",
+   "truth": "partly",
+   "verdicts": {
+    "partly": 6
+   }
+  },
+  {
+   "A": 6,
+   "B_code": 6,
+   "B_e2e": 6,
+   "C": 6,
+   "accepted": {
+    "working_knowledge": 6
+   },
+   "claimed": {
+    "working_knowledge": 6
+   },
+   "expected_depth": "working_knowledge",
+   "profile": "working_knowledge",
+   "required": "working_knowledge",
+   "runs": 6,
+   "skill": "Power BI",
+   "truth": "met",
+   "verdicts": {
+    "met": 6
+   }
+  },
+  {
+   "A": 6,
+   "B_code": 6,
+   "B_e2e": 6,
+   "C": 6,
+   "accepted": {
+    "hands_on": 6
+   },
+   "claimed": {
+    "hands_on": 6
+   },
+   "expected_depth": "hands_on",
+   "profile": "hands_on",
+   "required": "hands_on",
+   "runs": 6,
+   "skill": "Java",
+   "truth": "met",
+   "verdicts": {
+    "met": 6
+   }
+  },
+  {
+   "A": 6,
+   "B_code": 6,
+   "B_e2e": 6,
+   "C": 6,
+   "accepted": {
+    "hands_on": 6
+   },
+   "claimed": {
+    "hands_on": 6
+   },
+   "expected_depth": "hands_on",
+   "profile": "hands_on",
+   "required": "advanced",
+   "runs": 6,
+   "skill": "Microsoft Excel",
+   "truth": "partly",
+   "verdicts": {
+    "partly": 6
+   }
+  },
+  {
+   "A": 6,
+   "B_code": 6,
+   "B_e2e": 6,
+   "C": 6,
+   "accepted": {
+    "hands_on": 6
+   },
+   "claimed": {
+    "hands_on": 6
+   },
+   "expected_depth": "hands_on",
+   "profile": "hands_on",
+   "required": "working_knowledge",
+   "runs": 6,
+   "skill": "Power BI",
+   "truth": "met",
+   "verdicts": {
+    "met": 6
+   }
+  },
+  {
+   "A": 6,
+   "B_code": 6,
+   "B_e2e": 6,
+   "C": 6,
+   "accepted": {
+    "advanced": 6
+   },
+   "claimed": {
+    "advanced": 6
+   },
+   "expected_depth": "advanced",
+   "profile": "advanced",
+   "required": "hands_on",
+   "runs": 6,
+   "skill": "Java",
+   "truth": "met",
+   "verdicts": {
+    "met": 6
+   }
+  },
+  {
+   "A": 4,
+   "B_code": 6,
+   "B_e2e": 4,
+   "C": 6,
+   "accepted": {
+    "advanced": 4,
+    "hands_on": 2
+   },
+   "claimed": {
+    "advanced": 4,
+    "hands_on": 2
+   },
+   "expected_depth": "advanced",
+   "profile": "advanced",
+   "required": "advanced",
+   "runs": 6,
+   "skill": "Microsoft Excel",
+   "truth": "met",
+   "verdicts": {
+    "met": 4,
+    "partly": 2
+   }
+  },
+  {
+   "A": 6,
+   "B_code": 6,
+   "B_e2e": 6,
+   "C": 6,
+   "accepted": {
+    "advanced": 6
+   },
+   "claimed": {
+    "advanced": 6
+   },
+   "expected_depth": "advanced",
+   "profile": "advanced",
+   "required": "working_knowledge",
+   "runs": 6,
+   "skill": "Power BI",
+   "truth": "met",
+   "verdicts": {
+    "met": 6
+   }
+  }
+ ],
+ "depth_payload_violations": 0,
+ "error_profile": {
+  "by_evidence_level": {
+   "advanced/advanced": 2,
+   "hands_on/hands_on": 0,
+   "unspecified/familiar": 0,
+   "unspecified/none": 12,
+   "working_knowledge/working_knowledge": 6
+  },
+  "by_skill": {
+   "Java": 0,
+   "Microsoft Excel": 14,
+   "Power BI": 6
+  },
+  "cells": 15,
+  "cells_right_on_every_run": 11,
+  "cells_wrong_on_every_run": 3,
+  "errors": 20,
+  "over_by_one_level": 18,
+  "two_or_more_levels": 0,
+  "under_by_one_level": 2
+ },
+ "leak_token_hits": 0,
+ "passed": false,
+ "totals": {
+  "binding_discards": 0,
+  "calls": 125,
+  "cells": 90,
+  "estimated_cost_usd": 0.0152,
+  "failed_jobs": 0,
+  "input_tokens": 71071,
+  "jobs": 30,
+  "models": [
+   "gpt-4o-mini"
+  ],
+  "output_tokens": 7431,
+  "retried_checks": 5,
+  "retries_recovered": 5,
+  "temperatures": [
+   "0"
+  ]
+ }
+}

@@ -88,6 +88,19 @@ DEPTH_CLAUSE = {
 _LEAD_DEPTH = re.compile(r"^\s*(?P<d>working knowledge of|hands[- ]on|advanced proficiency in|advanced|expert(?:ise)? in)\s+(?P<s>.+?)\s*$", _I)
 _LEAD_DEPTH_MAP = {"working knowledge of": "working_knowledge", "advanced proficiency in": "advanced", "advanced": "advanced", "expertise in": "advanced", "expert in": "advanced"}
 
+# The ordinal depth ladder. The MODEL reports the depth the evidence DEMONSTRATES (`observed_depth`); CODE compares it with the depth the check requires.
+DEPTH_ORDER = {"unspecified": 0, "working_knowledge": 1, "hands_on": 2, "advanced": 3}
+OBSERVED_DEPTHS = tuple(DEPTH_ORDER)
+
+
+def meets_depth(observed: Optional[str], required: Optional[str]) -> bool:
+    """observed_depth >= required_depth on unspecified < working_knowledge < hands_on < advanced. An unknown / missing observation is `unspecified`; a missing requirement is
+    met by anything (there is no depth to meet)."""
+    if required is None:
+        return True
+    return DEPTH_ORDER.get(observed or "unspecified", 0) >= DEPTH_ORDER[required]
+
+
 _STOP = {"the", "and", "of", "or", "a", "an", "in", "for", "to", "with", "microsoft", "ms"}
 _GENERIC_ALT = re.compile(r"^\s*(?:similar|comparable|equivalent|related|other|any|modern)\b", _I)
 
@@ -96,8 +109,37 @@ def _tokens(s: str) -> List[str]:
     return re.findall(r"[a-z0-9][a-z0-9+#./&-]*", (s or "").casefold())
 
 
+def stems(word: str) -> frozenset:
+    """Conservative morphology for binding: the word itself plus its plural / -ing / -ed base forms. Deliberately NOT a fuzzy matcher: only purely alphabetic words of
+    4+ letters are touched, only these suffixes are removed (-ies, -es, -s, -ing, -ed), a doubled final consonant is undone (modelling -> model), and an -e is tried back
+    (managing -> manage). Two words match only if their forms intersect, so "modeling" = "models" = "modelling" but "modeling" != "planning", "Java" != "JavaScript",
+    "SQL" != "NoSQL", "excel" != "excellent". Nothing semantic (no synonym, no embedding) is involved."""
+    w = (word or "").casefold()
+    out = {w}
+    if len(w) < 4 or not w.isalpha():
+        return frozenset(out)
+    if w.endswith("ies") and len(w) > 4:
+        out.add(w[:-3] + "y")
+    elif w.endswith("es") and len(w) > 4:
+        out.update({w[:-2], w[:-1]})
+    elif w.endswith("s") and not w.endswith(("ss", "us")) and not (w.endswith("is") and len(w) >= 6):     # "analysis" is not a plural; "APIs" is
+        out.add(w[:-1])
+    for suf in ("ing", "ed"):
+        if w.endswith(suf):
+            base = w[: -len(suf)]
+            if len(base) >= 3 and any(c in "aeiouy" for c in base):
+                out.add(base)
+                out.add(base + "e")
+                if len(base) >= 4 and base[-1] == base[-2] and base[-1] not in "aeiou":
+                    out.add(base[:-1])                                                      # modelling -> model, planning -> plan
+    return frozenset(out)
+
+
 def _word_in(token: str, text_tokens: set) -> bool:
-    return token in text_tokens or (token.endswith("s") and token[:-1] in text_tokens) or (token + "s") in text_tokens
+    if token in text_tokens:
+        return True
+    ts = stems(token)
+    return any(ts & stems(t) for t in text_tokens)
 
 
 def subject_tokens(subject: str) -> Tuple[str, ...]:

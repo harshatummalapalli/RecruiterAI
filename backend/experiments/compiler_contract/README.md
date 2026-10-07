@@ -35,4 +35,6 @@ Tests: `tests/test_real_judge_validation.py` (offline). Reproduce: `python -m ba
 Evidence Check validation (this phase): `RESULTS_EVIDENCE_CHECK_VALIDATION.md` (generated), `backend/services/evidence_check.py` (the check schema, binding, predicates, quote gate), `evidence_check_scenarios.py` (hand-written SYNTHETIC scenarios A/B/C), `evidence_check_run.py` (6 real runs each; `analyze`; `diagnose_at_least` = an exploratory diagnostic, not adopted), `build_evidence_check_report.py`, `results/evidence_check/` (raw runs, analysis, the analyst's classification).
 Tests: `tests/test_evidence_check.py` (offline). Reproduce: `python -m backend.experiments.compiler_contract.evidence_check_run run --runs 6 && ... analyze && ... build_evidence_check_report`
 
+Depth contract (final hardening pass): `RESULTS_DEPTH_CONTRACT_VALIDATION.md` (generated), `depth_matrix.py` (5 evidence levels x 3 required depths x 6 runs, real model, synthetic; `run`, `analyze`), `build_depth_report.py`, `results/depth_matrix/`. Tests: `tests/test_evidence_check.py` (morphology `MO_*`, depth `DP_*`, exclusions `EX_*`).
+
 Status: Evidence Check contract validated on synthetic candidates with the real Judge model; not 6/6 on every scenario (see the results); no CrustData, no retrieval, no deployment; waiting for architecture review.

@@ -38,8 +38,8 @@ from backend.models.candidate_evidence import HarvestEvidence, TextSource
 from backend.models.search_intent import SearchIntent
 from backend.services.candidate_evidence_builder import build_candidate_evidence
 from backend.services.consumer_input import resolve as resolve_consumer_input
-from backend.services.evidence_check import (EvidenceCheck, INSUFFICIENT_EVIDENCE, NOT_PRESENT, PRESENT, RETRIABLE_QUOTE_FAILURES, WORK_EVIDENCE_TYPES, model_predicate,
-                                             negative_checks, positive_checks, validate_binding, verify_quote)
+from backend.services.evidence_check import (DEPTH_ORDER, EvidenceCheck, INSUFFICIENT_EVIDENCE, NOT_PRESENT, OBSERVED_DEPTHS, PRESENT, RETRIABLE_QUOTE_FAILURES, WORK_EVIDENCE_TYPES,
+                                             meets_depth, model_predicate, negative_checks, positive_checks, validate_binding, verify_quote)
 from backend.services.requirement_semantics import evaluate as evaluate_recognized_requirement, recognize_requirement
 
 logger = logging.getLogger(__name__)
@@ -150,6 +150,29 @@ Rules:
 
 Return only JSON: {"results":[{"x":<check number>,"verdict":"present|not_present|insufficient_evidence","p":<passage number or null>,"quote":"<exact quote or empty>"}]}
 Include every check exactly once."""
+
+
+_DEPTH_PROMPT = """You read a candidate's profile and report how deeply it shows the candidate has used a skill.
+
+You get numbered PASSAGES copied from the candidate's profile and numbered SKILLS. For every skill report the ONE depth that the passages demonstrate for that skill:
+- "unspecified": the passages do not demonstrate real use of the skill. It is absent, or only named (a skills list, a job title, a headline, years of experience with no
+  description of the work), or only studied, read about or described as "familiar" without use in real work.
+- "working_knowledge": the passages show real but modest or supporting use: the candidate has used the skill in real work for ordinary tasks, or states working knowledge
+  of it, without owning complex work built on it.
+- "hands_on": the passages show the candidate personally building, writing, configuring or operating with the skill as a core part of their real work.
+- "advanced": the passages state expertise, or show sophisticated work built with the skill: complex design, optimisation, architecture, or mastery of its advanced features.
+
+Rules:
+1. Report what the evidence DEMONSTRATES, not what the skill name suggests. Never infer a depth from a job title, from generic verbs ("worked on", "responsible for",
+   "involved in"), from years of experience, from a list of skills, or from the employer.
+2. Judge each skill only from passages about THAT skill. Evidence for another skill is not evidence for this one.
+3. For any depth other than "unspecified" you MUST give the passage number and a quote copied EXACTLY, character for character, from that ONE passage: one contiguous span of
+   at most 220 characters, no ellipsis ("..." or "\u2026"), no paraphrase. The quote must itself name the skill and show the depth.
+4. If you cannot give such a quote, answer "unspecified".
+5. If several passages differ, report the deepest depth that has a valid quote.
+
+Return only JSON: {"results":[{"d":<skill number>,"observed_depth":"unspecified|working_knowledge|hands_on|advanced","p":<passage number or null>,"quote":"<exact quote or empty>"}]}
+Include every skill exactly once."""
 
 
 CAREER_DATES_CAVEAT = (
@@ -418,38 +441,55 @@ class RequirementJudge:
                 return outcome
 
             client = self._client or OpenAI(api_key=get_openai_api_key())
-            results: Dict[int, Dict[str, Any]] = {}
-            pending = list(remaining)
-            # The model sometimes answers only some of the requirements (seen
-            # live: 3 of 12 on one call, 12 of 12 on the next, same input).
-            # A silently missing answer would read as "not evidenced" and
-            # randomly under-rank a candidate, so ask again for just the
-            # missing ones, once.
-            for attempt in range(2):
-                if not pending:
-                    break
-                answered = self._ask(client, passages, [(i, checks[i].criterion) for i in pending], outcome)
-                if answered is None:
+            # Two families of checks. A DEPTH check (skill + required depth) is not asked "does the evidence meet the depth"; the model reports the depth the evidence
+            # DEMONSTRATES (`observed_depth`) and CODE compares it with the required depth. Every other check is asked as before.
+            depth_idx = [i for i in remaining if checks[i].proficiency and checks[i].subject]
+            plain_idx = [i for i in remaining if i not in set(depth_idx)]
+
+            def collect(indices: List[int], ask) -> Optional[Dict[int, Dict[str, Any]]]:
+                # The model sometimes answers only some of the requirements (seen
+                # live: 3 of 12 on one call, 12 of 12 on the next, same input).
+                # A silently missing answer would read as "not evidenced" and
+                # randomly under-rank a candidate, so ask again for just the
+                # missing ones, once.
+                got: Dict[int, Dict[str, Any]] = {}
+                pending = list(indices)
+                for attempt in range(2):
+                    if not pending:
+                        break
+                    answered = ask(pending)
+                    if answered is None:
+                        return None
+                    got.update(answered)
+                    pending = [i for i in pending if i not in got]
+                    if pending and attempt == 0:
+                        outcome.re_asked_missing += len(pending)
+                return got
+
+            ask_plain = lambda pend, retry=False: self._ask(client, passages, [(i, checks[i].criterion) for i in pend], outcome, retry=retry)           # noqa: E731
+            ask_depth = lambda pend, retry=False: self._ask_depth(client, passages, [(i, checks[i]) for i in pend], outcome, retry=retry)                # noqa: E731
+            verified: Dict[int, Tuple[Dict[str, Any], Optional[str]]] = {}
+            for indices, ask, verify in ((plain_idx, ask_plain, self._verify_check), (depth_idx, ask_depth, self._verify_depth)):
+                if not indices:
+                    continue
+                got = collect(indices, ask)
+                if got is None:
                     outcome.failed = True
                     return outcome
-                results.update(answered)
-                pending = [i for i in pending if i not in results]
-                if pending and attempt == 0:
-                    outcome.re_asked_missing += len(pending)
-
-            verified: Dict[int, Tuple[Dict[str, Any], Optional[str]]] = {i: self._verify_check(checks[i], results.get(i), passages, outcome) for i in remaining}
-            # THE narrow retry: only the checks whose quote failed verification (never a check that succeeded, never a binding discard), once, with an exact-quote
-            # instruction. The verifier is the same; it is not relaxed.
-            retry = [i for i in remaining if verified[i][1] in RETRIABLE_QUOTE_FAILURES]
-            if retry:
-                second = self._ask(client, passages, [(i, checks[i].criterion) for i in retry], outcome, retry=True)
-                for i in retry:
-                    first_failure = verified[i][1]
-                    again = self._verify_check(checks[i], (second or {}).get(i), passages, outcome) if second is not None else verified[i]
-                    recovered = again[0].get("verdict") in ("met", "partly")
-                    outcome.retries["requirement"].append({"check_id": checks[i].check_id, "first_pass_failure": first_failure, "recovered": recovered,
-                                                           "final_failure": None if recovered else (again[1] or "not_claimed")})
-                    verified[i] = again
+                for i in indices:
+                    verified[i] = verify(checks[i], got.get(i), passages, outcome)
+                # THE narrow retry: only the checks whose quote failed verification (never a check that succeeded, never a binding discard), once, with an exact-quote
+                # instruction. The verifier is the same; it is not relaxed.
+                retry = [i for i in indices if verified[i][1] in RETRIABLE_QUOTE_FAILURES]
+                if retry:
+                    second = ask(retry, retry=True)
+                    for i in retry:
+                        first_failure = verified[i][1]
+                        again = verify(checks[i], (second or {}).get(i), passages, outcome) if second is not None else verified[i]
+                        recovered = again[0].get("verdict") in ("met", "partly")
+                        outcome.retries["requirement"].append({"check_id": checks[i].check_id, "first_pass_failure": first_failure, "recovered": recovered,
+                                                               "final_failure": None if recovered else (again[1] or "not_claimed")})
+                        verified[i] = again
             outcome.judgments = [deterministic[i] if i in deterministic else verified[i][0] for i in range(len(requirements))]
             self._review(client, outcome)
             return outcome
@@ -479,7 +519,7 @@ class RequirementJudge:
         claims = [
             (index, judgment)
             for index, judgment in enumerate(outcome.judgments or [])
-            if judgment.get("verdict") == "met" and judgment.get("source") != "career dates" and not judgment.get("deterministic")
+            if judgment.get("verdict") == "met" and judgment.get("source") != "career dates" and not judgment.get("deterministic") and "observed_depth" not in judgment
         ]
         if not claims:
             return
@@ -560,6 +600,80 @@ class RequirementJudge:
                 seen.setdefault(int(r["r"]), []).append(r)
         # a verdict binds to exactly ONE check: an id answered twice is ambiguous and is treated as unanswered (so it is re-asked, not guessed)
         return {i: rs[0] for i, rs in seen.items() if len(rs) == 1}
+
+    def _ask_depth(
+        self, client: Any, passages: List[TextSource], numbered: List[Tuple[int, EvidenceCheck]], outcome: "JudgeOutcome", retry: bool = False
+    ) -> Optional[Dict[int, Dict[str, Any]]]:
+        """The depth pass: for each skill the model reports the depth the passages DEMONSTRATE. It is never told the depth the check requires."""
+        payload: Dict[str, Any] = {
+            "passages": [{"p": i, "label": p.label, "text": (p.text or "")[:MAX_PASSAGE_CHARS]} for i, p in enumerate(passages)],
+            "skills": [{"d": i, "skill": c.subject} for i, c in numbered],
+        }
+        if retry:
+            payload["instruction"] = _RETRY_INSTRUCTION
+        response = client.responses.create(
+            model=self._model,
+            input=[{"role": "system", "content": _DEPTH_PROMPT}, {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}],
+            text={"format": {"type": "json_object"}},
+            temperature=0,
+        )
+        outcome.calls += 1
+        usage = getattr(response, "usage", None)
+        outcome.input_tokens += int(getattr(usage, "input_tokens", 0) or 0)
+        outcome.output_tokens += int(getattr(usage, "output_tokens", 0) or 0)
+        content = getattr(response, "output_text", None)
+        if not content:
+            return None
+        wanted = {i for i, _ in numbered}
+        seen: Dict[int, List[Dict[str, Any]]] = {}
+        for r in json.loads(content).get("results", []):
+            if isinstance(r, dict) and "d" in r:
+                try:
+                    d = int(r["d"])
+                except (TypeError, ValueError):
+                    continue
+                if d in wanted:
+                    seen.setdefault(d, []).append(r)
+        return {d: rs[0] for d, rs in seen.items() if len(rs) == 1}
+
+    def _verify_depth(
+        self, check: EvidenceCheck, row: Optional[Dict[str, Any]], passages: List[TextSource], outcome: JudgeOutcome
+    ) -> Tuple[Dict[str, Any], Optional[str]]:
+        """(judgment, failure) for a depth check. The model's `observed_depth` is accepted only with a quote that passes the quote gate and supports THIS skill from
+        demonstrated work or a certification (a title, headline, skills-list entry or computed passage is never depth evidence); otherwise the observation is
+        `unspecified` and the reason is kept. The verdict is then CODE: `met` iff observed >= required on unspecified < working_knowledge < hands_on < advanced; below the
+        requirement but demonstrated is `partly`; undemonstrated is `not_evidenced`."""
+        required = check.proficiency
+        base = {"tier": check.tier, "signal_text": check.label, "check_id": check.check_id, "criterion": check.criterion, "verdict": "not_evidenced",
+                "observed_depth": "unspecified", "required_depth": required, "claimed_depth": None}
+        if not row:
+            return base, None
+        claimed = str(row.get("observed_depth") or "").strip().casefold().replace("-", "_").replace(" ", "_")
+        if claimed not in OBSERVED_DEPTHS:
+            base.update(claimed_depth=claimed or None, discard_reason="unrecognised_observed_depth")
+            return base, None
+        base["claimed_depth"] = claimed
+        if claimed == "unspecified":
+            return base, None
+        quote = str(row.get("quote") or "").strip()
+        try:
+            pi = int(row.get("p"))
+            passage = passages[pi] if pi >= 0 else None
+        except (TypeError, ValueError, IndexError):
+            passage = None
+        ok, why = verify_quote(quote, passage.text if passage is not None else None)
+        if not ok:
+            base.update(discard_reason=why, discarded_quote=quote[:240])
+            return base, why
+        bind = validate_binding(check, quote, passage.evidence_type, passage.label)
+        if bind:
+            base.update(discard_reason=bind, discarded_quote=quote[:240])
+            outcome.binding_discards.append({"check_id": check.check_id, "reason": bind, "quote": quote[:240]})
+            return base, bind
+        met = meets_depth(claimed, required)
+        base.update(verdict="met" if met else "partly", observed_depth=claimed, quote=quote, term=check.subject, source=passage.label, evidence_detail=passage.detail,
+                    evidence_type=passage.evidence_type, strength=passage.strength, depth_rule="observed_depth >= required_depth (unspecified < working_knowledge < hands_on < advanced)")
+        return base, None
 
     @staticmethod
     def _not_evidenced(check: EvidenceCheck) -> Dict[str, Any]:

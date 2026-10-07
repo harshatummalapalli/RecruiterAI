@@ -52,6 +52,7 @@ class ScriptedModel:
         self.asked: List[List[str]] = []          # the requirement texts of each first-pass call, as the Judge sent them
         self.payloads: List[Dict[str, Any]] = []
         self.exclusion_asked: List[List[str]] = []
+        self.depth_asked: List[List[str]] = []
 
     def create(self, **kwargs):
         body = json.loads(kwargs["input"][1]["content"])
@@ -72,6 +73,19 @@ class ScriptedModel:
                     p_, ph = hit
                     start = p_["text"].casefold().index(ph.casefold())
                     out.append({"x": x["x"], "verdict": "present", "p": p_["p"], "quote": p_["text"][start:start + len(ph)]})
+            return SimpleNamespace(output_text=json.dumps({"results": out}), usage=usage)
+        if "skills" in body:                           # the depth pass: the scripted stand-in reports `advanced` iff the skill is named in a passage (it meets any depth)
+            self.depth_asked.append([x["skill"] for x in body["skills"]])
+            out = []
+            for x in body["skills"]:
+                needles = [x["skill"]] + [part.strip() for part in x["skill"].split(" or ") if part.strip()]
+                found = next(((p_, n) for p_ in body["passages"] for n in needles if n.casefold() in p_["text"].casefold()), None)
+                if found is None:
+                    out.append({"d": x["d"], "observed_depth": "unspecified", "p": None, "quote": ""})
+                else:
+                    p_, n = found
+                    start = p_["text"].casefold().index(n.casefold())
+                    out.append({"d": x["d"], "observed_depth": "advanced", "p": p_["p"], "quote": p_["text"][start:start + len(n)]})
             return SimpleNamespace(output_text=json.dumps({"results": out}), usage=usage)
         self.payloads.append(body)
         self.asked.append([r["text"] for r in body["requirements"]])
@@ -166,7 +180,7 @@ def run_matrix(contexts: List[DownstreamContext], base: Optional[SearchIntent] =
         result["candidates"][name] = {
             "satisfies": [a.path_id for a in per_path if a.satisfies_required],
             "attribution": [a.to_dict() for a in per_path],
-            "judge_inputs": [{"path_id": o.checklist["path_id"], "input_source": o.input_source, "asked": len({t for call in m.asked for t in call}),
+            "judge_inputs": [{"path_id": o.checklist["path_id"], "input_source": o.input_source, "asked": len({t for call in m.asked for t in call}) + len({t for call in m.depth_asked for t in call}),
                               "exclusions": len(o.checklist["exclusions"]), "preferences": len(o.checklist["preferences"]),
                               "unresolved": len(o.checklist["unresolved"]), "proficiencies": sum(1 for k in ("requirements", "preferences") for i in o.checklist[k] if i["proficiency"]),
                               "work_mode": sum(1 for k in ("requirements", "preferences", "unresolved") for i in o.checklist[k] if i["concept"] == "location.work_mode")}

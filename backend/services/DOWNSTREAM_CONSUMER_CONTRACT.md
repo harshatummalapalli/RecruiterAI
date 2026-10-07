@@ -81,15 +81,26 @@ The semantic unit the Judge evaluates. A **downstream execution artifact**: buil
 ## 3c. Requirement binding
 * A verdict binds to exactly **one** `check_id` (the model's `r` / `x` number is an alias; an id answered twice is ambiguous and is treated as unanswered, not guessed).
 * `met` / `partly` / `PRESENT` stands only if (1) its quote passes the quote gate (3f) **and** (2) the quote supports THIS check, deterministically:
-  * **subject binding**: a named skill's quote must contain that skill (every significant token, whole words, plural tolerant). The evidence for Python is never the evidence for Java just because the candidate has both.
+  * **subject binding**: a skill's quote must contain that skill (every significant token, whole words), compared through conservative base forms: case, plural (-s/-es/-ies), -ing, -ed, a doubled final consonant, a trailing -e (`financial modeling` = `financial models` = `financial modelling`; `financial modeling` is NOT `financial planning`; `Java` is not `JavaScript`; `SQL` is not `NoSQL`). No synonym, no similarity. The evidence for Python is never the evidence for Java just because the candidate has both.
   * **work evidence**: a check that requires a depth needs demonstrated work or a certification. A skills-list entry, a title, a headline or a computed passage is "a skill quote alone" and does not evidence a depth.
   * **indicator binding** (exclusions): a PRESENT quote must contain one of the predicate's own indicator terms.
 * A quote that does not support the exact check is **discarded** (the verdict becomes `not_evidenced`, with `discard_reason` and the discarded quote, and the discard is listed in `JudgeOutcome.binding_discards`). A binding discard is final: it is not retried.
 * The review pass (unchanged prompt) is given the check's complete `criterion`, not a label.
-* Known limit: subject binding is lexical. A plain, multi-word CATEGORY skill is bound on all its tokens in this implementation, which over-rejects legitimate evidence ("Financial modeling" vs "builds financial models"); see `RESULTS_EVIDENCE_CHECK_VALIDATION.md` (class VALIDATION, fix recommended and not applied).
+* Known limit: subject binding is lexical. The morphology fix recovers the "Financial modeling" / "financial models" case; a plain multi-word CATEGORY skill is still bound on all its tokens, so "Data Engineering" is not bound by "maintains the team's Python data pipelines" (see `RESULTS_DEPTH_CONTRACT_VALIDATION.md` for the recount; the scope of binding for category skills is an open decision).
 
-## 3d. Proficiency
-The Judge evaluates the **complete** claim `skill + proficiency` (Java + hands_on; Excel + advanced; Power BI + working_knowledge), as ONE check whose criterion states both. The plain skill ("Java") is a separate check. The depth text is deterministic: hands-on = built/written/operated it in real work (listing, studying or working beside users is not); working knowledge = practical familiarity from actual use; advanced = depth beyond routine use (stated expertise or sophisticated work). A depth is never inferred from an action verb in the source, and an unsupported depth stays `UNRESOLVED` (never a check at all).
+## 3d. Proficiency: observed depth, compared by code
+A skill + depth claim is ONE check whose subject is the skill and whose required depth is `proficiency`. The Judge does **not** decide whether the evidence meets the required depth. For these checks the model is asked a single question: which depth do the supplied passages DEMONSTRATE for the skill, one of
+
+```
+unspecified < working_knowledge < hands_on < advanced        (observed_depth)
+```
+with a quote. The model is **never told the required depth** (its payload is the passages and the skill names only). Then code applies `meets_depth(observed, required)` = `observed_depth >= required_depth`: **met** if so; **partly** if a depth is demonstrated but below the requirement (never counts as evidence); **not_evidenced** if `unspecified`. Stronger evidence therefore meets a weaker requirement by construction.
+
+* `unspecified` = absent, or only named (a skills list, a title, a headline, years of experience, a description with no account of the work), or only studied / "familiar" without use in real work. **A depth is never inferred from a title, a generic verb ("worked on", "responsible for") or years alone.**
+* An observed depth above `unspecified` is accepted only with a quote that passes the quote gate (§3f), names the skill (§3c) and comes from demonstrated work or a certification. Otherwise the observation is recorded as `unspecified` with the model's `claimed_depth` and the `discard_reason`; a quote-gate failure gets the one narrow retry (§3f).
+* The review pass does not apply to a depth judgment (a second model comparison would defeat the point). The plain skill ("Java") remains a separate check asked and reviewed as before.
+* The depth text of a source-stated phrase ("Working knowledge of X") is lifted into the check's required depth only from an explicit leading phrase; an unsupported depth stays `UNRESOLVED` and is never a check.
+* Judgment fields: `observed_depth`, `claimed_depth`, `required_depth`, `depth_rule`, plus the usual quote / source / evidence type.
 
 ## 3e. Exclusions: explicit predicates and three states
 An exclusion is built into a predicate; the Judge does not infer it from recruiter prose.
@@ -215,3 +226,17 @@ Two causes sit outside this contract and are recorded in §8: the existing verif
 | advanced Excel vs working-knowledge Power BI, independently | **not reliable**: a stronger statement is not accepted as meeting a weaker depth (0/6), borderline evidence is `partly`, explicit advanced evidence flips 2 in 6 (model capability; the wording hypothesis was tested and refuted) |
 
 Open items for review: a depth-comparison design that does not rely on the small model (classify the depth, compare in code) or a larger model; the over-reaching lexical binding on category skills (47 legitimate verdicts discarded); the policy for an unsupported PRESENT.
+
+
+## 12. Observed-depth validation (summary; the evidence is `RESULTS_DEPTH_CONTRACT_VALIDATION.md`)
+Targeted matrix only (5 evidence levels x 3 required depths x 6 runs = 90 cells, real model, synthetic profiles, nothing tuned). **Not passed.**
+
+| measure | result |
+|---|---|
+| A. the model's observed depth is the expected one | 70/90 (20 errors, all one level off, 18 too deep; stable across runs) |
+| B. the ordinal comparison is right (code) / end-to-end verdict | 90/90 / 82/90 |
+| stronger-than-required evidence meets the weaker requirement | 18/18 (previously 0/6 on the equivalent case) |
+| C. accepted observations have a gate-passing, skill-naming quote from demonstrated work | 90/90 |
+| required depth ever sent to the model; provider / compiler tokens | none; none |
+
+The structure (representation, comparison, binding, retry) holds. The remaining problem is mostly model capability (over-crediting adjacent depths: `worked on X` read as working knowledge for two of three skills, against an explicit rule) plus one ambiguous boundary (working knowledge vs hands-on for a ubiquitous tool). No further tuning and no stronger model was run; both are for review.

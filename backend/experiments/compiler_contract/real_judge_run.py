@@ -75,7 +75,7 @@ def build_profile(p: sc.Profile) -> Tuple[Candidate, HarvestEvidence]:
                      raw_data={"basic_profile": {"headline": p.headline},
                                "experience": {"employment_details": {"current": [{"start_date": f"{p.start_year}-01-01T00:00:00"}], "past": []}},
                                "metadata": {"updated_at": "2026-09-01T00:00:00+00:00"}})
-    harvest = HarvestEvidence(success=True, raw={"element": {"experience": [{"position": p.title, "companyName": "Synthetic Co", "description": d} for d in p.passages], "skills": []}})
+    harvest = HarvestEvidence(success=True, raw={"element": {"experience": [{"position": p.title, "companyName": "Synthetic Co", "description": d} for d in p.passages], "skills": [{"name": n} for n in getattr(p, "skills", ())]}})
     return cand, harvest
 
 

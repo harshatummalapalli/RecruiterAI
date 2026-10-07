@@ -34,9 +34,10 @@ TABLE = rr.scenario_table()
 class Fake:
     """A scripted model with a handler per prompt kind. Records every payload."""
 
-    def __init__(self, req: Callable = None, exc: Callable = None, review: Callable = None):
+    def __init__(self, req: Callable = None, exc: Callable = None, review: Callable = None, depth: Callable = None):
         self.responses = self
-        self._req, self._exc, self._review = req, exc, review
+        self._req, self._exc, self._review, self._depth = req, exc, review, depth
+        self.depth_calls: List[dict] = []
         self.req_calls: List[dict] = []
         self.exc_calls: List[dict] = []
         self.review_calls: List[dict] = []
@@ -48,6 +49,10 @@ class Fake:
             self.review_calls.append(body)
             out = self._review(body) if self._review else [{"i": c["i"], "supports": True} for c in body["claims"]]
             return SimpleNamespace(output_text=json.dumps({"results": out}), usage=usage)
+        if "skills" in body:
+            self.depth_calls.append(body)
+            rows = self._depth(body) if self._depth else [{"d": x["d"], "observed_depth": "unspecified", "p": None, "quote": ""} for x in body["skills"]]
+            return SimpleNamespace(output_text=json.dumps({"results": rows}), usage=usage)
         if "exclusion_checks" in body:
             self.exc_calls.append(body)
             return SimpleNamespace(output_text=json.dumps({"results": self._exc(body)}), usage=usage)
@@ -59,6 +64,12 @@ def fill(body, rows):
     """A complete answer: the given rows plus `not_evidenced` for every other requirement (a model that omits rows triggers the existing re-ask of the missing ones)."""
     have = {r["r"] for r in rows}
     return rows + [{"r": r["r"], "verdict": "not_evidenced", "p": None, "quote": ""} for r in body["requirements"] if r["r"] not in have]
+
+
+def dfill(body, rows):
+    """A complete depth answer: the given rows plus `unspecified` for every other skill."""
+    have = {r["d"] for r in rows}
+    return rows + [{"d": x["d"], "observed_depth": "unspecified", "p": None, "quote": ""} for x in body["skills"] if x["d"] not in have]
 
 
 def find(body, needle):
@@ -156,23 +167,30 @@ def test_PR_an_explicit_depth_phrase_in_the_criterion_is_lifted_but_a_verb_never
 def _python_for_everything(body):
     """A model that cross-assigns: it cites the PYTHON sentence for every requirement."""
     p, q = quote_of(body, "Python")
-    return [{"r": r["r"], "verdict": "met", "p": p, "quote": q, "term": "Python"} for r in body["requirements"]]
+    return fill(body, [{"r": r["r"], "verdict": "met", "p": p, "quote": q, "term": "Python"} for r in body["requirements"]])
+
+
+def _python_depth_for_every_skill(body):
+    """... and for every skill's depth."""
+    p, q = quote_of(body, "Python")
+    return [{"d": x["d"], "observed_depth": "hands_on", "p": p, "quote": q} for x in body["skills"]]
 
 
 def test_BI_evidence_for_python_cannot_be_reused_for_java():
-    out = judge(Fake(req=_python_for_everything), r2_intent(), ["Writes production Python services every day and maintains the team's Python data pipelines"])
+    out = judge(Fake(req=_python_for_everything, depth=_python_depth_for_every_skill), r2_intent(), ["Writes production Python services every day and maintains the team's Python data pipelines"])
     j = by_label(out, "hands-on Java")
     assert j["verdict"] == "not_evidenced" and j["discard_reason"] == "binding:subject_not_in_quote" and j["check_id"].endswith("skill.proficiency[5]|core")
+    assert j["claimed_depth"] == "hands_on" and j["observed_depth"] == "unspecified"                  # the model's claim is kept; the accepted observation is not
     assert by_label(out, "Java")["discard_reason"] == "binding:subject_not_in_quote"
-    assert by_label(out, "hands-on Python")["verdict"] == "met" and "Python" in by_label(out, "hands-on Python")["quote"]
-    assert {d["reason"] for d in out.binding_discards if "Java" in d["check_id"] or "[5]" in d["check_id"]} == {"binding:subject_not_in_quote"}
-    assert out.retries["requirement"] == [] or all(r["first_pass_failure"] in ec.RETRIABLE_QUOTE_FAILURES for r in out.retries["requirement"])      # a binding failure is not a retry
+    p = by_label(out, "hands-on Python")
+    assert p["verdict"] == "met" and p["observed_depth"] == "hands_on" and "Python" in p["quote"]
+    assert {d["reason"] for d in out.binding_discards if d["check_id"].endswith("skill.proficiency[5]|core")} == {"binding:subject_not_in_quote"}
 
 
 def test_BI_a_binding_discard_is_final_it_is_not_retried():
-    fake = Fake(req=_python_for_everything)
+    fake = Fake(req=_python_for_everything, depth=_python_depth_for_every_skill)
     judge(fake, r2_intent(), ["Writes production Python services every day"])
-    assert all("instruction" not in c for c in fake.req_calls)
+    assert all("instruction" not in c for c in fake.req_calls) and all("instruction" not in c for c in fake.depth_calls)
 
 
 def test_BI_every_judgment_maps_to_exactly_one_known_check_id():
@@ -192,26 +210,38 @@ def test_BI_an_id_answered_twice_is_ambiguous_and_unanswered():
     assert by_label(out, "Python")["verdict"] == "not_evidenced"                                  # not guessed from either of the two rows
 
 
-def test_BI_a_depth_claim_needs_demonstrated_work_not_a_skills_list_entry():
-    cand = Candidate(candidate_id="s", name="S", title="Engineer", raw_data={"basic_profile": {"headline": "Engineer"}})
+def test_BI_a_depth_claim_needs_demonstrated_work_not_a_skills_list_entry_a_title_or_a_headline():
+    cand = Candidate(candidate_id="s", name="S", title="Java Developer", raw_data={"basic_profile": {"headline": "Java Developer, 9 years"}})
     harvest = HarvestEvidence(success=True, raw={"element": {"experience": [], "skills": [{"name": "Java"}]}})
 
-    def cite_the_skill_entry(body):
+    def cite(label):
+        def f(body):
+            p = next(x for x in body["passages"] if x["label"] == label)
+            return [{"d": x["d"], "observed_depth": "advanced", "p": p["p"], "quote": p["text"]} for x in body["skills"] if x["skill"] == "Java"]
+        return f
+
+    def cite_plain(body):
         p = next(x for x in body["passages"] if x["label"] == "harvest: skill")
-        return fill(body, [{"r": r["r"], "verdict": "met", "p": p["p"], "quote": "Java"} for r in body["requirements"] if "Java" in r["text"]])
-    out = RequirementJudge(client=Fake(req=cite_the_skill_entry)).judge_detailed(cand, r2_intent(), harvest)
+        return fill(body, [{"r": r["r"], "verdict": "met", "p": p["p"], "quote": "Java"} for r in body["requirements"] if r["text"] == "Java"])
+    for label in ("harvest: skill", "current title", "headline"):
+        out = RequirementJudge(client=Fake(req=cite_plain, depth=cite(label))).judge_detailed(cand, r2_intent(), harvest)
+        j = by_label(out, "hands-on Java")
+        assert j["verdict"] == "not_evidenced" and j["discard_reason"] == "binding:work_evidence_required" and j["observed_depth"] == "unspecified" and j["claimed_depth"] == "advanced", label
     assert by_label(out, "Java")["verdict"] == "met"                                              # the plain skill: a listed skill is a skill quote
-    assert by_label(out, "hands-on Java")["verdict"] == "not_evidenced" and by_label(out, "hands-on Java")["discard_reason"] == "binding:work_evidence_required"
 
 
-def test_BI_the_review_pass_is_given_the_complete_claim_not_a_label():
+def test_BI_only_plain_checks_go_to_the_review_pass_and_with_the_check_criterion():
     def met_java(body):
         p, q = quote_of(body, "Java")
-        return fill(body, [{"r": r["r"], "verdict": "met", "p": p, "quote": q} for r in body["requirements"] if "Java" in r["text"]])
-    fake = Fake(req=met_java)
-    judge(fake, r2_intent(), ["Builds and operates production Java services for the payments platform"])
-    claims = [c["claims"][0]["requirement"] for c in fake.review_calls]
-    assert any(c.startswith("Java, at the level of hands-on use") for c in claims) and "Java" in claims
+        return fill(body, [{"r": r["r"], "verdict": "met", "p": p, "quote": q} for r in body["requirements"] if r["text"] == "Java"])
+
+    def depth(body):
+        p, q = quote_of(body, "Java")
+        return [{"d": x["d"], "observed_depth": "hands_on", "p": p, "quote": q} for x in body["skills"] if x["skill"] == "Java"]
+    fake = Fake(req=met_java, depth=depth)
+    out = judge(fake, r2_intent(), ["Builds and operates production Java services for the payments platform"])
+    assert [c["claims"][0]["requirement"] for c in fake.review_calls] == ["Java"]                 # the depth judgment is code-decided and is not reviewed
+    assert by_label(out, "hands-on Java")["verdict"] == "met" and "review" not in by_label(out, "hands-on Java")
 
 
 # ------------------------------------------------------------------------------------------------------------------ QG
@@ -259,7 +289,7 @@ def test_QG_the_retry_re_asks_only_the_failed_checks_once_with_an_exact_quote_in
     assert retried == ["Java"]                                                                    # ONLY the failed check; no successful check is re-asked
     assert by_label(out, "Java")["verdict"] == "met" and "..." not in by_label(out, "Java")["quote"]
     assert [(r["check_id"].split("|")[-2], r["first_pass_failure"], r["recovered"]) for r in out.retries["requirement"]] == [("skill[5]", "ellipsis", True)]
-    assert by_label(out, "Python")["verdict"] == "met" and by_label(out, "hands-on Python")["verdict"] == "met"
+    assert by_label(out, "Python")["verdict"] == "met"
 
 
 def test_QG_a_retry_that_fails_again_is_discarded_and_there_is_no_third_attempt():
@@ -469,3 +499,196 @@ def test_this_phase_calls_no_provider_and_no_retrieval():
     for f in ("backend/experiments/compiler_contract/evidence_check_run.py", "backend/experiments/compiler_contract/evidence_check_scenarios.py", "backend/services/evidence_check.py"):
         text = (ROOT / f).read_text(encoding="utf-8")
         assert not re.search(r"^\s*(?:from|import)\s+backend\.providers|HarvestEnrichmentService|CrustDataProvider|provider\.search|search_with_options", text, re.M), f
+
+
+# ------------------------------------------------------------------------------------------------------------------ morphology (binding)
+
+
+def bound(quote, subject):
+    return ec.subject_in(quote, ec.subject_tokens(subject))
+
+
+@pytest.mark.parametrize("quote,subject", [
+    ("builds financial models, scenario analysis and sensitivity analysis", "Financial modeling"),
+    ("Does financial modelling for the group", "Financial modeling"),
+    ("Owns the financial model", "Financial modeling"), ("Python services in production", "Python"), ("Dashboards built in Power BI", "Power BI"), ("power bi reports", "Power BI"),
+    ("ships APIs to customers", "API"), ("managed three teams", "managing"), ("Uses SQL daily", "sql"), ("plans the quarter", "planning"), ("designed the pipelines", "pipeline")])
+def test_MO_morphology_the_binding_accepts_case_plural_and_ing_variants(quote, subject):
+    assert bound(quote, subject)
+
+
+@pytest.mark.parametrize("quote,subject", [
+    ("builds the financial plan and the budget", "Financial modeling"), ("financial planning for two units", "Financial modeling"), ("Writes JavaScript front ends", "Java"),
+    ("MongoDB and other NoSQL stores", "SQL"), ("an excellent communicator", "Excel"), ("SQL query tuning", "Power Query"), ("Pythonic style guides", "Python"),
+    ("a basis for analysis", "analyses"), ("Studied the model", "Modeling languages"), ("works at a power company", "Power BI")])
+def test_MO_morphology_stays_conservative_no_semantic_or_fuzzy_matching(quote, subject):
+    assert not bound(quote, subject)
+
+
+def test_MO_the_stemmer_only_touches_plain_alphabetic_words_and_only_these_suffixes():
+    assert ec.stems("modeling") & ec.stems("models") and ec.stems("modelling") & ec.stems("model")
+    assert not (ec.stems("modeling") & ec.stems("planning")) and not (ec.stems("java") & ec.stems("javascript"))
+    assert ec.stems("c++") == frozenset({"c++"}) and ec.stems("fp&a") == frozenset({"fp&a"}) and ec.stems("sql") == frozenset({"sql"})
+    assert ec.stems("string") == frozenset({"string"})                                            # "-ing" needs a real base ("str" has no vowel)
+
+
+# ------------------------------------------------------------------------------------------------------------------ depth: the contract
+
+
+ORDER = ["unspecified", "working_knowledge", "hands_on", "advanced"]
+
+
+@pytest.mark.parametrize("observed", ORDER)
+@pytest.mark.parametrize("required", ORDER[1:])
+def test_DP_the_ordinal_comparison_is_unspecified_lt_working_knowledge_lt_hands_on_lt_advanced(observed, required):
+    assert ec.meets_depth(observed, required) is (ORDER.index(observed) >= ORDER.index(required))
+
+
+def test_DP_a_missing_observation_is_unspecified_and_a_missing_requirement_is_met_by_anything():
+    assert ec.meets_depth(None, "working_knowledge") is False and ec.meets_depth("garbage", "working_knowledge") is False and ec.meets_depth("unspecified", None) is True
+
+
+def depth_intent_and_labels():
+    from backend.experiments.compiler_contract import depth_matrix as dm
+    return dm.depth_intent()
+
+
+@pytest.mark.parametrize("observed", ORDER)
+def test_DP_the_verdict_is_code_on_the_observed_depth_for_every_required_depth(observed):
+    """The model only reports what the passages show; the verdict for Power BI (needs working knowledge), Java (needs hands-on) and Excel (needs advanced) is computed."""
+    def depth(body):
+        rows = []
+        for x in body["skills"]:
+            if observed == "unspecified":
+                rows.append({"d": x["d"], "observed_depth": "unspecified", "p": None, "quote": ""})
+            else:
+                p, q = quote_of(body, x["skill"], 30)
+                rows.append({"d": x["d"], "observed_depth": observed, "p": p, "quote": q})
+        return rows
+    fake = Fake(req=lambda b: fill(b, []), depth=depth)
+    out = judge(fake, depth_intent_and_labels(), ["Builds with Power BI, Java and Microsoft Excel in production work"])
+    for label, required in (("working knowledge of Power BI", "working_knowledge"), ("hands-on Java", "hands_on"), ("advanced proficiency in Microsoft Excel", "advanced")):
+        j = by_label(out, label)
+        met = ORDER.index(observed) >= ORDER.index(required)
+        assert j["required_depth"] == required and j["claimed_depth"] == observed
+        assert j["verdict"] == ("met" if met else ("partly" if observed != "unspecified" else "not_evidenced")), (label, observed)
+        if observed != "unspecified":
+            assert j["observed_depth"] == observed and j["quote"]
+
+
+def test_DP_the_model_is_never_told_the_required_depth():
+    fake = Fake(req=lambda b: fill(b, []))
+    judge(fake, depth_intent_and_labels(), ["Builds with Power BI, Java and Microsoft Excel in production work"])
+    (body,) = fake.depth_calls
+    assert set(body) == {"passages", "skills"} and body["skills"] == [{"d": i, "skill": s} for i, s in enumerate(["Power BI", "Java", "Microsoft Excel"])] or \
+        all(set(x) == {"d", "skill"} for x in body["skills"])
+    from backend.services import requirement_judge as rj
+    for word in ("required", "requirement", "meets", "at least"):
+        assert word not in rj._DEPTH_PROMPT.casefold()
+    blob = json.dumps(body["skills"]).casefold()
+    assert "hands" not in blob and "working" not in blob and "advanced" not in blob
+
+
+def test_DP_a_title_a_headline_years_or_a_skills_list_never_yield_a_depth():
+    cand = Candidate(candidate_id="t", name="T", title="Senior Java Developer", raw_data={"basic_profile": {"headline": "Java expert with 12 years of experience"}})
+    harvest = HarvestEvidence(success=True, raw={"element": {"experience": [], "skills": [{"name": "Java"}]}})
+
+    def claim_from_the_headline(body):
+        p = next(x for x in body["passages"] if x["label"] == "headline")
+        return [{"d": x["d"], "observed_depth": "advanced", "p": p["p"], "quote": "Java expert with 12 years of experience"} for x in body["skills"] if x["skill"] == "Java"]
+    out = RequirementJudge(client=Fake(req=lambda b: fill(b, []), depth=claim_from_the_headline)).judge_detailed(cand, r2_intent(), harvest)
+    j = by_label(out, "hands-on Java")
+    assert j["verdict"] == "not_evidenced" and j["observed_depth"] == "unspecified" and j["discard_reason"] == "binding:work_evidence_required"
+
+
+def test_DP_an_unrecognised_observed_depth_is_unspecified_never_a_guess():
+    out = judge(Fake(req=lambda b: fill(b, []), depth=lambda b: [{"d": x["d"], "observed_depth": "expert", "p": 1, "quote": "x"} for x in b["skills"]]), r2_intent(), ["Builds production Java services"])
+    j = by_label(out, "hands-on Java")
+    assert j["verdict"] == "not_evidenced" and j["observed_depth"] == "unspecified" and j["discard_reason"] == "unrecognised_observed_depth"
+
+
+def test_DP_the_depth_quote_gate_and_the_one_narrow_retry():
+    state = {"n": 0}
+
+    def depth(body):
+        state["n"] += 1
+        p, q = quote_of(body, "Java", 40)
+        return dfill(body, [{"d": x["d"], "observed_depth": "hands_on", "p": p, "quote": (q[:8] + "..." + q[-4:]) if state["n"] == 1 else q} for x in body["skills"] if x["skill"] == "Java"])
+    fake = Fake(req=lambda b: fill(b, []), depth=depth)
+    out = judge(fake, r2_intent(), ["Builds and operates production Java services for payments"])
+    assert len(fake.depth_calls) == 2 and "instruction" in fake.depth_calls[1] and [x["skill"] for x in fake.depth_calls[1]["skills"]] == ["Java"]
+    j = by_label(out, "hands-on Java")
+    assert j["verdict"] == "met" and "..." not in j["quote"] and any(r["recovered"] for r in out.retries["requirement"])
+    # a quote that fails twice stays discarded; no third attempt
+    fake2 = Fake(req=lambda b: fill(b, []), depth=lambda b: dfill(b, [{"d": x["d"], "observed_depth": "hands_on", "p": 1, "quote": "Builds ... Java"} for x in b["skills"] if x["skill"] == "Java"]))
+    out2 = judge(fake2, r2_intent(), ["Builds and operates production Java services for payments"])
+    assert len(fake2.depth_calls) == 2 and by_label(out2, "hands-on Java")["observed_depth"] == "unspecified" and by_label(out2, "hands-on Java")["discard_reason"] == "ellipsis"
+
+
+def test_DP_stronger_than_required_evidence_meets_a_weaker_requirement_by_code():
+    def adv(body):
+        p, q = quote_of(body, "Power BI", 50)
+        return [{"d": x["d"], "observed_depth": "advanced", "p": p, "quote": q} for x in body["skills"] if x["skill"] == "Power BI"]
+    out = judge(Fake(req=lambda b: fill(b, []), depth=adv), depth_intent_and_labels(), ["Builds advanced Power BI solutions: DAX measures and star-schema semantic models"])
+    j = by_label(out, "working knowledge of Power BI")
+    assert j["verdict"] == "met" and j["observed_depth"] == "advanced" and j["required_depth"] == "working_knowledge" and "observed_depth >= required_depth" in j["depth_rule"]
+
+
+# ------------------------------------------------------------------------------------------------------------------ exclusions: a failed quote never clears
+
+
+@pytest.mark.parametrize("row", [
+    {"verdict": "present", "p": 0, "quote": "Statutory ... audit"},                  # ellipsis
+    {"verdict": "present", "p": 0, "quote": "a quote that is not in the profile"},     # fabricated
+    {"verdict": "present", "p": 0, "quote": "ab"},                                     # too short
+    {"verdict": "present", "p": 99, "quote": "Statutory audit"},                       # no such passage
+    {"verdict": "present", "p": None, "quote": "Statutory audit"},                     # no passage given
+    {"verdict": "present", "p": 0, "quote": "Enjoys hiking"},                          # a real quote that shows none of the predicate's indicators
+    {"verdict": "PRESENT ", "p": 0, "quote": ""}])                                      # no quote at all
+def test_EX_a_failed_evidence_quote_never_turns_present_into_not_present(row):
+    def exc(body):
+        return [dict(row, x=x["x"]) for x in body["exclusion_checks"]]
+    fake = Fake(req=lambda b: [], exc=exc)
+    out = judge(fake, R3C, ["Enjoys hiking and reading. Statutory audit and tax work"])
+    (x,) = out.exclusion_judgments
+    assert x["state"] == INSUFFICIENT_EVIDENCE and x["state"] != NOT_PRESENT
+
+
+# ------------------------------------------------------------------------------------------------------ the committed depth-matrix runs
+
+
+def test_the_committed_depth_matrix_is_complete_and_was_not_told_the_required_depth():
+    from backend.experiments.compiler_contract import depth_matrix as dm
+    from backend.services import requirement_judge as rj
+    jobs = dm.load()
+    assert len(jobs) == 30 == len(dm.PROFILES) * 6 and {(j["candidate"], j["run"]) for j in jobs} == {(p.key, k) for p in dm.PROFILES for k in range(1, 7)}
+    assert {j["model"] for j in jobs} == {rj.JUDGE_MODEL} and {str(r["temperature"]) for j in jobs for r in j["requests"]} == {"0"} and not [j for j in jobs if j["failed"]]
+    depth_requests = [r for j in jobs for r in j["requests"] if r["system"].startswith("You read a candidate's profile and report how deeply")]
+    assert depth_requests and {r["system"] for r in depth_requests} == {rj._DEPTH_PROMPT}          # one prompt for every run: no tuning between runs
+    for r in depth_requests:
+        body = json.loads(r["user"])
+        assert set(body) <= {"passages", "skills", "instruction"} and all(set(x) == {"d", "skill"} for x in body["skills"])
+
+
+def test_the_committed_depth_analysis_is_what_the_analyzer_produces_and_the_report_is_current():
+    from backend.experiments.compiler_contract import build_depth_report as b
+    from backend.experiments.compiler_contract import depth_matrix as dm
+    fresh = dm.analyze(write=False)
+    committed = json.loads((dm.RESULTS / "analysis.json").read_text(encoding="utf-8"))
+    assert json.loads(json.dumps(fresh, sort_keys=True)) == committed
+    text = (ROOT / "backend" / "experiments" / "compiler_contract" / "RESULTS_DEPTH_CONTRACT_VALIDATION.md").read_text(encoding="utf-8")
+    assert b.build() == text and "No CrustData" in text
+    # the structural properties the contract claims, independent of the model's accuracy
+    assert committed["B_code_comparison"]["correct"] == committed["B_code_comparison"]["of"] == 90
+    assert committed["C_quote_binding"]["violations"] == [] and committed["depth_payload_violations"] == 0 and committed["leak_token_hits"] == 0
+    assert committed["B_stronger_than_required"]["correct"] == committed["B_stronger_than_required"]["of"]
+    assert committed["error_profile"]["two_or_more_levels"] == 0
+
+
+def test_the_truth_table_of_the_matrix_is_the_ordinal_comparison():
+    from backend.experiments.compiler_contract import depth_matrix as dm
+    for level in ORDER:
+        for required in ORDER[1:]:
+            v = dm.expected_verdict(level, required)
+            assert (v == "met") == (ORDER.index(level) >= ORDER.index(required))
+            assert v == ("not_evidenced" if level == "unspecified" else ("met" if ORDER.index(level) >= ORDER.index(required) else "partly"))
