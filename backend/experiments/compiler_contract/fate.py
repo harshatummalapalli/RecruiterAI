@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 from backend.experiments.compiler_contract import signature as S
 from backend.experiments.compiler_contract.atoms import Atom, enumerate_atoms
 from backend.experiments.intake_strategy.experimental_schema import ExperimentalHiringIntent
-from backend.services.search_compiler import CompiledPlan, compile_intent
+from backend.experiments.compiler_contract.legacy_compiler_v1 import CompiledPlan, compile_intent  # the BEFORE harness measures the legacy compiler
 
 FATES = ("ENFORCED", "VERIFIED_DOWNSTREAM", "PREFERENCE_CONTEXT", "NORMALIZED", "UNRESOLVED", "DROPPED_WITH_JUSTIFICATION", "SILENTLY_DROPPED")
 

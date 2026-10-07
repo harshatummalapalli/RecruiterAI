@@ -13,7 +13,7 @@ from backend.experiments.compiler_contract import loader, signature as S
 from backend.experiments.intake_strategy.experimental_schema import ExperimentalHiringIntent
 from backend.models.structured_intent import (CompanyReq, CompanyScale, SkillAnyOf, SkillReq, StructuredHiringIntent)
 from backend.services import compiler_audit, crustdata_capabilities as cap
-from backend.services.search_compiler import compile_intent
+from backend.experiments.compiler_contract.legacy_compiler_v1 import compile_intent  # the BEFORE harness measures the legacy compiler
 
 BASE: Dict[str, Any] = {"role_archetype": {"value": "hybrid", "confidence": 0.5, "rationale": "probe"}, "role_family": ["Probe Role"]}
 STRENGTHS = ("required", "preferred", "context")

@@ -1,0 +1,5512 @@
+{
+  "role": "R2",
+  "run": 2,
+  "atoms": [
+    {
+      "id": "global|role_archetype",
+      "concept": "role_archetype",
+      "scope": "global",
+      "kind": "METADATA",
+      "value": "hybrid",
+      "strength": null,
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "DROPPED_WITH_JUSTIFICATION"
+      ],
+      "records": [
+        "global|role_archetype[0]"
+      ],
+      "silent": false,
+      "fate": "DROPPED_WITH_JUSTIFICATION",
+      "consistent": true,
+      "why": "carries a justification"
+    },
+    {
+      "id": "global|provenance.basis",
+      "concept": "provenance.basis",
+      "scope": "global",
+      "kind": "METADATA",
+      "value": "per-atom source + verbatim quote (all atoms)",
+      "strength": null,
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [],
+      "records": [],
+      "silent": false,
+      "fate": "CARRIED",
+      "consistent": true,
+      "why": "provenance is a column of every atom record"
+    },
+    {
+      "id": "global|role_family[0]",
+      "concept": "role_family",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Software Engineer",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "NORMALIZED"
+      ],
+      "records": [
+        "global|role_family[0]"
+      ],
+      "silent": false,
+      "fate": "NORMALIZED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|role_family[1]",
+      "concept": "role_family",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Solution Architect",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|role_family[1]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|role_family[2]",
+      "concept": "role_family",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Forward Deployed Engineer",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|role_family[2]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|skill[0]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Full Stack Software Development",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[0]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill.proficiency[0]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Full Stack Software Development = hands_on",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[0]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[1]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Solution Design",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": "current",
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|skill[1]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|skill.proficiency[1]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Solution Design = hands_on",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[1]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[2]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Data Engineering",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[2]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[3]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "AI/ML Implementation",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": "current",
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|skill[3]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|skill.proficiency[3]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "AI/ML Implementation = hands_on",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[3]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[4]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Python",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[4]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill.proficiency[4]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Python = hands_on",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[4]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[5]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Java",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[5]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill.proficiency[5]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Java = hands_on",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[5]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[6]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "API Development",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": "current",
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|skill[6]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|skill.proficiency[6]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "API Development = hands_on",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[6]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[7]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Service Development",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": "current",
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|skill[7]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|skill.proficiency[7]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Service Development = hands_on",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[7]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[8]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Distributed Systems",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[8]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill.proficiency[8]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Distributed Systems = hands_on",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[8]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[9]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Generative AI",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[9]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill.proficiency[9]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Generative AI = hands_on",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[9]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[10]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Large Language Models (LLMs)",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": "current",
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|skill[10]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|skill.proficiency[10]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Large Language Models (LLMs) = hands_on",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[10]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[11]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Retrieval-Augmented Generation (RAG)",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": "current",
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|skill[11]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|skill.proficiency[11]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Retrieval-Augmented Generation (RAG) = hands_on",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[11]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[12]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Agentic AI",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": "current",
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|skill[12]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|skill.proficiency[12]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Agentic AI = hands_on",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[12]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[13]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "AI Orchestration",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": "current",
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|skill[13]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|skill.proficiency[13]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "AI Orchestration = hands_on",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[13]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[14]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Prompt Engineering",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": "current",
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|skill[14]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|skill.proficiency[14]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Prompt Engineering = hands_on",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[14]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[15]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "MCP",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[15]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[16]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "A2A",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[16]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[17]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "AI Application Development Patterns",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[17]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[18]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "NLP Frameworks",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[18]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[19]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "CI/CD",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[19]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[20]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Terraform",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[20]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[21]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "AKS",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[21]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[22]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "EKS",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[22]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[23]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "GitHub Actions",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[23]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[24]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Containerized Deployments",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[24]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[25]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "React",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[25]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill.proficiency[25]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "React = hands_on",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[25]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[26]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Bootstrap",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[26]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill.proficiency[26]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Bootstrap = hands_on",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[26]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[27]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Related User Interface Frameworks",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[27]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill.proficiency[27]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Related User Interface Frameworks = hands_on",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[27]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[28]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Azure DevOps",
+      "strength": "required",
+      "proficiency": "working_knowledge",
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[28]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill.proficiency[28]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Azure DevOps = working_knowledge",
+      "strength": "required",
+      "proficiency": "working_knowledge",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[28]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[29]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Jira",
+      "strength": "required",
+      "proficiency": "working_knowledge",
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[29]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill.proficiency[29]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Jira = working_knowledge",
+      "strength": "required",
+      "proficiency": "working_knowledge",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[29]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[30]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Modern Software Delivery Practices",
+      "strength": "required",
+      "proficiency": "working_knowledge",
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[30]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill.proficiency[30]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Modern Software Delivery Practices = working_knowledge",
+      "strength": "required",
+      "proficiency": "working_knowledge",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[30]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[31]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Snowflake",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[31]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[32]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Databricks",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[32]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[33]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Modern Data Platforms",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[33]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[34]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Data Integration",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": "current",
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|skill[34]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|skill.proficiency[34]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Data Integration = hands_on",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[34]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[35]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "ETL",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[35]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[36]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Data Quality",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[36]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[37]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Data Discovery",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[37]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[38]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Enterprise Data Management",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[38]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[39]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "API Integration",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[39]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[40]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Metadata Management Tools",
+      "strength": "required",
+      "proficiency": "working_knowledge",
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[40]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill.proficiency[40]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Metadata Management Tools = working_knowledge",
+      "strength": "required",
+      "proficiency": "working_knowledge",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[40]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[41]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Data Governance",
+      "strength": "required",
+      "proficiency": "working_knowledge",
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[41]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill.proficiency[41]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Data Governance = working_knowledge",
+      "strength": "required",
+      "proficiency": "working_knowledge",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[41]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill_any_of[0]",
+      "concept": "skill_any_of",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "TensorFlow | PyTorch | scikit-learn | Similar machine learning libraries",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill_any_of[0]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill_any_of[1]",
+      "concept": "skill_any_of",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Azure | AWS",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill_any_of[1]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|education.degree[0]",
+      "concept": "education.degree",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Bachelor's",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|education.degree[0]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|education.degree[1]",
+      "concept": "education.degree",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Master's",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|education.degree[1]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|education.stream[0]",
+      "concept": "education.stream",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Computer Science",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|education.stream[0]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|education.stream[1]",
+      "concept": "education.stream",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Information Technology",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|education.stream[1]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|education.stream[2]",
+      "concept": "education.stream",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Software Engineering",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|education.stream[2]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|education.stream[3]",
+      "concept": "education.stream",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Related field",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|education.stream[3]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|experience.min",
+      "concept": "experience.min",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "12+ years",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|experience.min[0]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|location.entry[0]",
+      "concept": "location.entry",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Hyderabad, Telangana, India",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|location.entry[0]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|domain[0]",
+      "concept": "domain",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Enterprise application development",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|domain[0]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|domain[1]",
+      "concept": "domain",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Enterprise data integration across SaaS applications",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|domain[1]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[0]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Staff-level hands-on individual contributor",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[0]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[1]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Hybrid working availability",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[1]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[2]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Understand client requirements, build proofs of concept, and design s…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[2]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[3]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Collaborate with existing teams to enhance existing products and feat…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[3]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[4]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Recent experience building and deploying AI-powered applications",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[4]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[5]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Design and develop enterprise-scale applications",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[5]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[6]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Translate business requirements into end-to-end solutions and actiona…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[6]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[7]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Design scalable, secure, maintainable solutions integrated into exist…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[7]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[8]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Contribute directly to development, code reviews, technical design di…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[8]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[9]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Own solution design decisions aligned with security, compliance, perf…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[9]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[10]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Champion engineering practices, coding standards, testing strategies,…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[10]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[11]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Evaluate emerging technologies and recommend practical innovations to…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[11]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[12]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Collaborate with data engineers and data scientists on data quality, …",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[12]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[13]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Design, implement, and maintain data pipelines, processing frameworks…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[13]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[14]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Production implementation and deployment of generative AI solutions",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[14]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[15]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Improve generative AI quality, relevance, and reliability",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[15]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[16]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Strong analytical, problem-solving, and troubleshooting capability",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[16]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[17]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Excellent communication and stakeholder management across clients, bu…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[17]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[18]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Communicate technical solutions, risks, and recommendations",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[18]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[19]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Stay current with software engineering, AI, machine learning, and clo…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[19]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[20]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Provide technical leadership, mentor team members, resolve complex ch…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[20]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    }
+  ],
+  "invented_model_only_hard_filters": [],
+  "duplicate_atom_ids": [],
+  "bad_fates": [],
+  "records_without_justification": [],
+  "filter_tree": {
+    "op": "and",
+    "conditions": [
+      {
+        "field": "basic_profile.location.city",
+        "type": "in",
+        "value": [
+          "Hyderabad"
+        ]
+      },
+      {
+        "field": "years_of_experience_raw",
+        "type": "=>",
+        "value": 12
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.title",
+            "type": "(.)",
+            "value": "Software Engineer"
+          },
+          {
+            "field": "experience.employment_details.current.title",
+            "type": "(.)",
+            "value": "Backend Engineer"
+          },
+          {
+            "field": "experience.employment_details.current.title",
+            "type": "(.)",
+            "value": "Backend Developer"
+          },
+          {
+            "field": "experience.employment_details.current.title",
+            "type": "(.)",
+            "value": "Python Developer"
+          },
+          {
+            "field": "experience.employment_details.current.title",
+            "type": "(.)",
+            "value": "Solution Architect"
+          },
+          {
+            "field": "experience.employment_details.current.title",
+            "type": "(.)",
+            "value": "Forward Deployed Engineer"
+          }
+        ]
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.description",
+            "type": "(.)",
+            "value": "Solution Design"
+          },
+          {
+            "field": "basic_profile.headline",
+            "type": "(.)",
+            "value": "Solution Design"
+          },
+          {
+            "field": "basic_profile.summary",
+            "type": "(.)",
+            "value": "Solution Design"
+          }
+        ]
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.description",
+            "type": "(.)",
+            "value": "AI/ML Implementation"
+          },
+          {
+            "field": "basic_profile.headline",
+            "type": "(.)",
+            "value": "AI/ML Implementation"
+          },
+          {
+            "field": "basic_profile.summary",
+            "type": "(.)",
+            "value": "AI/ML Implementation"
+          }
+        ]
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.description",
+            "type": "(.)",
+            "value": "API Development"
+          },
+          {
+            "field": "basic_profile.headline",
+            "type": "(.)",
+            "value": "API Development"
+          },
+          {
+            "field": "basic_profile.summary",
+            "type": "(.)",
+            "value": "API Development"
+          }
+        ]
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.description",
+            "type": "(.)",
+            "value": "Service Development"
+          },
+          {
+            "field": "basic_profile.headline",
+            "type": "(.)",
+            "value": "Service Development"
+          },
+          {
+            "field": "basic_profile.summary",
+            "type": "(.)",
+            "value": "Service Development"
+          }
+        ]
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.description",
+            "type": "(.)",
+            "value": "Large Language Models (LLMs)"
+          },
+          {
+            "field": "basic_profile.headline",
+            "type": "(.)",
+            "value": "Large Language Models (LLMs)"
+          },
+          {
+            "field": "basic_profile.summary",
+            "type": "(.)",
+            "value": "Large Language Models (LLMs)"
+          }
+        ]
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.description",
+            "type": "(.)",
+            "value": "Retrieval-Augmented Generation (RAG)"
+          },
+          {
+            "field": "basic_profile.headline",
+            "type": "(.)",
+            "value": "Retrieval-Augmented Generation (RAG)"
+          },
+          {
+            "field": "basic_profile.summary",
+            "type": "(.)",
+            "value": "Retrieval-Augmented Generation (RAG)"
+          }
+        ]
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.description",
+            "type": "(.)",
+            "value": "Agentic AI"
+          },
+          {
+            "field": "basic_profile.headline",
+            "type": "(.)",
+            "value": "Agentic AI"
+          },
+          {
+            "field": "basic_profile.summary",
+            "type": "(.)",
+            "value": "Agentic AI"
+          }
+        ]
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.description",
+            "type": "(.)",
+            "value": "AI Orchestration"
+          },
+          {
+            "field": "basic_profile.headline",
+            "type": "(.)",
+            "value": "AI Orchestration"
+          },
+          {
+            "field": "basic_profile.summary",
+            "type": "(.)",
+            "value": "AI Orchestration"
+          }
+        ]
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.description",
+            "type": "(.)",
+            "value": "Prompt Engineering"
+          },
+          {
+            "field": "basic_profile.headline",
+            "type": "(.)",
+            "value": "Prompt Engineering"
+          },
+          {
+            "field": "basic_profile.summary",
+            "type": "(.)",
+            "value": "Prompt Engineering"
+          }
+        ]
+      },
+      {
+        "op": "or",
+        "conditions": [
+          {
+            "field": "experience.employment_details.current.description",
+            "type": "(.)",
+            "value": "Data Integration"
+          },
+          {
+            "field": "basic_profile.headline",
+            "type": "(.)",
+            "value": "Data Integration"
+          },
+          {
+            "field": "basic_profile.summary",
+            "type": "(.)",
+            "value": "Data Integration"
+          }
+        ]
+      },
+      {
+        "op": "all_of",
+        "conditions": [
+          {
+            "op": "or",
+            "conditions": [
+              {
+                "field": "education.schools.degree",
+                "type": "(.)",
+                "value": "Bachelor's"
+              },
+              {
+                "field": "education.schools.degree",
+                "type": "(.)",
+                "value": "Master's"
+              }
+            ]
+          },
+          {
+            "op": "or",
+            "conditions": [
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Computer Science"
+              },
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Information Technology"
+              },
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Software Engineering"
+              },
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Related field"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "leaves": [
+    [
+      "basic_profile.headline",
+      "(.)",
+      "\"AI Orchestration\""
+    ],
+    [
+      "basic_profile.headline",
+      "(.)",
+      "\"AI/ML Implementation\""
+    ],
+    [
+      "basic_profile.headline",
+      "(.)",
+      "\"API Development\""
+    ],
+    [
+      "basic_profile.headline",
+      "(.)",
+      "\"Agentic AI\""
+    ],
+    [
+      "basic_profile.headline",
+      "(.)",
+      "\"Data Integration\""
+    ],
+    [
+      "basic_profile.headline",
+      "(.)",
+      "\"Large Language Models (LLMs)\""
+    ],
+    [
+      "basic_profile.headline",
+      "(.)",
+      "\"Prompt Engineering\""
+    ],
+    [
+      "basic_profile.headline",
+      "(.)",
+      "\"Retrieval-Augmented Generation (RAG)\""
+    ],
+    [
+      "basic_profile.headline",
+      "(.)",
+      "\"Service Development\""
+    ],
+    [
+      "basic_profile.headline",
+      "(.)",
+      "\"Solution Design\""
+    ],
+    [
+      "basic_profile.location.city",
+      "in",
+      "[\"Hyderabad\"]"
+    ],
+    [
+      "basic_profile.summary",
+      "(.)",
+      "\"AI Orchestration\""
+    ],
+    [
+      "basic_profile.summary",
+      "(.)",
+      "\"AI/ML Implementation\""
+    ],
+    [
+      "basic_profile.summary",
+      "(.)",
+      "\"API Development\""
+    ],
+    [
+      "basic_profile.summary",
+      "(.)",
+      "\"Agentic AI\""
+    ],
+    [
+      "basic_profile.summary",
+      "(.)",
+      "\"Data Integration\""
+    ],
+    [
+      "basic_profile.summary",
+      "(.)",
+      "\"Large Language Models (LLMs)\""
+    ],
+    [
+      "basic_profile.summary",
+      "(.)",
+      "\"Prompt Engineering\""
+    ],
+    [
+      "basic_profile.summary",
+      "(.)",
+      "\"Retrieval-Augmented Generation (RAG)\""
+    ],
+    [
+      "basic_profile.summary",
+      "(.)",
+      "\"Service Development\""
+    ],
+    [
+      "basic_profile.summary",
+      "(.)",
+      "\"Solution Design\""
+    ],
+    [
+      "education.schools.degree",
+      "(.)",
+      "\"Bachelor's\""
+    ],
+    [
+      "education.schools.degree",
+      "(.)",
+      "\"Master's\""
+    ],
+    [
+      "education.schools.field_of_study",
+      "(.)",
+      "\"Computer Science\""
+    ],
+    [
+      "education.schools.field_of_study",
+      "(.)",
+      "\"Information Technology\""
+    ],
+    [
+      "education.schools.field_of_study",
+      "(.)",
+      "\"Related field\""
+    ],
+    [
+      "education.schools.field_of_study",
+      "(.)",
+      "\"Software Engineering\""
+    ],
+    [
+      "experience.employment_details.current.description",
+      "(.)",
+      "\"AI Orchestration\""
+    ],
+    [
+      "experience.employment_details.current.description",
+      "(.)",
+      "\"AI/ML Implementation\""
+    ],
+    [
+      "experience.employment_details.current.description",
+      "(.)",
+      "\"API Development\""
+    ],
+    [
+      "experience.employment_details.current.description",
+      "(.)",
+      "\"Agentic AI\""
+    ],
+    [
+      "experience.employment_details.current.description",
+      "(.)",
+      "\"Data Integration\""
+    ],
+    [
+      "experience.employment_details.current.description",
+      "(.)",
+      "\"Large Language Models (LLMs)\""
+    ],
+    [
+      "experience.employment_details.current.description",
+      "(.)",
+      "\"Prompt Engineering\""
+    ],
+    [
+      "experience.employment_details.current.description",
+      "(.)",
+      "\"Retrieval-Augmented Generation (RAG)\""
+    ],
+    [
+      "experience.employment_details.current.description",
+      "(.)",
+      "\"Service Development\""
+    ],
+    [
+      "experience.employment_details.current.description",
+      "(.)",
+      "\"Solution Design\""
+    ],
+    [
+      "experience.employment_details.current.title",
+      "(.)",
+      "\"Backend Developer\""
+    ],
+    [
+      "experience.employment_details.current.title",
+      "(.)",
+      "\"Backend Engineer\""
+    ],
+    [
+      "experience.employment_details.current.title",
+      "(.)",
+      "\"Forward Deployed Engineer\""
+    ],
+    [
+      "experience.employment_details.current.title",
+      "(.)",
+      "\"Python Developer\""
+    ],
+    [
+      "experience.employment_details.current.title",
+      "(.)",
+      "\"Software Engineer\""
+    ],
+    [
+      "experience.employment_details.current.title",
+      "(.)",
+      "\"Solution Architect\""
+    ],
+    [
+      "years_of_experience_raw",
+      "=>",
+      "12"
+    ]
+  ],
+  "paths": [],
+  "audit_record": {
+    "search_id": "R2-run2",
+    "confirmation_id": null,
+    "intent_hash": "4ed9bab5163f65c4",
+    "plan_hash": "6fee0ff549f970cc",
+    "compiler_version": "v2-2026-10-07",
+    "contract_version": "compiler-contract-1",
+    "capability_map_version": "v1-2026-10-01",
+    "taxonomy_version": "v1-2026-10-02",
+    "retrieval_title_family": [
+      "Software Engineer",
+      "Backend Engineer",
+      "Backend Developer",
+      "Python Developer",
+      "Solution Architect",
+      "Forward Deployed Engineer"
+    ],
+    "compiled_provider_plan": {
+      "op": "and",
+      "conditions": [
+        {
+          "field": "basic_profile.location.city",
+          "type": "in",
+          "value": [
+            "Hyderabad"
+          ]
+        },
+        {
+          "field": "years_of_experience_raw",
+          "type": "=>",
+          "value": 12
+        },
+        {
+          "op": "or",
+          "conditions": [
+            {
+              "field": "experience.employment_details.current.title",
+              "type": "(.)",
+              "value": "Software Engineer"
+            },
+            {
+              "field": "experience.employment_details.current.title",
+              "type": "(.)",
+              "value": "Backend Engineer"
+            },
+            {
+              "field": "experience.employment_details.current.title",
+              "type": "(.)",
+              "value": "Backend Developer"
+            },
+            {
+              "field": "experience.employment_details.current.title",
+              "type": "(.)",
+              "value": "Python Developer"
+            },
+            {
+              "field": "experience.employment_details.current.title",
+              "type": "(.)",
+              "value": "Solution Architect"
+            },
+            {
+              "field": "experience.employment_details.current.title",
+              "type": "(.)",
+              "value": "Forward Deployed Engineer"
+            }
+          ]
+        },
+        {
+          "op": "or",
+          "conditions": [
+            {
+              "field": "experience.employment_details.current.description",
+              "type": "(.)",
+              "value": "Solution Design"
+            },
+            {
+              "field": "basic_profile.headline",
+              "type": "(.)",
+              "value": "Solution Design"
+            },
+            {
+              "field": "basic_profile.summary",
+              "type": "(.)",
+              "value": "Solution Design"
+            }
+          ]
+        },
+        {
+          "op": "or",
+          "conditions": [
+            {
+              "field": "experience.employment_details.current.description",
+              "type": "(.)",
+              "value": "AI/ML Implementation"
+            },
+            {
+              "field": "basic_profile.headline",
+              "type": "(.)",
+              "value": "AI/ML Implementation"
+            },
+            {
+              "field": "basic_profile.summary",
+              "type": "(.)",
+              "value": "AI/ML Implementation"
+            }
+          ]
+        },
+        {
+          "op": "or",
+          "conditions": [
+            {
+              "field": "experience.employment_details.current.description",
+              "type": "(.)",
+              "value": "API Development"
+            },
+            {
+              "field": "basic_profile.headline",
+              "type": "(.)",
+              "value": "API Development"
+            },
+            {
+              "field": "basic_profile.summary",
+              "type": "(.)",
+              "value": "API Development"
+            }
+          ]
+        },
+        {
+          "op": "or",
+          "conditions": [
+            {
+              "field": "experience.employment_details.current.description",
+              "type": "(.)",
+              "value": "Service Development"
+            },
+            {
+              "field": "basic_profile.headline",
+              "type": "(.)",
+              "value": "Service Development"
+            },
+            {
+              "field": "basic_profile.summary",
+              "type": "(.)",
+              "value": "Service Development"
+            }
+          ]
+        },
+        {
+          "op": "or",
+          "conditions": [
+            {
+              "field": "experience.employment_details.current.description",
+              "type": "(.)",
+              "value": "Large Language Models (LLMs)"
+            },
+            {
+              "field": "basic_profile.headline",
+              "type": "(.)",
+              "value": "Large Language Models (LLMs)"
+            },
+            {
+              "field": "basic_profile.summary",
+              "type": "(.)",
+              "value": "Large Language Models (LLMs)"
+            }
+          ]
+        },
+        {
+          "op": "or",
+          "conditions": [
+            {
+              "field": "experience.employment_details.current.description",
+              "type": "(.)",
+              "value": "Retrieval-Augmented Generation (RAG)"
+            },
+            {
+              "field": "basic_profile.headline",
+              "type": "(.)",
+              "value": "Retrieval-Augmented Generation (RAG)"
+            },
+            {
+              "field": "basic_profile.summary",
+              "type": "(.)",
+              "value": "Retrieval-Augmented Generation (RAG)"
+            }
+          ]
+        },
+        {
+          "op": "or",
+          "conditions": [
+            {
+              "field": "experience.employment_details.current.description",
+              "type": "(.)",
+              "value": "Agentic AI"
+            },
+            {
+              "field": "basic_profile.headline",
+              "type": "(.)",
+              "value": "Agentic AI"
+            },
+            {
+              "field": "basic_profile.summary",
+              "type": "(.)",
+              "value": "Agentic AI"
+            }
+          ]
+        },
+        {
+          "op": "or",
+          "conditions": [
+            {
+              "field": "experience.employment_details.current.description",
+              "type": "(.)",
+              "value": "AI Orchestration"
+            },
+            {
+              "field": "basic_profile.headline",
+              "type": "(.)",
+              "value": "AI Orchestration"
+            },
+            {
+              "field": "basic_profile.summary",
+              "type": "(.)",
+              "value": "AI Orchestration"
+            }
+          ]
+        },
+        {
+          "op": "or",
+          "conditions": [
+            {
+              "field": "experience.employment_details.current.description",
+              "type": "(.)",
+              "value": "Prompt Engineering"
+            },
+            {
+              "field": "basic_profile.headline",
+              "type": "(.)",
+              "value": "Prompt Engineering"
+            },
+            {
+              "field": "basic_profile.summary",
+              "type": "(.)",
+              "value": "Prompt Engineering"
+            }
+          ]
+        },
+        {
+          "op": "or",
+          "conditions": [
+            {
+              "field": "experience.employment_details.current.description",
+              "type": "(.)",
+              "value": "Data Integration"
+            },
+            {
+              "field": "basic_profile.headline",
+              "type": "(.)",
+              "value": "Data Integration"
+            },
+            {
+              "field": "basic_profile.summary",
+              "type": "(.)",
+              "value": "Data Integration"
+            }
+          ]
+        },
+        {
+          "op": "all_of",
+          "conditions": [
+            {
+              "op": "or",
+              "conditions": [
+                {
+                  "field": "education.schools.degree",
+                  "type": "(.)",
+                  "value": "Bachelor's"
+                },
+                {
+                  "field": "education.schools.degree",
+                  "type": "(.)",
+                  "value": "Master's"
+                }
+              ]
+            },
+            {
+              "op": "or",
+              "conditions": [
+                {
+                  "field": "education.schools.field_of_study",
+                  "type": "(.)",
+                  "value": "Computer Science"
+                },
+                {
+                  "field": "education.schools.field_of_study",
+                  "type": "(.)",
+                  "value": "Information Technology"
+                },
+                {
+                  "field": "education.schools.field_of_study",
+                  "type": "(.)",
+                  "value": "Software Engineering"
+                },
+                {
+                  "field": "education.schools.field_of_study",
+                  "type": "(.)",
+                  "value": "Related field"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "requirements": {
+      "provider_enforced": [
+        "location",
+        "experience",
+        "role_family",
+        "skill:Solution Design",
+        "skill:AI/ML Implementation",
+        "skill:API Development",
+        "skill:Service Development",
+        "skill:Large Language Models (LLMs)",
+        "skill:Retrieval-Augmented Generation (RAG)",
+        "skill:Agentic AI",
+        "skill:AI Orchestration",
+        "skill:Prompt Engineering",
+        "skill:Data Integration",
+        "education"
+      ],
+      "admission_enforced": [],
+      "downstream_verified": [
+        "skill:Full Stack Software Development",
+        "proficiency:Full Stack Software Development=hands_on",
+        "proficiency:Solution Design=hands_on",
+        "skill:Data Engineering",
+        "proficiency:AI/ML Implementation=hands_on",
+        "skill:Python",
+        "proficiency:Python=hands_on",
+        "skill:Java",
+        "proficiency:Java=hands_on",
+        "proficiency:API Development=hands_on",
+        "proficiency:Service Development=hands_on",
+        "skill:Distributed Systems",
+        "proficiency:Distributed Systems=hands_on",
+        "skill:Generative AI",
+        "proficiency:Generative AI=hands_on",
+        "proficiency:Large Language Models (LLMs)=hands_on",
+        "proficiency:Retrieval-Augmented Generation (RAG)=hands_on",
+        "proficiency:Agentic AI=hands_on",
+        "proficiency:AI Orchestration=hands_on",
+        "proficiency:Prompt Engineering=hands_on",
+        "skill:MCP",
+        "skill:A2A",
+        "skill:AI Application Development Patterns",
+        "skill:NLP Frameworks",
+        "skill:CI/CD",
+        "skill:Terraform",
+        "skill:AKS",
+        "skill:EKS",
+        "skill:GitHub Actions",
+        "skill:Containerized Deployments",
+        "skill:React",
+        "proficiency:React=hands_on",
+        "skill:Bootstrap",
+        "proficiency:Bootstrap=hands_on",
+        "skill:Related User Interface Frameworks",
+        "proficiency:Related User Interface Frameworks=hands_on",
+        "skill:Azure DevOps",
+        "proficiency:Azure DevOps=working_knowledge",
+        "skill:Jira",
+        "proficiency:Jira=working_knowledge",
+        "skill:Modern Software Delivery Practices",
+        "proficiency:Modern Software Delivery Practices=working_knowledge",
+        "skill:Snowflake",
+        "skill:Databricks",
+        "skill:Modern Data Platforms",
+        "proficiency:Data Integration=hands_on",
+        "skill:ETL",
+        "skill:Data Quality",
+        "skill:Data Discovery",
+        "skill:Enterprise Data Management",
+        "skill:API Integration",
+        "skill:Metadata Management Tools",
+        "proficiency:Metadata Management Tools=working_knowledge",
+        "skill:Data Governance",
+        "proficiency:Data Governance=working_knowledge",
+        "skill_any_of:TensorFlow|PyTorch|scikit-learn|Similar machine learning libraries",
+        "skill_any_of:Azure|AWS",
+        "domain:Enterprise application development",
+        "domain:Enterprise data integration across SaaS applications",
+        "evidence:Staff-level hands-on individual contributor",
+        "evidence:Hybrid working availability",
+        "evidence:Understand client requirements, build proofs of concept, and design systems for client problems",
+        "evidence:Collaborate with existing teams to enhance existing products and features",
+        "evidence:Recent experience building and deploying AI-powered applications",
+        "evidence:Design and develop enterprise-scale applications",
+        "evidence:Translate business requirements into end-to-end solutions and actionable user stories and technical deliverables",
+        "evidence:Design scalable, secure, maintainable solutions integrated into existing products and strategic offerings",
+        "evidence:Contribute directly to development, code reviews, technical design discussions, and architecture reviews",
+        "evidence:Own solution design decisions aligned with security, compliance, performance, and operational requirements",
+        "evidence:Champion engineering practices, coding standards, testing strategies, and quality metrics",
+        "evidence:Evaluate emerging technologies and recommend practical innovations to improve scalability, maintainability, performance, and reliability",
+        "evidence:Collaborate with data engineers and data scientists on data quality, availability, and AI/ML deployment",
+        "evidence:Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads",
+        "evidence:Production implementation and deployment of generative AI solutions",
+        "evidence:Improve generative AI quality, relevance, and reliability",
+        "evidence:Strong analytical, problem-solving, and troubleshooting capability",
+        "evidence:Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering",
+        "evidence:Communicate technical solutions, risks, and recommendations",
+        "evidence:Stay current with software engineering, AI, machine learning, and cloud advancements",
+        "evidence:Provide technical leadership, mentor team members, resolve complex challenges, and foster collaboration"
+      ],
+      "context_only": [],
+      "unverifiable": [],
+      "downstream_exclusion": []
+    },
+    "downstream_checklist": [
+      {
+        "tier": "core",
+        "requirement": "Full Stack Software Development"
+      },
+      {
+        "tier": "core",
+        "requirement": "hands-on Full Stack Software Development"
+      },
+      {
+        "tier": "core",
+        "requirement": "hands-on Solution Design"
+      },
+      {
+        "tier": "core",
+        "requirement": "Data Engineering"
+      },
+      {
+        "tier": "core",
+        "requirement": "hands-on AI/ML Implementation"
+      },
+      {
+        "tier": "core",
+        "requirement": "Python"
+      },
+      {
+        "tier": "core",
+        "requirement": "hands-on Python"
+      },
+      {
+        "tier": "core",
+        "requirement": "Java"
+      },
+      {
+        "tier": "core",
+        "requirement": "hands-on Java"
+      },
+      {
+        "tier": "core",
+        "requirement": "hands-on API Development"
+      },
+      {
+        "tier": "core",
+        "requirement": "hands-on Service Development"
+      },
+      {
+        "tier": "core",
+        "requirement": "Distributed Systems"
+      },
+      {
+        "tier": "core",
+        "requirement": "hands-on Distributed Systems"
+      },
+      {
+        "tier": "core",
+        "requirement": "Generative AI"
+      },
+      {
+        "tier": "core",
+        "requirement": "hands-on Generative AI"
+      },
+      {
+        "tier": "core",
+        "requirement": "hands-on Large Language Models (LLMs)"
+      },
+      {
+        "tier": "core",
+        "requirement": "hands-on Retrieval-Augmented Generation (RAG)"
+      },
+      {
+        "tier": "core",
+        "requirement": "hands-on Agentic AI"
+      },
+      {
+        "tier": "core",
+        "requirement": "hands-on AI Orchestration"
+      },
+      {
+        "tier": "core",
+        "requirement": "hands-on Prompt Engineering"
+      },
+      {
+        "tier": "core",
+        "requirement": "MCP"
+      },
+      {
+        "tier": "core",
+        "requirement": "A2A"
+      },
+      {
+        "tier": "core",
+        "requirement": "AI Application Development Patterns"
+      },
+      {
+        "tier": "core",
+        "requirement": "NLP Frameworks"
+      },
+      {
+        "tier": "core",
+        "requirement": "CI/CD"
+      },
+      {
+        "tier": "core",
+        "requirement": "Terraform"
+      },
+      {
+        "tier": "core",
+        "requirement": "AKS"
+      },
+      {
+        "tier": "core",
+        "requirement": "EKS"
+      },
+      {
+        "tier": "core",
+        "requirement": "GitHub Actions"
+      },
+      {
+        "tier": "core",
+        "requirement": "Containerized Deployments"
+      },
+      {
+        "tier": "core",
+        "requirement": "React"
+      },
+      {
+        "tier": "core",
+        "requirement": "hands-on React"
+      },
+      {
+        "tier": "core",
+        "requirement": "Bootstrap"
+      },
+      {
+        "tier": "core",
+        "requirement": "hands-on Bootstrap"
+      },
+      {
+        "tier": "core",
+        "requirement": "Related User Interface Frameworks"
+      },
+      {
+        "tier": "core",
+        "requirement": "hands-on Related User Interface Frameworks"
+      },
+      {
+        "tier": "core",
+        "requirement": "Azure DevOps"
+      },
+      {
+        "tier": "core",
+        "requirement": "working knowledge of Azure DevOps"
+      },
+      {
+        "tier": "core",
+        "requirement": "Jira"
+      },
+      {
+        "tier": "core",
+        "requirement": "working knowledge of Jira"
+      },
+      {
+        "tier": "core",
+        "requirement": "Modern Software Delivery Practices"
+      },
+      {
+        "tier": "core",
+        "requirement": "working knowledge of Modern Software Delivery Practices"
+      },
+      {
+        "tier": "core",
+        "requirement": "Snowflake"
+      },
+      {
+        "tier": "core",
+        "requirement": "Databricks"
+      },
+      {
+        "tier": "core",
+        "requirement": "Modern Data Platforms"
+      },
+      {
+        "tier": "core",
+        "requirement": "hands-on Data Integration"
+      },
+      {
+        "tier": "core",
+        "requirement": "ETL"
+      },
+      {
+        "tier": "core",
+        "requirement": "Data Quality"
+      },
+      {
+        "tier": "core",
+        "requirement": "Data Discovery"
+      },
+      {
+        "tier": "core",
+        "requirement": "Enterprise Data Management"
+      },
+      {
+        "tier": "core",
+        "requirement": "API Integration"
+      },
+      {
+        "tier": "core",
+        "requirement": "Metadata Management Tools"
+      },
+      {
+        "tier": "core",
+        "requirement": "working knowledge of Metadata Management Tools"
+      },
+      {
+        "tier": "core",
+        "requirement": "Data Governance"
+      },
+      {
+        "tier": "core",
+        "requirement": "working knowledge of Data Governance"
+      },
+      {
+        "tier": "core",
+        "requirement": "TensorFlow|PyTorch|scikit-learn|Similar machine learning libraries"
+      },
+      {
+        "tier": "core",
+        "requirement": "Azure|AWS"
+      },
+      {
+        "tier": "core",
+        "requirement": "Enterprise application development"
+      },
+      {
+        "tier": "core",
+        "requirement": "Enterprise data integration across SaaS applications"
+      },
+      {
+        "tier": "core",
+        "requirement": "Staff-level hands-on individual contributor"
+      },
+      {
+        "tier": "core",
+        "requirement": "Hybrid working availability"
+      },
+      {
+        "tier": "core",
+        "requirement": "Understand client requirements, build proofs of concept, and design systems for client problems"
+      },
+      {
+        "tier": "core",
+        "requirement": "Collaborate with existing teams to enhance existing products and features"
+      },
+      {
+        "tier": "core",
+        "requirement": "Recent experience building and deploying AI-powered applications"
+      },
+      {
+        "tier": "core",
+        "requirement": "Design and develop enterprise-scale applications"
+      },
+      {
+        "tier": "core",
+        "requirement": "Translate business requirements into end-to-end solutions and actionable user stories and technical deliverables"
+      },
+      {
+        "tier": "core",
+        "requirement": "Design scalable, secure, maintainable solutions integrated into existing products and strategic offerings"
+      },
+      {
+        "tier": "core",
+        "requirement": "Contribute directly to development, code reviews, technical design discussions, and architecture reviews"
+      },
+      {
+        "tier": "core",
+        "requirement": "Own solution design decisions aligned with security, compliance, performance, and operational requirements"
+      },
+      {
+        "tier": "core",
+        "requirement": "Champion engineering practices, coding standards, testing strategies, and quality metrics"
+      },
+      {
+        "tier": "core",
+        "requirement": "Evaluate emerging technologies and recommend practical innovations to improve scalability, maintainability, performance, and reliability"
+      },
+      {
+        "tier": "core",
+        "requirement": "Collaborate with data engineers and data scientists on data quality, availability, and AI/ML deployment"
+      },
+      {
+        "tier": "core",
+        "requirement": "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads"
+      },
+      {
+        "tier": "core",
+        "requirement": "Production implementation and deployment of generative AI solutions"
+      },
+      {
+        "tier": "core",
+        "requirement": "Improve generative AI quality, relevance, and reliability"
+      },
+      {
+        "tier": "core",
+        "requirement": "Strong analytical, problem-solving, and troubleshooting capability"
+      },
+      {
+        "tier": "core",
+        "requirement": "Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering"
+      },
+      {
+        "tier": "core",
+        "requirement": "Communicate technical solutions, risks, and recommendations"
+      },
+      {
+        "tier": "core",
+        "requirement": "Stay current with software engineering, AI, machine learning, and cloud advancements"
+      },
+      {
+        "tier": "core",
+        "requirement": "Provide technical leadership, mentor team members, resolve complex challenges, and foster collaboration"
+      }
+    ],
+    "downstream_exclusions": [],
+    "warnings": [
+      "skill 'Solution Design': filtered on response-gated text; not displayable from the provider",
+      "skill 'AI/ML Implementation': filtered on response-gated text; not displayable from the provider",
+      "skill 'API Development': filtered on response-gated text; not displayable from the provider",
+      "skill 'Service Development': filtered on response-gated text; not displayable from the provider",
+      "skill 'Large Language Models (LLMs)': filtered on response-gated text; not displayable from the provider",
+      "skill 'Retrieval-Augmented Generation (RAG)': filtered on response-gated text; not displayable from the provider",
+      "skill 'Agentic AI': filtered on response-gated text; not displayable from the provider",
+      "skill 'AI Orchestration': filtered on response-gated text; not displayable from the provider",
+      "skill 'Prompt Engineering': filtered on response-gated text; not displayable from the provider",
+      "skill 'Data Integration': filtered on response-gated text; not displayable from the provider",
+      "education stream: filterable but response-gated (not displayable); verify via Harvest if needed"
+    ],
+    "atom_audit": [
+      {
+        "atom_id": "global|location.entry[0]",
+        "concept": "location.entry",
+        "scope": "global",
+        "value": "Hyderabad, Telangana, India",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "Location is Hyderabad and need someone who can work on a Hybrid basis."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: city",
+        "justification": "enforced as the stated place; 2 component(s) not enforced (see components)",
+        "components": [
+          {
+            "component": "country",
+            "value": "India",
+            "fate": "DROPPED_WITH_JUSTIFICATION",
+            "justification": "model-supplied: not in the cited source text and no approved normalization; never a provider filter"
+          },
+          {
+            "component": "state",
+            "value": "Telangana",
+            "fate": "DROPPED_WITH_JUSTIFICATION",
+            "justification": "model-supplied: not in the cited source text and no approved normalization; never a provider filter"
+          },
+          {
+            "component": "city",
+            "value": "Hyderabad",
+            "fate": "ENFORCED",
+            "justification": "the stated place"
+          }
+        ],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|experience.min[0]",
+        "concept": "experience.min",
+        "scope": "global",
+        "value": "12+ years",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "12+ years of experience in Full Stack Software Development, Solution Design, Data Engineering, and AI/ML implementation."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: years_of_experience_raw",
+        "justification": "enforced",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|role_family[0]",
+        "concept": "role_family",
+        "scope": "global",
+        "value": "Software Engineer",
+        "provenance": {
+          "state": "unrecorded",
+          "sources": [],
+          "quote": null
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "NORMALIZED",
+        "destination": "provider filter: current title",
+        "justification": "expanded by the approved role-family taxonomy (v1-2026-10-02) to ['Software Engineer', 'Backend Engineer', 'Backend Developer', 'Python Developer']",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|role_family[1]",
+        "concept": "role_family",
+        "scope": "global",
+        "value": "Solution Architect",
+        "provenance": {
+          "state": "unrecorded",
+          "sources": [],
+          "quote": null
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: current title",
+        "justification": "no taxonomy entry: the source title is used verbatim (no expansion)",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|role_family[2]",
+        "concept": "role_family",
+        "scope": "global",
+        "value": "Forward Deployed Engineer",
+        "provenance": {
+          "state": "unrecorded",
+          "sources": [],
+          "quote": null
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: current title",
+        "justification": "no taxonomy entry: the source title is used verbatim (no expansion)",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[0]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Full Stack Software Development",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "strong expertise in Full Stack Software Development, Solution Design, Data Engineering, and AI/ML implementation"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[0]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Full Stack Software Development = hands_on",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "strong expertise in Full Stack Software Development, Solution Design, Data Engineering, and AI/ML implementation"
+        },
+        "strength": "required",
+        "proficiency": "hands_on",
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[1]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Solution Design",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd",
+            "recruiter_brief"
+          ],
+          "quote": "understands the client requirements, builds POC's, designs the system"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "current",
+        "fate": "ENFORCED",
+        "destination": "provider filter: current-role text",
+        "justification": "required with an explicit 'current' relationship; capability enforce_but_not_verifiable",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[1]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Solution Design = hands_on",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd",
+            "recruiter_brief"
+          ],
+          "quote": "understands the client requirements, builds POC's, designs the system"
+        },
+        "strength": "required",
+        "proficiency": "hands_on",
+        "relationship": "current",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[2]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Data Engineering",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "strong expertise in Full Stack Software Development, Solution Design, Data Engineering, and AI/ML implementation"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[3]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "AI/ML Implementation",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "implementing modern AI capabilities that align with our product and solution offerings"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "current",
+        "fate": "ENFORCED",
+        "destination": "provider filter: current-role text",
+        "justification": "required with an explicit 'current' relationship; capability enforce_but_not_verifiable",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[3]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "AI/ML Implementation = hands_on",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "implementing modern AI capabilities that align with our product and solution offerings"
+        },
+        "strength": "required",
+        "proficiency": "hands_on",
+        "relationship": "current",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[4]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Python",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Advanced proficiency in Python and Java with strong experience building APIs, services, and distributed systems."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[4]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Python = hands_on",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Advanced proficiency in Python and Java with strong experience building APIs, services, and distributed systems."
+        },
+        "strength": "required",
+        "proficiency": "hands_on",
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[5]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Java",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Advanced proficiency in Python and Java with strong experience building APIs, services, and distributed systems."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[5]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Java = hands_on",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Advanced proficiency in Python and Java with strong experience building APIs, services, and distributed systems."
+        },
+        "strength": "required",
+        "proficiency": "hands_on",
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[6]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "API Development",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Design, develop, and maintain APIs, services, and integrations that support enterprise applications and AI solutions."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "current",
+        "fate": "ENFORCED",
+        "destination": "provider filter: current-role text",
+        "justification": "required with an explicit 'current' relationship; capability enforce_but_not_verifiable",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[6]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "API Development = hands_on",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Design, develop, and maintain APIs, services, and integrations that support enterprise applications and AI solutions."
+        },
+        "strength": "required",
+        "proficiency": "hands_on",
+        "relationship": "current",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[7]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Service Development",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Design, develop, and maintain APIs, services, and integrations that support enterprise applications and AI solutions."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "current",
+        "fate": "ENFORCED",
+        "destination": "provider filter: current-role text",
+        "justification": "required with an explicit 'current' relationship; capability enforce_but_not_verifiable",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[7]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Service Development = hands_on",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Design, develop, and maintain APIs, services, and integrations that support enterprise applications and AI solutions."
+        },
+        "strength": "required",
+        "proficiency": "hands_on",
+        "relationship": "current",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[8]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Distributed Systems",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "strong experience building APIs, services, and distributed systems"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[8]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Distributed Systems = hands_on",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "strong experience building APIs, services, and distributed systems"
+        },
+        "strength": "required",
+        "proficiency": "hands_on",
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[9]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Generative AI",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Hands-on experience implementing and deploying Generative AI solutions in production environments."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[9]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Generative AI = hands_on",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Hands-on experience implementing and deploying Generative AI solutions in production environments."
+        },
+        "strength": "required",
+        "proficiency": "hands_on",
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[10]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Large Language Models (LLMs)",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), Agentic AI frameworks, and modern AI orchestration patterns."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "current",
+        "fate": "ENFORCED",
+        "destination": "provider filter: current-role text",
+        "justification": "required with an explicit 'current' relationship; capability enforce_but_not_verifiable",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[10]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Large Language Models (LLMs) = hands_on",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), Agentic AI frameworks, and modern AI orchestration patterns."
+        },
+        "strength": "required",
+        "proficiency": "hands_on",
+        "relationship": "current",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[11]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Retrieval-Augmented Generation (RAG)",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), Agentic AI frameworks, and modern AI orchestration patterns."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "current",
+        "fate": "ENFORCED",
+        "destination": "provider filter: current-role text",
+        "justification": "required with an explicit 'current' relationship; capability enforce_but_not_verifiable",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[11]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Retrieval-Augmented Generation (RAG) = hands_on",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), Agentic AI frameworks, and modern AI orchestration patterns."
+        },
+        "strength": "required",
+        "proficiency": "hands_on",
+        "relationship": "current",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[12]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Agentic AI",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), Agentic AI frameworks, and modern AI orchestration patterns."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "current",
+        "fate": "ENFORCED",
+        "destination": "provider filter: current-role text",
+        "justification": "required with an explicit 'current' relationship; capability enforce_but_not_verifiable",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[12]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Agentic AI = hands_on",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), Agentic AI frameworks, and modern AI orchestration patterns."
+        },
+        "strength": "required",
+        "proficiency": "hands_on",
+        "relationship": "current",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[13]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "AI Orchestration",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Agentic AI frameworks, and modern AI orchestration patterns"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "current",
+        "fate": "ENFORCED",
+        "destination": "provider filter: current-role text",
+        "justification": "required with an explicit 'current' relationship; capability enforce_but_not_verifiable",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[13]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "AI Orchestration = hands_on",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Agentic AI frameworks, and modern AI orchestration patterns"
+        },
+        "strength": "required",
+        "proficiency": "hands_on",
+        "relationship": "current",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[14]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Prompt Engineering",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Apply prompt engineering techniques and AI best practices to improve the quality, relevance, and reliability of generative AI solutions."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "current",
+        "fate": "ENFORCED",
+        "destination": "provider filter: current-role text",
+        "justification": "required with an explicit 'current' relationship; capability enforce_but_not_verifiable",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[14]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Prompt Engineering = hands_on",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Apply prompt engineering techniques and AI best practices to improve the quality, relevance, and reliability of generative AI solutions."
+        },
+        "strength": "required",
+        "proficiency": "hands_on",
+        "relationship": "current",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[15]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "MCP",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Strong understanding of LLMs, RAG architectures, Agentic AI, Prompt Engineering, MCP, A2A, and modern AI application development patterns."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[16]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "A2A",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Strong understanding of LLMs, RAG architectures, Agentic AI, Prompt Engineering, MCP, A2A, and modern AI application development patterns."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[17]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "AI Application Development Patterns",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Strong understanding of LLMs, RAG architectures, Agentic AI, Prompt Engineering, MCP, A2A, and modern AI application development patterns."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[18]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "NLP Frameworks",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience working with NLP frameworks and machine learning libraries such as TensorFlow, PyTorch, scikit-learn, or similar technologies."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[19]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "CI/CD",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[20]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Terraform",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[21]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "AKS",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[22]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "EKS",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[23]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "GitHub Actions",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[24]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Containerized Deployments",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[25]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "React",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience building modern user interfaces using React, Bootstrap, and related frameworks."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[25]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "React = hands_on",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience building modern user interfaces using React, Bootstrap, and related frameworks."
+        },
+        "strength": "required",
+        "proficiency": "hands_on",
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[26]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Bootstrap",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience building modern user interfaces using React, Bootstrap, and related frameworks."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[26]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Bootstrap = hands_on",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience building modern user interfaces using React, Bootstrap, and related frameworks."
+        },
+        "strength": "required",
+        "proficiency": "hands_on",
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[27]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Related User Interface Frameworks",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience building modern user interfaces using React, Bootstrap, and related frameworks."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[27]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Related User Interface Frameworks = hands_on",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience building modern user interfaces using React, Bootstrap, and related frameworks."
+        },
+        "strength": "required",
+        "proficiency": "hands_on",
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[28]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Azure DevOps",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Familiarity with Azure DevOps, Jira, and modern software delivery practices."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[28]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Azure DevOps = working_knowledge",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Familiarity with Azure DevOps, Jira, and modern software delivery practices."
+        },
+        "strength": "required",
+        "proficiency": "working_knowledge",
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[29]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Jira",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Familiarity with Azure DevOps, Jira, and modern software delivery practices."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[29]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Jira = working_knowledge",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Familiarity with Azure DevOps, Jira, and modern software delivery practices."
+        },
+        "strength": "required",
+        "proficiency": "working_knowledge",
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[30]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Modern Software Delivery Practices",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Familiarity with Azure DevOps, Jira, and modern software delivery practices."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[30]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Modern Software Delivery Practices = working_knowledge",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Familiarity with Azure DevOps, Jira, and modern software delivery practices."
+        },
+        "strength": "required",
+        "proficiency": "working_knowledge",
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[31]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Snowflake",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience working with Snowflake, Databricks, and modern data platforms."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[32]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Databricks",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience working with Snowflake, Databricks, and modern data platforms."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[33]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Modern Data Platforms",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience working with Snowflake, Databricks, and modern data platforms."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[34]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Data Integration",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Integrate and optimize data from various internal and external systems"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "current",
+        "fate": "ENFORCED",
+        "destination": "provider filter: current-role text",
+        "justification": "required with an explicit 'current' relationship; capability enforce_but_not_verifiable",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[34]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Data Integration = hands_on",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Integrate and optimize data from various internal and external systems"
+        },
+        "strength": "required",
+        "proficiency": "hands_on",
+        "relationship": "current",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[35]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "ETL",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Strong understanding of Data Integration, ETL, Data Quality, Data Discovery, and enterprise data management concepts."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[36]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Data Quality",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Strong understanding of Data Integration, ETL, Data Quality, Data Discovery, and enterprise data management concepts."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[37]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Data Discovery",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Strong understanding of Data Integration, ETL, Data Quality, Data Discovery, and enterprise data management concepts."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[38]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Enterprise Data Management",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Strong understanding of Data Integration, ETL, Data Quality, Data Discovery, and enterprise data management concepts."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[39]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "API Integration",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience integrating third-party and enterprise APIs."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[40]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Metadata Management Tools",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Familiarity with metadata management tools and data governance concepts."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[40]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Metadata Management Tools = working_knowledge",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Familiarity with metadata management tools and data governance concepts."
+        },
+        "strength": "required",
+        "proficiency": "working_knowledge",
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[41]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Data Governance",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Familiarity with metadata management tools and data governance concepts."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[41]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Data Governance = working_knowledge",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Familiarity with metadata management tools and data governance concepts."
+        },
+        "strength": "required",
+        "proficiency": "working_knowledge",
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill_any_of[0]",
+        "concept": "skill_any_of",
+        "scope": "global",
+        "value": "TensorFlow | PyTorch | scikit-learn | Similar machine learning libraries",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience working with NLP frameworks and machine learning libraries such as TensorFlow, PyTorch, scikit-learn, or similar technologies."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill_any_of[1]",
+        "concept": "skill_any_of",
+        "scope": "global",
+        "value": "Azure | AWS",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience with cloud platforms and services including Azure and/or AWS."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|education.degree[0]",
+        "concept": "education.degree",
+        "scope": "global",
+        "value": "Bachelor's",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Bachelor's or Master's degree in Computer Science, Information Technology, Software Engineering, or a related field."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: education.schools",
+        "justification": "enforced (literal provider string; normalization beyond the approved degree list is a taxonomy item)",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|education.degree[1]",
+        "concept": "education.degree",
+        "scope": "global",
+        "value": "Master's",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Bachelor's or Master's degree in Computer Science, Information Technology, Software Engineering, or a related field."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: education.schools",
+        "justification": "enforced (literal provider string; normalization beyond the approved degree list is a taxonomy item)",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|education.stream[0]",
+        "concept": "education.stream",
+        "scope": "global",
+        "value": "Computer Science",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Bachelor's or Master's degree in Computer Science, Information Technology, Software Engineering, or a related field."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: education.schools",
+        "justification": "enforced (literal provider string; normalization beyond the approved degree list is a taxonomy item)",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|education.stream[1]",
+        "concept": "education.stream",
+        "scope": "global",
+        "value": "Information Technology",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Bachelor's or Master's degree in Computer Science, Information Technology, Software Engineering, or a related field."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: education.schools",
+        "justification": "enforced (literal provider string; normalization beyond the approved degree list is a taxonomy item)",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|education.stream[2]",
+        "concept": "education.stream",
+        "scope": "global",
+        "value": "Software Engineering",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Bachelor's or Master's degree in Computer Science, Information Technology, Software Engineering, or a related field."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: education.schools",
+        "justification": "enforced (literal provider string; normalization beyond the approved degree list is a taxonomy item)",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|education.stream[3]",
+        "concept": "education.stream",
+        "scope": "global",
+        "value": "Related field",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Bachelor's or Master's degree in Computer Science, Information Technology, Software Engineering, or a related field."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: education.schools",
+        "justification": "enforced (literal provider string; normalization beyond the approved degree list is a taxonomy item)",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|domain[0]",
+        "concept": "domain",
+        "scope": "global",
+        "value": "Enterprise application development",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "proven experience designing and developing enterprise-scale applications"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "domain is verified from the candidate's evidence",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|domain[1]",
+        "concept": "domain",
+        "scope": "global",
+        "value": "Enterprise data integration across SaaS applications",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "understanding the challenges associated with enterprise data integration across SaaS applications"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "domain is verified from the candidate's evidence",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[0]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Staff-level hands-on individual contributor",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd",
+            "recruiter_brief"
+          ],
+          "quote": "Look for an IC Engineer"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[1]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Hybrid working availability",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "need someone who can work on a Hybrid basis"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[2]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Understand client requirements, build proofs of concept, and design systems for client problems",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "more like a Forward Deployed Engineer who understands the client requirements, builds POC's, designs the system"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[3]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Collaborate with existing teams to enhance existing products and features",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "working closely with the existing teams on enhancing the existing products and features"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[4]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Recent experience building and deploying AI-powered applications",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "recent experience building and deploying AI-powered applications"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[5]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Design and develop enterprise-scale applications",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Strong hands-on software engineering background with proven experience designing and developing enterprise-scale applications."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[6]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Translate business requirements into end-to-end solutions and actionable user stories and technical deliverables",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Partner with business and product stakeholders to understand requirements, design end-to-end solutions, and help Product Owners break down initiatives into actionable user stories and technical deliverables."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[7]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Design scalable, secure, maintainable solutions integrated into existing products and strategic offerings",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Design and develop scalable, secure, and maintainable software solutions that can be integrated into existing products and strategic solution offerings."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[8]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Contribute directly to development, code reviews, technical design discussions, and architecture reviews",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Actively contribute to software development, code reviews, technical design discussions, and architecture reviews."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[9]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Own solution design decisions aligned with security, compliance, performance, and operational requirements",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Drive solution design decisions while ensuring alignment with security, compliance, performance, and operational requirements."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[10]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Champion engineering practices, coding standards, testing strategies, and quality metrics",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Champion engineering best practices, coding standards, testing strategies, and quality metrics across development teams."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[11]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Evaluate emerging technologies and recommend practical innovations to improve scalability, maintainability, performance, and reliability",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Evaluate and adopt emerging technologies to improve scalability, maintainability, performance, and reliability of applications and AI systems."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[12]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Collaborate with data engineers and data scientists on data quality, availability, and AI/ML deployment",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Collaborate with data engineers and data scientists to ensure data quality, availability, and successful deployment of AI and machine learning capabilities."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[13]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Design, implement, and maintain data pipelines, processing frameworks, and supporting infrastructure required for AI and machine learning workloads."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[14]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Production implementation and deployment of generative AI solutions",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Hands-on experience implementing and deploying Generative AI solutions in production environments."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[15]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Improve generative AI quality, relevance, and reliability",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Apply prompt engineering techniques and AI best practices to improve the quality, relevance, and reliability of generative AI solutions."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[16]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Strong analytical, problem-solving, and troubleshooting capability",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Strong analytical, problem-solving, and troubleshooting skills."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[17]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Excellent communication and stakeholder management skills with the ability to effectively engage clients, business stakeholders, leadership teams, and engineering organizations."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[18]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Communicate technical solutions, risks, and recommendations",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Communicate technical solutions, risks, and recommendations effectively to leadership, business stakeholders, and clients."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[19]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Stay current with software engineering, AI, machine learning, and cloud advancements",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Stay current with advancements in software engineering, AI, machine learning, and cloud technologies, recommending practical innovations for our products and operations."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[20]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Provide technical leadership, mentor team members, resolve complex challenges, and foster collaboration",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Provide technical leadership, mentor team members, resolve complex technical challenges, and foster a collaborative engineering culture."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|role_archetype[0]",
+        "concept": "role_archetype",
+        "scope": "global",
+        "value": "hybrid",
+        "provenance": {
+          "state": "unrecorded",
+          "sources": [],
+          "quote": null
+        },
+        "strength": null,
+        "proficiency": null,
+        "relationship": null,
+        "fate": "DROPPED_WITH_JUSTIFICATION",
+        "destination": "atom audit",
+        "justification": "classification metadata about the role (title/skill/hybrid): it carries no execution semantics and no candidate constraint",
+        "components": [],
+        "kind": "METADATA"
+      }
+    ]
+  },
+  "warnings": [
+    "skill 'Solution Design': filtered on response-gated text; not displayable from the provider",
+    "skill 'AI/ML Implementation': filtered on response-gated text; not displayable from the provider",
+    "skill 'API Development': filtered on response-gated text; not displayable from the provider",
+    "skill 'Service Development': filtered on response-gated text; not displayable from the provider",
+    "skill 'Large Language Models (LLMs)': filtered on response-gated text; not displayable from the provider",
+    "skill 'Retrieval-Augmented Generation (RAG)': filtered on response-gated text; not displayable from the provider",
+    "skill 'Agentic AI': filtered on response-gated text; not displayable from the provider",
+    "skill 'AI Orchestration': filtered on response-gated text; not displayable from the provider",
+    "skill 'Prompt Engineering': filtered on response-gated text; not displayable from the provider",
+    "skill 'Data Integration': filtered on response-gated text; not displayable from the provider",
+    "education stream: filterable but response-gated (not displayable); verify via Harvest if needed"
+  ]
+}

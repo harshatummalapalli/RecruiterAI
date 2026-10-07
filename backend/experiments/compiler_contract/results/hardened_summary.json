@@ -1,0 +1,224 @@
+{
+  "compiler_version": "v2-2026-10-07",
+  "contract_version": "compiler-contract-1",
+  "runs": {
+    "R1/1": {
+      "atoms": 66,
+      "silently_dropped": 0,
+      "inconsistent": 0,
+      "invented_model_only_hard_filters": 0,
+      "duplicate_atom_ids": 0,
+      "fates": {
+        "DROPPED_WITH_JUSTIFICATION": 6,
+        "CARRIED": 1,
+        "ENFORCED": 10,
+        "VERIFIED_DOWNSTREAM": 24,
+        "PREFERENCE_CONTEXT": 25
+      }
+    },
+    "R1/2": {
+      "atoms": 69,
+      "silently_dropped": 0,
+      "inconsistent": 0,
+      "invented_model_only_hard_filters": 0,
+      "duplicate_atom_ids": 0,
+      "fates": {
+        "DROPPED_WITH_JUSTIFICATION": 7,
+        "CARRIED": 1,
+        "ENFORCED": 7,
+        "VERIFIED_DOWNSTREAM": 29,
+        "PREFERENCE_CONTEXT": 25
+      }
+    },
+    "R1/3": {
+      "atoms": 66,
+      "silently_dropped": 0,
+      "inconsistent": 0,
+      "invented_model_only_hard_filters": 0,
+      "duplicate_atom_ids": 0,
+      "fates": {
+        "DROPPED_WITH_JUSTIFICATION": 7,
+        "CARRIED": 1,
+        "ENFORCED": 7,
+        "VERIFIED_DOWNSTREAM": 28,
+        "PREFERENCE_CONTEXT": 23
+      }
+    },
+    "R1/4": {
+      "atoms": 67,
+      "silently_dropped": 0,
+      "inconsistent": 0,
+      "invented_model_only_hard_filters": 0,
+      "duplicate_atom_ids": 0,
+      "fates": {
+        "DROPPED_WITH_JUSTIFICATION": 6,
+        "CARRIED": 1,
+        "ENFORCED": 7,
+        "VERIFIED_DOWNSTREAM": 28,
+        "PREFERENCE_CONTEXT": 25
+      }
+    },
+    "R1/5": {
+      "atoms": 66,
+      "silently_dropped": 0,
+      "inconsistent": 0,
+      "invented_model_only_hard_filters": 0,
+      "duplicate_atom_ids": 0,
+      "fates": {
+        "DROPPED_WITH_JUSTIFICATION": 7,
+        "CARRIED": 1,
+        "ENFORCED": 7,
+        "VERIFIED_DOWNSTREAM": 29,
+        "PREFERENCE_CONTEXT": 22
+      }
+    },
+    "R2/1": {
+      "atoms": 108,
+      "silently_dropped": 0,
+      "inconsistent": 0,
+      "invented_model_only_hard_filters": 0,
+      "duplicate_atom_ids": 0,
+      "fates": {
+        "DROPPED_WITH_JUSTIFICATION": 1,
+        "CARRIED": 1,
+        "NORMALIZED": 1,
+        "ENFORCED": 20,
+        "VERIFIED_DOWNSTREAM": 84,
+        "PREFERENCE_CONTEXT": 1
+      }
+    },
+    "R2/2": {
+      "atoms": 103,
+      "silently_dropped": 0,
+      "inconsistent": 0,
+      "invented_model_only_hard_filters": 0,
+      "duplicate_atom_ids": 0,
+      "fates": {
+        "DROPPED_WITH_JUSTIFICATION": 1,
+        "CARRIED": 1,
+        "NORMALIZED": 1,
+        "ENFORCED": 20,
+        "VERIFIED_DOWNSTREAM": 80
+      }
+    },
+    "R2/3": {
+      "atoms": 100,
+      "silently_dropped": 0,
+      "inconsistent": 0,
+      "invented_model_only_hard_filters": 0,
+      "duplicate_atom_ids": 0,
+      "fates": {
+        "DROPPED_WITH_JUSTIFICATION": 1,
+        "CARRIED": 1,
+        "NORMALIZED": 1,
+        "ENFORCED": 15,
+        "VERIFIED_DOWNSTREAM": 82
+      }
+    },
+    "R2/4": {
+      "atoms": 105,
+      "silently_dropped": 0,
+      "inconsistent": 0,
+      "invented_model_only_hard_filters": 0,
+      "duplicate_atom_ids": 0,
+      "fates": {
+        "DROPPED_WITH_JUSTIFICATION": 1,
+        "CARRIED": 1,
+        "NORMALIZED": 1,
+        "ENFORCED": 11,
+        "VERIFIED_DOWNSTREAM": 90,
+        "PREFERENCE_CONTEXT": 1
+      }
+    },
+    "R2/5": {
+      "atoms": 104,
+      "silently_dropped": 0,
+      "inconsistent": 0,
+      "invented_model_only_hard_filters": 0,
+      "duplicate_atom_ids": 0,
+      "fates": {
+        "DROPPED_WITH_JUSTIFICATION": 1,
+        "CARRIED": 1,
+        "NORMALIZED": 1,
+        "ENFORCED": 16,
+        "VERIFIED_DOWNSTREAM": 84,
+        "PREFERENCE_CONTEXT": 1
+      }
+    },
+    "R3/1": {
+      "atoms": 56,
+      "silently_dropped": 0,
+      "inconsistent": 0,
+      "invented_model_only_hard_filters": 0,
+      "duplicate_atom_ids": 0,
+      "fates": {
+        "DROPPED_WITH_JUSTIFICATION": 1,
+        "CARRIED": 1,
+        "ENFORCED": 10,
+        "VERIFIED_DOWNSTREAM": 21,
+        "PREFERENCE_CONTEXT": 22,
+        "UNRESOLVED": 1
+      }
+    },
+    "R3/2": {
+      "atoms": 57,
+      "silently_dropped": 0,
+      "inconsistent": 0,
+      "invented_model_only_hard_filters": 0,
+      "duplicate_atom_ids": 0,
+      "fates": {
+        "DROPPED_WITH_JUSTIFICATION": 1,
+        "CARRIED": 1,
+        "ENFORCED": 10,
+        "UNRESOLVED": 2,
+        "VERIFIED_DOWNSTREAM": 21,
+        "PREFERENCE_CONTEXT": 22
+      }
+    },
+    "R3/3": {
+      "atoms": 58,
+      "silently_dropped": 0,
+      "inconsistent": 0,
+      "invented_model_only_hard_filters": 0,
+      "duplicate_atom_ids": 0,
+      "fates": {
+        "DROPPED_WITH_JUSTIFICATION": 1,
+        "CARRIED": 1,
+        "ENFORCED": 10,
+        "UNRESOLVED": 2,
+        "VERIFIED_DOWNSTREAM": 22,
+        "PREFERENCE_CONTEXT": 22
+      }
+    },
+    "R3/4": {
+      "atoms": 55,
+      "silently_dropped": 0,
+      "inconsistent": 0,
+      "invented_model_only_hard_filters": 0,
+      "duplicate_atom_ids": 0,
+      "fates": {
+        "DROPPED_WITH_JUSTIFICATION": 1,
+        "CARRIED": 1,
+        "ENFORCED": 10,
+        "UNRESOLVED": 2,
+        "VERIFIED_DOWNSTREAM": 20,
+        "PREFERENCE_CONTEXT": 21
+      }
+    },
+    "R3/5": {
+      "atoms": 57,
+      "silently_dropped": 0,
+      "inconsistent": 0,
+      "invented_model_only_hard_filters": 0,
+      "duplicate_atom_ids": 0,
+      "fates": {
+        "DROPPED_WITH_JUSTIFICATION": 1,
+        "CARRIED": 1,
+        "ENFORCED": 10,
+        "UNRESOLVED": 2,
+        "VERIFIED_DOWNSTREAM": 21,
+        "PREFERENCE_CONTEXT": 22
+      }
+    }
+  }
+}

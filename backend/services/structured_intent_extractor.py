@@ -116,9 +116,10 @@ def _normalize(raw: dict) -> dict:
             any_of = [x for x in (g.get("any_of") or []) if x]
             if len(any_of) < 2:
                 if any_of:
-                    skills.append({"name": any_of[0],
-                                   "relationship": g.get("relationship", "current"),
-                                   "strength": g.get("strength", "required")})
+                    collapsed = {"name": any_of[0], "strength": g.get("strength", "required")}
+                    if g.get("relationship") is not None:  # an unstated relationship stays unstated; it is never invented as "current"
+                        collapsed["relationship"] = g["relationship"]
+                    skills.append(collapsed)
                 continue
             g["any_of"] = any_of
             kept_groups.append(g)

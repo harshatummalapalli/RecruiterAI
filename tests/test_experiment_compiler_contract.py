@@ -17,18 +17,19 @@ from backend.experiments.compiler_contract import fate, loader, paths, probes, s
 from backend.experiments.compiler_contract import run_contract
 from backend.experiments.compiler_contract.atoms import enumerate_atoms
 from backend.experiments.intake_strategy.experimental_schema import ExperimentalHiringIntent
-from backend.services.search_compiler import compile_intent
+from backend.experiments.compiler_contract.legacy_compiler_v1 import compile_intent   # the BEFORE measurements are of the legacy compiler
 
 REPO = Path(__file__).resolve().parents[1]
 CC = REPO / "backend" / "experiments" / "compiler_contract"
 RESULTS = CC / "results"
 
+# The compiler-hardening phase changed search_compiler.py, compiler_audit.py and structured_intent.py ON PURPOSE. The BEFORE measurements are of the
+# byte-identical legacy copy (its hash is the old search_compiler.py hash), so that the baseline stays reproducible. The files the hardening did NOT
+# touch stay pinned.
 PINNED = {
-    "backend/services/search_compiler.py": "38d0fc14ac659e47835cc195e816502b5dddd01fa2049e0eec7f962b0df781cd",
-    "backend/services/compiler_audit.py": "ccda5898f4da48dce185dffbc65cd3781df6930299fab38ac0dec0664d58b86d",
+    "backend/experiments/compiler_contract/legacy_compiler_v1.py": "38d0fc14ac659e47835cc195e816502b5dddd01fa2049e0eec7f962b0df781cd",
     "backend/services/crustdata_capabilities.py": "c2038c5754ab26e4d5fdaed60da2ac27a32e36271202863963554611524a6148",
     "backend/services/role_family_taxonomy.py": "8d828121ffa8a8fe334cafee92642837bd4272c4a745d836a7c34b123eebca25",
-    "backend/models/structured_intent.py": "fe765fd1071de88e12933d047c08f7599eb4e597a3255757dcdfa80de694b924",
     "backend/knowledge/seniority.json": "106b55214b6b91c18573e5a63b8fb81755811a92c6cae9f20e937b20972f4534",
 }
 
@@ -193,8 +194,9 @@ def test_strength_context_is_treated_as_required_by_the_compiler():
     assert s[("company", "context", "any")] == 1 and s[("company", "preferred", "any")] == 0
 
 
-def test_prediction_5_omitted_relationship_equals_explicit_current_and_is_a_hard_filter():
-    r = probes.relationship_omission()
+def test_prediction_5_omitted_relationship_equals_explicit_current_and_is_a_hard_filter(analysis):
+    """BEFORE fact, read from the committed baseline measurement (the live models no longer default to `current`; see the hardening tests)."""
+    r = analysis["probes"]["relationship_omission"]
     assert r["defaults"]["SkillReq"] == "current" and r["defaults"]["CompanyReq"] == "any"
     assert r["omitted_equals_explicit_current_after_validation"]
     assert r["compiled_output_identical_omitted_vs_explicit_current"]

@@ -13,7 +13,7 @@ from typing import Any, Dict, List
 
 from backend.experiments.compiler_contract import signature as S
 from backend.experiments.intake_strategy.experimental_schema import ExperimentalHiringIntent, effective_view
-from backend.services.search_compiler import compile_intent
+from backend.experiments.compiler_contract.legacy_compiler_v1 import compile_intent  # the BEFORE harness measures the legacy compiler
 
 
 def path_intent(intent: ExperimentalHiringIntent, path_id: str) -> ExperimentalHiringIntent:

@@ -66,29 +66,34 @@ class _Strengthed(BaseModel):
         return v
 
 
+def _check_relationship(v: Optional[str]) -> Optional[str]:
+    if v is not None and v not in _RELATIONSHIPS:
+        raise ValueError(f"relationship must be one of {_RELATIONSHIPS}")
+    return v
+
+
 class SkillReq(_Strengthed):
     name: str
-    relationship: Relationship = "current"
+    # None = the source did not state a temporal relationship. It is NOT "current": an omitted value used to default to "current",
+    # which made the compiler hard-filter on the candidate's current role for a requirement that never said so. The compiler
+    # (COMPILER_CONTRACT.md) never invents "current" for None.
+    relationship: Optional[Relationship] = None
 
     @field_validator("relationship")
     @classmethod
-    def _rel(cls, v: str) -> str:
-        if v not in _RELATIONSHIPS:
-            raise ValueError(f"relationship must be one of {_RELATIONSHIPS}")
-        return v
+    def _rel(cls, v: Optional[str]) -> Optional[str]:
+        return _check_relationship(v)
 
 
 class SkillAnyOf(_Strengthed):
     """An OR group of skills — the brief's 'X and/or Y' / 'X or Y'."""
     any_of: List[str] = Field(min_length=2)
-    relationship: Relationship = "current"
+    relationship: Optional[Relationship] = None   # None = unspecified, never "current" (see SkillReq)
 
     @field_validator("relationship")
     @classmethod
-    def _rel(cls, v: str) -> str:
-        if v not in _RELATIONSHIPS:
-            raise ValueError(f"relationship must be one of {_RELATIONSHIPS}")
-        return v
+    def _rel(cls, v: Optional[str]) -> Optional[str]:
+        return _check_relationship(v)
 
 
 class CompanyReq(_Strengthed):
@@ -105,14 +110,12 @@ class CompanyReq(_Strengthed):
 
 class CompanyScale(_Strengthed):
     minimum_employees: int = Field(gt=0)
-    relationship: Relationship = "current"
+    relationship: Optional[Relationship] = None   # None = unspecified, never "current" (see SkillReq)
 
     @field_validator("relationship")
     @classmethod
-    def _rel(cls, v: str) -> str:
-        if v not in _RELATIONSHIPS:
-            raise ValueError(f"relationship must be one of {_RELATIONSHIPS}")
-        return v
+    def _rel(cls, v: Optional[str]) -> Optional[str]:
+        return _check_relationship(v)
 
 
 class Education(_Strengthed):

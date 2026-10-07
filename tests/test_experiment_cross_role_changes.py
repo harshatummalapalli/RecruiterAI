@@ -113,7 +113,11 @@ def test_a_downstream_compiler_behaviour_is_unchanged() -> None:
     plain = ExperimentalHiringIntent.model_validate(base(skills=[{"name": "Python", "strength": "required", "relationship": "any"}]))
     deep = ExperimentalHiringIntent.model_validate(base(skills=[{"name": "Python", "strength": "required", "relationship": "any", "proficiency": "advanced"}]))
     a, c = compile_intent(plain), compile_intent(deep)
-    assert a.filter_tree == c.filter_tree and [vars(x) for x in a.audit] == [vars(x) for x in c.audit]
+    # Updated in the compiler-hardening phase: the PROVIDER plan is still unchanged by proficiency (a depth is never a provider filter), but the compiler
+    # no longer ignores it: it adds one downstream audit row carrying the stated level (it used to be silently dropped).
+    assert a.filter_tree == c.filter_tree
+    extra = [x for x in c.audit if x not in a.audit]
+    assert [x.source for x in extra] == ["proficiency:Python=advanced"] and extra[0].route == "downstream_evidence"
 
 
 # ================================================================== B. work mode

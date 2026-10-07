@@ -1,0 +1,2826 @@
+{
+  "role": "R3",
+  "run": 3,
+  "atoms": [
+    {
+      "id": "global|role_archetype",
+      "concept": "role_archetype",
+      "scope": "global",
+      "kind": "METADATA",
+      "value": "title_defined",
+      "strength": null,
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "DROPPED_WITH_JUSTIFICATION"
+      ],
+      "records": [
+        "global|role_archetype[0]"
+      ],
+      "silent": false,
+      "fate": "DROPPED_WITH_JUSTIFICATION",
+      "consistent": true,
+      "why": "carries a justification"
+    },
+    {
+      "id": "global|provenance.basis",
+      "concept": "provenance.basis",
+      "scope": "global",
+      "kind": "METADATA",
+      "value": "per-atom source + verbatim quote (all atoms)",
+      "strength": null,
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [],
+      "records": [],
+      "silent": false,
+      "fate": "CARRIED",
+      "consistent": true,
+      "why": "provenance is a column of every atom record"
+    },
+    {
+      "id": "global|role_family[0]",
+      "concept": "role_family",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "FP&A and Business Finance Manager",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|role_family[0]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|seniority",
+      "concept": "seniority.value",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Senior Manager",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "UNRESOLVED"
+      ],
+      "records": [
+        "global|seniority.value[0]"
+      ],
+      "silent": false,
+      "fate": "UNRESOLVED",
+      "consistent": true,
+      "why": "carries a justification"
+    },
+    {
+      "id": "global|seniority.leadership[0]",
+      "concept": "seniority.leadership",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "technical",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|seniority.leadership[0]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[0]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Financial planning",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[0]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[1]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Budgeting",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[1]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[2]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Forecasting",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[2]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[3]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Variance analysis",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[3]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[4]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Financial analysis",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[4]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[5]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Financial modeling",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[5]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[6]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Scenario analysis",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[6]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[7]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Sensitivity analysis",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[7]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[8]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Microsoft Excel",
+      "strength": "required",
+      "proficiency": "advanced",
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[8]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill.proficiency[8]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Microsoft Excel = advanced",
+      "strength": "required",
+      "proficiency": "advanced",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[8]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[9]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "ERP systems",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[9]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill_any_of[0]",
+      "concept": "skill_any_of",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Power BI | A similar business intelligence/reporting platform",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill_any_of[0]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill_any_of[1]",
+      "concept": "skill_any_of",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "SAP | Oracle | Comparable ERP platforms",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill_any_of[1]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|company[0]",
+      "concept": "company",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Unilever",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|company[0]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|company[1]",
+      "concept": "company",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Procter & Gamble",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|company[1]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|company[2]",
+      "concept": "company",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "PepsiCo",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|company[2]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|company[3]",
+      "concept": "company",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Nestlé",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|company[3]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|company[4]",
+      "concept": "company",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Coca-Cola",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|company[4]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|company[5]",
+      "concept": "company",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Mondelez International",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|company[5]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|education.degree[0]",
+      "concept": "education.degree",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Bachelor’s degree",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|education.degree[0]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|education.stream[0]",
+      "concept": "education.stream",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Finance",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|education.stream[0]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|education.stream[1]",
+      "concept": "education.stream",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Accounting",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|education.stream[1]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|education.stream[2]",
+      "concept": "education.stream",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Economics",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|education.stream[2]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|education.stream[3]",
+      "concept": "education.stream",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Business",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|education.stream[3]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|education.stream[4]",
+      "concept": "education.stream",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "A related discipline",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|education.stream[4]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|experience.min",
+      "concept": "experience.min",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "8+ years",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|experience.min[0]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|experience.max",
+      "concept": "experience.max",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "<= 12 years",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|experience.max[1]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|location.entry[0]",
+      "concept": "location.entry",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Hyderabad, Telangana, India",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|location.entry[0]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|location.work_mode",
+      "concept": "location.work_mode",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "hybrid",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "UNRESOLVED"
+      ],
+      "records": [
+        "global|location.work_mode[0]"
+      ],
+      "silent": false,
+      "fate": "UNRESOLVED",
+      "consistent": true,
+      "why": "carries a justification"
+    },
+    {
+      "id": "global|semantic_exclusion[0]",
+      "concept": "semantic_exclusion",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Experience exclusively in statutory audit, tax, bookkeeping, or trans…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|semantic_exclusion[0]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|domain[0]",
+      "concept": "domain",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "FP&A, Business Finance, Commercial Finance, or closely related financ…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|domain[0]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|domain[1]",
+      "concept": "domain",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Large multinational or complex enterprise environments",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|domain[1]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|domain[2]",
+      "concept": "domain",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Large consumer or industrial organizations",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|domain[2]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|domain[3]",
+      "concept": "domain",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Large, complex organization",
+      "strength": "context",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|domain[3]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[0]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Meaningful FP&A or business-finance ownership",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[0]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[1]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Commercial judgment",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[1]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[2]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Stakeholder management",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[2]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[3]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Strong business partnering and communication",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[3]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[4]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Experience presenting financial analysis and recommendations clearly …",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[4]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[5]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Working knowledge of Power BI or a similar business intelligence/repo…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[5]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[6]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Professional qualification such as CA, CMA, ACCA, or MBA Finance",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|evidence_signal[6]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[7]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Experience supporting commercial, operations, or business-unit leader…",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|evidence_signal[7]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[8]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Lead annual budgeting, forecasting, and long-range planning for assig…",
+      "strength": "context",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|evidence_signal[8]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[9]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Develop and maintain financial models supporting planning, scenarios,…",
+      "strength": "context",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|evidence_signal[9]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[10]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Analyze actuals against budgets and forecasts, explain variance drive…",
+      "strength": "context",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|evidence_signal[10]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[11]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Prepare monthly and quarterly management reporting with clear perform…",
+      "strength": "context",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|evidence_signal[11]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[12]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Partner with leaders on financial implications of strategic and opera…",
+      "strength": "context",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|evidence_signal[12]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[13]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Develop scenario and sensitivity models for revenue, cost, headcount,…",
+      "strength": "context",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|evidence_signal[13]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[14]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Improve planning and reporting through automation, standardization, a…",
+      "strength": "context",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|evidence_signal[14]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[15]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Present financial insights and recommendations to senior leadership",
+      "strength": "context",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|evidence_signal[15]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[16]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Work cross-functionally with Accounting, Commercial, Operations, and …",
+      "strength": "context",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|evidence_signal[16]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[17]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Support ad hoc financial analysis and strategic projects",
+      "strength": "context",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|evidence_signal[17]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[18]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Translate financial information into actionable insights, improve for…",
+      "strength": "context",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|evidence_signal[18]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    }
+  ],
+  "invented_model_only_hard_filters": [],
+  "duplicate_atom_ids": [],
+  "bad_fates": [],
+  "records_without_justification": [],
+  "filter_tree": {
+    "op": "and",
+    "conditions": [
+      {
+        "field": "basic_profile.location.country",
+        "type": "in",
+        "value": [
+          "India"
+        ]
+      },
+      {
+        "field": "basic_profile.location.city",
+        "type": "in",
+        "value": [
+          "Hyderabad"
+        ]
+      },
+      {
+        "field": "years_of_experience_raw",
+        "type": "=>",
+        "value": 8
+      },
+      {
+        "field": "years_of_experience_raw",
+        "type": "=<",
+        "value": 12
+      },
+      {
+        "field": "experience.employment_details.current.title",
+        "type": "(.)",
+        "value": "FP&A and Business Finance Manager"
+      },
+      {
+        "op": "all_of",
+        "conditions": [
+          {
+            "field": "education.schools.degree",
+            "type": "(.)",
+            "value": "Bachelor’s degree"
+          },
+          {
+            "op": "or",
+            "conditions": [
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Finance"
+              },
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Accounting"
+              },
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Economics"
+              },
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "Business"
+              },
+              {
+                "field": "education.schools.field_of_study",
+                "type": "(.)",
+                "value": "A related discipline"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "leaves": [
+    [
+      "basic_profile.location.city",
+      "in",
+      "[\"Hyderabad\"]"
+    ],
+    [
+      "basic_profile.location.country",
+      "in",
+      "[\"India\"]"
+    ],
+    [
+      "education.schools.degree",
+      "(.)",
+      "\"Bachelor’s degree\""
+    ],
+    [
+      "education.schools.field_of_study",
+      "(.)",
+      "\"A related discipline\""
+    ],
+    [
+      "education.schools.field_of_study",
+      "(.)",
+      "\"Accounting\""
+    ],
+    [
+      "education.schools.field_of_study",
+      "(.)",
+      "\"Business\""
+    ],
+    [
+      "education.schools.field_of_study",
+      "(.)",
+      "\"Economics\""
+    ],
+    [
+      "education.schools.field_of_study",
+      "(.)",
+      "\"Finance\""
+    ],
+    [
+      "experience.employment_details.current.title",
+      "(.)",
+      "\"FP&A and Business Finance Manager\""
+    ],
+    [
+      "years_of_experience_raw",
+      "=<",
+      "12"
+    ],
+    [
+      "years_of_experience_raw",
+      "=>",
+      "8"
+    ]
+  ],
+  "paths": [],
+  "audit_record": {
+    "search_id": "R3-run3",
+    "confirmation_id": null,
+    "intent_hash": "5272e6f993b5b037",
+    "plan_hash": "ac77d52d15eb2c8f",
+    "compiler_version": "v2-2026-10-07",
+    "contract_version": "compiler-contract-1",
+    "capability_map_version": "v1-2026-10-01",
+    "taxonomy_version": "v1-2026-10-02",
+    "retrieval_title_family": [
+      "FP&A and Business Finance Manager"
+    ],
+    "compiled_provider_plan": {
+      "op": "and",
+      "conditions": [
+        {
+          "field": "basic_profile.location.country",
+          "type": "in",
+          "value": [
+            "India"
+          ]
+        },
+        {
+          "field": "basic_profile.location.city",
+          "type": "in",
+          "value": [
+            "Hyderabad"
+          ]
+        },
+        {
+          "field": "years_of_experience_raw",
+          "type": "=>",
+          "value": 8
+        },
+        {
+          "field": "years_of_experience_raw",
+          "type": "=<",
+          "value": 12
+        },
+        {
+          "field": "experience.employment_details.current.title",
+          "type": "(.)",
+          "value": "FP&A and Business Finance Manager"
+        },
+        {
+          "op": "all_of",
+          "conditions": [
+            {
+              "field": "education.schools.degree",
+              "type": "(.)",
+              "value": "Bachelor’s degree"
+            },
+            {
+              "op": "or",
+              "conditions": [
+                {
+                  "field": "education.schools.field_of_study",
+                  "type": "(.)",
+                  "value": "Finance"
+                },
+                {
+                  "field": "education.schools.field_of_study",
+                  "type": "(.)",
+                  "value": "Accounting"
+                },
+                {
+                  "field": "education.schools.field_of_study",
+                  "type": "(.)",
+                  "value": "Economics"
+                },
+                {
+                  "field": "education.schools.field_of_study",
+                  "type": "(.)",
+                  "value": "Business"
+                },
+                {
+                  "field": "education.schools.field_of_study",
+                  "type": "(.)",
+                  "value": "A related discipline"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "requirements": {
+      "provider_enforced": [
+        "location",
+        "experience",
+        "role_family",
+        "education"
+      ],
+      "admission_enforced": [
+        "seniority"
+      ],
+      "downstream_verified": [
+        "seniority.leadership",
+        "skill:Financial planning",
+        "skill:Budgeting",
+        "skill:Forecasting",
+        "skill:Variance analysis",
+        "skill:Financial analysis",
+        "skill:Financial modeling",
+        "skill:Scenario analysis",
+        "skill:Sensitivity analysis",
+        "skill:Microsoft Excel",
+        "proficiency:Microsoft Excel=advanced",
+        "skill:ERP systems",
+        "skill_any_of:Power BI|A similar business intelligence/reporting platform",
+        "skill_any_of:SAP|Oracle|Comparable ERP platforms",
+        "domain:FP&A, Business Finance, Commercial Finance, or closely related financial planning roles",
+        "domain:Large multinational or complex enterprise environments",
+        "domain:Large consumer or industrial organizations",
+        "domain:Large, complex organization",
+        "evidence:Meaningful FP&A or business-finance ownership",
+        "evidence:Commercial judgment",
+        "evidence:Stakeholder management",
+        "evidence:Strong business partnering and communication",
+        "evidence:Experience presenting financial analysis and recommendations clearly to senior stakeholders",
+        "evidence:Working knowledge of Power BI or a similar business intelligence/reporting platform",
+        "evidence:Professional qualification such as CA, CMA, ACCA, or MBA Finance",
+        "evidence:Experience supporting commercial, operations, or business-unit leadership",
+        "evidence:Lead annual budgeting, forecasting, and long-range planning for assigned business areas",
+        "evidence:Develop and maintain financial models supporting planning, scenarios, investments, and performance reviews",
+        "evidence:Analyze actuals against budgets and forecasts, explain variance drivers, and recommend actions",
+        "evidence:Prepare monthly and quarterly management reporting with clear performance commentary",
+        "evidence:Partner with leaders on financial implications of strategic and operational initiatives",
+        "evidence:Develop scenario and sensitivity models for revenue, cost, headcount, and investments",
+        "evidence:Improve planning and reporting through automation, standardization, and data-driven analysis",
+        "evidence:Present financial insights and recommendations to senior leadership",
+        "evidence:Work cross-functionally with Accounting, Commercial, Operations, and other business teams",
+        "evidence:Support ad hoc financial analysis and strategic projects",
+        "evidence:Translate financial information into actionable insights, improve forecasting accuracy, and support business decisions"
+      ],
+      "context_only": [
+        "company:Unilever",
+        "company:Procter & Gamble",
+        "company:PepsiCo",
+        "company:Nestlé",
+        "company:Coca-Cola",
+        "company:Mondelez International"
+      ],
+      "unverifiable": [
+        "location.work_mode"
+      ],
+      "downstream_exclusion": [
+        "semantic_exclusion:Experience exclusively in statutory audit, tax, bookkeeping, or transaction processing, without substantive FP&A or business-finance responsibilities"
+      ]
+    },
+    "downstream_checklist": [
+      {
+        "tier": "core",
+        "requirement": "Technical leadership"
+      },
+      {
+        "tier": "core",
+        "requirement": "Financial planning"
+      },
+      {
+        "tier": "core",
+        "requirement": "Budgeting"
+      },
+      {
+        "tier": "core",
+        "requirement": "Forecasting"
+      },
+      {
+        "tier": "core",
+        "requirement": "Variance analysis"
+      },
+      {
+        "tier": "core",
+        "requirement": "Financial analysis"
+      },
+      {
+        "tier": "core",
+        "requirement": "Financial modeling"
+      },
+      {
+        "tier": "core",
+        "requirement": "Scenario analysis"
+      },
+      {
+        "tier": "core",
+        "requirement": "Sensitivity analysis"
+      },
+      {
+        "tier": "core",
+        "requirement": "Microsoft Excel"
+      },
+      {
+        "tier": "core",
+        "requirement": "advanced proficiency in Microsoft Excel"
+      },
+      {
+        "tier": "core",
+        "requirement": "ERP systems"
+      },
+      {
+        "tier": "core",
+        "requirement": "Power BI|A similar business intelligence/reporting platform"
+      },
+      {
+        "tier": "core",
+        "requirement": "SAP|Oracle|Comparable ERP platforms"
+      },
+      {
+        "tier": "core",
+        "requirement": "FP&A, Business Finance, Commercial Finance, or closely related financial planning roles"
+      },
+      {
+        "tier": "supporting",
+        "requirement": "Large multinational or complex enterprise environments"
+      },
+      {
+        "tier": "supporting",
+        "requirement": "Large consumer or industrial organizations"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Large, complex organization"
+      },
+      {
+        "tier": "core",
+        "requirement": "Meaningful FP&A or business-finance ownership"
+      },
+      {
+        "tier": "core",
+        "requirement": "Commercial judgment"
+      },
+      {
+        "tier": "core",
+        "requirement": "Stakeholder management"
+      },
+      {
+        "tier": "core",
+        "requirement": "Strong business partnering and communication"
+      },
+      {
+        "tier": "core",
+        "requirement": "Experience presenting financial analysis and recommendations clearly to senior stakeholders"
+      },
+      {
+        "tier": "core",
+        "requirement": "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+      },
+      {
+        "tier": "supporting",
+        "requirement": "Professional qualification such as CA, CMA, ACCA, or MBA Finance"
+      },
+      {
+        "tier": "supporting",
+        "requirement": "Experience supporting commercial, operations, or business-unit leadership"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Lead annual budgeting, forecasting, and long-range planning for assigned business areas"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Develop and maintain financial models supporting planning, scenarios, investments, and performance reviews"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Analyze actuals against budgets and forecasts, explain variance drivers, and recommend actions"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Prepare monthly and quarterly management reporting with clear performance commentary"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Partner with leaders on financial implications of strategic and operational initiatives"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Develop scenario and sensitivity models for revenue, cost, headcount, and investments"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Improve planning and reporting through automation, standardization, and data-driven analysis"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Present financial insights and recommendations to senior leadership"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Work cross-functionally with Accounting, Commercial, Operations, and other business teams"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Support ad hoc financial analysis and strategic projects"
+      },
+      {
+        "tier": "differentiator",
+        "requirement": "Translate financial information into actionable insights, improve forecasting accuracy, and support business decisions"
+      }
+    ],
+    "downstream_exclusions": [
+      "Experience exclusively in statutory audit, tax, bookkeeping, or transaction processing, without substantive FP&A or business-finance responsibilities"
+    ],
+    "warnings": [
+      "UNRESOLVED location.work_mode 'hybrid' (global): capability map: no work-mode filter on person search and not verifiable from candidate data; preserved as typed, never converted to another mode",
+      "UNRESOLVED seniority.value 'Senior Manager' (global): no approved taxonomy mapping for this level: preserved verbatim for the admission gate, never remapped to another level",
+      "education stream: filterable but response-gated (not displayable); verify via Harvest if needed"
+    ],
+    "atom_audit": [
+      {
+        "atom_id": "global|location.entry[0]",
+        "concept": "location.entry",
+        "scope": "global",
+        "value": "Hyderabad, Telangana, India",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Location: Hyderabad, India\nWork Mode: Hybrid"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: city, country",
+        "justification": "enforced as the stated place; 1 component(s) not enforced (see components)",
+        "components": [
+          {
+            "component": "country",
+            "value": "India",
+            "fate": "ENFORCED",
+            "justification": "stated in the cited source"
+          },
+          {
+            "component": "state",
+            "value": "Telangana",
+            "fate": "DROPPED_WITH_JUSTIFICATION",
+            "justification": "model-supplied: not in the cited source text and no approved normalization; never a provider filter"
+          },
+          {
+            "component": "city",
+            "value": "Hyderabad",
+            "fate": "ENFORCED",
+            "justification": "the stated place"
+          }
+        ],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|location.work_mode[0]",
+        "concept": "location.work_mode",
+        "scope": "global",
+        "value": "hybrid",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Location: Hyderabad, India\nWork Mode: Hybrid"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "UNRESOLVED",
+        "destination": "audit row 'location.work_mode' (disclose)",
+        "justification": "capability map: no work-mode filter on person search and not verifiable from candidate data; preserved as typed, never converted to another mode",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|experience.min[0]",
+        "concept": "experience.min",
+        "scope": "global",
+        "value": "8+ years",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "8–12 years of relevant experience in FP&A, Business Finance, Commercial Finance, or closely related financial planning roles."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: years_of_experience_raw",
+        "justification": "enforced",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|experience.max[1]",
+        "concept": "experience.max",
+        "scope": "global",
+        "value": "<= 12 years",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "8–12 years of relevant experience in FP&A, Business Finance, Commercial Finance, or closely related financial planning roles."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: years_of_experience_raw",
+        "justification": "enforced",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|role_family[0]",
+        "concept": "role_family",
+        "scope": "global",
+        "value": "FP&A and Business Finance Manager",
+        "provenance": {
+          "state": "unrecorded",
+          "sources": [],
+          "quote": null
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: current title",
+        "justification": "no taxonomy entry: the source title is used verbatim (no expansion)",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|seniority.value[0]",
+        "concept": "seniority.value",
+        "scope": "global",
+        "value": "Senior Manager",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Senior Manager – FP&A and Business Finance"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "UNRESOLVED",
+        "destination": "audit row 'seniority' (admission_level_fit)",
+        "justification": "no approved taxonomy mapping for this level: preserved verbatim for the admission gate, never remapped to another level",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|seniority.leadership[0]",
+        "concept": "seniority.leadership",
+        "scope": "global",
+        "value": "technical",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Senior Manager – FP&A and Business Finance"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "a leadership requirement no provider field can express; verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[0]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Financial planning",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Strong experience in financial planning, budgeting, forecasting, and variance analysis."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[1]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Budgeting",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Strong experience in financial planning, budgeting, forecasting, and variance analysis."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[2]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Forecasting",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Strong experience in financial planning, budgeting, forecasting, and variance analysis."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[3]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Variance analysis",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Strong experience in financial planning, budgeting, forecasting, and variance analysis."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[4]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Financial analysis",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "strong financial analysis and modeling capabilities"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[5]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Financial modeling",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Strong financial modeling skills, including scenario and sensitivity analysis."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[6]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Scenario analysis",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Strong financial modeling skills, including scenario and sensitivity analysis."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[7]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Sensitivity analysis",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Strong financial modeling skills, including scenario and sensitivity analysis."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[8]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Microsoft Excel",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Advanced proficiency in Microsoft Excel."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[8]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Microsoft Excel = advanced",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Advanced proficiency in Microsoft Excel."
+        },
+        "strength": "required",
+        "proficiency": "advanced",
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[9]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "ERP systems",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience working with ERP systems such as SAP, Oracle, or comparable platforms."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill_any_of[0]",
+        "concept": "skill_any_of",
+        "scope": "global",
+        "value": "Power BI | A similar business intelligence/reporting platform",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Working knowledge of Power BI or a similar business intelligence/reporting platform."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill_any_of[1]",
+        "concept": "skill_any_of",
+        "scope": "global",
+        "value": "SAP | Oracle | Comparable ERP platforms",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience working with ERP systems such as SAP, Oracle, or comparable platforms."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|education.degree[0]",
+        "concept": "education.degree",
+        "scope": "global",
+        "value": "Bachelor’s degree",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Bachelor’s degree in Finance, Accounting, Economics, Business, or a related discipline."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: education.schools",
+        "justification": "enforced (literal provider string; normalization beyond the approved degree list is a taxonomy item)",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|education.stream[0]",
+        "concept": "education.stream",
+        "scope": "global",
+        "value": "Finance",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Bachelor’s degree in Finance, Accounting, Economics, Business, or a related discipline."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: education.schools",
+        "justification": "enforced (literal provider string; normalization beyond the approved degree list is a taxonomy item)",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|education.stream[1]",
+        "concept": "education.stream",
+        "scope": "global",
+        "value": "Accounting",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Bachelor’s degree in Finance, Accounting, Economics, Business, or a related discipline."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: education.schools",
+        "justification": "enforced (literal provider string; normalization beyond the approved degree list is a taxonomy item)",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|education.stream[2]",
+        "concept": "education.stream",
+        "scope": "global",
+        "value": "Economics",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Bachelor’s degree in Finance, Accounting, Economics, Business, or a related discipline."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: education.schools",
+        "justification": "enforced (literal provider string; normalization beyond the approved degree list is a taxonomy item)",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|education.stream[3]",
+        "concept": "education.stream",
+        "scope": "global",
+        "value": "Business",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Bachelor’s degree in Finance, Accounting, Economics, Business, or a related discipline."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: education.schools",
+        "justification": "enforced (literal provider string; normalization beyond the approved degree list is a taxonomy item)",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|education.stream[4]",
+        "concept": "education.stream",
+        "scope": "global",
+        "value": "A related discipline",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Bachelor’s degree in Finance, Accounting, Economics, Business, or a related discipline."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: education.schools",
+        "justification": "enforced (literal provider string; normalization beyond the approved degree list is a taxonomy item)",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|company[0]",
+        "concept": "company",
+        "scope": "global",
+        "value": "Unilever",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Candidates with experience in organizations such as Unilever, Procter & Gamble, PepsiCo, Nestlé, Coca-Cola, Mondelez International, or similar large consumer/industrial organizations"
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "audit row (context_or_evidence)",
+        "justification": "strength 'preferred': a company preference is never a hard company filter; no provider preference mechanism exists",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|company[1]",
+        "concept": "company",
+        "scope": "global",
+        "value": "Procter & Gamble",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Candidates with experience in organizations such as Unilever, Procter & Gamble, PepsiCo, Nestlé, Coca-Cola, Mondelez International, or similar large consumer/industrial organizations"
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "audit row (context_or_evidence)",
+        "justification": "strength 'preferred': a company preference is never a hard company filter; no provider preference mechanism exists",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|company[2]",
+        "concept": "company",
+        "scope": "global",
+        "value": "PepsiCo",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Candidates with experience in organizations such as Unilever, Procter & Gamble, PepsiCo, Nestlé, Coca-Cola, Mondelez International, or similar large consumer/industrial organizations"
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "audit row (context_or_evidence)",
+        "justification": "strength 'preferred': a company preference is never a hard company filter; no provider preference mechanism exists",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|company[3]",
+        "concept": "company",
+        "scope": "global",
+        "value": "Nestlé",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Candidates with experience in organizations such as Unilever, Procter & Gamble, PepsiCo, Nestlé, Coca-Cola, Mondelez International, or similar large consumer/industrial organizations"
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "audit row (context_or_evidence)",
+        "justification": "strength 'preferred': a company preference is never a hard company filter; no provider preference mechanism exists",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|company[4]",
+        "concept": "company",
+        "scope": "global",
+        "value": "Coca-Cola",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Candidates with experience in organizations such as Unilever, Procter & Gamble, PepsiCo, Nestlé, Coca-Cola, Mondelez International, or similar large consumer/industrial organizations"
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "audit row (context_or_evidence)",
+        "justification": "strength 'preferred': a company preference is never a hard company filter; no provider preference mechanism exists",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|company[5]",
+        "concept": "company",
+        "scope": "global",
+        "value": "Mondelez International",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Candidates with experience in organizations such as Unilever, Procter & Gamble, PepsiCo, Nestlé, Coca-Cola, Mondelez International, or similar large consumer/industrial organizations"
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "audit row (context_or_evidence)",
+        "justification": "strength 'preferred': a company preference is never a hard company filter; no provider preference mechanism exists",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|semantic_exclusion[0]",
+        "concept": "semantic_exclusion",
+        "scope": "global",
+        "value": "Experience exclusively in statutory audit, tax, bookkeeping, or transaction processing, without substantive FP&A or business-finance responsibilities",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Candidates whose experience is exclusively in statutory audit, tax, bookkeeping, or transaction processing, without substantive FP&A or business-finance responsibilities, are not suitable."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream exclusion checklist",
+        "justification": "a semantic negative is verified by the Judge; no provider constraint is equivalent, so none is invented",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|domain[0]",
+        "concept": "domain",
+        "scope": "global",
+        "value": "FP&A, Business Finance, Commercial Finance, or closely related financial planning roles",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "8–12 years of relevant experience in FP&A, Business Finance, Commercial Finance, or closely related financial planning roles."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "domain is verified from the candidate's evidence",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|domain[1]",
+        "concept": "domain",
+        "scope": "global",
+        "value": "Large multinational or complex enterprise environments",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience in large multinational or complex enterprise environments is preferred."
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "domain is verified from the candidate's evidence; strength 'preferred' is a preference",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|domain[2]",
+        "concept": "domain",
+        "scope": "global",
+        "value": "Large consumer or industrial organizations",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "or similar large consumer/industrial organizations would be particularly relevant."
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "domain is verified from the candidate's evidence; strength 'preferred' is a preference",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|domain[3]",
+        "concept": "domain",
+        "scope": "global",
+        "value": "Large, complex organization",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "lead financial planning, forecasting, performance analysis, and business decision support for a large, complex organization."
+        },
+        "strength": "context",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "domain is verified from the candidate's evidence; strength 'context' is a preference",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[0]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Meaningful FP&A or business-finance ownership",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "This role requires meaningful FP&A/business-finance ownership."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[1]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Commercial judgment",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "The successful candidate will combine strong financial analysis and modeling capabilities with commercial judgment, stakeholder management"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[2]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Stakeholder management",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "commercial judgment, stakeholder management, and the ability to communicate financial insights clearly to senior business leaders."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[3]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Strong business partnering and communication",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Strong business partnering and communication skills."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[4]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Experience presenting financial analysis and recommendations clearly to senior stakeholders",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience presenting financial analysis and recommendations to senior stakeholders."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[5]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Working knowledge of Power BI or a similar business intelligence/reporting platform",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Working knowledge of Power BI or a similar business intelligence/reporting platform."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[6]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Professional qualification such as CA, CMA, ACCA, or MBA Finance",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Professional qualification such as CA, CMA, ACCA, or MBA Finance is preferred."
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[7]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Experience supporting commercial, operations, or business-unit leadership",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience supporting commercial, operations, or business-unit leadership is preferred."
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[8]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Lead annual budgeting, forecasting, and long-range planning for assigned business areas",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Lead the annual budgeting, forecasting, and long-range planning processes for assigned business areas."
+        },
+        "strength": "context",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[9]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Develop and maintain financial models supporting planning, scenarios, investments, and performance reviews",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Develop and maintain financial models to support planning, scenario analysis, investment decisions, and business performance reviews."
+        },
+        "strength": "context",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[10]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Analyze actuals against budgets and forecasts, explain variance drivers, and recommend actions",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Analyze actuals versus budget and forecast, identify key drivers of variance, and provide recommendations to business leaders."
+        },
+        "strength": "context",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[11]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Prepare monthly and quarterly management reporting with clear performance commentary",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Prepare monthly and quarterly management reporting packs with clear commentary on business performance."
+        },
+        "strength": "context",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[12]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Partner with leaders on financial implications of strategic and operational initiatives",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Partner with business and functional leaders to evaluate financial implications of strategic and operational initiatives."
+        },
+        "strength": "context",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[13]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Develop scenario and sensitivity models for revenue, cost, headcount, and investments",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Develop scenario analyses and sensitivity models for revenue, cost, headcount, and investment decisions."
+        },
+        "strength": "context",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[14]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Improve planning and reporting through automation, standardization, and data-driven analysis",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Improve financial planning and reporting processes through automation, standardization, and data-driven analysis."
+        },
+        "strength": "context",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[15]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Present financial insights and recommendations to senior leadership",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Present financial insights and recommendations to senior leadership."
+        },
+        "strength": "context",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[16]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Work cross-functionally with Accounting, Commercial, Operations, and other business teams",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Work cross-functionally with Accounting, Commercial, Operations, and other business teams."
+        },
+        "strength": "context",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[17]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Support ad hoc financial analysis and strategic projects",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Support ad hoc financial analysis and strategic projects as required."
+        },
+        "strength": "context",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[18]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Translate financial information into actionable insights, improve forecasting accuracy, and support business decisions",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "translate financial information into actionable insights, improve forecasting accuracy, and support strategic and operational decisions."
+        },
+        "strength": "context",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|role_archetype[0]",
+        "concept": "role_archetype",
+        "scope": "global",
+        "value": "title_defined",
+        "provenance": {
+          "state": "unrecorded",
+          "sources": [],
+          "quote": null
+        },
+        "strength": null,
+        "proficiency": null,
+        "relationship": null,
+        "fate": "DROPPED_WITH_JUSTIFICATION",
+        "destination": "atom audit",
+        "justification": "classification metadata about the role (title/skill/hybrid): it carries no execution semantics and no candidate constraint",
+        "components": [],
+        "kind": "METADATA"
+      }
+    ]
+  },
+  "warnings": [
+    "UNRESOLVED location.work_mode 'hybrid' (global): capability map: no work-mode filter on person search and not verifiable from candidate data; preserved as typed, never converted to another mode",
+    "UNRESOLVED seniority.value 'Senior Manager' (global): no approved taxonomy mapping for this level: preserved verbatim for the admission gate, never remapped to another level",
+    "education stream: filterable but response-gated (not displayable); verify via Harvest if needed"
+  ]
+}

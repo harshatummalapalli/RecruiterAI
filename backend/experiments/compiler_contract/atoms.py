@@ -195,3 +195,34 @@ def enumerate_atoms(intent: ExperimentalHiringIntent) -> List[Atom]:
         for i, x in enumerate(p["domain"]):
             A.append(Atom(f"{sc}|domain[{i}]", "domain", sc, "MEANING", _short(x["name"]), _mut(lambda c, pi=pi, i=i: c["sourcing_paths"][pi]["domain"].pop(i)), strength=x["strength"]))
     return A
+
+
+# --- schema coverage guard ----------------------------------------------------------------------------------------------------
+# Every field path of the extended intent must belong to a concept the compiler contract covers. A NEW schema field fails
+# `tests/test_compiler_contract.py::test_every_schema_field_belongs_to_a_covered_concept` until it is routed, which is how a future field cannot
+# become a silent drop. Qualifier fields (`strength`, `relationship`, `basis`, ...) travel on their atom's record.
+CONCEPT_OF_PATH = [
+    ("role_archetype", "role_archetype"), ("role_family", "role_family"),
+    ("seniority.leadership", "seniority.leadership"), ("seniority.alternatives", "seniority.alternatives"), ("seniority", "seniority.value"),
+    ("skills[].proficiency", "skill.proficiency"), ("skills", "skill"), ("skill_any_of", "skill_any_of"),
+    ("companies", "company"), ("company_scale", "company_scale"),
+    ("education.degrees", "education.degree"), ("education.streams", "education.stream"), ("education", "education.*"),
+    ("experience.minimum_years", "experience.min"), ("experience.maximum_years", "experience.max"), ("experience", "experience.*"),
+    ("location.entries", "location.entry"), ("location.countries", "location.country"), ("location.radius", "location.radius"),
+    ("location.remote", "location.remote"), ("location.work_mode", "location.work_mode"), ("location", "location.*"),
+    ("exclusions", "exclusion"), ("semantic_exclusions", "semantic_exclusion"), ("domain", "domain"), ("evidence_signals", "evidence_signal"),
+    ("sourcing_paths", "sourcing_path"), ("reconciliations", "reconciliation"),
+]
+
+
+def concept_of(path: str) -> Optional[str]:
+    """The contract concept a schema field path belongs to (None = unclassified: a new field that nobody routed)."""
+    if "basis" in path.replace("[]", "").split("."):
+        return "provenance.basis"
+    if path == "sourcing_paths" or (path.startswith("sourcing_paths[].") and path.split(".")[1].split("[")[0] in ("id", "label", "strategy")):
+        return "sourcing_path"
+    inner = path.replace("sourcing_paths[].", "", 1) if path.startswith("sourcing_paths[].") else path
+    for prefix, concept in CONCEPT_OF_PATH:
+        if inner == prefix or inner.startswith(prefix + ".") or inner.startswith(prefix + "[]"):
+            return concept
+    return None

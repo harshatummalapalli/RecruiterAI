@@ -1,0 +1,3516 @@
+{
+  "role": "R1",
+  "run": 4,
+  "atoms": [
+    {
+      "id": "global|role_archetype",
+      "concept": "role_archetype",
+      "scope": "global",
+      "kind": "METADATA",
+      "value": "hybrid",
+      "strength": null,
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "DROPPED_WITH_JUSTIFICATION"
+      ],
+      "records": [
+        "global|role_archetype[0]"
+      ],
+      "silent": false,
+      "fate": "DROPPED_WITH_JUSTIFICATION",
+      "consistent": true,
+      "why": "carries a justification"
+    },
+    {
+      "id": "global|provenance.basis",
+      "concept": "provenance.basis",
+      "scope": "global",
+      "kind": "METADATA",
+      "value": "per-atom source + verbatim quote (all atoms)",
+      "strength": null,
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [],
+      "records": [],
+      "silent": false,
+      "fate": "CARRIED",
+      "consistent": true,
+      "why": "provenance is a column of every atom record"
+    },
+    {
+      "id": "global|role_family[0]",
+      "concept": "role_family",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Data Analyst",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "global|role_family[0]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "global|skill[0]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "SQL",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[0]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill.proficiency[0]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "SQL = hands_on",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[0]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[1]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Python",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[1]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill.proficiency[1]",
+      "concept": "skill.proficiency",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Python = hands_on",
+      "strength": "required",
+      "proficiency": "hands_on",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill.proficiency[1]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[2]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Data privacy",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[2]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[3]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Information security principles",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[3]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[4]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Data analytics",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|skill[4]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[5]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Security frameworks",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|skill[5]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[6]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Regulatory compliance standards",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|skill[6]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[7]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Relativity",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|skill[7]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|skill[8]",
+      "concept": "skill",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Canopy",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": "any",
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|skill[8]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|education.degree[0]",
+      "concept": "education.degree",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Bachelor's degree",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|education.degree[0]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|education.stream[0]",
+      "concept": "education.stream",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Cybersecurity",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|education.stream[0]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|education.stream[1]",
+      "concept": "education.stream",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Information Technology",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|education.stream[1]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|education.stream[2]",
+      "concept": "education.stream",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Computer Science",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|education.stream[2]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|education.stream[3]",
+      "concept": "education.stream",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Information Systems",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|education.stream[3]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|education.stream[4]",
+      "concept": "education.stream",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Data Analytics",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|education.stream[4]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|education.stream[5]",
+      "concept": "education.stream",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "a related discipline",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|education.stream[5]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|semantic_exclusion[0]",
+      "concept": "semantic_exclusion",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Conventional cybersecurity operations backgrounds are not equivalent …",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|semantic_exclusion[0]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|semantic_exclusion[1]",
+      "concept": "semantic_exclusion",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "A strong SQL/Python analyst working at a security firm",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|semantic_exclusion[1]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|semantic_exclusion[2]",
+      "concept": "semantic_exclusion",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "A profile containing only the word cyber or incident without relevant…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|semantic_exclusion[2]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|domain[0]",
+      "concept": "domain",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Cyber Incident Review and Data Breach Analysis",
+      "strength": "context",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|domain[0]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|domain[1]",
+      "concept": "domain",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Legal Tech / Legal Solutions",
+      "strength": "context",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|domain[1]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|domain[2]",
+      "concept": "domain",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Cyber Incident Review, Data Breach Analysis, Legal Tech, LPO, Legal S…",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|domain[2]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[0]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "SQL/Python use for data querying, analysis, automation, and reporting",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[0]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[1]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "People leadership or technical leadership",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[1]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[2]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Experience performing review, quality assurance, compliance, or audit…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[2]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[3]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Quality oversight and delivery of high-quality review services in acc…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[3]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[4]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Large-dataset analysis to identify trends, anomalies, and potential s…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[4]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[5]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Cross-functional collaboration on review findings and remediation",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[5]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[6]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Management reports, dashboards, and performance metrics supporting op…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[6]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[7]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Accurate documentation, procedures, audit trails, and quality records",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[7]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[8]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Operational workflow coordination, resource planning, and administrat…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[8]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[9]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Ability to lead, mentor, coach, and support analysts with ongoing per…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[9]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[10]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Continuous improvement of operational efficiency, quality, and compli…",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[10]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[11]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Strong analytical capabilities and attention to detail",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "global|evidence_signal[11]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[12]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Experience managing cyber incident reviews, breach investigations, or…",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|evidence_signal[12]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[13]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Equivalent education and relevant professional experience are accepta…",
+      "strength": "context",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|evidence_signal[13]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|evidence[14]",
+      "concept": "evidence_signal",
+      "scope": "global",
+      "kind": "MEANING",
+      "value": "Domain-led candidates are the strongest target; capability-led candid…",
+      "strength": "context",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "global|evidence_signal[14]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "global|reconciliation[0]",
+      "concept": "reconciliation",
+      "scope": "global",
+      "kind": "RECORD",
+      "value": "waived: Power Query requirement",
+      "strength": null,
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "DROPPED_WITH_JUSTIFICATION"
+      ],
+      "records": [
+        "path:PATH A|reconciliation[0]",
+        "path:PATH B|reconciliation[1]",
+        "global|reconciliation[2]",
+        "global|reconciliation[3]",
+        "global|reconciliation[4]"
+      ],
+      "silent": false,
+      "fate": "DROPPED_WITH_JUSTIFICATION",
+      "consistent": true,
+      "why": "carries a justification"
+    },
+    {
+      "id": "global|reconciliation[1]",
+      "concept": "reconciliation",
+      "scope": "global",
+      "kind": "RECORD",
+      "value": "waived: Prior cyber-incident review expertise",
+      "strength": null,
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "DROPPED_WITH_JUSTIFICATION"
+      ],
+      "records": [
+        "path:PATH B|reconciliation[1]",
+        "global|reconciliation[2]",
+        "global|reconciliation[3]",
+        "global|reconciliation[4]"
+      ],
+      "silent": false,
+      "fate": "DROPPED_WITH_JUSTIFICATION",
+      "consistent": true,
+      "why": "carries a justification"
+    },
+    {
+      "id": "global|reconciliation[2]",
+      "concept": "reconciliation",
+      "scope": "global",
+      "kind": "RECORD",
+      "value": "waived: Mandatory previous people leadership",
+      "strength": null,
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "DROPPED_WITH_JUSTIFICATION"
+      ],
+      "records": [
+        "global|reconciliation[2]"
+      ],
+      "silent": false,
+      "fate": "DROPPED_WITH_JUSTIFICATION",
+      "consistent": true,
+      "why": "carries a justification"
+    },
+    {
+      "id": "global|reconciliation[3]",
+      "concept": "reconciliation",
+      "scope": "global",
+      "kind": "RECORD",
+      "value": "narrowed: Security-monitoring background as an acceptable qualificati…",
+      "strength": null,
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "DROPPED_WITH_JUSTIFICATION"
+      ],
+      "records": [
+        "global|reconciliation[3]"
+      ],
+      "silent": false,
+      "fate": "DROPPED_WITH_JUSTIFICATION",
+      "consistent": true,
+      "why": "carries a justification"
+    },
+    {
+      "id": "global|reconciliation[4]",
+      "concept": "reconciliation",
+      "scope": "global",
+      "kind": "RECORD",
+      "value": "narrowed: Interpretation of cybersecurity review expertise",
+      "strength": null,
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "DROPPED_WITH_JUSTIFICATION"
+      ],
+      "records": [
+        "global|reconciliation[4]"
+      ],
+      "silent": false,
+      "fate": "DROPPED_WITH_JUSTIFICATION",
+      "consistent": true,
+      "why": "carries a justification"
+    },
+    {
+      "id": "path:PATH A|path",
+      "concept": "sourcing_path",
+      "scope": "path:PATH A",
+      "kind": "MEANING",
+      "value": "PATH A (domain_led): Domain-led candidate",
+      "strength": null,
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "path:PATH A|sourcing_path[0]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "path:PATH A|seniority",
+      "concept": "seniority.value",
+      "scope": "path:PATH A",
+      "kind": "MEANING",
+      "value": "Lead",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "path:PATH A|seniority.value[0]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "path:PATH A|seniority.leadership[0]",
+      "concept": "seniority.leadership",
+      "scope": "path:PATH A",
+      "kind": "MEANING",
+      "value": "people",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "path:PATH A|seniority.leadership[0]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "path:PATH A|seniority.leadership[1]",
+      "concept": "seniority.leadership",
+      "scope": "path:PATH A",
+      "kind": "MEANING",
+      "value": "technical",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "path:PATH A|seniority.leadership[1]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "path:PATH A|seniority.alternatives[0]",
+      "concept": "seniority.alternatives",
+      "scope": "path:PATH A",
+      "kind": "MEANING",
+      "value": "Senior",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "path:PATH A|seniority.alternatives[0]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "path:PATH A|location.country[0]",
+      "concept": "location.country",
+      "scope": "path:PATH A",
+      "kind": "MEANING",
+      "value": "India",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "path:PATH A|location.country[0]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "path:PATH A|location.remote",
+      "concept": "location.remote",
+      "scope": "path:PATH A",
+      "kind": "MEANING",
+      "value": "allowed",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "path:PATH A|location.remote[0]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "path:PATH A|skill[0]",
+      "concept": "skill",
+      "scope": "path:PATH A",
+      "kind": "MEANING",
+      "value": "Power Query",
+      "strength": "preferred",
+      "proficiency": "working_knowledge",
+      "relationship": "any",
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "path:PATH A|skill[0]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "path:PATH A|skill.proficiency[0]",
+      "concept": "skill.proficiency",
+      "scope": "path:PATH A",
+      "kind": "MEANING",
+      "value": "Power Query = working_knowledge",
+      "strength": "preferred",
+      "proficiency": "working_knowledge",
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "path:PATH A|skill.proficiency[0]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "path:PATH A|domain[0]",
+      "concept": "domain",
+      "scope": "path:PATH A",
+      "kind": "MEANING",
+      "value": "Cyber Incident Review or Data Breach Analysis",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "path:PATH A|domain[0]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "path:PATH A|domain[1]",
+      "concept": "domain",
+      "scope": "path:PATH A",
+      "kind": "MEANING",
+      "value": "Legal Tech / LPO / Legal Solutions / legal-services technology / Data…",
+      "strength": "preferred",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "PREFERENCE_CONTEXT"
+      ],
+      "records": [
+        "path:PATH A|domain[1]"
+      ],
+      "silent": false,
+      "fate": "PREFERENCE_CONTEXT",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "path:PATH B|path",
+      "concept": "sourcing_path",
+      "scope": "path:PATH B",
+      "kind": "MEANING",
+      "value": "PATH B (capability_led): Capability-led Data Analyst",
+      "strength": null,
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "path:PATH B|sourcing_path[0]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "path:PATH B|seniority",
+      "concept": "seniority.value",
+      "scope": "path:PATH B",
+      "kind": "MEANING",
+      "value": "Lead",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "path:PATH B|seniority.value[0]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "path:PATH B|seniority.leadership[0]",
+      "concept": "seniority.leadership",
+      "scope": "path:PATH B",
+      "kind": "MEANING",
+      "value": "people",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "path:PATH B|seniority.leadership[0]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "path:PATH B|seniority.leadership[1]",
+      "concept": "seniority.leadership",
+      "scope": "path:PATH B",
+      "kind": "MEANING",
+      "value": "technical",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "path:PATH B|seniority.leadership[1]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "path:PATH B|experience.min",
+      "concept": "experience.min",
+      "scope": "path:PATH B",
+      "kind": "MEANING",
+      "value": "6+ years",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "path:PATH B|experience.min[0]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "path:PATH B|location.entry[0]",
+      "concept": "location.entry",
+      "scope": "path:PATH B",
+      "kind": "MEANING",
+      "value": "Hyderabad, Telangana, India",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "path:PATH B|location.entry[0]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "path:PATH B|location.entry[1]",
+      "concept": "location.entry",
+      "scope": "path:PATH B",
+      "kind": "MEANING",
+      "value": "Pune, Maharashtra, India",
+      "strength": "required",
+      "proficiency": null,
+      "relationship": null,
+      "declared_fates": [
+        "ENFORCED"
+      ],
+      "records": [
+        "path:PATH B|location.entry[1]"
+      ],
+      "silent": false,
+      "fate": "ENFORCED",
+      "consistent": true,
+      "why": "provider leaf moved"
+    },
+    {
+      "id": "path:PATH B|skill[0]",
+      "concept": "skill",
+      "scope": "path:PATH B",
+      "kind": "MEANING",
+      "value": "Power Query",
+      "strength": "required",
+      "proficiency": "working_knowledge",
+      "relationship": "any",
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "path:PATH B|skill[0]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    },
+    {
+      "id": "path:PATH B|skill.proficiency[0]",
+      "concept": "skill.proficiency",
+      "scope": "path:PATH B",
+      "kind": "MEANING",
+      "value": "Power Query = working_knowledge",
+      "strength": "required",
+      "proficiency": "working_knowledge",
+      "relationship": null,
+      "declared_fates": [
+        "VERIFIED_DOWNSTREAM"
+      ],
+      "records": [
+        "path:PATH B|skill.proficiency[0]"
+      ],
+      "silent": false,
+      "fate": "VERIFIED_DOWNSTREAM",
+      "consistent": true,
+      "why": "an audit row / checklist item moved"
+    }
+  ],
+  "invented_model_only_hard_filters": [],
+  "duplicate_atom_ids": [],
+  "bad_fates": [],
+  "records_without_justification": [],
+  "filter_tree": {
+    "op": "or",
+    "conditions": [
+      {
+        "op": "and",
+        "conditions": [
+          {
+            "field": "basic_profile.location.country",
+            "type": "in",
+            "value": [
+              "India"
+            ]
+          },
+          {
+            "field": "experience.employment_details.current.title",
+            "type": "(.)",
+            "value": "Data Analyst"
+          }
+        ]
+      },
+      {
+        "op": "and",
+        "conditions": [
+          {
+            "field": "basic_profile.location.city",
+            "type": "in",
+            "value": [
+              "Hyderabad",
+              "Pune"
+            ]
+          },
+          {
+            "field": "years_of_experience_raw",
+            "type": "=>",
+            "value": 6
+          },
+          {
+            "field": "experience.employment_details.current.title",
+            "type": "(.)",
+            "value": "Data Analyst"
+          }
+        ]
+      }
+    ]
+  },
+  "leaves": [
+    [
+      "basic_profile.location.city",
+      "in",
+      "[\"Hyderabad\", \"Pune\"]"
+    ],
+    [
+      "basic_profile.location.country",
+      "in",
+      "[\"India\"]"
+    ],
+    [
+      "experience.employment_details.current.title",
+      "(.)",
+      "\"Data Analyst\""
+    ],
+    [
+      "experience.employment_details.current.title",
+      "(.)",
+      "\"Data Analyst\""
+    ],
+    [
+      "years_of_experience_raw",
+      "=>",
+      "6"
+    ]
+  ],
+  "paths": [
+    {
+      "path_id": "PATH A",
+      "label": "Domain-led candidate",
+      "strategy": "domain_led",
+      "filter_tree": {
+        "op": "and",
+        "conditions": [
+          {
+            "field": "basic_profile.location.country",
+            "type": "in",
+            "value": [
+              "India"
+            ]
+          },
+          {
+            "field": "experience.employment_details.current.title",
+            "type": "(.)",
+            "value": "Data Analyst"
+          }
+        ]
+      }
+    },
+    {
+      "path_id": "PATH B",
+      "label": "Capability-led Data Analyst",
+      "strategy": "capability_led",
+      "filter_tree": {
+        "op": "and",
+        "conditions": [
+          {
+            "field": "basic_profile.location.city",
+            "type": "in",
+            "value": [
+              "Hyderabad",
+              "Pune"
+            ]
+          },
+          {
+            "field": "years_of_experience_raw",
+            "type": "=>",
+            "value": 6
+          },
+          {
+            "field": "experience.employment_details.current.title",
+            "type": "(.)",
+            "value": "Data Analyst"
+          }
+        ]
+      }
+    }
+  ],
+  "audit_record": {
+    "search_id": "R1-run4",
+    "confirmation_id": null,
+    "intent_hash": "c2fffed664ab4dc2",
+    "plan_hash": "847c52c6c003d6c1",
+    "compiler_version": "v2-2026-10-07",
+    "contract_version": "compiler-contract-1",
+    "capability_map_version": "v1-2026-10-01",
+    "taxonomy_version": "v1-2026-10-02",
+    "retrieval_title_family": [
+      "Data Analyst"
+    ],
+    "compiled_provider_plan": {
+      "op": "or",
+      "conditions": [
+        {
+          "op": "and",
+          "conditions": [
+            {
+              "field": "basic_profile.location.country",
+              "type": "in",
+              "value": [
+                "India"
+              ]
+            },
+            {
+              "field": "experience.employment_details.current.title",
+              "type": "(.)",
+              "value": "Data Analyst"
+            }
+          ]
+        },
+        {
+          "op": "and",
+          "conditions": [
+            {
+              "field": "basic_profile.location.city",
+              "type": "in",
+              "value": [
+                "Hyderabad",
+                "Pune"
+              ]
+            },
+            {
+              "field": "years_of_experience_raw",
+              "type": "=>",
+              "value": 6
+            },
+            {
+              "field": "experience.employment_details.current.title",
+              "type": "(.)",
+              "value": "Data Analyst"
+            }
+          ]
+        }
+      ]
+    },
+    "requirements": {
+      "provider_enforced": [
+        "[path:PATH A] location",
+        "[path:PATH A] role_family",
+        "[path:PATH B] location",
+        "[path:PATH B] experience",
+        "[path:PATH B] role_family"
+      ],
+      "admission_enforced": [
+        "[path:PATH A] seniority",
+        "[path:PATH B] seniority"
+      ],
+      "downstream_verified": [
+        "[path:PATH A] seniority.leadership",
+        "[path:PATH A] skill:SQL",
+        "[path:PATH A] proficiency:SQL=hands_on",
+        "[path:PATH A] skill:Python",
+        "[path:PATH A] proficiency:Python=hands_on",
+        "[path:PATH A] skill:Data privacy",
+        "[path:PATH A] skill:Information security principles",
+        "[path:PATH A] skill:Data analytics",
+        "[path:PATH A] skill:Security frameworks",
+        "[path:PATH A] skill:Regulatory compliance standards",
+        "[path:PATH A] skill:Relativity",
+        "[path:PATH A] skill:Canopy",
+        "[path:PATH A] skill:Power Query",
+        "[path:PATH A] proficiency:Power Query=working_knowledge",
+        "[path:PATH A] domain:Cyber Incident Review and Data Breach Analysis",
+        "[path:PATH A] domain:Legal Tech / Legal Solutions",
+        "[path:PATH A] domain:Cyber Incident Review, Data Breach Analysis, Legal Tech, LPO, Legal Solutions, or related evidence-backed environments",
+        "[path:PATH A] domain:Cyber Incident Review or Data Breach Analysis",
+        "[path:PATH A] domain:Legal Tech / LPO / Legal Solutions / legal-services technology / Data Breach Analysis environments",
+        "[path:PATH A] evidence:SQL/Python use for data querying, analysis, automation, and reporting",
+        "[path:PATH A] evidence:People leadership or technical leadership",
+        "[path:PATH A] evidence:Experience performing review, quality assurance, compliance, or audit activities",
+        "[path:PATH A] evidence:Quality oversight and delivery of high-quality review services in accordance with security standards and established protocols",
+        "[path:PATH A] evidence:Large-dataset analysis to identify trends, anomalies, and potential security risks",
+        "[path:PATH A] evidence:Cross-functional collaboration on review findings and remediation",
+        "[path:PATH A] evidence:Management reports, dashboards, and performance metrics supporting operational and business decisions",
+        "[path:PATH A] evidence:Accurate documentation, procedures, audit trails, and quality records",
+        "[path:PATH A] evidence:Operational workflow coordination, resource planning, and administrative support to the Review Manager",
+        "[path:PATH A] evidence:Ability to lead, mentor, coach, and support analysts with ongoing performance feedback",
+        "[path:PATH A] evidence:Continuous improvement of operational efficiency, quality, and compliance",
+        "[path:PATH A] evidence:Strong analytical capabilities and attention to detail",
+        "[path:PATH A] evidence:Experience managing cyber incident reviews, breach investigations, or data privacy review workflows",
+        "[path:PATH A] evidence:Equivalent education and relevant professional experience are acceptable",
+        "[path:PATH A] evidence:Domain-led candidates are the strongest target; capability-led candidates are an acceptable alternative",
+        "[path:PATH B] seniority.leadership",
+        "[path:PATH B] skill:SQL",
+        "[path:PATH B] proficiency:SQL=hands_on",
+        "[path:PATH B] skill:Python",
+        "[path:PATH B] proficiency:Python=hands_on",
+        "[path:PATH B] skill:Data privacy",
+        "[path:PATH B] skill:Information security principles",
+        "[path:PATH B] skill:Data analytics",
+        "[path:PATH B] skill:Security frameworks",
+        "[path:PATH B] skill:Regulatory compliance standards",
+        "[path:PATH B] skill:Relativity",
+        "[path:PATH B] skill:Canopy",
+        "[path:PATH B] skill:Power Query",
+        "[path:PATH B] proficiency:Power Query=working_knowledge",
+        "[path:PATH B] domain:Cyber Incident Review and Data Breach Analysis",
+        "[path:PATH B] domain:Legal Tech / Legal Solutions",
+        "[path:PATH B] domain:Cyber Incident Review, Data Breach Analysis, Legal Tech, LPO, Legal Solutions, or related evidence-backed environments",
+        "[path:PATH B] evidence:SQL/Python use for data querying, analysis, automation, and reporting",
+        "[path:PATH B] evidence:People leadership or technical leadership",
+        "[path:PATH B] evidence:Experience performing review, quality assurance, compliance, or audit activities",
+        "[path:PATH B] evidence:Quality oversight and delivery of high-quality review services in accordance with security standards and established protocols",
+        "[path:PATH B] evidence:Large-dataset analysis to identify trends, anomalies, and potential security risks",
+        "[path:PATH B] evidence:Cross-functional collaboration on review findings and remediation",
+        "[path:PATH B] evidence:Management reports, dashboards, and performance metrics supporting operational and business decisions",
+        "[path:PATH B] evidence:Accurate documentation, procedures, audit trails, and quality records",
+        "[path:PATH B] evidence:Operational workflow coordination, resource planning, and administrative support to the Review Manager",
+        "[path:PATH B] evidence:Ability to lead, mentor, coach, and support analysts with ongoing performance feedback",
+        "[path:PATH B] evidence:Continuous improvement of operational efficiency, quality, and compliance",
+        "[path:PATH B] evidence:Strong analytical capabilities and attention to detail",
+        "[path:PATH B] evidence:Experience managing cyber incident reviews, breach investigations, or data privacy review workflows",
+        "[path:PATH B] evidence:Equivalent education and relevant professional experience are acceptable",
+        "[path:PATH B] evidence:Domain-led candidates are the strongest target; capability-led candidates are an acceptable alternative"
+      ],
+      "context_only": [
+        "[path:PATH A] location.remote",
+        "[path:PATH A] education",
+        "[path:PATH B] education"
+      ],
+      "unverifiable": [],
+      "downstream_exclusion": [
+        "[path:PATH A] semantic_exclusion:Conventional cybersecurity operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+        "[path:PATH A] semantic_exclusion:A strong SQL/Python analyst working at a security firm",
+        "[path:PATH A] semantic_exclusion:A profile containing only the word cyber or incident without relevant substantive evidence",
+        "[path:PATH B] semantic_exclusion:Conventional cybersecurity operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+        "[path:PATH B] semantic_exclusion:A strong SQL/Python analyst working at a security firm",
+        "[path:PATH B] semantic_exclusion:A profile containing only the word cyber or incident without relevant substantive evidence"
+      ]
+    },
+    "downstream_checklist": [],
+    "downstream_exclusions": [],
+    "warnings": [],
+    "atom_audit": [
+      {
+        "atom_id": "global|role_family[0]",
+        "concept": "role_family",
+        "scope": "global",
+        "value": "Data Analyst",
+        "provenance": {
+          "state": "unrecorded",
+          "sources": [],
+          "quote": null
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: current title (inherited by paths: PATH A, PATH B)",
+        "justification": "no taxonomy entry: the source title is used verbatim (no expansion)",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[0]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "SQL",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd",
+            "recruiter_brief"
+          ],
+          "quote": "Target: Lead Data Analysts with hands-on SQL and Python."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[0]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "SQL = hands_on",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd",
+            "recruiter_brief"
+          ],
+          "quote": "Target: Lead Data Analysts with hands-on SQL and Python."
+        },
+        "strength": "required",
+        "proficiency": "hands_on",
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[1]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Python",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd",
+            "recruiter_brief"
+          ],
+          "quote": "Target: Lead Data Analysts with hands-on SQL and Python."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill.proficiency[1]",
+        "concept": "skill.proficiency",
+        "scope": "global",
+        "value": "Python = hands_on",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd",
+            "recruiter_brief"
+          ],
+          "quote": "Target: Lead Data Analysts with hands-on SQL and Python."
+        },
+        "strength": "required",
+        "proficiency": "hands_on",
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[2]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Data privacy",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "a solid understanding of cybersecurity review processes, data privacy, information security principles, and data analytics."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[3]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Information security principles",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "a solid understanding of cybersecurity review processes, data privacy, information security principles, and data analytics."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[4]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Data analytics",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "a solid understanding of cybersecurity review processes, data privacy, information security principles, and data analytics."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[5]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Security frameworks",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience working with security frameworks, data privacy requirements, and regulatory compliance standards is highly desirable."
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "strength 'preferred' is a preference, never a hard filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[6]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Regulatory compliance standards",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience working with security frameworks, data privacy requirements, and regulatory compliance standards is highly desirable."
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "strength 'preferred' is a preference, never a hard filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[7]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Relativity",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience with Relativity and Canopy platforms is preferred."
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "strength 'preferred' is a preference, never a hard filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|skill[8]",
+        "concept": "skill",
+        "scope": "global",
+        "value": "Canopy",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience with Relativity and Canopy platforms is preferred."
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "strength 'preferred' is a preference, never a hard filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|education.degree[0]",
+        "concept": "education.degree",
+        "scope": "global",
+        "value": "Bachelor's degree",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Bachelor's degree in Cybersecurity, Information Technology, Computer Science, Information Systems, Data Analytics, or a related discipline preferred."
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "audit row 'education' (inherited by paths: PATH A, PATH B)",
+        "justification": "education strength is 'preferred': a non-required qualification is preserved as a preference, not enforced",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|education.stream[0]",
+        "concept": "education.stream",
+        "scope": "global",
+        "value": "Cybersecurity",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Bachelor's degree in Cybersecurity, Information Technology, Computer Science, Information Systems, Data Analytics, or a related discipline preferred."
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "audit row 'education' (inherited by paths: PATH A, PATH B)",
+        "justification": "education strength is 'preferred': a non-required qualification is preserved as a preference, not enforced",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|education.stream[1]",
+        "concept": "education.stream",
+        "scope": "global",
+        "value": "Information Technology",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Bachelor's degree in Cybersecurity, Information Technology, Computer Science, Information Systems, Data Analytics, or a related discipline preferred."
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "audit row 'education' (inherited by paths: PATH A, PATH B)",
+        "justification": "education strength is 'preferred': a non-required qualification is preserved as a preference, not enforced",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|education.stream[2]",
+        "concept": "education.stream",
+        "scope": "global",
+        "value": "Computer Science",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Bachelor's degree in Cybersecurity, Information Technology, Computer Science, Information Systems, Data Analytics, or a related discipline preferred."
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "audit row 'education' (inherited by paths: PATH A, PATH B)",
+        "justification": "education strength is 'preferred': a non-required qualification is preserved as a preference, not enforced",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|education.stream[3]",
+        "concept": "education.stream",
+        "scope": "global",
+        "value": "Information Systems",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Bachelor's degree in Cybersecurity, Information Technology, Computer Science, Information Systems, Data Analytics, or a related discipline preferred."
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "audit row 'education' (inherited by paths: PATH A, PATH B)",
+        "justification": "education strength is 'preferred': a non-required qualification is preserved as a preference, not enforced",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|education.stream[4]",
+        "concept": "education.stream",
+        "scope": "global",
+        "value": "Data Analytics",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Bachelor's degree in Cybersecurity, Information Technology, Computer Science, Information Systems, Data Analytics, or a related discipline preferred."
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "audit row 'education' (inherited by paths: PATH A, PATH B)",
+        "justification": "education strength is 'preferred': a non-required qualification is preserved as a preference, not enforced",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|education.stream[5]",
+        "concept": "education.stream",
+        "scope": "global",
+        "value": "a related discipline",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Bachelor's degree in Cybersecurity, Information Technology, Computer Science, Information Systems, Data Analytics, or a related discipline preferred."
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "audit row 'education' (inherited by paths: PATH A, PATH B)",
+        "justification": "education strength is 'preferred': a non-required qualification is preserved as a preference, not enforced",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|semantic_exclusion[0]",
+        "concept": "semantic_exclusion",
+        "scope": "global",
+        "value": "Conventional cybersecurity operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "- Cyber Security\n- SOC\n- Security Operations\n- Security Analyst\n- SIEM\n- Threat Detection\n- security incident response\n- other cybersecurity operations work"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream exclusion checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "a semantic negative is verified by the Judge; no provider constraint is equivalent, so none is invented",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|semantic_exclusion[1]",
+        "concept": "semantic_exclusion",
+        "scope": "global",
+        "value": "A strong SQL/Python analyst working at a security firm",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "A strong SQL/Python analyst working at a security firm should be excluded."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream exclusion checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "a semantic negative is verified by the Judge; no provider constraint is equivalent, so none is invented",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|semantic_exclusion[2]",
+        "concept": "semantic_exclusion",
+        "scope": "global",
+        "value": "A profile containing only the word cyber or incident without relevant substantive evidence",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "A candidate should not become relevant merely because a profile contains the word \"cyber\" or \"incident\"."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream exclusion checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "a semantic negative is verified by the Judge; no provider constraint is equivalent, so none is invented",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|domain[0]",
+        "concept": "domain",
+        "scope": "global",
+        "value": "Cyber Incident Review and Data Breach Analysis",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "The team analyses:\n- Cyber Incidents\n- Data Breaches\n- Cyber Incident Review\n- Data Breach Analysis"
+        },
+        "strength": "context",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "domain is verified from the candidate's evidence; strength 'context' is a preference",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|domain[1]",
+        "concept": "domain",
+        "scope": "global",
+        "value": "Legal Tech / Legal Solutions",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "This is for a \"Cyber Incident Review\" team within a Legal Tech / Legal Solutions environment."
+        },
+        "strength": "context",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "domain is verified from the candidate's evidence; strength 'context' is a preference",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|domain[2]",
+        "concept": "domain",
+        "scope": "global",
+        "value": "Cyber Incident Review, Data Breach Analysis, Legal Tech, LPO, Legal Solutions, or related evidence-backed environments",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "Preferred background includes Cyber Incident Review, Data Breach Analysis, Legal Tech, LPO, Legal Solutions, or related evidence-backed environments."
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "domain is verified from the candidate's evidence; strength 'preferred' is a preference",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[0]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "SQL/Python use for data querying, analysis, automation, and reporting",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd",
+            "recruiter_brief"
+          ],
+          "quote": "Python/SQL are used for querying, analysis, automation, and reporting."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[1]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "People leadership or technical leadership",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "\"Lead\" may mean people leadership OR technical leadership."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[2]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Experience performing review, quality assurance, compliance, or audit activities",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience performing review, quality assurance, compliance, audit, or security monitoring activities."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[3]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Quality oversight and delivery of high-quality review services in accordance with security standards and established protocols",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "ensuring the delivery of high-quality review services, adherence to security standards, and compliance with established protocols."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[4]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Large-dataset analysis to identify trends, anomalies, and potential security risks",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Review, analyse, and interpret large datasets to identify trends, anomalies, and potential security risks."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[5]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Cross-functional collaboration on review findings and remediation",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Collaborate with technology, security, legal, compliance, and business stakeholders to address review findings and support remediation efforts."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[6]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Management reports, dashboards, and performance metrics supporting operational and business decisions",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Prepare management reports, dashboards, and performance metrics to support operational and business decisions."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[7]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Accurate documentation, procedures, audit trails, and quality records",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Maintain accurate documentation, procedures, audit trails, and quality records in accordance with organizational and client requirements."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[8]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Operational workflow coordination, resource planning, and administrative support to the Review Manager",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Assist the Review Manager with administrative activities, resource planning, workflow management, and team coordination."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[9]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Ability to lead, mentor, coach, and support analysts with ongoing performance feedback",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Coach, develop, and provide ongoing feedback to team members to enhance performance and capability."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[10]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Continuous improvement of operational efficiency, quality, and compliance",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Drive continuous improvement initiatives to enhance operational efficiency, quality, and compliance outcomes."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[11]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Strong analytical capabilities and attention to detail",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "The role requires strong analytical capabilities, leadership skills, attention to detail"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[12]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Experience managing cyber incident reviews, breach investigations, or data privacy review workflows",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Experience managing cyber incident reviews, breach investigations, or data privacy review workflows is an advantage."
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[13]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Equivalent education and relevant professional experience are acceptable",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd"
+          ],
+          "quote": "Equivalent combination of education and relevant professional experience will be considered."
+        },
+        "strength": "context",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|evidence_signal[14]",
+        "concept": "evidence_signal",
+        "scope": "global",
+        "value": "Domain-led candidates are the strongest target; capability-led candidates are an acceptable alternative",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "1. Domain-led + tools + experience = strongest target\n2. Capability-led + tools + experience = acceptable alternative"
+        },
+        "strength": "context",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist (inherited by paths: PATH A, PATH B)",
+        "justification": "verified by the Judge; never a provider filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "global|role_archetype[0]",
+        "concept": "role_archetype",
+        "scope": "global",
+        "value": "hybrid",
+        "provenance": {
+          "state": "unrecorded",
+          "sources": [],
+          "quote": null
+        },
+        "strength": null,
+        "proficiency": null,
+        "relationship": null,
+        "fate": "DROPPED_WITH_JUSTIFICATION",
+        "destination": "atom audit",
+        "justification": "classification metadata about the role (title/skill/hybrid): it carries no execution semantics and no candidate constraint",
+        "components": [],
+        "kind": "METADATA"
+      },
+      {
+        "atom_id": "path:PATH A|reconciliation[0]",
+        "concept": "reconciliation",
+        "scope": "path:PATH A",
+        "value": "waived: Power Query requirement",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd",
+            "recruiter_brief"
+          ],
+          "quote": "Path A does NOT require Power Query."
+        },
+        "strength": null,
+        "proficiency": null,
+        "relationship": null,
+        "fate": "DROPPED_WITH_JUSTIFICATION",
+        "destination": "atom audit (decision record)",
+        "justification": "decision record: waived; the final reconciled meaning is carried by the surviving atoms (and any retired JD atom is recorded as such): Power Query remains desirable at working-knowledge depth for PATH A but is not mandatory there.",
+        "components": [],
+        "kind": "RECORD"
+      },
+      {
+        "atom_id": "path:PATH B|reconciliation[1]",
+        "concept": "reconciliation",
+        "scope": "path:PATH B",
+        "value": "waived: Prior cyber-incident review expertise",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd",
+            "recruiter_brief"
+          ],
+          "quote": "Path B does not require the cyber-incident domain."
+        },
+        "strength": null,
+        "proficiency": null,
+        "relationship": null,
+        "fate": "DROPPED_WITH_JUSTIFICATION",
+        "destination": "atom audit (decision record)",
+        "justification": "decision record: waived; the final reconciled meaning is carried by the surviving atoms (and any retired JD atom is recorded as such): PATH B accepts a strong Data Analyst without prior cyber-incident domain experience, while retaining the role's review-related responsibilities.",
+        "components": [],
+        "kind": "RECORD"
+      },
+      {
+        "atom_id": "global|reconciliation[2]",
+        "concept": "reconciliation",
+        "scope": "global",
+        "value": "waived: Mandatory previous people leadership",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd",
+            "recruiter_brief"
+          ],
+          "quote": "\"Lead\" may mean people leadership OR technical leadership."
+        },
+        "strength": null,
+        "proficiency": null,
+        "relationship": null,
+        "fate": "DROPPED_WITH_JUSTIFICATION",
+        "destination": "atom audit (decision record)",
+        "justification": "decision record: waived; the final reconciled meaning is carried by the surviving atoms (and any retired JD atom is recorded as such): Technical leadership can satisfy the leadership background requirement without prior people management, while coaching and operational coordination remain role responsibilities.",
+        "components": [],
+        "kind": "RECORD"
+      },
+      {
+        "atom_id": "global|reconciliation[3]",
+        "concept": "reconciliation",
+        "scope": "global",
+        "value": "narrowed: Security-monitoring background as an acceptable qualification",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd",
+            "recruiter_brief"
+          ],
+          "quote": "This is NOT cybersecurity operations."
+        },
+        "strength": null,
+        "proficiency": null,
+        "relationship": null,
+        "fate": "DROPPED_WITH_JUSTIFICATION",
+        "destination": "atom audit (decision record)",
+        "justification": "decision record: narrowed; the final reconciled meaning is carried by the surviving atoms (and any retired JD atom is recorded as such): Review, quality assurance, compliance, or audit experience remains relevant, but conventional security-monitoring or cybersecurity-operations experience is not an equivalent qualification.",
+        "components": [],
+        "kind": "RECORD"
+      },
+      {
+        "atom_id": "global|reconciliation[4]",
+        "concept": "reconciliation",
+        "scope": "global",
+        "value": "narrowed: Interpretation of cybersecurity review expertise",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd",
+            "recruiter_brief"
+          ],
+          "quote": "This is for a \"Cyber Incident Review\" team within a Legal Tech / Legal Solutions environment."
+        },
+        "strength": null,
+        "proficiency": null,
+        "relationship": null,
+        "fate": "DROPPED_WITH_JUSTIFICATION",
+        "destination": "atom audit (decision record)",
+        "justification": "decision record: narrowed; the final reconciled meaning is carried by the surviving atoms (and any retired JD atom is recorded as such): Cybersecurity review means legal-tech Cyber Incident Review or Data Breach Analysis rather than security operations; prior domain expertise is expected only for PATH A.",
+        "components": [],
+        "kind": "RECORD"
+      },
+      {
+        "atom_id": "path:PATH A|location.country[0]",
+        "concept": "location.country",
+        "scope": "path:PATH A",
+        "value": "India",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "For this path:\n- India-wide location is acceptable\n- remote resources across India are acceptable"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: country",
+        "justification": "a country-wide area is a country filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "path:PATH A|location.remote[0]",
+        "concept": "location.remote",
+        "scope": "path:PATH A",
+        "value": "allowed",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "For this path:\n- India-wide location is acceptable\n- remote resources across India are acceptable"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "audit row 'location.remote' (context_or_evidence)",
+        "justification": "remote acceptability is an allowance, not a candidate filter; preserved as context and it does not relax the place filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "path:PATH A|seniority.value[0]",
+        "concept": "seniority.value",
+        "scope": "path:PATH A",
+        "value": "Lead",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "Ideal:\n- Lead / Senior Data Analyst identity"
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "audit row 'seniority' (admission_level_fit)",
+        "justification": "level known to approved knowledge (seniority.json); carried to the admission gate verbatim",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "path:PATH A|seniority.alternatives[0]",
+        "concept": "seniority.alternatives",
+        "scope": "path:PATH A",
+        "value": "Senior",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "Ideal:\n- Lead / Senior Data Analyst identity"
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "audit row 'seniority' (admission_level_fit)",
+        "justification": "an accepted alternative level: level known to approved knowledge (seniority.json); carried to the admission gate verbatim",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "path:PATH A|seniority.leadership[0]",
+        "concept": "seniority.leadership",
+        "scope": "path:PATH A",
+        "value": "people",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "Ideal:\n- Lead / Senior Data Analyst identity"
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "a leadership requirement no provider field can express; verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "path:PATH A|seniority.leadership[1]",
+        "concept": "seniority.leadership",
+        "scope": "path:PATH A",
+        "value": "technical",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "Ideal:\n- Lead / Senior Data Analyst identity"
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "a leadership requirement no provider field can express; verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "path:PATH A|skill[0]",
+        "concept": "skill",
+        "scope": "path:PATH A",
+        "value": "Power Query",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd",
+            "recruiter_brief"
+          ],
+          "quote": "Path A does NOT require Power Query."
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "strength 'preferred' is a preference, never a hard filter",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "path:PATH A|skill.proficiency[0]",
+        "concept": "skill.proficiency",
+        "scope": "path:PATH A",
+        "value": "Power Query = working_knowledge",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd",
+            "recruiter_brief"
+          ],
+          "quote": "Path A does NOT require Power Query."
+        },
+        "strength": "preferred",
+        "proficiency": "working_knowledge",
+        "relationship": "any",
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged (preference: strength 'preferred')",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "path:PATH A|domain[0]",
+        "concept": "domain",
+        "scope": "path:PATH A",
+        "value": "Cyber Incident Review or Data Breach Analysis",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "Cyber Incident Review and/or Data Breach Analysis experience"
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "domain is verified from the candidate's evidence",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "path:PATH A|domain[1]",
+        "concept": "domain",
+        "scope": "path:PATH A",
+        "value": "Legal Tech / LPO / Legal Solutions / legal-services technology / Data Breach Analysis environments",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "preferably from Legal Tech / LPO / Legal Solutions / legal-services technology / Data Breach Analysis environments"
+        },
+        "strength": "preferred",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "PREFERENCE_CONTEXT",
+        "destination": "downstream checklist",
+        "justification": "domain is verified from the candidate's evidence; strength 'preferred' is a preference",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "path:PATH B|location.entry[0]",
+        "concept": "location.entry",
+        "scope": "path:PATH B",
+        "value": "Hyderabad, Telangana, India",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "Path B geography is Hyderabad OR Pune."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: city",
+        "justification": "enforced as the stated place; 2 component(s) not enforced (see components)",
+        "components": [
+          {
+            "component": "city",
+            "value": "Hyderabad",
+            "fate": "ENFORCED",
+            "justification": "the stated place"
+          },
+          {
+            "component": "qualifier",
+            "value": "Telangana",
+            "fate": "DROPPED_WITH_JUSTIFICATION",
+            "justification": "a multi-entry location compiles to its cities only (existing rule); state and country are not enforced"
+          },
+          {
+            "component": "qualifier",
+            "value": "India",
+            "fate": "DROPPED_WITH_JUSTIFICATION",
+            "justification": "a multi-entry location compiles to its cities only (existing rule); state and country are not enforced"
+          }
+        ],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "path:PATH B|location.entry[1]",
+        "concept": "location.entry",
+        "scope": "path:PATH B",
+        "value": "Pune, Maharashtra, India",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "Path B geography is Hyderabad OR Pune."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: city",
+        "justification": "enforced as the stated place; 2 component(s) not enforced (see components)",
+        "components": [
+          {
+            "component": "city",
+            "value": "Pune",
+            "fate": "ENFORCED",
+            "justification": "the stated place"
+          },
+          {
+            "component": "qualifier",
+            "value": "Maharashtra",
+            "fate": "DROPPED_WITH_JUSTIFICATION",
+            "justification": "a multi-entry location compiles to its cities only (existing rule); state and country are not enforced"
+          },
+          {
+            "component": "qualifier",
+            "value": "India",
+            "fate": "DROPPED_WITH_JUSTIFICATION",
+            "justification": "a multi-entry location compiles to its cities only (existing rule); state and country are not enforced"
+          }
+        ],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "path:PATH B|experience.min[0]",
+        "concept": "experience.min",
+        "scope": "path:PATH B",
+        "value": "6+ years",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "Path B requires Lead level and 6+ years."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "provider filter: years_of_experience_raw",
+        "justification": "enforced",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "path:PATH B|seniority.value[0]",
+        "concept": "seniority.value",
+        "scope": "path:PATH B",
+        "value": "Lead",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "Path B requires Lead level and 6+ years."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "audit row 'seniority' (admission_level_fit)",
+        "justification": "level known to approved knowledge (seniority.json); carried to the admission gate verbatim",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "path:PATH B|seniority.leadership[0]",
+        "concept": "seniority.leadership",
+        "scope": "path:PATH B",
+        "value": "people",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "Path B requires Lead level and 6+ years."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "a leadership requirement no provider field can express; verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "path:PATH B|seniority.leadership[1]",
+        "concept": "seniority.leadership",
+        "scope": "path:PATH B",
+        "value": "technical",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "Path B requires Lead level and 6+ years."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": null,
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "a leadership requirement no provider field can express; verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "path:PATH B|skill[0]",
+        "concept": "skill",
+        "scope": "path:PATH B",
+        "value": "Power Query",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd",
+            "recruiter_brief"
+          ],
+          "quote": "Path B requires working knowledge of Power Query."
+        },
+        "strength": "required",
+        "proficiency": null,
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "relationship 'any' has no verified provider field (capability disclose); verified downstream",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "path:PATH B|skill.proficiency[0]",
+        "concept": "skill.proficiency",
+        "scope": "path:PATH B",
+        "value": "Power Query = working_knowledge",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "jd",
+            "recruiter_brief"
+          ],
+          "quote": "Path B requires working knowledge of Power Query."
+        },
+        "strength": "required",
+        "proficiency": "working_knowledge",
+        "relationship": "any",
+        "fate": "VERIFIED_DOWNSTREAM",
+        "destination": "downstream checklist",
+        "justification": "no provider field states depth; the stated level travels with the skill unchanged",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "path:PATH A|sourcing_path[0]",
+        "concept": "sourcing_path",
+        "scope": "path:PATH A",
+        "value": "PATH A (domain_led): Domain-led candidate",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "PATH A — DOMAIN-LED CANDIDATE"
+        },
+        "strength": null,
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "paths[PATH A].filter_tree",
+        "justification": "compiled as its own independent provider plan (an alternative, never ANDed with another path)",
+        "components": [],
+        "kind": "MEANING"
+      },
+      {
+        "atom_id": "path:PATH B|sourcing_path[0]",
+        "concept": "sourcing_path",
+        "scope": "path:PATH B",
+        "value": "PATH B (capability_led): Capability-led Data Analyst",
+        "provenance": {
+          "state": "source",
+          "sources": [
+            "recruiter_brief"
+          ],
+          "quote": "PATH B — CAPABILITY-LED DATA ANALYST"
+        },
+        "strength": null,
+        "proficiency": null,
+        "relationship": null,
+        "fate": "ENFORCED",
+        "destination": "paths[PATH B].filter_tree",
+        "justification": "compiled as its own independent provider plan (an alternative, never ANDed with another path)",
+        "components": [],
+        "kind": "MEANING"
+      }
+    ],
+    "paths": [
+      {
+        "path_id": "PATH A",
+        "label": "Domain-led candidate",
+        "strategy": "domain_led",
+        "compiled_provider_plan": {
+          "op": "and",
+          "conditions": [
+            {
+              "field": "basic_profile.location.country",
+              "type": "in",
+              "value": [
+                "India"
+              ]
+            },
+            {
+              "field": "experience.employment_details.current.title",
+              "type": "(.)",
+              "value": "Data Analyst"
+            }
+          ]
+        },
+        "retrieval_title_family": [
+          "Data Analyst"
+        ],
+        "requirements": {
+          "provider_enforced": [
+            "location",
+            "role_family"
+          ],
+          "admission_enforced": [
+            "seniority"
+          ],
+          "downstream_verified": [
+            "seniority.leadership",
+            "skill:SQL",
+            "proficiency:SQL=hands_on",
+            "skill:Python",
+            "proficiency:Python=hands_on",
+            "skill:Data privacy",
+            "skill:Information security principles",
+            "skill:Data analytics",
+            "skill:Security frameworks",
+            "skill:Regulatory compliance standards",
+            "skill:Relativity",
+            "skill:Canopy",
+            "skill:Power Query",
+            "proficiency:Power Query=working_knowledge",
+            "domain:Cyber Incident Review and Data Breach Analysis",
+            "domain:Legal Tech / Legal Solutions",
+            "domain:Cyber Incident Review, Data Breach Analysis, Legal Tech, LPO, Legal Solutions, or related evidence-backed environments",
+            "domain:Cyber Incident Review or Data Breach Analysis",
+            "domain:Legal Tech / LPO / Legal Solutions / legal-services technology / Data Breach Analysis environments",
+            "evidence:SQL/Python use for data querying, analysis, automation, and reporting",
+            "evidence:People leadership or technical leadership",
+            "evidence:Experience performing review, quality assurance, compliance, or audit activities",
+            "evidence:Quality oversight and delivery of high-quality review services in accordance with security standards and established protocols",
+            "evidence:Large-dataset analysis to identify trends, anomalies, and potential security risks",
+            "evidence:Cross-functional collaboration on review findings and remediation",
+            "evidence:Management reports, dashboards, and performance metrics supporting operational and business decisions",
+            "evidence:Accurate documentation, procedures, audit trails, and quality records",
+            "evidence:Operational workflow coordination, resource planning, and administrative support to the Review Manager",
+            "evidence:Ability to lead, mentor, coach, and support analysts with ongoing performance feedback",
+            "evidence:Continuous improvement of operational efficiency, quality, and compliance",
+            "evidence:Strong analytical capabilities and attention to detail",
+            "evidence:Experience managing cyber incident reviews, breach investigations, or data privacy review workflows",
+            "evidence:Equivalent education and relevant professional experience are acceptable",
+            "evidence:Domain-led candidates are the strongest target; capability-led candidates are an acceptable alternative"
+          ],
+          "context_only": [
+            "location.remote",
+            "education"
+          ],
+          "unverifiable": [],
+          "downstream_exclusion": [
+            "semantic_exclusion:Conventional cybersecurity operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+            "semantic_exclusion:A strong SQL/Python analyst working at a security firm",
+            "semantic_exclusion:A profile containing only the word cyber or incident without relevant substantive evidence"
+          ]
+        },
+        "downstream_checklist": [
+          {
+            "tier": "supporting",
+            "requirement": "People leadership or technical leadership"
+          },
+          {
+            "tier": "core",
+            "requirement": "SQL"
+          },
+          {
+            "tier": "core",
+            "requirement": "hands-on SQL"
+          },
+          {
+            "tier": "core",
+            "requirement": "Python"
+          },
+          {
+            "tier": "core",
+            "requirement": "hands-on Python"
+          },
+          {
+            "tier": "core",
+            "requirement": "Data privacy"
+          },
+          {
+            "tier": "core",
+            "requirement": "Information security principles"
+          },
+          {
+            "tier": "core",
+            "requirement": "Data analytics"
+          },
+          {
+            "tier": "supporting",
+            "requirement": "Security frameworks"
+          },
+          {
+            "tier": "supporting",
+            "requirement": "Regulatory compliance standards"
+          },
+          {
+            "tier": "supporting",
+            "requirement": "Relativity"
+          },
+          {
+            "tier": "supporting",
+            "requirement": "Canopy"
+          },
+          {
+            "tier": "supporting",
+            "requirement": "Power Query"
+          },
+          {
+            "tier": "supporting",
+            "requirement": "working knowledge of Power Query"
+          },
+          {
+            "tier": "differentiator",
+            "requirement": "Cyber Incident Review and Data Breach Analysis"
+          },
+          {
+            "tier": "differentiator",
+            "requirement": "Legal Tech / Legal Solutions"
+          },
+          {
+            "tier": "supporting",
+            "requirement": "Cyber Incident Review, Data Breach Analysis, Legal Tech, LPO, Legal Solutions, or related evidence-backed environments"
+          },
+          {
+            "tier": "core",
+            "requirement": "Cyber Incident Review or Data Breach Analysis"
+          },
+          {
+            "tier": "supporting",
+            "requirement": "Legal Tech / LPO / Legal Solutions / legal-services technology / Data Breach Analysis environments"
+          },
+          {
+            "tier": "core",
+            "requirement": "SQL/Python use for data querying, analysis, automation, and reporting"
+          },
+          {
+            "tier": "core",
+            "requirement": "People leadership or technical leadership"
+          },
+          {
+            "tier": "core",
+            "requirement": "Experience performing review, quality assurance, compliance, or audit activities"
+          },
+          {
+            "tier": "core",
+            "requirement": "Quality oversight and delivery of high-quality review services in accordance with security standards and established protocols"
+          },
+          {
+            "tier": "core",
+            "requirement": "Large-dataset analysis to identify trends, anomalies, and potential security risks"
+          },
+          {
+            "tier": "core",
+            "requirement": "Cross-functional collaboration on review findings and remediation"
+          },
+          {
+            "tier": "core",
+            "requirement": "Management reports, dashboards, and performance metrics supporting operational and business decisions"
+          },
+          {
+            "tier": "core",
+            "requirement": "Accurate documentation, procedures, audit trails, and quality records"
+          },
+          {
+            "tier": "core",
+            "requirement": "Operational workflow coordination, resource planning, and administrative support to the Review Manager"
+          },
+          {
+            "tier": "core",
+            "requirement": "Ability to lead, mentor, coach, and support analysts with ongoing performance feedback"
+          },
+          {
+            "tier": "core",
+            "requirement": "Continuous improvement of operational efficiency, quality, and compliance"
+          },
+          {
+            "tier": "core",
+            "requirement": "Strong analytical capabilities and attention to detail"
+          },
+          {
+            "tier": "supporting",
+            "requirement": "Experience managing cyber incident reviews, breach investigations, or data privacy review workflows"
+          },
+          {
+            "tier": "differentiator",
+            "requirement": "Equivalent education and relevant professional experience are acceptable"
+          },
+          {
+            "tier": "differentiator",
+            "requirement": "Domain-led candidates are the strongest target; capability-led candidates are an acceptable alternative"
+          }
+        ],
+        "downstream_exclusions": [
+          "Conventional cybersecurity operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+          "A strong SQL/Python analyst working at a security firm",
+          "A profile containing only the word cyber or incident without relevant substantive evidence"
+        ],
+        "warnings": []
+      },
+      {
+        "path_id": "PATH B",
+        "label": "Capability-led Data Analyst",
+        "strategy": "capability_led",
+        "compiled_provider_plan": {
+          "op": "and",
+          "conditions": [
+            {
+              "field": "basic_profile.location.city",
+              "type": "in",
+              "value": [
+                "Hyderabad",
+                "Pune"
+              ]
+            },
+            {
+              "field": "years_of_experience_raw",
+              "type": "=>",
+              "value": 6
+            },
+            {
+              "field": "experience.employment_details.current.title",
+              "type": "(.)",
+              "value": "Data Analyst"
+            }
+          ]
+        },
+        "retrieval_title_family": [
+          "Data Analyst"
+        ],
+        "requirements": {
+          "provider_enforced": [
+            "location",
+            "experience",
+            "role_family"
+          ],
+          "admission_enforced": [
+            "seniority"
+          ],
+          "downstream_verified": [
+            "seniority.leadership",
+            "skill:SQL",
+            "proficiency:SQL=hands_on",
+            "skill:Python",
+            "proficiency:Python=hands_on",
+            "skill:Data privacy",
+            "skill:Information security principles",
+            "skill:Data analytics",
+            "skill:Security frameworks",
+            "skill:Regulatory compliance standards",
+            "skill:Relativity",
+            "skill:Canopy",
+            "skill:Power Query",
+            "proficiency:Power Query=working_knowledge",
+            "domain:Cyber Incident Review and Data Breach Analysis",
+            "domain:Legal Tech / Legal Solutions",
+            "domain:Cyber Incident Review, Data Breach Analysis, Legal Tech, LPO, Legal Solutions, or related evidence-backed environments",
+            "evidence:SQL/Python use for data querying, analysis, automation, and reporting",
+            "evidence:People leadership or technical leadership",
+            "evidence:Experience performing review, quality assurance, compliance, or audit activities",
+            "evidence:Quality oversight and delivery of high-quality review services in accordance with security standards and established protocols",
+            "evidence:Large-dataset analysis to identify trends, anomalies, and potential security risks",
+            "evidence:Cross-functional collaboration on review findings and remediation",
+            "evidence:Management reports, dashboards, and performance metrics supporting operational and business decisions",
+            "evidence:Accurate documentation, procedures, audit trails, and quality records",
+            "evidence:Operational workflow coordination, resource planning, and administrative support to the Review Manager",
+            "evidence:Ability to lead, mentor, coach, and support analysts with ongoing performance feedback",
+            "evidence:Continuous improvement of operational efficiency, quality, and compliance",
+            "evidence:Strong analytical capabilities and attention to detail",
+            "evidence:Experience managing cyber incident reviews, breach investigations, or data privacy review workflows",
+            "evidence:Equivalent education and relevant professional experience are acceptable",
+            "evidence:Domain-led candidates are the strongest target; capability-led candidates are an acceptable alternative"
+          ],
+          "context_only": [
+            "education"
+          ],
+          "unverifiable": [],
+          "downstream_exclusion": [
+            "semantic_exclusion:Conventional cybersecurity operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+            "semantic_exclusion:A strong SQL/Python analyst working at a security firm",
+            "semantic_exclusion:A profile containing only the word cyber or incident without relevant substantive evidence"
+          ]
+        },
+        "downstream_checklist": [
+          {
+            "tier": "core",
+            "requirement": "People leadership or technical leadership"
+          },
+          {
+            "tier": "core",
+            "requirement": "SQL"
+          },
+          {
+            "tier": "core",
+            "requirement": "hands-on SQL"
+          },
+          {
+            "tier": "core",
+            "requirement": "Python"
+          },
+          {
+            "tier": "core",
+            "requirement": "hands-on Python"
+          },
+          {
+            "tier": "core",
+            "requirement": "Data privacy"
+          },
+          {
+            "tier": "core",
+            "requirement": "Information security principles"
+          },
+          {
+            "tier": "core",
+            "requirement": "Data analytics"
+          },
+          {
+            "tier": "supporting",
+            "requirement": "Security frameworks"
+          },
+          {
+            "tier": "supporting",
+            "requirement": "Regulatory compliance standards"
+          },
+          {
+            "tier": "supporting",
+            "requirement": "Relativity"
+          },
+          {
+            "tier": "supporting",
+            "requirement": "Canopy"
+          },
+          {
+            "tier": "core",
+            "requirement": "Power Query"
+          },
+          {
+            "tier": "core",
+            "requirement": "working knowledge of Power Query"
+          },
+          {
+            "tier": "differentiator",
+            "requirement": "Cyber Incident Review and Data Breach Analysis"
+          },
+          {
+            "tier": "differentiator",
+            "requirement": "Legal Tech / Legal Solutions"
+          },
+          {
+            "tier": "supporting",
+            "requirement": "Cyber Incident Review, Data Breach Analysis, Legal Tech, LPO, Legal Solutions, or related evidence-backed environments"
+          },
+          {
+            "tier": "core",
+            "requirement": "SQL/Python use for data querying, analysis, automation, and reporting"
+          },
+          {
+            "tier": "core",
+            "requirement": "People leadership or technical leadership"
+          },
+          {
+            "tier": "core",
+            "requirement": "Experience performing review, quality assurance, compliance, or audit activities"
+          },
+          {
+            "tier": "core",
+            "requirement": "Quality oversight and delivery of high-quality review services in accordance with security standards and established protocols"
+          },
+          {
+            "tier": "core",
+            "requirement": "Large-dataset analysis to identify trends, anomalies, and potential security risks"
+          },
+          {
+            "tier": "core",
+            "requirement": "Cross-functional collaboration on review findings and remediation"
+          },
+          {
+            "tier": "core",
+            "requirement": "Management reports, dashboards, and performance metrics supporting operational and business decisions"
+          },
+          {
+            "tier": "core",
+            "requirement": "Accurate documentation, procedures, audit trails, and quality records"
+          },
+          {
+            "tier": "core",
+            "requirement": "Operational workflow coordination, resource planning, and administrative support to the Review Manager"
+          },
+          {
+            "tier": "core",
+            "requirement": "Ability to lead, mentor, coach, and support analysts with ongoing performance feedback"
+          },
+          {
+            "tier": "core",
+            "requirement": "Continuous improvement of operational efficiency, quality, and compliance"
+          },
+          {
+            "tier": "core",
+            "requirement": "Strong analytical capabilities and attention to detail"
+          },
+          {
+            "tier": "supporting",
+            "requirement": "Experience managing cyber incident reviews, breach investigations, or data privacy review workflows"
+          },
+          {
+            "tier": "differentiator",
+            "requirement": "Equivalent education and relevant professional experience are acceptable"
+          },
+          {
+            "tier": "differentiator",
+            "requirement": "Domain-led candidates are the strongest target; capability-led candidates are an acceptable alternative"
+          }
+        ],
+        "downstream_exclusions": [
+          "Conventional cybersecurity operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+          "A strong SQL/Python analyst working at a security firm",
+          "A profile containing only the word cyber or incident without relevant substantive evidence"
+        ],
+        "warnings": []
+      }
+    ]
+  },
+  "warnings": []
+}

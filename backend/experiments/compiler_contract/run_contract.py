@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Set
 from backend.experiments.compiler_contract import checks, contract, fate, loader, paths, probes, signature as S
 from backend.experiments.intake_strategy.experimental_schema import ExperimentalHiringIntent
 from backend.services import compiler_audit, crustdata_capabilities as cap, role_family_taxonomy as tax
-from backend.services.search_compiler import COMPILER_VERSION, compile_intent
+from backend.experiments.compiler_contract.legacy_compiler_v1 import COMPILER_VERSION, compile_intent  # BEFORE harness: legacy compiler v1
 
 OUT = Path(__file__).resolve().parent / "results"
 REPO = Path(__file__).resolve().parents[3]

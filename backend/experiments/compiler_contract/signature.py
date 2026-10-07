@@ -8,7 +8,7 @@ from typing import Any, Dict, FrozenSet, Iterable, List, Set, Tuple
 from pydantic import BaseModel
 
 from backend.services.compiler_audit import judge_checklist
-from backend.services.search_compiler import CompiledPlan, canonicalize, compile_intent
+from backend.experiments.compiler_contract.legacy_compiler_v1 import CompiledPlan, canonicalize, compile_intent  # the BEFORE harness measures the legacy compiler
 
 
 def leaves(tree: Any, acc: List[Tuple[str, str, str]] | None = None) -> List[Tuple[str, str, str]]:
