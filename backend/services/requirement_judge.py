@@ -27,8 +27,8 @@ import logging
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional, Tuple
 
 from openai import OpenAI
 
@@ -38,6 +38,8 @@ from backend.models.candidate_evidence import HarvestEvidence, TextSource
 from backend.models.search_intent import SearchIntent
 from backend.services.candidate_evidence_builder import build_candidate_evidence
 from backend.services.consumer_input import resolve as resolve_consumer_input
+from backend.services.evidence_check import (EvidenceCheck, INSUFFICIENT_EVIDENCE, NOT_PRESENT, PRESENT, RETRIABLE_QUOTE_FAILURES, WORK_EVIDENCE_TYPES, model_predicate,
+                                             negative_checks, positive_checks, validate_binding, verify_quote)
 from backend.services.requirement_semantics import evaluate as evaluate_recognized_requirement, recognize_requirement
 
 logger = logging.getLogger(__name__)
@@ -123,27 +125,31 @@ Return only JSON: {"results":[{"i":<claim number>,"supports":true|false}]}
 Include every claim exactly once."""
 
 
-_EXCLUSION_PROMPT = """You check whether a candidate's profile shows an EXCLUDED profile.
+_EXCLUSION_PROMPT = """You check whether a candidate's profile shows an EXCLUDED work identity.
 
-You get numbered PASSAGES copied from the candidate's profile and numbered EXCLUSIONS from the job. An exclusion describes a kind of
-profile the hiring team does NOT want. For every exclusion decide:
-- "present": the passages clearly show the candidate IS the excluded kind of profile, exactly as the exclusion words it.
-- "not_present": they do not.
+You get numbered PASSAGES copied from the candidate's profile and numbered CHECKS. Each check is a predicate about the candidate's work identity: what work the
+candidate actually does or did. Its fields:
+- must_not_indicate: kinds of work or identity that exclude the candidate if the passages show the candidate has it.
+- exclusive: if true, the check applies only when ALL the substantive work the passages show is of those kinds.
+- unless_candidate_also_shows: if the passages show the candidate ALSO has any of these, the check does NOT apply.
+- not_sufficient: things that NEVER make the check apply, however prominent.
+- qualifier: a recruiter qualifier on the identity; keep it.
+
+For every check decide:
+- "present": the passages clearly show the candidate's work identity IS one of must_not_indicate, and no exclusive / unless_candidate_also_shows condition defeats it.
+- "not_present": the passages describe the candidate's actual work in enough detail to say the check does not apply.
+- "insufficient_evidence": the passages do not say enough about what work the candidate actually did to decide.
 
 Rules:
-1. Apply the exclusion as worded; never broaden it. A qualified exclusion (for example "exclusively X without Y", or "X alone") applies
-   only when the whole qualification holds: a candidate with X AND Y, or with X plus other substantive experience, is "not_present".
-2. An exclusion is worded either as the profile itself ("experience exclusively in X") or as a statement of what does NOT count ("X
-   backgrounds are not equivalent to Y", "X alone is not enough", "X wording without substantive evidence"). Read the second form as:
-   a candidate whose relevant background is X, with no substantive evidence of Y itself, IS the excluded profile ("present"); a
-   candidate who shows Y itself is "not_present".
-3. Otherwise related, adjacent or partly overlapping experience is "not_present". Only the excluded profile itself is "present".
-4. For "present" you MUST give the passage number and a quote copied EXACTLY, character for character, from that passage (at most 220
-   characters). If you cannot quote it, answer "not_present".
+1. Judge the work identity the passages show, not words. A mention of a topic, an employer in the field, training, or adjacent duties is not the identity.
+2. Never broaden. Anything in not_sufficient never makes a check "present".
+3. For "present" you MUST give the passage number and a quote copied EXACTLY, character for character, from that ONE passage: one contiguous span of at most
+   220 characters, no ellipsis ("..." or "\u2026"), no paraphrase. The quote itself must show the work identity.
+4. If you cannot give such a quote, do not answer "present": answer "insufficient_evidence".
 5. Do not use outside knowledge about the person or their employers.
 
-Return only JSON: {"results":[{"x":<exclusion number>,"verdict":"present|not_present","p":<passage number or null>,"quote":"<exact quote or empty>"}]}
-Include every exclusion exactly once."""
+Return only JSON: {"results":[{"x":<check number>,"verdict":"present|not_present|insufficient_evidence","p":<passage number or null>,"quote":"<exact quote or empty>"}]}
+Include every check exactly once."""
 
 
 CAREER_DATES_CAVEAT = (
@@ -204,16 +210,28 @@ class JudgeOutcome:
     input_source: str = "legacy"
     checklist: Optional[Dict[str, Any]] = None
     disagreements: Optional[List[Dict[str, Any]]] = None
-    # The semantic exclusions ("the candidate must NOT have this profile") evaluated against the profile: one entry per exclusion with a verdict
-    # present | not_present, and, for present, a quote that was verified to appear in the cited passage. None = nothing to evaluate / not evaluated.
+    # The semantic exclusions evaluated against the profile, one entry per negative Evidence Check: state PRESENT | NOT_PRESENT | INSUFFICIENT_EVIDENCE, the
+    # check_id it is bound to, and, for PRESENT, a quote that passed the quote gate and the indicator binding. None = nothing to evaluate / not evaluated.
     exclusion_judgments: Optional[List[Dict[str, Any]]] = None
     exclusion_failed: bool = False
+    # The Evidence Checks (positive and negative) every verdict is bound to, the one narrow quote retry, and every verdict the deterministic binding discarded.
+    checks: Optional[List[Dict[str, Any]]] = None
+    retries: Dict[str, List[Dict[str, Any]]] = field(default_factory=lambda: {"requirement": [], "exclusion": []})
+    binding_discards: List[Dict[str, Any]] = field(default_factory=list)
 
     @property
     def estimated_cost_usd(self) -> float:
         return (
             self.input_tokens * INPUT_USD_PER_MILLION_TOKENS + self.output_tokens * OUTPUT_USD_PER_MILLION_TOKENS
         ) / 1_000_000
+
+
+# the instruction added to the payload of the ONE retry (only the checks whose quote failed verification are re-asked)
+_RETRY_INSTRUCTION = (
+    "RETRY of the checks below only. Your previous quote for each could not be verified: it was not one contiguous span copied character for character from ONE passage "
+    "(for example it contained an ellipsis, '...' or the single character, it joined two places, or it was paraphrased). Answer again. Copy ONE contiguous span exactly, "
+    "with no ellipsis and no changes. If no such span exists, do not claim the check."
+)
 
 
 class RequirementJudge:
@@ -244,64 +262,117 @@ class RequirementJudge:
     ) -> JudgeOutcome:
         outcome = self._judge_requirements(candidate, intent, harvest_evidence)
         consumer_input = resolve_consumer_input(intent)
-        exclusions = list(consumer_input.checklist.exclusions) if consumer_input.checklist is not None else []
-        if exclusions and not outcome.failed:
-            self._evaluate_exclusions(candidate, intent, harvest_evidence, exclusions, outcome)
+        if consumer_input.checklist is not None and consumer_input.checklist.exclusions and not outcome.failed:
+            self._evaluate_exclusions(candidate, intent, harvest_evidence, consumer_input.checklist, outcome)
         return outcome
 
+    # ------------------------------------------------------------------------------------------------------ negatives
+
     def _evaluate_exclusions(
-        self, candidate: Candidate, intent: SearchIntent, harvest_evidence: Optional[HarvestEvidence], exclusions: List[Any], outcome: JudgeOutcome
+        self, candidate: Candidate, intent: SearchIntent, harvest_evidence: Optional[HarvestEvidence], checklist: Any, outcome: JudgeOutcome
     ) -> None:
-        """The negatives of the downstream contract: for each semantic exclusion, does the profile show the excluded profile? One extra call per candidate,
-        never at all for an intent without exclusions. Its own prompt (the requirement prompt is untouched) and the same verified-quote gate: a "present"
-        needs a quote that really appears in the passage it cites, otherwise it is "not_present". A failure here never touches the requirement judgments."""
+        """The negatives: each exclusion is an explicit predicate (a negative Evidence Check), answered PRESENT / NOT_PRESENT / INSUFFICIENT_EVIDENCE. One call per
+        candidate (plus at most ONE retry of only the checks whose quote failed verification), never for an intent without exclusions.
+
+          PRESENT only with a quote that passes the quote gate (one contiguous, exact, ellipsis-free span of ONE passage) AND contains an indicator of the
+          predicate itself. A PRESENT claim that cannot be so evidenced is INSUFFICIENT_EVIDENCE, never NOT_PRESENT.
+          NOT_PRESENT needs a profile that actually describes work (demonstrated work or a certification); without one it is INSUFFICIENT_EVIDENCE.
+        A failure here never touches the requirement judgments."""
         try:
+            negatives = negative_checks(checklist)
+            outcome.checks = (outcome.checks or []) + [c.to_dict() for c in negatives]
             passages = build_passages(candidate, intent, harvest_evidence)
-            results: Dict[int, Dict[str, Any]] = {}
+            has_work = any(p.evidence_type in WORK_EVIDENCE_TYPES for p in passages)
+            client = self._client or OpenAI(api_key=get_openai_api_key()) if passages else None
+            rows: Dict[int, Dict[str, Any]] = {}
             if passages:
-                client = self._client or OpenAI(api_key=get_openai_api_key())
-                payload = {
-                    "passages": [{"p": i, "label": p.label, "text": (p.text or "")[:MAX_PASSAGE_CHARS]} for i, p in enumerate(passages)],
-                    "exclusions": [{"x": i, "text": e.text} for i, e in enumerate(exclusions)],
-                }
-                response = client.responses.create(
-                    model=self._model,
-                    input=[{"role": "system", "content": _EXCLUSION_PROMPT}, {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}],
-                    text={"format": {"type": "json_object"}},
-                    temperature=0,
-                )
-                outcome.calls += 1
-                usage = getattr(response, "usage", None)
-                outcome.input_tokens += int(getattr(usage, "input_tokens", 0) or 0)
-                outcome.output_tokens += int(getattr(usage, "output_tokens", 0) or 0)
-                content = getattr(response, "output_text", None)
-                if not content:
-                    raise ValueError("empty exclusion response")
-                results = {int(r["x"]): r for r in json.loads(content).get("results", []) if isinstance(r, dict) and "x" in r and 0 <= int(r["x"]) < len(exclusions)}
-            judged: List[Dict[str, Any]] = []
-            for i, e in enumerate(exclusions):
-                entry: Dict[str, Any] = {"text": e.text, "item_id": e.item_id, "path_id": e.path_id, "provenance": dict(e.provenance), "verdict": "not_present"}
-                r = results.get(i)
+                rows = self._ask_exclusions(client, passages, [(i, c) for i, c in enumerate(negatives)], outcome, retry=False)
+
+            def resolve_row(i: int, c: EvidenceCheck, row: Optional[Dict[str, Any]]) -> Tuple[str, Dict[str, Any], Optional[str]]:
+                """(state, evidence fields, failure) for one check from one model row. `failure` is a RETRIABLE quote failure when a PRESENT claim must be re-asked."""
                 if not passages:
-                    entry["note"] = "no profile text to evaluate"
-                elif r and r.get("verdict") == "present":
-                    quote = str(r.get("quote") or "").strip()
+                    return INSUFFICIENT_EVIDENCE, {"reason": "no profile text to evaluate"}, None
+                if row is None:
+                    return INSUFFICIENT_EVIDENCE, {"reason": "the model gave no answer for this check"}, None
+                verdict = str(row.get("verdict") or "").strip().casefold()
+                if verdict == "present":
+                    quote = str(row.get("quote") or "").strip()
                     try:
-                        passage = passages[int(r.get("p"))]
+                        pi = int(row.get("p"))
+                        passage = passages[pi] if pi >= 0 else None
                     except (TypeError, ValueError, IndexError):
                         passage = None
-                    if passage is not None and len(quote) >= 3 and _normalize(quote) in _normalize(passage.text):
-                        entry.update(verdict="present", quote=quote, source=passage.label, evidence_detail=passage.detail)
-                    else:
-                        entry["note"] = "unverified_quote: a present verdict without a quote found in the cited passage is not accepted"
-                elif r is None and passages:
-                    entry["note"] = "the model gave no answer for this exclusion"
-                judged.append(entry)
+                    ok, why = verify_quote(quote, passage.text if passage is not None else None)
+                    if not ok:
+                        return INSUFFICIENT_EVIDENCE, {"reason": f"present_claim_unverified:{why}", "discarded_quote": quote[:240]}, why
+                    bind = validate_binding(c, quote, passage.evidence_type, passage.label)
+                    if bind:
+                        outcome.binding_discards.append({"check_id": c.check_id, "reason": bind, "quote": quote[:240]})
+                        return INSUFFICIENT_EVIDENCE, {"reason": f"present_claim_not_supported:{bind}", "discarded_quote": quote[:240]}, None
+                    return PRESENT, {"quote": quote, "source": passage.label, "evidence_detail": passage.detail, "reason": "model, quote verified and bound"}, None
+                if verdict == "not_present":
+                    if not has_work:
+                        return INSUFFICIENT_EVIDENCE, {"reason": "floor: the profile contains no description of work, so the exclusion cannot be cleared"}, None
+                    return NOT_PRESENT, {"reason": "model"}, None
+                if verdict == "insufficient_evidence":
+                    return INSUFFICIENT_EVIDENCE, {"reason": "model"}, None
+                return INSUFFICIENT_EVIDENCE, {"reason": f"unrecognised verdict {verdict!r}"}, None
+
+            resolved = {i: resolve_row(i, c, rows.get(i)) for i, c in enumerate(negatives)}
+            retry = [i for i, (_st, _ev, failure) in resolved.items() if failure in RETRIABLE_QUOTE_FAILURES]
+            if retry and passages:
+                second = self._ask_exclusions(client, passages, [(i, negatives[i]) for i in retry], outcome, retry=True)
+                for i in retry:
+                    first_failure = resolved[i][2]
+                    new = resolve_row(i, negatives[i], second.get(i))
+                    outcome.retries["exclusion"].append({"check_id": negatives[i].check_id, "first_pass_failure": first_failure, "recovered": new[2] is None, "final_failure": new[2],
+                                                         "final_state": new[0] if new[2] is None else INSUFFICIENT_EVIDENCE})
+                    resolved[i] = (new[0], new[1], None) if new[2] is None else (INSUFFICIENT_EVIDENCE, {**new[1], "reason": f"present_claim_unverified_after_retry:{new[2]}"}, None)
+            judged: List[Dict[str, Any]] = []
+            for i, c in enumerate(negatives):
+                state, ev, _f = resolved[i]
+                judged.append({"check_id": c.check_id, "text": c.label, "item_id": c.check_id.split("#", 1)[-1].rsplit("|", 1)[0], "path_id": c.path_id, "provenance": dict(c.provenance),
+                               "verdict": state, "state": state, **ev})
             outcome.exclusion_judgments = judged
         except Exception:  # noqa: BLE001 - an exclusion failure must never break a search or the requirement judgments
             logger.warning("Exclusion evaluation failed | candidate_id=%s", candidate.candidate_id, exc_info=True)
             outcome.exclusion_failed = True
             outcome.exclusion_judgments = None
+
+    def _ask_exclusions(self, client: Any, passages: List[TextSource], numbered: List[Tuple[int, EvidenceCheck]], outcome: JudgeOutcome, retry: bool) -> Dict[int, Dict[str, Any]]:
+        payload: Dict[str, Any] = {
+            "passages": [{"p": i, "label": p.label, "text": (p.text or "")[:MAX_PASSAGE_CHARS]} for i, p in enumerate(passages)],
+            "exclusion_checks": [{"x": i, "predicate": model_predicate(c.predicate)} for i, c in numbered],
+        }
+        if retry:
+            payload["instruction"] = _RETRY_INSTRUCTION
+        response = client.responses.create(
+            model=self._model,
+            input=[{"role": "system", "content": _EXCLUSION_PROMPT}, {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}],
+            text={"format": {"type": "json_object"}},
+            temperature=0,
+        )
+        outcome.calls += 1
+        usage = getattr(response, "usage", None)
+        outcome.input_tokens += int(getattr(usage, "input_tokens", 0) or 0)
+        outcome.output_tokens += int(getattr(usage, "output_tokens", 0) or 0)
+        content = getattr(response, "output_text", None)
+        if not content:
+            raise ValueError("empty exclusion response")
+        wanted = {i for i, _ in numbered}
+        seen: Dict[int, List[Dict[str, Any]]] = {}
+        for r in json.loads(content).get("results", []):
+            if isinstance(r, dict) and "x" in r:
+                try:
+                    x = int(r["x"])
+                except (TypeError, ValueError):
+                    continue
+                if x in wanted:
+                    seen.setdefault(x, []).append(r)
+        # a verdict binds to exactly ONE check: an id answered twice is ambiguous and is treated as unanswered
+        return {x: rs[0] for x, rs in seen.items() if len(rs) == 1}
+
+    # ------------------------------------------------------------------------------------------------------ positives
 
     def _judge_requirements(
         self, candidate: Candidate, intent: SearchIntent, harvest_evidence: Optional[HarvestEvidence]
@@ -315,7 +386,8 @@ class RequirementJudge:
         )
         if not requirements:
             return JudgeOutcome(judgments=None, **header)
-        outcome = JudgeOutcome(judgments=None, requirements=len(requirements), **header)
+        checks = positive_checks(consumer_input)                    # one Evidence Check per requirement, aligned by index
+        outcome = JudgeOutcome(judgments=None, requirements=len(requirements), checks=[c.to_dict() for c in checks], **header)
         try:
             # Deterministic pre-pass: a requirement whose own wording
             # unambiguously names a validated company-size/industry/career-
@@ -330,6 +402,7 @@ class RequirementJudge:
                 recognized = recognize_requirement(text)
                 if recognized is not None:
                     deterministic[i] = evaluate_recognized_requirement(recognized, tier, candidate, harvest_evidence)
+                    deterministic[i]["check_id"] = checks[i].check_id
             remaining = [i for i in range(len(requirements)) if i not in deterministic]
 
             if not remaining:
@@ -339,8 +412,8 @@ class RequirementJudge:
             passages = build_passages(candidate, intent, harvest_evidence)
             if not passages:
                 outcome.judgments = [
-                    deterministic[i] if i in deterministic else self._not_evidenced(tier, text)
-                    for i, (tier, text) in enumerate(requirements)
+                    deterministic[i] if i in deterministic else self._not_evidenced(checks[i])
+                    for i in range(len(requirements))
                 ]
                 return outcome
 
@@ -355,7 +428,7 @@ class RequirementJudge:
             for attempt in range(2):
                 if not pending:
                     break
-                answered = self._ask(client, passages, [(i, requirements[i][1]) for i in pending], outcome)
+                answered = self._ask(client, passages, [(i, checks[i].criterion) for i in pending], outcome)
                 if answered is None:
                     outcome.failed = True
                     return outcome
@@ -363,10 +436,21 @@ class RequirementJudge:
                 pending = [i for i in pending if i not in results]
                 if pending and attempt == 0:
                     outcome.re_asked_missing += len(pending)
-            outcome.judgments = [
-                deterministic[i] if i in deterministic else self._verified(i, tier, text, results.get(i), passages)
-                for i, (tier, text) in enumerate(requirements)
-            ]
+
+            verified: Dict[int, Tuple[Dict[str, Any], Optional[str]]] = {i: self._verify_check(checks[i], results.get(i), passages, outcome) for i in remaining}
+            # THE narrow retry: only the checks whose quote failed verification (never a check that succeeded, never a binding discard), once, with an exact-quote
+            # instruction. The verifier is the same; it is not relaxed.
+            retry = [i for i in remaining if verified[i][1] in RETRIABLE_QUOTE_FAILURES]
+            if retry:
+                second = self._ask(client, passages, [(i, checks[i].criterion) for i in retry], outcome, retry=True)
+                for i in retry:
+                    first_failure = verified[i][1]
+                    again = self._verify_check(checks[i], (second or {}).get(i), passages, outcome) if second is not None else verified[i]
+                    recovered = again[0].get("verdict") in ("met", "partly")
+                    outcome.retries["requirement"].append({"check_id": checks[i].check_id, "first_pass_failure": first_failure, "recovered": recovered,
+                                                           "final_failure": None if recovered else (again[1] or "not_claimed")})
+                    verified[i] = again
+            outcome.judgments = [deterministic[i] if i in deterministic else verified[i][0] for i in range(len(requirements))]
             self._review(client, outcome)
             return outcome
         except Exception:  # noqa: BLE001 - a judge failure must never break a search
@@ -389,7 +473,9 @@ class RequirementJudge:
         same claim got different verdicts depending on which other claims
         shared its call, while a single-claim call was stable across repeats.
         If a review call itself fails, that claim's first-pass verdict stands
-        and the failure is recorded."""
+        and the failure is recorded.
+
+        The reviewer is given the Evidence Check's COMPLETE claim (`criterion`: for a depth claim, the skill AND the depth), not a label."""
         claims = [
             (index, judgment)
             for index, judgment in enumerate(outcome.judgments or [])
@@ -407,7 +493,7 @@ class RequirementJudge:
                         {
                             "role": "user",
                             "content": json.dumps(
-                                {"claims": [{"i": index, "requirement": judgment["signal_text"], "quote": judgment["quote"]}]},
+                                {"claims": [{"i": index, "requirement": judgment.get("criterion") or judgment["signal_text"], "quote": judgment["quote"]}]},
                                 ensure_ascii=False,
                             ),
                         },
@@ -441,14 +527,16 @@ class RequirementJudge:
                 outcome.downgraded_by_review += 1
 
     def _ask(
-        self, client: Any, passages: List[TextSource], numbered: List[tuple], outcome: "JudgeOutcome"
+        self, client: Any, passages: List[TextSource], numbered: List[tuple], outcome: "JudgeOutcome", retry: bool = False
     ) -> Optional[Dict[int, Dict[str, Any]]]:
-        payload = {
+        payload: Dict[str, Any] = {
             "passages": [
                 {"p": i, "label": p.label, "text": (p.text or "")[:MAX_PASSAGE_CHARS]} for i, p in enumerate(passages)
             ],
             "requirements": [{"r": index, "text": text} for index, text in numbered],
         }
+        if retry:
+            payload["instruction"] = _RETRY_INSTRUCTION
         response = client.responses.create(
             model=self._model,
             input=[
@@ -466,31 +554,43 @@ class RequirementJudge:
         if not content:
             return None
         wanted = {index for index, _ in numbered}
-        return {
-            int(r["r"]): r
-            for r in json.loads(content).get("results", [])
-            if isinstance(r, dict) and "r" in r and int(r["r"]) in wanted
-        }
+        seen: Dict[int, List[Dict[str, Any]]] = {}
+        for r in json.loads(content).get("results", []):
+            if isinstance(r, dict) and "r" in r and int(r["r"]) in wanted:
+                seen.setdefault(int(r["r"]), []).append(r)
+        # a verdict binds to exactly ONE check: an id answered twice is ambiguous and is treated as unanswered (so it is re-asked, not guessed)
+        return {i: rs[0] for i, rs in seen.items() if len(rs) == 1}
 
     @staticmethod
-    def _not_evidenced(tier: str, text: str) -> Dict[str, Any]:
-        return {"tier": tier, "signal_text": text, "verdict": "not_evidenced"}
+    def _not_evidenced(check: EvidenceCheck) -> Dict[str, Any]:
+        return {"tier": check.tier, "signal_text": check.label, "verdict": "not_evidenced", "check_id": check.check_id, "criterion": check.criterion}
 
-    def _verified(
-        self, index: int, tier: str, text: str, result: Optional[Dict[str, Any]], passages: List[TextSource]
-    ) -> Dict[str, Any]:
-        base = self._not_evidenced(tier, text)
+    def _verify_check(
+        self, check: EvidenceCheck, result: Optional[Dict[str, Any]], passages: List[TextSource], outcome: JudgeOutcome
+    ) -> Tuple[Dict[str, Any], Optional[str]]:
+        """(judgment, failure). A `met` / `partly` verdict stands only if (1) its quote passes the quote gate (contiguous, exact, no ellipsis, ONE passage) and (2) the
+        quote supports THIS check (deterministic binding: the skill's own name, demonstrated work for a depth claim). `failure` is the reason a claimed verdict was
+        discarded: a RETRIABLE quote failure is re-asked once; a binding failure is final."""
+        base = self._not_evidenced(check)
         if not result or result.get("verdict") not in ("met", "partly"):
-            return base
+            return base, None
         quote = str(result.get("quote") or "").strip()
         try:
-            passage = passages[int(result.get("p"))]
+            pi = int(result.get("p"))
+            passage = passages[pi] if pi >= 0 else None
         except (TypeError, ValueError, IndexError):
-            return base
-        # THE gate: no quote that really appears in the cited passage, no credit.
-        if len(quote) < 3 or _normalize(quote) not in _normalize(passage.text):
-            logger.info("Discarded unverified quote for requirement %s", index)
-            return base
+            passage = None
+        ok, why = verify_quote(quote, passage.text if passage is not None else None)
+        if not ok:
+            logger.info("Discarded unverified quote (%s) for check %s", why, check.check_id)
+            base.update(discard_reason=why, discarded_quote=quote[:240])
+            return base, why
+        bind = validate_binding(check, quote, passage.evidence_type, passage.label)
+        if bind:
+            logger.info("Discarded a quote that does not support check %s (%s)", check.check_id, bind)
+            base.update(discard_reason=bind, discarded_quote=quote[:240])
+            outcome.binding_discards.append({"check_id": check.check_id, "reason": bind, "quote": quote[:240]})
+            return base, bind
         term = str(result.get("term") or "").strip()
         if not term or _normalize(term) not in _normalize(quote):
             term = " ".join(quote.split()[:3])
@@ -502,8 +602,10 @@ class RequirementJudge:
             years = re.search(r"About ([\d.]+) years", passage.text)
             detail = f"{_career_dates_sentence(float(years.group(1)))} {CAREER_DATES_CAVEAT}" if years else CAREER_DATES_CAVEAT
         return {
-            "tier": tier,
-            "signal_text": text,
+            "tier": check.tier,
+            "signal_text": check.label,
+            "check_id": check.check_id,
+            "criterion": check.criterion,
             "verdict": result["verdict"],
             "quote": quote,
             "term": term,
@@ -511,4 +613,4 @@ class RequirementJudge:
             "evidence_detail": detail,
             "evidence_type": passage.evidence_type,
             "strength": passage.strength,
-        }
+        }, None

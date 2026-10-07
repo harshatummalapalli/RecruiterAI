@@ -60,6 +60,7 @@ class ChecklistItem:
     reason: str = ""                              # why it is a preference / unresolved / not judged
     alternatives: Tuple[str, ...] = ()            # an "A or B" group (leadership kinds): satisfying ANY one satisfies the item
     unsupported_qualifiers: Tuple[Dict[str, Any], ...] = ()   # claims the source did not support (not used), with the reason
+    value: str = ""                               # the compiled atom's own value (a skill name, "Skill = depth", "A | B"): the Evidence Check reads its subject from it
 
     def to_dict(self) -> Dict[str, Any]:
         d = dataclasses.asdict(self)
@@ -119,7 +120,7 @@ def _item(e: ContextEntry, ctx: DownstreamContext, polarity: str, judged: bool, 
         tier = "supporting" if judged else None
     return ChecklistItem(
         item_id=e.atom_id, concept=e.concept, text=e.text, polarity=polarity, tier=tier, judged=judged, strength=e.strength, proficiency=e.proficiency,
-        relationship=e.relationship, fate=e.fate, path_id=ctx.path_id, inherited=e.inherited, provenance=dict(e.provenance), reason=reason,
+        relationship=e.relationship, fate=e.fate, path_id=ctx.path_id, inherited=e.inherited, provenance=dict(e.provenance), reason=reason, value=e.value,
         unsupported_qualifiers=tuple(dict(u) for u in e.unsupported_qualifiers))
 
 

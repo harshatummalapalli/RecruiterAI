@@ -312,9 +312,11 @@ def test_mixed_requirements_only_send_the_unrecognized_one_to_the_llm():
 
     judgments = RequirementJudge(client=client).judge(candidate, intent)
 
-    assert len(client.calls) == 1  # exactly one LLM call, for the non-recognized requirement only
-    sent_requirement_indices = {r["r"] for r in client.calls[0]["requirements"]}
-    assert sent_requirement_indices == {1}  # only "Proficiency in Python" (index 1) was sent
+    # The LLM is asked only about the non-recognized requirement. (This fixture's quote "x" fails the quote gate, so the narrow quote retry re-asks that same single
+    # requirement once; the recognized one is never sent, in either call.)
+    assert 1 <= len(client.calls) <= 2
+    for call in client.calls:
+        assert {r["r"] for r in call["requirements"]} == {1}  # only "Proficiency in Python" (index 1) was sent
     assert judgments[0]["deterministic"] is True
     assert judgments[0]["verdict"] == "met"
 

@@ -32,4 +32,7 @@ Tests: `tests/test_downstream_consumers.py`. Reproduce: `python -m backend.exper
 Real-Judge validation (this phase): `RESULTS_REAL_JUDGE_VALIDATION.md` (generated), `real_judge_scenarios.py` (hand-written SYNTHETIC profiles and expectations), `real_judge_run.py` (runs the production Judge model on them N times, no tuning between runs; `analyze`; `diagnose`), `build_real_judge_report.py`, `results/real_judge/` (every request and verdict, the analyses, the admission decisions).
 Tests: `tests/test_real_judge_validation.py` (offline). Reproduce: `python -m backend.experiments.compiler_contract.real_judge_run run --runs 6 && ... analyze && ... build_real_judge_report`
 
-Status: real-Judge validation of the downstream contract run on synthetic candidates only; no CrustData, no retrieval, no deployment; waiting for architecture review.
+Evidence Check validation (this phase): `RESULTS_EVIDENCE_CHECK_VALIDATION.md` (generated), `backend/services/evidence_check.py` (the check schema, binding, predicates, quote gate), `evidence_check_scenarios.py` (hand-written SYNTHETIC scenarios A/B/C), `evidence_check_run.py` (6 real runs each; `analyze`; `diagnose_at_least` = an exploratory diagnostic, not adopted), `build_evidence_check_report.py`, `results/evidence_check/` (raw runs, analysis, the analyst's classification).
+Tests: `tests/test_evidence_check.py` (offline). Reproduce: `python -m backend.experiments.compiler_contract.evidence_check_run run --runs 6 && ... analyze && ... build_evidence_check_report`
+
+Status: Evidence Check contract validated on synthetic candidates with the real Judge model; not 6/6 on every scenario (see the results); no CrustData, no retrieval, no deployment; waiting for architecture review.

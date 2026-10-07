@@ -46,7 +46,7 @@ Built only from that path's own context entries. **Never merged across paths.** 
 | list | polarity | contents | does the Judge evaluate it? |
 |---|---|---|---|
 | `requirements` | `must_have` | every `VERIFIED_DOWNSTREAM` atom routed to downstream evidence, with tier, proficiency, relationship, provenance | **yes**, at its tier |
-| `exclusions` | `must_not_have` | semantic exclusions (the profile the candidate must NOT have) | **yes, in a separate exclusion pass** (`present` / `not_present`; `present` needs a quote verified in the cited passage; never part of the positive requirement judgments; §3a) |
+| `exclusions` | `must_not_have` | semantic exclusions (the profile the candidate must NOT have) | **yes, as explicit predicates in a separate exclusion pass** (`PRESENT` / `NOT_PRESENT` / `INSUFFICIENT_EVIDENCE`; `PRESENT` needs a quote that passes the gate and names an indicator of the predicate; never part of the positive requirement judgments; §3e) |
 | `preferences` | `prefer` | `PREFERENCE_CONTEXT` atoms; never in the core tier | the ones routed to evidence are judged at their own (non-core) tier; context-only ones (a preferred company, an education) are carried, not judged |
 | `unresolved` | `undecided` | `UNRESOLVED` atoms with the reason (an unknown level, a work mode no provider filters, an unsupported qualifier) | no, never; visible, never invented |
 | `already_enforced` | informational | what the provider already enforced | no (not re-required independently) |
@@ -57,8 +57,65 @@ Two rules in the checklist: (a) leadership kinds the source accepts as alternati
 
 `JudgeOutcome` additionally records `input_source`, the `checklist` the Judge was given, and the `disagreements`. The scripted/real model sees only requirement texts (no provenance, no path); provenance and path live on the interface and in the outcome. The verified-quote gate and the review pass are unchanged.
 
-### 3a. The exclusion pass (new in this phase)
-`RequirementJudge` makes ONE extra call per candidate, and only when the checklist has exclusions (never for a legacy intent). It has its own prompt (`_EXCLUSION_PROMPT`); the requirement prompt and the requirement/review passes are unchanged. The model sees the passages and the exclusion texts only. Verdicts: `present` (the profile IS the excluded profile, exactly as worded; a qualified exclusion applies only when the whole qualification holds) or `not_present`; a `present` without a quote that really appears in the cited passage is `not_present` with a note (`unverified_quote`). The result is `JudgeOutcome.exclusion_judgments` (text, item id, path, provenance, verdict, quote, source). A failure of this pass never touches the requirement judgments (`exclusion_failed`). The prompt was revised once after the first real-model run (an exclusion worded as a statement of what does NOT count, e.g. "X backgrounds are not equivalent to Y", was read as a description and answered `not_present`); both versions and their results are in `RESULTS_REAL_JUDGE_VALIDATION.md`. **What a `present` verdict DOES downstream is not defined**: nothing in ranking, admission or presentation reads it yet (architecture decision, §8).
+### 3a. The exclusion pass (superseded by 3b-3f; kept for the history)
+The first exclusion pass (v1, then one revision v2) gave the model the recruiter's prose and answered `present` / `not_present`. It is validated in `RESULTS_REAL_JUDGE_VALIDATION.md` and was replaced by the Evidence Check below because the prose form was read inconsistently.
+
+## 3b. The Evidence Check (`backend/services/evidence_check.py`)
+The semantic unit the Judge evaluates. A **downstream execution artifact**: built from the compiled checklist, per path; **not** part of `StructuredHiringIntent` (that module is hash-pinned). One check = one semantic claim = one `check_id`.
+
+| field | meaning |
+|---|---|
+| `check_id` | unique per path (`<path or global>#<atom id>|<tier or exclusion>`); the ONLY key a verdict may bind to |
+| `path_id` | the sourcing path the check belongs to (a global atom is one check per path) |
+| `concept`, `kind` | the atom's concept; `skill` / `proficiency` / `any_of` / `prose` / `legacy` / `exclusion` |
+| `criterion` | positives: the exact claim the model is asked about (for a depth claim: the skill AND the depth). negatives: a one-line description; the model is given the predicate |
+| `label` | the stable text key of the existing judgments and alignment (the checklist item text) |
+| `polarity` | `positive` or `negative` |
+| `strength`, `tier` | from the compiled atom |
+| `proficiency`, `proficiency_source` | `hands_on` / `working_knowledge` / `advanced`; source `intent` (a compiled atom) or `stated_in_criterion_text` (an explicit leading depth phrase such as "Working knowledge of X"). **Never inferred from a verb.** |
+| `relationship` | `None` = unspecified; never read as current |
+| `provenance` | `state`, `sources`, `quote`, as in the checklist |
+| `subject`, `subject_terms`, `requires_work_evidence` | the deterministic binding rules of 3c |
+| `predicate`, `recruiter_wording` | negatives only: the explicit predicate (3e); the recruiter's original wording is kept for audit and **never sent to the model** |
+
+## 3c. Requirement binding
+* A verdict binds to exactly **one** `check_id` (the model's `r` / `x` number is an alias; an id answered twice is ambiguous and is treated as unanswered, not guessed).
+* `met` / `partly` / `PRESENT` stands only if (1) its quote passes the quote gate (3f) **and** (2) the quote supports THIS check, deterministically:
+  * **subject binding**: a named skill's quote must contain that skill (every significant token, whole words, plural tolerant). The evidence for Python is never the evidence for Java just because the candidate has both.
+  * **work evidence**: a check that requires a depth needs demonstrated work or a certification. A skills-list entry, a title, a headline or a computed passage is "a skill quote alone" and does not evidence a depth.
+  * **indicator binding** (exclusions): a PRESENT quote must contain one of the predicate's own indicator terms.
+* A quote that does not support the exact check is **discarded** (the verdict becomes `not_evidenced`, with `discard_reason` and the discarded quote, and the discard is listed in `JudgeOutcome.binding_discards`). A binding discard is final: it is not retried.
+* The review pass (unchanged prompt) is given the check's complete `criterion`, not a label.
+* Known limit: subject binding is lexical. A plain, multi-word CATEGORY skill is bound on all its tokens in this implementation, which over-rejects legitimate evidence ("Financial modeling" vs "builds financial models"); see `RESULTS_EVIDENCE_CHECK_VALIDATION.md` (class VALIDATION, fix recommended and not applied).
+
+## 3d. Proficiency
+The Judge evaluates the **complete** claim `skill + proficiency` (Java + hands_on; Excel + advanced; Power BI + working_knowledge), as ONE check whose criterion states both. The plain skill ("Java") is a separate check. The depth text is deterministic: hands-on = built/written/operated it in real work (listing, studying or working beside users is not); working knowledge = practical familiarity from actual use; advanced = depth beyond routine use (stated expertise or sophisticated work). A depth is never inferred from an action verb in the source, and an unsupported depth stays `UNRESOLVED` (never a check at all).
+
+## 3e. Exclusions: explicit predicates and three states
+An exclusion is built into a predicate; the Judge does not infer it from recruiter prose.
+
+```
+subject: candidate_work_identity
+must_not_indicate: [...]            what, if the profile shows it, excludes the candidate
+not_sufficient: [...]               what NEVER makes it apply (works for a company in the field, mentions the topic, adjacent duties)
+unless_candidate_also_shows: [...]  the recruiter's "without Y" / "not equivalent to Y": if the profile also shows it, the exclusion does not apply
+exclusive: true                     "exclusively in X": applies only if ALL the substantive work shown is X
+qualifier: "generic"                the recruiter's qualifier, kept
+```
+Forms parsed structurally and generically: "X are not equivalent to Y", "X alone without Y", "exclusively in X without Y"; anything else is a literal profile statement. An exclusion phrase that names a known identity gets that identity spelled out from approved, versioned knowledge (`exclusion-predicates-v1`, same status as the role-family taxonomy; one validated anchor: security operations = SOC, security operations, cybersecurity operations, equivalent security-operations work; never "works for a security company", "mentions security", "has security experience"). Every other phrase gets a structural predicate (its own words, the qualifier, no expansion).
+
+| state | meaning | how it arises |
+|---|---|---|
+| `PRESENT` | supported evidence exists; the candidate fails the exclusion | the model says present AND the quote passes the gate AND names an indicator of the predicate |
+| `NOT_PRESENT` | no supported evidence of the exclusion | the model says not_present AND the profile describes work (demonstrated work or a certification) |
+| `INSUFFICIENT_EVIDENCE` | the profile does not contain enough to clear the exclusion | the model says so; or the profile describes no work (the model's NOT_PRESENT is overruled); or a PRESENT claim cannot be evidenced (unverified after the one retry, or not supported by its quote); or the model gave no answer |
+
+**INSUFFICIENT_EVIDENCE is never silently turned into NOT_PRESENT**, and an unsupported PRESENT is INSUFFICIENT_EVIDENCE (a policy, recorded as a risk), not NOT_PRESENT.
+
+## 3f. Quote verification and the retry rule
+`verify_quote` is the gate (unchanged in strength, now explicit): one **contiguous**, **exact** span of **one** supplied passage (case and whitespace only are folded); no ellipsis (`...` or the single character), no paraphrase, no fabrication, no span joined from two places; at least 3 characters. Failure reasons: `ellipsis`, `quote_not_found`, `quote_too_short`, `no_passage`.
+
+**One narrow retry.** After the first pass, only the checks whose claimed verdict failed the gate for one of those reasons are re-asked, once, with an exact-quote instruction in the payload (same prompt, same model). A check that succeeded is never re-asked; a binding discard is not a quote failure and is never retried; there is no third attempt. For exclusions a PRESENT that still fails after the retry is INSUFFICIENT_EVIDENCE. `JudgeOutcome.retries` records, per check, the first-pass failure, whether it recovered and the final failure.
 
 ## 4. The path contract
 A candidate can satisfy Path A, Path B, both, or neither. The Judge is run against **each path's own** checklist (`search_intents_from_contexts(contexts, base)` gives one `SearchIntent` per path). `attribute_path(path_id, checklist, judgments)` → `PathAttribution(met, partly, not_evidenced, satisfies_required)`: `satisfies_required` is true iff every judged must-have item **of that path** has a verified `met`. It is a flag for attribution, **not a score**: no path is ranked above another, no path weight exists, and the attribution is not used by ranking or admission. A requirement stated by only one path never appears in the other path's Judge input (tested), and a global atom reaches every path that inherits it, marked `inherited`. `merge_path_results` (runtime contract §6) is unchanged and carries each contributing path's own obligations.
@@ -96,7 +153,7 @@ Admission's rules are untouched (`evaluate_eligibility`, the level ladder, `_cla
 * **Accepted alternative levels are OR (decision 2)** and use the **unchanged** level rule once per accepted level: `aligned` at any accepted level is `aligned`; `above` / `below` stands only if every accepted level agrees; otherwise `unclear` (admission never gates on it). With no alternatives (always so for a legacy intent) this is exactly the old rule.
 
 ## 8. Known limits (recorded, not hidden)
-1. **What a `present` exclusion does is undefined.** The Judge now evaluates exclusions (§3a) but no consumer acts on the verdict: not ranking, not admission, not the recruiter view. Whether it demotes, flags or excludes is an architecture decision (and, per decision 1, an exclusion is a requirement-side fact, not an admission threshold).
+1. **What a `PRESENT` exclusion does is undefined.** The Judge evaluates exclusions (§3e) but no consumer acts on the verdict: not ranking, not admission, not the recruiter view. Whether it demotes, flags or excludes is an architecture decision (and, per decision 1, an exclusion is a requirement-side fact, not an admission threshold).
 2. **Per-path pipeline execution is not wired** (§9). Nothing is deployed and the seam stays dormant in production: `compiled_context` is `None` until the pipeline sets it.
 3. `MatchedSignal.provenance` and `CandidateEvidence.contributing_path_ids` are not added; provenance and path are on the Judge interface and in the outcome.
 4. The depth / alternative / leadership / mode / distance checks are lexical and deliberately conservative (decision 3).
@@ -140,3 +197,21 @@ The production Judge model (gpt-4o-mini, temperature 0; requirement and review p
 | work mode / preferred company do not change a requirement verdict | strictly fails (the model flips single items between runs); indistinguishable from the model's own noise once quote-gate-damaged runs are set aside (supplementary) |
 
 Two causes sit outside this contract and are recorded in §8: the existing verified-quote gate discards a whole run when the model writes an ellipsis in its quotes, and a `present` exclusion has no downstream consumer. The results do not show that the Judge is accurate on real profiles.
+
+
+## 11. Evidence Check validation (summary; the evidence is `RESULTS_EVIDENCE_CHECK_VALIDATION.md`)
+72 real runs (3 scenarios, 6 runs each, synthetic candidates, production model, requirement and review prompts unchanged), plus an exploratory diagnostic that is not part of the validation. **Not all scenarios reach 6/6**: B (Role 2 proficiency) 6/6; A (Role 1 negative) 5/6; C (Role 3 proficiency) 0/6.
+
+| property | result |
+|---|---|
+| every verdict maps to a known check_id; no verdict without one | **holds** (0 violations) |
+| evidence cannot be cross-assigned (Java vs Python, Excel vs Power BI) | **holds** (0 accepted quotes outside the subject; the four cross-assignment expectations 6/6) |
+| exact quote verification stays active | **holds** (0 accepted quotes fail the gate; 110 of 1054 first-pass claims carried an ellipsis and none was accepted) |
+| the narrow retry re-asks only failed checks, once | **holds** (0 violations; 134 checks re-asked, 121 recovered) |
+| INSUFFICIENT_EVIDENCE stays distinct | **holds** (6/6) |
+| no provider syntax / check_id / recruiter wording reaches the model | **holds** (0 hits in 1053 calls) |
+| hands-on Python vs Java (the earlier review-pass failure) | **fixed**: 6/6 on every Role 2 expectation |
+| SOC exclusion PRESENT / cyber-incident NOT_PRESENT / security-company analyst NOT broadened | 6/6, 5/6, 6/6 (the miss: an unsupported PRESENT caught by the indicator binding, so INSUFFICIENT_EVIDENCE) |
+| advanced Excel vs working-knowledge Power BI, independently | **not reliable**: a stronger statement is not accepted as meeting a weaker depth (0/6), borderline evidence is `partly`, explicit advanced evidence flips 2 in 6 (model capability; the wording hypothesis was tested and refuted) |
+
+Open items for review: a depth-comparison design that does not rely on the small model (classify the depth, compare in code) or a larger model; the over-reaching lexical binding on category skills (47 legitimate verdicts discarded); the policy for an unsupported PRESENT.

@@ -134,7 +134,11 @@ def build() -> str:
         for rq in json.loads(p.read_text(encoding="utf-8"))["requests"]:
             if rq["system"].startswith("You check whether"):
                 v1_prompt = rq["system"]
-    from backend.services import requirement_judge as rj
+    v2_prompt = ""
+    for p in sorted((RES / "raw_v2").glob("R1__E__PATH_A__run1.json")):
+        for rq in json.loads(p.read_text(encoding="utf-8"))["requests"]:
+            if rq["system"].startswith("You check whether"):
+                v2_prompt = rq["system"]
 
     def fmt(rows):
         return _exp_table(rows)
@@ -167,10 +171,10 @@ v1 exclusion system prompt, verbatim (recorded in every raw request):
 {v1_prompt}
 ```
 
-v2 (current `_EXCLUSION_PROMPT`):
+v2 (as run; recorded in every raw v2 request):
 
 ```
-{rj._EXCLUSION_PROMPT}
+{v2_prompt}
 ```
 """
 

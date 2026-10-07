@@ -78,6 +78,7 @@ def relationship_scan() -> List[List[str]]:
         "backend/services/structured_intent_extractor.py": "WRITER. `_fix_strength_relationship` repairs a strength word in the slot to `any`; group-collapse keeps an ABSENT relationship absent. Never writes `current`",
         "backend/services/search_compiler.py": "CONSUMER. `current` / `past` → provider fields; `any` → downstream; `None` → downstream with capability `unspecified_relationship` (no current-role filter); company scale: `== \"current\"` only",
         "backend/services/downstream_context.py": "CARRIER. Copies the atom's relationship (None stays None) into every entry",
+        "backend/services/evidence_check.py": "CARRIER (evidence-check phase). Copies the checklist item's relationship (None stays None) into the Evidence Check; never reads it to decide anything",
         "backend/services/consumer_input.py": "CARRIER (downstream-consumer phase). Passes the entry's relationship (None stays None) to the Judge checklist; never reads it to decide anything",
     }
     out = []

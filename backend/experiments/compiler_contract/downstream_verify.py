@@ -37,6 +37,13 @@ PASSAGE_BUDGET = 820          # characters of requirement text per synthetic rol
 OVERLAY_SKILLS = {"PATH A": "Synthetic Alpha Tool", "PATH B": "Synthetic Beta Tool"}
 
 
+def _needles(criterion: str) -> List[str]:
+    """What the scripted stand-in looks for: the claim's label (a depth clause is dropped), or any one alternative of an "any one of" claim."""
+    if criterion.startswith("Any one of: "):
+        return [a.strip() for a in criterion[len("Any one of: "):].split(";") if a.strip()]
+    return [criterion.split(", at the level of ")[0]]
+
+
 class ScriptedModel:
     """Stands in for the Judge's model. Deterministic. `met` iff the requirement's own text is in a passage of the profile; the review pass affirms every claim."""
 
@@ -51,27 +58,33 @@ class ScriptedModel:
         usage = SimpleNamespace(input_tokens=1, output_tokens=1)
         if "claims" in body:
             return SimpleNamespace(output_text=json.dumps({"results": [{"i": c["i"], "supports": True} for c in body["claims"]]}), usage=usage)
-        if "exclusions" in body:                      # the exclusion pass: "present" iff the exclusion's own text is in a passage
-            self.exclusion_asked.append([x["text"] for x in body["exclusions"]])
+        if "exclusion_checks" in body:                # the exclusion pass: PRESENT iff a must_not_indicate phrase is in a passage and no `unless` phrase is
+            self.exclusion_asked.append([x["predicate"] for x in body["exclusion_checks"]])
             out = []
-            for x in body["exclusions"]:
-                hit = next((p for p in body["passages"] if x["text"].casefold() in p["text"].casefold()), None)
-                if hit is None:
+            for x in body["exclusion_checks"]:
+                pred = x["predicate"]
+                low = [p_ for p_ in body["passages"]]
+                hit = next(((p_, ph) for p_ in low for ph in pred["must_not_indicate"] if ph.casefold() in p_["text"].casefold()), None)
+                unless = any(u.casefold() in p_["text"].casefold() for p_ in low for u in pred.get("unless_candidate_also_shows", []))
+                if hit is None or unless:
                     out.append({"x": x["x"], "verdict": "not_present", "p": None, "quote": ""})
                 else:
-                    start = hit["text"].casefold().index(x["text"].casefold())
-                    out.append({"x": x["x"], "verdict": "present", "p": hit["p"], "quote": hit["text"][start:start + len(x["text"])]})
+                    p_, ph = hit
+                    start = p_["text"].casefold().index(ph.casefold())
+                    out.append({"x": x["x"], "verdict": "present", "p": p_["p"], "quote": p_["text"][start:start + len(ph)]})
             return SimpleNamespace(output_text=json.dumps({"results": out}), usage=usage)
         self.payloads.append(body)
         self.asked.append([r["text"] for r in body["requirements"]])
         out = []
         for r in body["requirements"]:
-            hit = next((p for p in body["passages"] if r["text"].casefold() in p["text"].casefold()), None)
-            if hit is None:
+            needles = _needles(r["text"])
+            found = next(((p, n) for p in body["passages"] for n in needles if n.casefold() in p["text"].casefold()), None)
+            if found is None:
                 out.append({"r": r["r"], "verdict": "not_evidenced", "p": None, "quote": "", "term": ""})
             else:
-                start = hit["text"].casefold().index(r["text"].casefold())
-                out.append({"r": r["r"], "verdict": "met", "p": hit["p"], "quote": hit["text"][start:start + len(r["text"])], "term": r["text"][:30]})
+                hit, n = found
+                start = hit["text"].casefold().index(n.casefold())
+                out.append({"r": r["r"], "verdict": "met", "p": hit["p"], "quote": hit["text"][start:start + len(n)], "term": n[:30]})
         return SimpleNamespace(output_text=json.dumps({"results": out}), usage=usage)
 
 

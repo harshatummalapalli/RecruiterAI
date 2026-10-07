@@ -220,7 +220,7 @@ def test_R_every_consumer_of_a_relationship_is_known_and_none_defaults_to_curren
     assert bad == [], bad
     assert files == {"backend/models/structured_intent.py", "backend/services/search_compiler.py",
                      "backend/services/structured_intent_extractor.py", "backend/services/downstream_context.py",
-                     "backend/services/consumer_input.py"}, files
+                     "backend/services/consumer_input.py", "backend/services/evidence_check.py"}, files
 
 
 # an explicit relationship is kept only where the cited source states it (semantic provenance); `any` makes no temporal claim

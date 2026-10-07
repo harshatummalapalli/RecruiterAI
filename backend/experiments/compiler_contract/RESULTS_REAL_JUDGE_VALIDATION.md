@@ -222,7 +222,7 @@ Return only JSON: {"results":[{"x":<exclusion number>,"verdict":"present|not_pre
 Include every exclusion exactly once.
 ```
 
-v2 (current `_EXCLUSION_PROMPT`):
+v2 (as run; recorded in every raw v2 request):
 
 ```
 You check whether a candidate's profile shows an EXCLUDED profile.

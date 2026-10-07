@@ -1,0 +1,1008 @@
+{
+ "binding_breakdown": [
+  {
+   "count": 24,
+   "example_quote": "builds financial models, scenario analysis and sensitivity analysis for revenue,",
+   "kind": "skill",
+   "label": "Financial modeling",
+   "reason": "binding:subject_not_in_quote",
+   "subject_terms": [
+    "financial",
+    "modeling"
+   ]
+  },
+  {
+   "count": 13,
+   "example_quote": "maintains the team's Python data pipelines.",
+   "kind": "skill",
+   "label": "Data Engineering",
+   "reason": "binding:subject_not_in_quote",
+   "subject_terms": [
+    "data",
+    "engineering"
+   ]
+  },
+  {
+   "count": 12,
+   "example_quote": "Backend Engineer",
+   "kind": "proficiency",
+   "label": "hands-on Solution Design",
+   "reason": "binding:work_evidence_required",
+   "subject_terms": [
+    "solution",
+    "design"
+   ]
+  },
+  {
+   "count": 6,
+   "example_quote": "ships APIs to customers",
+   "kind": "skill",
+   "label": "API Development",
+   "reason": "binding:subject_not_in_quote",
+   "subject_terms": [
+    "api",
+    "development"
+   ]
+  },
+  {
+   "count": 4,
+   "example_quote": "Writes production Python and Java services every day and ships APIs to customers",
+   "kind": "skill",
+   "label": "Service Development",
+   "reason": "binding:subject_not_in_quote",
+   "subject_terms": [
+    "service",
+    "development"
+   ]
+  },
+  {
+   "count": 1,
+   "example_quote": "reviewed documents from data breach incidents for several clients to identify af",
+   "kind": "exclusion",
+   "label": "Generic cybersecurity or security-operations backgrounds are",
+   "reason": "binding:indicator_not_in_quote",
+   "subject_terms": []
+  },
+  {
+   "count": 1,
+   "example_quote": "Writes production Python services every day",
+   "kind": "proficiency",
+   "label": "hands-on Data Engineering",
+   "reason": "binding:subject_not_in_quote",
+   "subject_terms": [
+    "data",
+    "engineering"
+   ]
+  }
+ ],
+ "binding_discards": [
+  {
+   "check_id": "PATH A#global|semantic_exclusion[0]|exclusion",
+   "job": "ECA/A/run1",
+   "quote": "reviewed documents from data breach incidents for several clients to identify affected individuals, classify personal data and prepare notification lists; ran cyber incident review matters end to end as part of the review team.",
+   "reason": "binding:indicator_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[6]|core",
+   "job": "ECB/B0/run1",
+   "quote": "ships APIs to customers",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[7]|core",
+   "job": "ECB/B0/run1",
+   "quote": "Writes production Python and Java services every day and ships APIs to customers; maintains the CI pipelines for them.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[6]|core",
+   "job": "ECB/B0/run2",
+   "quote": "ships APIs to customers",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[7]|core",
+   "job": "ECB/B0/run2",
+   "quote": "Writes production Python and Java services every day and ships APIs to customers; maintains the CI pipelines for them.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[6]|core",
+   "job": "ECB/B0/run3",
+   "quote": "Writes production Python and Java services every day and ships APIs to customers; maintains the CI pipelines for them.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[6]|core",
+   "job": "ECB/B0/run4",
+   "quote": "ships APIs to customers",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[7]|core",
+   "job": "ECB/B0/run4",
+   "quote": "Writes production Python and Java services every day and ships APIs to customers; maintains the CI pipelines for them.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[6]|core",
+   "job": "ECB/B0/run5",
+   "quote": "ships APIs to customers",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[6]|core",
+   "job": "ECB/B0/run6",
+   "quote": "ships APIs to customers",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[7]|core",
+   "job": "ECB/B0/run6",
+   "quote": "Writes production Python and Java services every day and ships APIs to customers; maintains the CI pipelines for them.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill.proficiency[1]|core",
+   "job": "ECB/B1/run1",
+   "quote": "Backend Engineer",
+   "reason": "binding:work_evidence_required"
+  },
+  {
+   "check_id": "global#global|skill.proficiency[1]|core",
+   "job": "ECB/B1/run3",
+   "quote": "Backend Engineer",
+   "reason": "binding:work_evidence_required"
+  },
+  {
+   "check_id": "global#global|skill.proficiency[1]|core",
+   "job": "ECB/B1/run4",
+   "quote": "Backend Engineer",
+   "reason": "binding:work_evidence_required"
+  },
+  {
+   "check_id": "global#global|skill[2]|core",
+   "job": "ECB/B1/run5",
+   "quote": "maintains the team's Python data pipelines.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[2]|core",
+   "job": "ECB/B1/run6",
+   "quote": "maintains the team's Python data pipelines.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill.proficiency[1]|core",
+   "job": "ECB/B2/run1",
+   "quote": "Backend Engineer",
+   "reason": "binding:work_evidence_required"
+  },
+  {
+   "check_id": "global#global|skill[2]|core",
+   "job": "ECB/B2/run1",
+   "quote": "Backend Engineer | Python",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill.proficiency[1]|core",
+   "job": "ECB/B2/run2",
+   "quote": "Backend Engineer",
+   "reason": "binding:work_evidence_required"
+  },
+  {
+   "check_id": "global#global|skill[2]|core",
+   "job": "ECB/B2/run2",
+   "quote": "Backend Engineer | Python",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[2]|core",
+   "job": "ECB/B2/run3",
+   "quote": "maintains the team's Python data pipelines.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill.proficiency[2]|core",
+   "job": "ECB/B2/run3",
+   "quote": "Writes production Python services every day",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill.proficiency[1]|core",
+   "job": "ECB/B2/run4",
+   "quote": "Backend Engineer",
+   "reason": "binding:work_evidence_required"
+  },
+  {
+   "check_id": "global#global|skill[2]|core",
+   "job": "ECB/B2/run4",
+   "quote": "Backend Engineer | Python",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill.proficiency[1]|core",
+   "job": "ECB/B2/run5",
+   "quote": "Backend Engineer",
+   "reason": "binding:work_evidence_required"
+  },
+  {
+   "check_id": "global#global|skill[2]|core",
+   "job": "ECB/B2/run5",
+   "quote": "Backend Engineer | Python",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[2]|core",
+   "job": "ECB/B2/run6",
+   "quote": "maintains the team's Python data pipelines.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill.proficiency[1]|core",
+   "job": "ECB/B3/run1",
+   "quote": "Backend Engineer",
+   "reason": "binding:work_evidence_required"
+  },
+  {
+   "check_id": "global#global|skill[2]|core",
+   "job": "ECB/B3/run1",
+   "quote": "Backend Engineer | Java",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill.proficiency[1]|core",
+   "job": "ECB/B3/run2",
+   "quote": "Backend Engineer",
+   "reason": "binding:work_evidence_required"
+  },
+  {
+   "check_id": "global#global|skill[2]|core",
+   "job": "ECB/B3/run2",
+   "quote": "Backend Engineer | Java",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill.proficiency[1]|core",
+   "job": "ECB/B3/run4",
+   "quote": "Backend Engineer",
+   "reason": "binding:work_evidence_required"
+  },
+  {
+   "check_id": "global#global|skill[2]|core",
+   "job": "ECB/B3/run4",
+   "quote": "Backend Engineer | Java",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill.proficiency[1]|core",
+   "job": "ECB/B3/run5",
+   "quote": "Backend Engineer",
+   "reason": "binding:work_evidence_required"
+  },
+  {
+   "check_id": "global#global|skill[2]|core",
+   "job": "ECB/B3/run5",
+   "quote": "Backend Engineer | Java",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill.proficiency[1]|core",
+   "job": "ECB/B3/run6",
+   "quote": "Backend Engineer",
+   "reason": "binding:work_evidence_required"
+  },
+  {
+   "check_id": "global#global|skill[2]|core",
+   "job": "ECB/B3/run6",
+   "quote": "Backend Engineer | Java",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C1/run1",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C1/run2",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C1/run3",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C1/run4",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C1/run5",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C1/run6",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C2/run1",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C2/run2",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C2/run3",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C2/run4",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C2/run5",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C2/run6",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C3/run1",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C3/run2",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C3/run3",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C3/run4",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C3/run5",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C3/run6",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C4/run1",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C4/run2",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C4/run3",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C4/run4",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C4/run5",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  },
+  {
+   "check_id": "global#global|skill[5]|core",
+   "job": "ECC/C4/run6",
+   "quote": "builds financial models, scenario analysis and sensitivity analysis for revenue, cost, headcount and investment decisions.",
+   "reason": "binding:subject_not_in_quote"
+  }
+ ],
+ "diagnostic_at_least": {
+  "C1": {
+   "excel_advanced": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "powerbi_working_knowledge": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  "C2": {
+   "excel_advanced": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "powerbi_working_knowledge": [
+    "partly",
+    "partly",
+    "met",
+    "partly",
+    "partly",
+    "partly"
+   ]
+  },
+  "C3": {
+   "excel_advanced": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "powerbi_working_knowledge": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  "C4": {
+   "excel_advanced": [
+    "met",
+    "met",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "met"
+   ],
+   "powerbi_working_knowledge": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ]
+  }
+ },
+ "expectations": [
+  {
+   "candidate": "E",
+   "check": "excl_state",
+   "eid": "A-E-present",
+   "expected": "PRESENT",
+   "gating": true,
+   "item": "Generic cybersecurity or security-operations backgrounds are not equivalent",
+   "observed": [
+    "PRESENT",
+    "PRESENT",
+    "PRESENT",
+    "PRESENT",
+    "PRESENT",
+    "PRESENT"
+   ],
+   "passed_runs": 6,
+   "runs": 6,
+   "scenario": "A",
+   "status": "PASS",
+   "why": "explicit SOC / security-operations work"
+  },
+  {
+   "candidate": "A",
+   "check": "excl_state",
+   "eid": "A-A-not-present",
+   "expected": "NOT_PRESENT",
+   "gating": true,
+   "item": "Generic cybersecurity or security-operations backgrounds are not equivalent",
+   "observed": [
+    "INSUFFICIENT_EVIDENCE",
+    "NOT_PRESENT",
+    "NOT_PRESENT",
+    "NOT_PRESENT",
+    "NOT_PRESENT",
+    "NOT_PRESENT"
+   ],
+   "passed_runs": 5,
+   "runs": 6,
+   "scenario": "A",
+   "status": "UNSTABLE",
+   "why": "cyber incident / breach review is the domain, not security operations"
+  },
+  {
+   "candidate": "G",
+   "check": "excl_state",
+   "eid": "A-G-not-broadened",
+   "expected": "NOT_PRESENT",
+   "gating": true,
+   "item": "Generic cybersecurity or security-operations backgrounds are not equivalent",
+   "observed": [
+    "NOT_PRESENT",
+    "NOT_PRESENT",
+    "NOT_PRESENT",
+    "NOT_PRESENT",
+    "NOT_PRESENT",
+    "NOT_PRESENT"
+   ],
+   "passed_runs": 6,
+   "runs": 6,
+   "scenario": "A",
+   "status": "PASS",
+   "why": "works for a security company / mentions security / has security-adjacent duties is NOT the exclusion"
+  },
+  {
+   "candidate": "H",
+   "check": "excl_state",
+   "eid": "A-H-insufficient",
+   "expected": "INSUFFICIENT_EVIDENCE",
+   "gating": true,
+   "item": "Generic cybersecurity or security-operations backgrounds are not equivalent",
+   "observed": [
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE",
+    "INSUFFICIENT_EVIDENCE"
+   ],
+   "passed_runs": 6,
+   "runs": 6,
+   "scenario": "A",
+   "status": "PASS",
+   "why": "a profile with no description of work cannot clear the exclusion; it must not read as NOT_PRESENT"
+  },
+  {
+   "candidate": "G",
+   "check": "excl_state",
+   "eid": "A-G-firm-info",
+   "expected": "PRESENT",
+   "gating": false,
+   "item": "A strong SQL/Python analyst working at a security firm",
+   "observed": [
+    "PRESENT",
+    "PRESENT",
+    "PRESENT",
+    "PRESENT",
+    "PRESENT",
+    "PRESENT"
+   ],
+   "passed_runs": 6,
+   "runs": 6,
+   "scenario": "A",
+   "status": "PASS",
+   "why": "informational: this exclusion names the security-firm analyst"
+  },
+  {
+   "candidate": "B0",
+   "check": "req_met",
+   "eid": "B0-java",
+   "expected": "met",
+   "gating": true,
+   "item": "hands-on Java",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "runs": 6,
+   "scenario": "B",
+   "status": "PASS",
+   "why": "Java is named in the quote and used in production"
+  },
+  {
+   "candidate": "B0",
+   "check": "req_met",
+   "eid": "B0-python",
+   "expected": "met",
+   "gating": true,
+   "item": "hands-on Python",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "runs": 6,
+   "scenario": "B",
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "B1",
+   "check": "req_met",
+   "eid": "B1-java",
+   "expected": "met",
+   "gating": true,
+   "item": "hands-on Java",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "runs": 6,
+   "scenario": "B",
+   "status": "PASS",
+   "why": "Java evidence is the Java passage"
+  },
+  {
+   "candidate": "B1",
+   "check": "req_met",
+   "eid": "B1-python",
+   "expected": "met",
+   "gating": true,
+   "item": "hands-on Python",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "runs": 6,
+   "scenario": "B",
+   "status": "PASS",
+   "why": "Python evidence is the Python passage"
+  },
+  {
+   "candidate": "B2",
+   "check": "req_met",
+   "eid": "B2-python",
+   "expected": "met",
+   "gating": true,
+   "item": "hands-on Python",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "runs": 6,
+   "scenario": "B",
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "B2",
+   "check": "req_not_met",
+   "eid": "B2-java",
+   "expected": "not met",
+   "gating": true,
+   "item": "hands-on Java",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 6,
+   "runs": 6,
+   "scenario": "B",
+   "status": "PASS",
+   "why": "familiar != hands-on; Python evidence cannot be reused for Java"
+  },
+  {
+   "candidate": "B3",
+   "check": "req_met",
+   "eid": "B3-java",
+   "expected": "met",
+   "gating": true,
+   "item": "hands-on Java",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "runs": 6,
+   "scenario": "B",
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "B3",
+   "check": "req_not_met",
+   "eid": "B3-python",
+   "expected": "not met",
+   "gating": true,
+   "item": "hands-on Python",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 6,
+   "runs": 6,
+   "scenario": "B",
+   "status": "PASS",
+   "why": "familiar != hands-on; Java evidence cannot be reused for Python"
+  },
+  {
+   "candidate": "C1",
+   "check": "req_met",
+   "eid": "C1-excel",
+   "expected": "met",
+   "gating": true,
+   "item": "advanced proficiency in Microsoft Excel",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "runs": 6,
+   "scenario": "C",
+   "status": "PASS",
+   "why": "advanced evidence meets advanced"
+  },
+  {
+   "candidate": "C1",
+   "check": "req_met",
+   "eid": "C1-pbi",
+   "expected": "met",
+   "gating": true,
+   "item": "Working knowledge of Power BI or a similar business intelligence/reporting platform",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "runs": 6,
+   "scenario": "C",
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "C2",
+   "check": "req_not_met",
+   "eid": "C2-excel",
+   "expected": "not met",
+   "gating": true,
+   "item": "advanced proficiency in Microsoft Excel",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 6,
+   "runs": 6,
+   "scenario": "C",
+   "status": "PASS",
+   "why": "basic Excel is not advanced"
+  },
+  {
+   "candidate": "C2",
+   "check": "req_met",
+   "eid": "C2-pbi",
+   "expected": "met",
+   "gating": true,
+   "item": "Working knowledge of Power BI or a similar business intelligence/reporting platform",
+   "observed": [
+    "partly",
+    "partly",
+    "partly",
+    "partly",
+    "partly",
+    "partly"
+   ],
+   "passed_runs": 0,
+   "runs": 6,
+   "scenario": "C",
+   "status": "FAIL",
+   "why": "working knowledge is the weaker depth"
+  },
+  {
+   "candidate": "C3",
+   "check": "req_not_met",
+   "eid": "C3-excel",
+   "expected": "not met",
+   "gating": true,
+   "item": "advanced proficiency in Microsoft Excel",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 6,
+   "runs": 6,
+   "scenario": "C",
+   "status": "PASS",
+   "why": "Power BI depth cannot be assigned to Excel"
+  },
+  {
+   "candidate": "C3",
+   "check": "req_met",
+   "eid": "C3-pbi",
+   "expected": "met",
+   "gating": true,
+   "item": "Working knowledge of Power BI or a similar business intelligence/reporting platform",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 0,
+   "runs": 6,
+   "scenario": "C",
+   "status": "FAIL",
+   "why": ""
+  },
+  {
+   "candidate": "C4",
+   "check": "req_met",
+   "eid": "C4-excel",
+   "expected": "met",
+   "gating": true,
+   "item": "advanced proficiency in Microsoft Excel",
+   "observed": [
+    "not_evidenced",
+    "met",
+    "met",
+    "met",
+    "met",
+    "not_evidenced"
+   ],
+   "passed_runs": 4,
+   "runs": 6,
+   "scenario": "C",
+   "status": "UNSTABLE",
+   "why": ""
+  },
+  {
+   "candidate": "C4",
+   "check": "req_not_met",
+   "eid": "C4-pbi",
+   "expected": "not met",
+   "gating": true,
+   "item": "Working knowledge of Power BI or a similar business intelligence/reporting platform",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 6,
+   "runs": 6,
+   "scenario": "C",
+   "status": "PASS",
+   "why": "Excel depth cannot be assigned to Power BI"
+  }
+ ],
+ "scenarios": {
+  "A": {
+   "expectations": 4,
+   "runs": 6,
+   "runs_all_correct": 5
+  },
+  "B": {
+   "expectations": 8,
+   "runs": 6,
+   "runs_all_correct": 6
+  },
+  "C": {
+   "expectations": 8,
+   "runs": 6,
+   "runs_all_correct": 0
+  }
+ },
+ "totals": {
+  "binding_discards": 61,
+  "calls": 1053,
+  "estimated_cost_usd": 0.168,
+  "failed_jobs": 0,
+  "first_pass_claims_with_ellipsis": 110,
+  "first_pass_claims_with_quote": 1054,
+  "input_tokens": 586006,
+  "jobs": 72,
+  "models": [
+   "gpt-4o-mini"
+  ],
+  "output_tokens": 132716,
+  "retried_checks": 134,
+  "retries_recovered": 121,
+  "retry_calls": 23,
+  "review_downgrades": 5,
+  "temperatures": [
+   "0"
+  ]
+ },
+ "universal_violations": {
+  "bad_quotes": 0,
+  "binding_violations": 0,
+  "leaks": 0,
+  "retry_violations": 0,
+  "unbound": 0
+ }
+}

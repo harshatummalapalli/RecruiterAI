@@ -27,6 +27,8 @@ from backend.experiments.compiler_contract import downstream_verify as dv
 from backend.experiments.compiler_contract import loader
 from backend.experiments.compiler_contract.signature import leaves
 from backend.experiments.intake_strategy.experimental_schema import ExperimentalHiringIntent
+from backend.models.candidate import Candidate
+from backend.models.candidate_evidence import HarvestEvidence
 from backend.models.search_intent import Experience, Role, SearchIntent, Titles
 from backend.services import consumer_input as ci
 from backend.services.candidate_evidence_builder import _build_role_alignment, build_candidate_evidence
@@ -359,7 +361,9 @@ def test_JC_the_judge_asks_exactly_the_checklist_and_never_reconstructs_from_pro
     model = dv.ScriptedModel()
     out = RequirementJudge(client=model).judge_detailed(cand, dataclasses.replace(legacy, compiled_context=ctx), harvest)
     asked = {t for call in model.asked for t in call}
-    assert asked == set(dv.judged_texts(ctx)) and "Some legacy prose requirement" not in asked
+    labels = {c["label"] for c in out.checks if c["polarity"] == "positive"}
+    assert labels == set(dv.judged_texts(ctx)) and asked == {c["criterion"] for c in out.checks if c["polarity"] == "positive"}      # one Evidence Check per requirement
+    assert "Some legacy prose requirement" not in asked
     assert out.input_source == "compiled" and out.checklist["path_id"] == ctx.path_id
     assert {i["text"] for i in out.checklist["exclusions"]} == {i.text for i in ci.judge_checklist_for(ctx).exclusions}
     assert out.checklist["unresolved"] and out.checklist["preferences"]
@@ -591,37 +595,45 @@ def test_SY_a_candidate_matching_a_preference_only_does_not_satisfy_a_path():
 def test_SY_exclusions_are_evaluated_separately_from_the_positive_requirements():
     ctxs = dv.contexts_for("R3", 1)
     c = ci.judge_checklist_for(ctxs[0])
-    excluded = [i.text for i in c.exclusions]
     stated = [i.text for i in c.requirements if i.judged]
     intent = ci.search_intent_for_context(ctxs[0])
-    cand, harvest = dv.synthetic_candidate("neg", excluded + stated)
+    from backend.services.evidence_check import INSUFFICIENT_EVIDENCE, NOT_PRESENT, PRESENT, exclusion_predicate
+    excluded = exclusion_predicate(c.exclusions[0].text)["must_not_indicate"][0]
+    cand, harvest = dv.synthetic_candidate("neg", [excluded + " work"] + stated)
     model = dv.ScriptedModel()
     out = RequirementJudge(client=model).judge_detailed(cand, intent, harvest)
-    assert not any(j["signal_text"] in set(excluded) for j in out.judgments)                        # the requirement judgments are positives only
-    assert [x["verdict"] for x in out.exclusion_judgments] == ["present"] * len(excluded)           # the profile states the excluded profile
-    assert all(x["quote"] and x["path_id"] == ctxs[0].path_id and x["provenance"]["state"] for x in out.exclusion_judgments)
-    assert model.exclusion_asked == [excluded]
+    assert not any(j["signal_text"] == c.exclusions[0].text for j in out.judgments)                  # the requirement judgments are positives only
+    (x,) = out.exclusion_judgments
+    assert x["state"] == x["verdict"] == PRESENT and x["quote"] and x["path_id"] == ctxs[0].path_id and x["provenance"]["state"] and x["check_id"].endswith("|exclusion")
+    assert len(model.exclusion_asked) == 1 and set(model.exclusion_asked[0][0]) >= {"subject", "must_not_indicate", "not_sufficient"}      # the model got a predicate
     clean, harvest2 = dv.synthetic_candidate("clean", stated)
     out2 = RequirementJudge(client=dv.ScriptedModel()).judge_detailed(clean, intent, harvest2)
-    assert [x["verdict"] for x in out2.exclusion_judgments] == ["not_present"] * len(excluded)
-    assert out2.judgments == out.judgments                                                           # evaluating exclusions never changes a requirement verdict
+    assert [x["state"] for x in out2.exclusion_judgments] == [NOT_PRESENT]
+    assert [j for j in out2.judgments if j["tier"]] == [j for j in out2.judgments]                      # (positives untouched)
+    # a profile with no description of work cannot CLEAR the exclusion: INSUFFICIENT_EVIDENCE, never NOT_PRESENT
+    bare = Candidate(candidate_id="bare", name="B", title="Analyst", raw_data={"basic_profile": {"headline": "Analyst"}})
+    out3 = RequirementJudge(client=dv.ScriptedModel()).judge_detailed(bare, intent, HarvestEvidence(success=False))
+    assert [x["state"] for x in out3.exclusion_judgments] == [INSUFFICIENT_EVIDENCE]
 
 
-def test_SY_a_present_verdict_without_a_verified_quote_is_not_accepted():
+def test_SY_a_present_verdict_without_a_verified_quote_is_insufficient_evidence_never_not_present():
     ctxs = dv.contexts_for("R3", 1)
     intent = ci.search_intent_for_context(ctxs[0])
     cand, harvest = dv.synthetic_candidate("x", ["Worked on unrelated things"])
+    calls = []
 
     class Liar(dv.ScriptedModel):
         def create(self, **kw):
             body = json.loads(kw["input"][1]["content"])
-            if "exclusions" in body:
-                out = [{"x": x["x"], "verdict": "present", "p": 0, "quote": "a quote that is not in the profile"} for x in body["exclusions"]]
+            if "exclusion_checks" in body:
+                calls.append(body)
+                out = [{"x": x["x"], "verdict": "present", "p": 0, "quote": "a quote that is not in the profile"} for x in body["exclusion_checks"]]
                 return type("R", (), {"output_text": json.dumps({"results": out}), "usage": None})()
             return super().create(**kw)
 
     out = RequirementJudge(client=Liar()).judge_detailed(cand, intent, harvest)
-    assert all(x["verdict"] == "not_present" and "unverified_quote" in x["note"] for x in out.exclusion_judgments)
+    assert all(x["state"] == "INSUFFICIENT_EVIDENCE" and "present_claim_unverified" in x["reason"] for x in out.exclusion_judgments)
+    assert len(calls) == 2 and "instruction" in calls[1] and "instruction" not in calls[0]            # asked once, retried once, no more
 
 
 def test_SY_an_intent_without_exclusions_makes_no_exclusion_call_and_a_legacy_intent_has_none():

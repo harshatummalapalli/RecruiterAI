@@ -182,7 +182,11 @@ def test_the_committed_real_runs_are_complete_and_used_the_production_model_conf
     assert {j["input_source"] for j in jobs if j["context"] == "legacy_only_control"} == {"legacy"} and {j["input_source"] for j in jobs if j["context"] != "legacy_only_control"} == {"compiled"}
     v2 = _jobs(rr.RAW_V2)
     assert len(v2) == sum(len(TABLE[g]["profiles"]) * len(TABLE[g]["contexts"]) * runs for g in ("R1", "R3"))
-    assert any(r["system"] == rj._EXCLUSION_PROMPT for j in v2 for r in j["requests"]) and not any(r["system"] == rj._EXCLUSION_PROMPT for j in jobs for r in j["requests"])
+    # the exclusion prompt has since been replaced (Evidence Check phase); the historical v1 / v2 prompts are verifiable from the requests they ran with
+    excl = lambda js: {r["system"] for j in js for r in j["requests"] if r["system"].startswith("You check whether")}
+    assert all("An exclusion describes a kind of" in p and "worded either as the profile itself" not in p for p in excl(jobs))
+    assert all("worded either as the profile itself" in p for p in excl(v2))
+    assert rj._EXCLUSION_PROMPT not in excl(jobs) | excl(v2)
 
 
 def test_the_committed_analyses_are_what_the_analyzer_produces_from_the_committed_runs():

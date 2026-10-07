@@ -128,6 +128,7 @@ def run_one(group: str, profile: sc.Profile, ctx_label: str, intent: SearchInten
             "judgments": out.judgments, "failed": out.failed, "review_failed": out.review_failed, "downgraded_by_review": out.downgraded_by_review,
             "re_asked_missing": out.re_asked_missing, "exclusion_judgments": out.exclusion_judgments, "exclusion_failed": out.exclusion_failed,
             "input_source": out.input_source, "checklist": out.checklist, "disagreements": out.disagreements,
+            "checks": out.checks, "retries": out.retries, "binding_discards": out.binding_discards,
             "calls": out.calls, "input_tokens": out.input_tokens, "output_tokens": out.output_tokens, "estimated_cost_usd": round(out.estimated_cost_usd, 5),
             "seconds": round(time.time() - t0, 1),
             "requests": rc.calls,
