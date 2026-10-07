@@ -540,3 +540,16 @@ def test_every_concept_the_enumerator_produces_has_a_record_in_the_compiler(veri
             if a["concept"] != "provenance.basis":
                 assert a["concept"] in have, (k, a["concept"])
     assert seen
+
+
+def test_the_hardening_report_is_generated_from_the_measurements_and_is_current():
+    from backend.experiments.compiler_contract import build_hardening_report
+    path = Path(__file__).resolve().parents[1] / "backend" / "experiments" / "compiler_contract" / "RESULTS_COMPILER_HARDENING.md"
+    before = path.read_text(encoding="utf-8")
+    assert build_hardening_report.build() == before and "{{" not in before
+
+
+def test_the_committed_hardened_measurements_are_what_the_live_compiler_produces(verified):
+    summary = json.loads((Path(__file__).resolve().parents[1] / "backend/experiments/compiler_contract/results/hardened_summary.json").read_text(encoding="utf-8"))
+    for k, v in verified.items():
+        assert summary["runs"][f"{k[0]}/{k[1]}"]["atoms"] == len(v["atoms"]) and summary["runs"][f"{k[0]}/{k[1]}"]["silently_dropped"] == 0

@@ -13,4 +13,10 @@ dropping, strengthening or weakening meaning? Measurement only: no model, no Cru
 
 Reproduce: `python -m backend.experiments.compiler_contract.run_contract baseline && python -m backend.experiments.compiler_contract.run_contract analyse && python -m backend.experiments.compiler_contract.build_report`
 
-Status: baseline measured, nothing fixed, waiting for architecture review.
+## Hardening phase (compiler contract v1)
+`RESULTS_COMPILER_HARDENING.md` (report, generated tables), `backend/services/COMPILER_CONTRACT.md` (the formal contract), `hardened_verify.py` (independent ablation verification of the LIVE compiler),
+`results/hardened/` + `hardened_summary.json` (after measurements), `legacy_compiler_v1.py` (byte-identical copy of the compiler before hardening, pinned by hash, so the BEFORE measurements stay reproducible),
+`tests/test_compiler_contract.py` (matrix A-O). The BEFORE modules (`fate.py`, `paths.py`, `probes.py`, `signature.py`, `run_contract.py`) deliberately measure the legacy copy.
+Reproduce: `python -m backend.experiments.compiler_contract.hardened_verify && python -m backend.experiments.compiler_contract.build_hardening_report`
+
+Status: compiler hardened offline; waiting for architecture review.
