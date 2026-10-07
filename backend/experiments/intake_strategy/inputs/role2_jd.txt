@@ -1,0 +1,45 @@
+Summary
+
+We are seeking a highly skilled Staff Software Engineer/ Solution Architect - AI Solutions with strong expertise in Full Stack Software Development, Solution Design, Data Engineering, and AI/ML implementation.
+
+This is a hands-on engineering role for an experienced software developer who combines strong technical design skills with recent experience building and deploying AI-powered applications. The ideal candidate will be responsible for designing scalable solutions, contributing to software development, and implementing modern AI capabilities that align with our product and solution offerings.
+
+As a Staff Software Engineer/ Solution Architect, you will work closely with business stakeholders, Product Owners, leadership teams, clients, data scientists, consultants, DevOps engineers, and software engineers to design, build, and maintain enterprise-grade applications and AI-driven solutions. You will play a key role in translating complex business problems into scalable technical solutions while ensuring engineering excellence, maintainability, and long-term product success.
+
+Job Responsibilities
+Partner with business and product stakeholders to understand requirements, design end-to-end solutions, and help Product Owners break down initiatives into actionable user stories and technical deliverables.
+Design and develop scalable, secure, and maintainable software solutions that can be integrated into existing products and strategic solution offerings.
+Actively contribute to software development, code reviews, technical design discussions, and architecture reviews.
+Drive solution design decisions while ensuring alignment with security, compliance, performance, and operational requirements.
+Leverage strong analytical and problem-solving skills to understand complex business challenges and develop innovative AI-powered solutions.
+Champion engineering best practices, coding standards, testing strategies, and quality metrics across development teams.
+Integrate and optimize data from various internal and external systems, understanding the challenges associated with enterprise data integration across SaaS applications.
+Design, develop, and maintain APIs, services, and integrations that support enterprise applications and AI solutions.
+Evaluate and adopt emerging technologies to improve scalability, maintainability, performance, and reliability of applications and AI systems.
+Collaborate with data engineers and data scientists to ensure data quality, availability, and successful deployment of AI and machine learning capabilities.
+Design, implement, and maintain data pipelines, processing frameworks, and supporting infrastructure required for AI and machine learning workloads.
+Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), Agentic AI frameworks, and modern AI orchestration patterns.
+Apply prompt engineering techniques and AI best practices to improve the quality, relevance, and reliability of generative AI solutions.
+Communicate technical solutions, risks, and recommendations effectively to leadership, business stakeholders, and clients.
+Stay current with advancements in software engineering, AI, machine learning, and cloud technologies, recommending practical innovations for our products and operations.
+Provide technical leadership, mentor team members, resolve complex technical challenges, and foster a collaborative engineering culture.
+
+Requirements / Skills
+Bachelor's or Master's degree in Computer Science, Information Technology, Software Engineering, or a related field.
+12+ years of experience in Full Stack Software Development, Solution Design, Data Engineering, and AI/ML implementation.
+Strong hands-on software engineering background with proven experience designing and developing enterprise-scale applications.
+Demonstrated experience designing technical solutions and participating in architecture reviews, system design discussions, and technical decision-making.
+Advanced proficiency in Python and Java with strong experience building APIs, services, and distributed systems.
+Hands-on experience implementing and deploying Generative AI solutions in production environments.
+Strong understanding of LLMs, RAG architectures, Agentic AI, Prompt Engineering, MCP, A2A, and modern AI application development patterns.
+Experience working with NLP frameworks and machine learning libraries such as TensorFlow, PyTorch, scikit-learn, or similar technologies.
+Experience with cloud platforms and services including Azure and/or AWS.
+Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments.
+Experience building modern user interfaces using React, Bootstrap, and related frameworks.
+Familiarity with Azure DevOps, Jira, and modern software delivery practices.
+Experience working with Snowflake, Databricks, and modern data platforms.
+Strong understanding of Data Integration, ETL, Data Quality, Data Discovery, and enterprise data management concepts.
+Experience integrating third-party and enterprise APIs.
+Familiarity with metadata management tools and data governance concepts.
+Strong analytical, problem-solving, and troubleshooting skills.
+Excellent communication and stakeholder management skills with the ability to effectively engage clients, business stakeholders, leadership teams, and engineering organizations.
