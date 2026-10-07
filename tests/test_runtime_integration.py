@@ -73,7 +73,7 @@ _NO_PROVENANCE = {
     "location": (dict(location={"entries": ["Pune, Maharashtra, India"], "strength": "required"}), "location.city"),
     "exclusion": (dict(exclusions=[{"kind": "exclude_past_company", "value": "Acme"}]), "company_name"),
 }
-_STATES = "We are hiring a Probe Role. Anchor sentence. Rust and Go experience. Acme is a target. A company of 5,000 employees. B.Tech in CS. 7 years. Pune, Maharashtra, India. Not Acme."
+_STATES = "We are hiring a Probe Role. Anchor sentence. Currently using Rust and Go. Acme is a target. A company currently of 5,000 employees. B.Tech in CS. 7 years. Pune, Maharashtra, India. Not Acme."
 
 
 @pytest.mark.parametrize("concept", sorted(_NO_PROVENANCE))
@@ -122,8 +122,8 @@ def test_P_a_legacy_intent_that_records_no_provenance_keeps_its_behaviour_and_sa
 @pytest.mark.parametrize("sources,state,hard", [(("inferred",), "model_only", False), (("approved_knowledge",), "knowledge", True), (("jd",), "source", True),
                                                 (("recruiter_brief",), "source", True), (("inferred", "jd"), "source", True)])
 def test_P_basis_sources_decide_the_provenance_state(sources, state, hard):
-    plan = compile_intent(recorded(skills=[{"name": "Rust", "strength": "required", "relationship": "current", "basis": b("Rust and Go experience.", sources)}]),
-                          SourceTexts(jd="We are hiring a Probe Role. Anchor sentence. Rust and Go experience.", recruiter_brief="Rust and Go experience."))
+    plan = compile_intent(recorded(skills=[{"name": "Rust", "strength": "required", "relationship": "current", "basis": b("Currently using Rust and Go.", sources)}]),
+                          SourceTexts(jd="We are hiring a Probe Role. Anchor sentence. Currently using Rust and Go.", recruiter_brief="Currently using Rust and Go."))
     a = atoms(plan, "skill")[0]
     assert a.provenance["state"] == state and (a.fate == "ENFORCED") == hard
 
@@ -219,15 +219,20 @@ def test_R_every_consumer_of_a_relationship_is_known_and_none_defaults_to_curren
             bad.append((rel, line.strip()))
     assert bad == [], bad
     assert files == {"backend/models/structured_intent.py", "backend/services/search_compiler.py",
-                     "backend/services/structured_intent_extractor.py", "backend/services/downstream_context.py"}, files
+                     "backend/services/structured_intent_extractor.py", "backend/services/downstream_context.py",
+                     "backend/services/consumer_input.py"}, files
+
+
+# an explicit relationship is kept only where the cited source states it (semantic provenance); `any` makes no temporal claim
+_SQL_STATEMENT = {"current": "Currently uses SQL.", "past": "Previously used SQL.", "any": "SQL."}
 
 
 @pytest.mark.parametrize("rel", ["current", "past", "any"])
 def test_R_an_explicit_relationship_keeps_its_meaning_everywhere(rel):
     sk = SkillReq.model_validate_json(f'{{"name": "SQL", "relationship": "{rel}"}}')
     assert sk.relationship == rel
-    it = recorded(skills=[{"name": "SQL", "strength": "required", "relationship": rel, "basis": b("SQL.")}])
-    plan = compile_intent(it, src("We are hiring a Probe Role. Anchor sentence. SQL."))
+    it = recorded(skills=[{"name": "SQL", "strength": "required", "relationship": rel, "basis": b(_SQL_STATEMENT[rel])}])
+    plan = compile_intent(it, src("We are hiring a Probe Role. Anchor sentence. " + _SQL_STATEMENT[rel]))
     a = atoms(plan, "skill")[0]
     assert a.relationship == rel
     (ctx,) = build_downstream_contexts(plan)
@@ -544,17 +549,23 @@ def test_M_the_same_candidate_twice_in_one_path_does_not_overwrite_that_paths_pa
 # ======================================================================================================================
 
 
-def test_J_the_judge_and_admission_still_consume_only_the_legacy_intent():
-    """LEGACY DOWNSTREAM CONSUMER: none of these reads the compiled plan, a path, the downstream context, an exclusion, or provenance. If one is ever wired
-    to the compiled plan this test fails on purpose: update the audit in RESULTS_RUNTIME_INTEGRATION.md and the contract."""
-    compiled = re.compile(r"compile_intent|CompiledPlan|downstream_context|atom_audit|sourcing_path|semantic_exclusion|search_compiler(?!_shadow)|exclusion_checklist|AtomRecord|provenance_mode")
+def test_J_the_judge_and_admission_consume_the_compiled_plan_only_through_the_consumer_seam():
+    """Superseded the runtime-phase pin "the Judge and admission still consume only the legacy intent" (that phase recorded the gap; the downstream-consumer
+    phase closes it). What stays pinned: NO consumer reaches into the compiler, the plan or the atom audit; they go through `consumer_input.resolve` only, and
+    the legacy fields are read for meaning in that one module."""
+    compiler_internals = re.compile(r"compile_intent|CompiledPlan|atom_audit|sourcing_path|search_compiler(?!_shadow)|exclusion_checklist|AtomRecord|provenance_mode|downstream_context")
     for f in ("requirement_judge.py", "admission.py", "candidate_evidence_builder.py", "search_pipeline.py", "candidate_ranker.py", "match_explainer.py"):
         text = (ROOT / "backend" / "services" / f).read_text(encoding="utf-8")
-        assert not compiled.search(text), f"{f} now references the compiled plan"
+        assert not compiler_internals.search(text), f"{f} now reaches into the compiler"
+    for f in ("requirement_judge.py", "candidate_evidence_builder.py", "search_pipeline.py"):
+        assert "consumer_input" in (ROOT / "backend" / "services" / f).read_text(encoding="utf-8"), f
     judge = (ROOT / "backend" / "services" / "requirement_judge.py").read_text(encoding="utf-8")
-    assert "intent.core_signals" in judge and "intent.supporting_signals" in judge and "intent.differentiator_signals" in judge
     evidence = (ROOT / "backend" / "services" / "candidate_evidence_builder.py").read_text(encoding="utf-8")
-    assert "intent.role.seniority" in evidence
+    pipeline = (ROOT / "backend" / "services" / "search_pipeline.py").read_text(encoding="utf-8")
+    for text in (judge, evidence):
+        assert not re.search(r"intent\.(core_signals|supporting_signals|differentiator_signals)", text), "a consumer reads the legacy signals directly"
+    assert "intent.core_signals" not in pipeline and "intent.differentiator_signals" not in pipeline
+    assert not re.search(r"intent\.role\.seniority|intent\.experience\.minimum_years|intent\.role\.title|intent\.titles\.include_titles", evidence)
 
 
 def test_J_the_only_production_caller_of_the_compiler_is_the_shadow_audit():
@@ -624,8 +635,11 @@ def test_G_no_new_module_can_reach_a_provider_or_a_model():
         assert not forbidden.search((ROOT / "backend" / "services" / f).read_text(encoding="utf-8")), f
 
 
-def test_the_runtime_report_is_generated_from_the_measurements_and_is_current():
+def test_the_runtime_report_is_a_frozen_deliverable_with_no_template_markers():
+    # the runtime phase is frozen and accepted; its report records the runtime-phase measurements, so it is pinned by hash instead of regenerated from live code
+    import hashlib
     from backend.experiments.compiler_contract import build_runtime_report
     path = ROOT / "backend" / "experiments" / "compiler_contract" / "RESULTS_RUNTIME_INTEGRATION.md"
     before = path.read_text(encoding="utf-8")
-    assert build_runtime_report.build() == before and "{{" not in before
+    assert "{{" not in before
+    assert hashlib.sha256(before.encode("utf-8")).hexdigest() == "9c9555fb49d472dbd70794094ad361bd8063fcebed1d9a97d86c3d54a57f48f8"

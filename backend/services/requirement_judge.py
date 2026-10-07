@@ -37,6 +37,7 @@ from backend.models.candidate import Candidate
 from backend.models.candidate_evidence import HarvestEvidence, TextSource
 from backend.models.search_intent import SearchIntent
 from backend.services.candidate_evidence_builder import build_candidate_evidence
+from backend.services.consumer_input import resolve as resolve_consumer_input
 from backend.services.requirement_semantics import evaluate as evaluate_recognized_requirement, recognize_requirement
 
 logger = logging.getLogger(__name__)
@@ -175,6 +176,11 @@ class JudgeOutcome:
     review_failed: bool = False
     downgraded_by_review: int = 0
     re_asked_missing: int = 0
+    # What the Judge was GIVEN (backend/services/consumer_input): where the requirements came from ("compiled" | "legacy"), the per-path checklist with
+    # its exclusions, preferences, unresolved items and provenance, and every legacy value that disagreed with the compiled meaning (the compiled one was used).
+    input_source: str = "legacy"
+    checklist: Optional[Dict[str, Any]] = None
+    disagreements: Optional[List[Dict[str, Any]]] = None
 
     @property
     def estimated_cost_usd(self) -> float:
@@ -209,14 +215,16 @@ class RequirementJudge:
     def _judge(
         self, candidate: Candidate, intent: SearchIntent, harvest_evidence: Optional[HarvestEvidence]
     ) -> JudgeOutcome:
-        requirements = (
-            [("core", s) for s in intent.core_signals]
-            + [("supporting", s) for s in intent.supporting_signals]
-            + [("differentiator", s) for s in intent.differentiator_signals]
+        consumer_input = resolve_consumer_input(intent)
+        requirements = list(consumer_input.judged)
+        header = dict(
+            input_source=consumer_input.source,
+            checklist=consumer_input.checklist.to_dict() if consumer_input.checklist is not None else None,
+            disagreements=[d.to_dict() for d in consumer_input.disagreements] if consumer_input.source == "compiled" else None,
         )
         if not requirements:
-            return JudgeOutcome(judgments=None)
-        outcome = JudgeOutcome(judgments=None, requirements=len(requirements))
+            return JudgeOutcome(judgments=None, **header)
+        outcome = JudgeOutcome(judgments=None, requirements=len(requirements), **header)
         try:
             # Deterministic pre-pass: a requirement whose own wording
             # unambiguously names a validated company-size/industry/career-

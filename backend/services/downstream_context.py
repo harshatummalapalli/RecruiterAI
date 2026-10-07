@@ -54,6 +54,7 @@ class ContextEntry:
     route: str
     provenance: Dict[str, Any]
     components: List[Dict[str, Any]] = field(default_factory=list)
+    unsupported_qualifiers: List[Dict[str, Any]] = field(default_factory=list)   # claims the intent made that its cited source does not support (not used)
 
 
 def _kind(a: AtomRecord) -> str:
@@ -76,7 +77,8 @@ def _entry(a: AtomRecord) -> ContextEntry:
     return ContextEntry(atom_id=a.atom_id, concept=a.concept, value=a.value, kind=_kind(a), scope=a.scope, inherited=(a.scope == "global" and a.kind == "MEANING"),
                         text=a.downstream_text or a.value, tier=_STRENGTH_TIER.get(a.strength) if a.strength else None, strength=a.strength,
                         proficiency=a.proficiency, relationship=a.relationship, fate=a.fate, destination=a.destination, justification=a.justification,
-                        route=a.route, provenance=dict(a.provenance), components=list(a.components))
+                        route=a.route, provenance=dict(a.provenance), components=list(a.components),
+                        unsupported_qualifiers=list(a.unsupported_qualifiers))
 
 
 @dataclass

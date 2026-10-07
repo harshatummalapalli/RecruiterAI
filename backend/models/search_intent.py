@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from backend.models.retrieval_concepts import RetrievalConcepts
 
@@ -122,3 +122,7 @@ class SearchIntent:
     # read by SearchPlanner, QueryExpansionService, CapabilityMapper, any provider, ranking, or admission; not a
     # requirement and not recruiter-editable (ConfirmationEdits has no path to it). None when nothing was built.
     retrieval_concepts: Optional[RetrievalConcepts] = None
+    # The compiled downstream context (backend/services/downstream_context.DownstreamContext) for ONE sourcing path. When present it is the SOURCE OF TRUTH
+    # for what the Judge asks and what admission gates on (backend/services/consumer_input.resolve); the legacy fields above are then not read for meaning.
+    # None = a legacy flow: every consumer behaves exactly as before. Typed Any so the model layer does not import the services layer.
+    compiled_context: Optional[Any] = None

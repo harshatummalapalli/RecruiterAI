@@ -1,0 +1,2776 @@
+{
+  "conflicts": [
+    {
+      "case": "legacy: current Python required   |   compiled: Python relationship UNSPECIFIED",
+      "current_python_enforced_or_asked": false,
+      "disagreements": [
+        {
+          "compiled": null,
+          "field": "signal.core",
+          "legacy": "Currently works with Python (required)",
+          "winner": "compiled"
+        },
+        {
+          "compiled": "Python",
+          "field": "signal.core",
+          "legacy": null,
+          "winner": "compiled"
+        }
+      ],
+      "judge_was_asked": [
+        "Python"
+      ],
+      "legacy_input": [
+        "Currently works with Python (required)"
+      ],
+      "relationship_carried": [
+        null
+      ],
+      "winner": "compiled"
+    },
+    {
+      "carried_as": [
+        [
+          "prefer",
+          "Quuxcorp"
+        ]
+      ],
+      "case": "legacy: company is a hard (core) requirement   |   compiled: company is a PREFERENCE",
+      "company_required": false,
+      "disagreements": [
+        {
+          "compiled": null,
+          "field": "signal.core",
+          "legacy": "Works at Quuxcorp",
+          "winner": "compiled"
+        }
+      ],
+      "judge_was_asked": [],
+      "legacy_input": [
+        "Works at Quuxcorp"
+      ],
+      "winner": "compiled"
+    }
+  ],
+  "coverage": {
+    "R1": {
+      "admission_floor": 6,
+      "admission_level": 5,
+      "admission_ungated": 10,
+      "already_enforced": 31,
+      "contexts": 10,
+      "exclusions": 30,
+      "judged": 308,
+      "preferences": 199,
+      "proficiency_items": 25,
+      "unresolved": 21,
+      "unsupported_qualifiers": 26,
+      "verified_atoms": 234,
+      "verified_reaching_a_consumer": 234,
+      "work_mode_items": 0
+    },
+    "R2": {
+      "admission_floor": 5,
+      "admission_level": 0,
+      "admission_ungated": 0,
+      "already_enforced": 50,
+      "contexts": 5,
+      "exclusions": 0,
+      "judged": 400,
+      "preferences": 3,
+      "proficiency_items": 54,
+      "unresolved": 60,
+      "unsupported_qualifiers": 87,
+      "verified_atoms": 397,
+      "verified_reaching_a_consumer": 397,
+      "work_mode_items": 0
+    },
+    "R3": {
+      "admission_floor": 5,
+      "admission_level": 1,
+      "admission_ungated": 4,
+      "already_enforced": 50,
+      "contexts": 5,
+      "exclusions": 5,
+      "judged": 176,
+      "preferences": 109,
+      "proficiency_items": 5,
+      "unresolved": 11,
+      "unsupported_qualifiers": 2,
+      "verified_atoms": 103,
+      "verified_reaching_a_consumer": 103,
+      "work_mode_items": 5
+    }
+  },
+  "matrix": [
+    {
+      "candidates": {
+        "A": {
+          "attribution": [
+            {
+              "met": [
+                "SQL",
+                "hands-on SQL",
+                "Python",
+                "hands-on Python",
+                "Data Privacy",
+                "Information Security Principles",
+                "Cyber Incident Review and/or Data Breach Analysis",
+                "Data querying, analysis, automation, and reporting using SQL and Python",
+                "Review, quality assurance, compliance, or audit experience",
+                "People leadership or technical leadership",
+                "Strong analytical capabilities and attention to detail",
+                "Large-dataset analysis to identify trends, anomalies, and potential security risks",
+                "Quality oversight, security-standard adherence, and protocol compliance",
+                "Cross-functional collaboration on review findings and remediation",
+                "Management reports, dashboards, and performance metrics",
+                "Accurate documentation, procedures, audit trails, and quality records",
+                "Operational coordination, resource planning, workflow management, and support for the Review Manager",
+                "Continuous improvement of operational efficiency, quality, and compliance"
+              ],
+              "not_evidenced": [],
+              "partly": [],
+              "path_id": "PATH A",
+              "satisfies_required": true
+            },
+            {
+              "met": [
+                "People leadership or technical leadership",
+                "SQL",
+                "hands-on SQL",
+                "Python",
+                "hands-on Python",
+                "Data Privacy",
+                "Information Security Principles",
+                "Data querying, analysis, automation, and reporting using SQL and Python",
+                "Review, quality assurance, compliance, or audit experience",
+                "People leadership or technical leadership",
+                "Strong analytical capabilities and attention to detail",
+                "Large-dataset analysis to identify trends, anomalies, and potential security risks",
+                "Quality oversight, security-standard adherence, and protocol compliance",
+                "Cross-functional collaboration on review findings and remediation",
+                "Management reports, dashboards, and performance metrics",
+                "Accurate documentation, procedures, audit trails, and quality records",
+                "Operational coordination, resource planning, workflow management, and support for the Review Manager",
+                "Continuous improvement of operational efficiency, quality, and compliance"
+              ],
+              "not_evidenced": [
+                "Power Query",
+                "working knowledge of Power Query"
+              ],
+              "partly": [],
+              "path_id": "PATH B",
+              "satisfies_required": false
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 29,
+              "exclusions": 3,
+              "input_source": "compiled",
+              "path_id": "PATH A",
+              "preferences": 22,
+              "proficiencies": 2,
+              "unresolved": 2,
+              "work_mode": 0
+            },
+            {
+              "asked": 29,
+              "exclusions": 3,
+              "input_source": "compiled",
+              "path_id": "PATH B",
+              "preferences": 17,
+              "proficiencies": 3,
+              "unresolved": 2,
+              "work_mode": 0
+            }
+          ],
+          "satisfies": [
+            "PATH A"
+          ]
+        },
+        "B": {
+          "attribution": [
+            {
+              "met": [
+                "SQL",
+                "hands-on SQL",
+                "Python",
+                "hands-on Python",
+                "Data Privacy",
+                "Information Security Principles",
+                "Data querying, analysis, automation, and reporting using SQL and Python",
+                "Review, quality assurance, compliance, or audit experience",
+                "People leadership or technical leadership",
+                "Strong analytical capabilities and attention to detail",
+                "Large-dataset analysis to identify trends, anomalies, and potential security risks",
+                "Quality oversight, security-standard adherence, and protocol compliance",
+                "Cross-functional collaboration on review findings and remediation",
+                "Management reports, dashboards, and performance metrics",
+                "Accurate documentation, procedures, audit trails, and quality records",
+                "Operational coordination, resource planning, workflow management, and support for the Review Manager",
+                "Continuous improvement of operational efficiency, quality, and compliance"
+              ],
+              "not_evidenced": [
+                "Cyber Incident Review and/or Data Breach Analysis"
+              ],
+              "partly": [],
+              "path_id": "PATH A",
+              "satisfies_required": false
+            },
+            {
+              "met": [
+                "People leadership or technical leadership",
+                "SQL",
+                "hands-on SQL",
+                "Python",
+                "hands-on Python",
+                "Data Privacy",
+                "Information Security Principles",
+                "Power Query",
+                "working knowledge of Power Query",
+                "Data querying, analysis, automation, and reporting using SQL and Python",
+                "Review, quality assurance, compliance, or audit experience",
+                "People leadership or technical leadership",
+                "Strong analytical capabilities and attention to detail",
+                "Large-dataset analysis to identify trends, anomalies, and potential security risks",
+                "Quality oversight, security-standard adherence, and protocol compliance",
+                "Cross-functional collaboration on review findings and remediation",
+                "Management reports, dashboards, and performance metrics",
+                "Accurate documentation, procedures, audit trails, and quality records",
+                "Operational coordination, resource planning, workflow management, and support for the Review Manager",
+                "Continuous improvement of operational efficiency, quality, and compliance"
+              ],
+              "not_evidenced": [],
+              "partly": [],
+              "path_id": "PATH B",
+              "satisfies_required": true
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 29,
+              "exclusions": 3,
+              "input_source": "compiled",
+              "path_id": "PATH A",
+              "preferences": 22,
+              "proficiencies": 2,
+              "unresolved": 2,
+              "work_mode": 0
+            },
+            {
+              "asked": 29,
+              "exclusions": 3,
+              "input_source": "compiled",
+              "path_id": "PATH B",
+              "preferences": 17,
+              "proficiencies": 3,
+              "unresolved": 2,
+              "work_mode": 0
+            }
+          ],
+          "satisfies": [
+            "PATH B"
+          ]
+        },
+        "C": {
+          "attribution": [
+            {
+              "met": [
+                "SQL",
+                "hands-on SQL",
+                "Python",
+                "hands-on Python",
+                "Data Privacy",
+                "Information Security Principles",
+                "Cyber Incident Review and/or Data Breach Analysis",
+                "Data querying, analysis, automation, and reporting using SQL and Python",
+                "Review, quality assurance, compliance, or audit experience",
+                "People leadership or technical leadership",
+                "Strong analytical capabilities and attention to detail",
+                "Large-dataset analysis to identify trends, anomalies, and potential security risks",
+                "Quality oversight, security-standard adherence, and protocol compliance",
+                "Cross-functional collaboration on review findings and remediation",
+                "Management reports, dashboards, and performance metrics",
+                "Accurate documentation, procedures, audit trails, and quality records",
+                "Operational coordination, resource planning, workflow management, and support for the Review Manager",
+                "Continuous improvement of operational efficiency, quality, and compliance"
+              ],
+              "not_evidenced": [],
+              "partly": [],
+              "path_id": "PATH A",
+              "satisfies_required": true
+            },
+            {
+              "met": [
+                "People leadership or technical leadership",
+                "SQL",
+                "hands-on SQL",
+                "Python",
+                "hands-on Python",
+                "Data Privacy",
+                "Information Security Principles",
+                "Power Query",
+                "working knowledge of Power Query",
+                "Data querying, analysis, automation, and reporting using SQL and Python",
+                "Review, quality assurance, compliance, or audit experience",
+                "People leadership or technical leadership",
+                "Strong analytical capabilities and attention to detail",
+                "Large-dataset analysis to identify trends, anomalies, and potential security risks",
+                "Quality oversight, security-standard adherence, and protocol compliance",
+                "Cross-functional collaboration on review findings and remediation",
+                "Management reports, dashboards, and performance metrics",
+                "Accurate documentation, procedures, audit trails, and quality records",
+                "Operational coordination, resource planning, workflow management, and support for the Review Manager",
+                "Continuous improvement of operational efficiency, quality, and compliance"
+              ],
+              "not_evidenced": [],
+              "partly": [],
+              "path_id": "PATH B",
+              "satisfies_required": true
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 29,
+              "exclusions": 3,
+              "input_source": "compiled",
+              "path_id": "PATH A",
+              "preferences": 22,
+              "proficiencies": 2,
+              "unresolved": 2,
+              "work_mode": 0
+            },
+            {
+              "asked": 29,
+              "exclusions": 3,
+              "input_source": "compiled",
+              "path_id": "PATH B",
+              "preferences": 17,
+              "proficiencies": 3,
+              "unresolved": 2,
+              "work_mode": 0
+            }
+          ],
+          "satisfies": [
+            "PATH A",
+            "PATH B"
+          ]
+        },
+        "D": {
+          "attribution": [
+            {
+              "met": [],
+              "not_evidenced": [
+                "SQL",
+                "hands-on SQL",
+                "Python",
+                "hands-on Python",
+                "Data Privacy",
+                "Information Security Principles",
+                "Cyber Incident Review and/or Data Breach Analysis",
+                "Data querying, analysis, automation, and reporting using SQL and Python",
+                "Review, quality assurance, compliance, or audit experience",
+                "People leadership or technical leadership",
+                "Strong analytical capabilities and attention to detail",
+                "Large-dataset analysis to identify trends, anomalies, and potential security risks",
+                "Quality oversight, security-standard adherence, and protocol compliance",
+                "Cross-functional collaboration on review findings and remediation",
+                "Management reports, dashboards, and performance metrics",
+                "Accurate documentation, procedures, audit trails, and quality records",
+                "Operational coordination, resource planning, workflow management, and support for the Review Manager",
+                "Continuous improvement of operational efficiency, quality, and compliance"
+              ],
+              "partly": [],
+              "path_id": "PATH A",
+              "satisfies_required": false
+            },
+            {
+              "met": [],
+              "not_evidenced": [
+                "People leadership or technical leadership",
+                "SQL",
+                "hands-on SQL",
+                "Python",
+                "hands-on Python",
+                "Data Privacy",
+                "Information Security Principles",
+                "Power Query",
+                "working knowledge of Power Query",
+                "Data querying, analysis, automation, and reporting using SQL and Python",
+                "Review, quality assurance, compliance, or audit experience",
+                "People leadership or technical leadership",
+                "Strong analytical capabilities and attention to detail",
+                "Large-dataset analysis to identify trends, anomalies, and potential security risks",
+                "Quality oversight, security-standard adherence, and protocol compliance",
+                "Cross-functional collaboration on review findings and remediation",
+                "Management reports, dashboards, and performance metrics",
+                "Accurate documentation, procedures, audit trails, and quality records",
+                "Operational coordination, resource planning, workflow management, and support for the Review Manager",
+                "Continuous improvement of operational efficiency, quality, and compliance"
+              ],
+              "partly": [],
+              "path_id": "PATH B",
+              "satisfies_required": false
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 29,
+              "exclusions": 3,
+              "input_source": "compiled",
+              "path_id": "PATH A",
+              "preferences": 22,
+              "proficiencies": 2,
+              "unresolved": 2,
+              "work_mode": 0
+            },
+            {
+              "asked": 29,
+              "exclusions": 3,
+              "input_source": "compiled",
+              "path_id": "PATH B",
+              "preferences": 17,
+              "proficiencies": 3,
+              "unresolved": 2,
+              "work_mode": 0
+            }
+          ],
+          "satisfies": []
+        }
+      },
+      "expected": {
+        "A": [
+          "PATH A"
+        ],
+        "B": [
+          "PATH B"
+        ],
+        "C": [
+          "PATH A",
+          "PATH B"
+        ],
+        "D": []
+      },
+      "match": {
+        "A": true,
+        "B": true,
+        "C": true,
+        "D": true
+      },
+      "overlay": false,
+      "path_only_required": {
+        "PATH A": 1,
+        "PATH B": 2
+      },
+      "paths": [
+        "PATH A",
+        "PATH B"
+      ],
+      "required_items_by_path": {
+        "PATH A": 18,
+        "PATH B": 19
+      },
+      "role": "R1",
+      "run": 3
+    },
+    {
+      "candidates": {
+        "A": {
+          "attribution": [
+            {
+              "met": [
+                "SQL",
+                "hands-on SQL",
+                "Python",
+                "hands-on Python",
+                "Data privacy",
+                "Information security principles",
+                "Synthetic Alpha Tool",
+                "People leadership or technical leadership",
+                "Data querying, analysis, automation, and reporting using SQL and Python",
+                "Analysis of large datasets to identify trends, anomalies, and potential security risks",
+                "Experience in review, quality assurance, compliance, or audit activities, rather than cybersecurity operations",
+                "Quality oversight and adherence to established protocols",
+                "Cross-functional collaboration on review findings and remediation support",
+                "Management reports, dashboards, and performance metrics supporting operational and business decisions",
+                "Accurate documentation, procedures, audit trails, and quality records",
+                "Operational workflow coordination, resource planning, and administrative support",
+                "Continuous improvement of operational efficiency, quality, and compliance",
+                "Strong analytical capabilities and attention to detail"
+              ],
+              "not_evidenced": [],
+              "partly": [],
+              "path_id": "PATH A",
+              "satisfies_required": true
+            },
+            {
+              "met": [
+                "SQL",
+                "hands-on SQL",
+                "Python",
+                "hands-on Python",
+                "Data privacy",
+                "Information security principles",
+                "People leadership or technical leadership",
+                "Data querying, analysis, automation, and reporting using SQL and Python",
+                "Analysis of large datasets to identify trends, anomalies, and potential security risks",
+                "Experience in review, quality assurance, compliance, or audit activities, rather than cybersecurity operations",
+                "Quality oversight and adherence to established protocols",
+                "Cross-functional collaboration on review findings and remediation support",
+                "Management reports, dashboards, and performance metrics supporting operational and business decisions",
+                "Accurate documentation, procedures, audit trails, and quality records",
+                "Operational workflow coordination, resource planning, and administrative support",
+                "Continuous improvement of operational efficiency, quality, and compliance",
+                "Strong analytical capabilities and attention to detail"
+              ],
+              "not_evidenced": [
+                "Synthetic Beta Tool"
+              ],
+              "partly": [],
+              "path_id": "PATH B",
+              "satisfies_required": false
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 29,
+              "exclusions": 3,
+              "input_source": "compiled",
+              "path_id": "PATH A",
+              "preferences": 18,
+              "proficiencies": 2,
+              "unresolved": 2,
+              "work_mode": 0
+            },
+            {
+              "asked": 29,
+              "exclusions": 3,
+              "input_source": "compiled",
+              "path_id": "PATH B",
+              "preferences": 18,
+              "proficiencies": 2,
+              "unresolved": 2,
+              "work_mode": 0
+            }
+          ],
+          "satisfies": [
+            "PATH A"
+          ]
+        },
+        "B": {
+          "attribution": [
+            {
+              "met": [
+                "SQL",
+                "hands-on SQL",
+                "Python",
+                "hands-on Python",
+                "Data privacy",
+                "Information security principles",
+                "People leadership or technical leadership",
+                "Data querying, analysis, automation, and reporting using SQL and Python",
+                "Analysis of large datasets to identify trends, anomalies, and potential security risks",
+                "Experience in review, quality assurance, compliance, or audit activities, rather than cybersecurity operations",
+                "Quality oversight and adherence to established protocols",
+                "Cross-functional collaboration on review findings and remediation support",
+                "Management reports, dashboards, and performance metrics supporting operational and business decisions",
+                "Accurate documentation, procedures, audit trails, and quality records",
+                "Operational workflow coordination, resource planning, and administrative support",
+                "Continuous improvement of operational efficiency, quality, and compliance",
+                "Strong analytical capabilities and attention to detail"
+              ],
+              "not_evidenced": [
+                "Synthetic Alpha Tool"
+              ],
+              "partly": [],
+              "path_id": "PATH A",
+              "satisfies_required": false
+            },
+            {
+              "met": [
+                "SQL",
+                "hands-on SQL",
+                "Python",
+                "hands-on Python",
+                "Data privacy",
+                "Information security principles",
+                "Synthetic Beta Tool",
+                "People leadership or technical leadership",
+                "Data querying, analysis, automation, and reporting using SQL and Python",
+                "Analysis of large datasets to identify trends, anomalies, and potential security risks",
+                "Experience in review, quality assurance, compliance, or audit activities, rather than cybersecurity operations",
+                "Quality oversight and adherence to established protocols",
+                "Cross-functional collaboration on review findings and remediation support",
+                "Management reports, dashboards, and performance metrics supporting operational and business decisions",
+                "Accurate documentation, procedures, audit trails, and quality records",
+                "Operational workflow coordination, resource planning, and administrative support",
+                "Continuous improvement of operational efficiency, quality, and compliance",
+                "Strong analytical capabilities and attention to detail"
+              ],
+              "not_evidenced": [],
+              "partly": [],
+              "path_id": "PATH B",
+              "satisfies_required": true
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 29,
+              "exclusions": 3,
+              "input_source": "compiled",
+              "path_id": "PATH A",
+              "preferences": 18,
+              "proficiencies": 2,
+              "unresolved": 2,
+              "work_mode": 0
+            },
+            {
+              "asked": 29,
+              "exclusions": 3,
+              "input_source": "compiled",
+              "path_id": "PATH B",
+              "preferences": 18,
+              "proficiencies": 2,
+              "unresolved": 2,
+              "work_mode": 0
+            }
+          ],
+          "satisfies": [
+            "PATH B"
+          ]
+        },
+        "C": {
+          "attribution": [
+            {
+              "met": [
+                "SQL",
+                "hands-on SQL",
+                "Python",
+                "hands-on Python",
+                "Data privacy",
+                "Information security principles",
+                "Synthetic Alpha Tool",
+                "People leadership or technical leadership",
+                "Data querying, analysis, automation, and reporting using SQL and Python",
+                "Analysis of large datasets to identify trends, anomalies, and potential security risks",
+                "Experience in review, quality assurance, compliance, or audit activities, rather than cybersecurity operations",
+                "Quality oversight and adherence to established protocols",
+                "Cross-functional collaboration on review findings and remediation support",
+                "Management reports, dashboards, and performance metrics supporting operational and business decisions",
+                "Accurate documentation, procedures, audit trails, and quality records",
+                "Operational workflow coordination, resource planning, and administrative support",
+                "Continuous improvement of operational efficiency, quality, and compliance",
+                "Strong analytical capabilities and attention to detail"
+              ],
+              "not_evidenced": [],
+              "partly": [],
+              "path_id": "PATH A",
+              "satisfies_required": true
+            },
+            {
+              "met": [
+                "SQL",
+                "hands-on SQL",
+                "Python",
+                "hands-on Python",
+                "Data privacy",
+                "Information security principles",
+                "Synthetic Beta Tool",
+                "People leadership or technical leadership",
+                "Data querying, analysis, automation, and reporting using SQL and Python",
+                "Analysis of large datasets to identify trends, anomalies, and potential security risks",
+                "Experience in review, quality assurance, compliance, or audit activities, rather than cybersecurity operations",
+                "Quality oversight and adherence to established protocols",
+                "Cross-functional collaboration on review findings and remediation support",
+                "Management reports, dashboards, and performance metrics supporting operational and business decisions",
+                "Accurate documentation, procedures, audit trails, and quality records",
+                "Operational workflow coordination, resource planning, and administrative support",
+                "Continuous improvement of operational efficiency, quality, and compliance",
+                "Strong analytical capabilities and attention to detail"
+              ],
+              "not_evidenced": [],
+              "partly": [],
+              "path_id": "PATH B",
+              "satisfies_required": true
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 29,
+              "exclusions": 3,
+              "input_source": "compiled",
+              "path_id": "PATH A",
+              "preferences": 18,
+              "proficiencies": 2,
+              "unresolved": 2,
+              "work_mode": 0
+            },
+            {
+              "asked": 29,
+              "exclusions": 3,
+              "input_source": "compiled",
+              "path_id": "PATH B",
+              "preferences": 18,
+              "proficiencies": 2,
+              "unresolved": 2,
+              "work_mode": 0
+            }
+          ],
+          "satisfies": [
+            "PATH A",
+            "PATH B"
+          ]
+        },
+        "D": {
+          "attribution": [
+            {
+              "met": [],
+              "not_evidenced": [
+                "SQL",
+                "hands-on SQL",
+                "Python",
+                "hands-on Python",
+                "Data privacy",
+                "Information security principles",
+                "Synthetic Alpha Tool",
+                "People leadership or technical leadership",
+                "Data querying, analysis, automation, and reporting using SQL and Python",
+                "Analysis of large datasets to identify trends, anomalies, and potential security risks",
+                "Experience in review, quality assurance, compliance, or audit activities, rather than cybersecurity operations",
+                "Quality oversight and adherence to established protocols",
+                "Cross-functional collaboration on review findings and remediation support",
+                "Management reports, dashboards, and performance metrics supporting operational and business decisions",
+                "Accurate documentation, procedures, audit trails, and quality records",
+                "Operational workflow coordination, resource planning, and administrative support",
+                "Continuous improvement of operational efficiency, quality, and compliance",
+                "Strong analytical capabilities and attention to detail"
+              ],
+              "partly": [],
+              "path_id": "PATH A",
+              "satisfies_required": false
+            },
+            {
+              "met": [],
+              "not_evidenced": [
+                "SQL",
+                "hands-on SQL",
+                "Python",
+                "hands-on Python",
+                "Data privacy",
+                "Information security principles",
+                "Synthetic Beta Tool",
+                "People leadership or technical leadership",
+                "Data querying, analysis, automation, and reporting using SQL and Python",
+                "Analysis of large datasets to identify trends, anomalies, and potential security risks",
+                "Experience in review, quality assurance, compliance, or audit activities, rather than cybersecurity operations",
+                "Quality oversight and adherence to established protocols",
+                "Cross-functional collaboration on review findings and remediation support",
+                "Management reports, dashboards, and performance metrics supporting operational and business decisions",
+                "Accurate documentation, procedures, audit trails, and quality records",
+                "Operational workflow coordination, resource planning, and administrative support",
+                "Continuous improvement of operational efficiency, quality, and compliance",
+                "Strong analytical capabilities and attention to detail"
+              ],
+              "partly": [],
+              "path_id": "PATH B",
+              "satisfies_required": false
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 29,
+              "exclusions": 3,
+              "input_source": "compiled",
+              "path_id": "PATH A",
+              "preferences": 18,
+              "proficiencies": 2,
+              "unresolved": 2,
+              "work_mode": 0
+            },
+            {
+              "asked": 29,
+              "exclusions": 3,
+              "input_source": "compiled",
+              "path_id": "PATH B",
+              "preferences": 18,
+              "proficiencies": 2,
+              "unresolved": 2,
+              "work_mode": 0
+            }
+          ],
+          "satisfies": []
+        }
+      },
+      "expected": {
+        "A": [
+          "PATH A"
+        ],
+        "B": [
+          "PATH B"
+        ],
+        "C": [
+          "PATH A",
+          "PATH B"
+        ],
+        "D": []
+      },
+      "match": {
+        "A": true,
+        "B": true,
+        "C": true,
+        "D": true
+      },
+      "overlay": true,
+      "path_only_required": {
+        "PATH A": 1,
+        "PATH B": 1
+      },
+      "paths": [
+        "PATH A",
+        "PATH B"
+      ],
+      "required_items_by_path": {
+        "PATH A": 18,
+        "PATH B": 18
+      },
+      "role": "R1",
+      "run": 1
+    },
+    {
+      "candidates": {
+        "A": {
+          "attribution": [
+            {
+              "met": [
+                "Full Stack Software Development",
+                "hands-on Full Stack Software Development",
+                "Solution Design",
+                "hands-on Solution Design",
+                "Data Engineering",
+                "hands-on Data Engineering",
+                "AI/ML Implementation",
+                "Python",
+                "hands-on Python",
+                "Java",
+                "hands-on Java",
+                "API Development",
+                "Service Development",
+                "Distributed Systems",
+                "hands-on Distributed Systems",
+                "Generative AI",
+                "hands-on Generative AI",
+                "Large Language Models",
+                "Retrieval-Augmented Generation",
+                "Agentic AI",
+                "AI Orchestration",
+                "Prompt Engineering",
+                "MCP",
+                "A2A",
+                "AI Application Development Patterns",
+                "NLP Frameworks",
+                "DevOps",
+                "CI/CD",
+                "Terraform",
+                "AKS",
+                "EKS",
+                "GitHub Actions",
+                "Containerized Deployments",
+                "React",
+                "Bootstrap",
+                "Related User Interface Frameworks",
+                "Azure DevOps",
+                "working knowledge of Azure DevOps",
+                "Jira",
+                "working knowledge of Jira",
+                "Modern Software Delivery Practices",
+                "working knowledge of Modern Software Delivery Practices",
+                "Snowflake",
+                "Databricks",
+                "Modern Data Platforms",
+                "Data Integration",
+                "ETL",
+                "Data Quality",
+                "Data Discovery",
+                "Enterprise Data Management",
+                "Third-Party and Enterprise API Integration",
+                "Metadata Management Tools",
+                "working knowledge of Metadata Management Tools",
+                "Data Governance",
+                "working knowledge of Data Governance",
+                "TensorFlow|PyTorch|scikit-learn|Similar Machine Learning Libraries",
+                "Azure|AWS",
+                "Enterprise-scale applications",
+                "Enterprise data integration across SaaS applications",
+                "Production generative AI solutions",
+                "Staff-level hands-on engineering individual contributor",
+                "Understand client requirements and design systems that solve client problems",
+                "Build proofs of concept",
+                "Collaborate with existing teams to enhance existing products and features",
+                "Work on a hybrid basis in Hyderabad",
+                "Translate business and product requirements into end-to-end solutions, user stories, and technical deliverables",
+                "Design and develop scalable, secure, maintainable enterprise applications integrated into existing products",
+                "Contribute directly to development, code reviews, technical design discussions, and architecture reviews",
+                "Own solution design decisions aligned with security, compliance, performance, and operational requirements",
+                "Champion engineering best practices, coding standards, testing strategies, and quality metrics",
+                "Evaluate and adopt emerging technologies to improve application and AI-system scalability, maintainability, performance, and reliability",
+                "Collaborate with data engineers and data scientists on data quality, availability, and successful AI/ML deployment",
+                "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads",
+                "Recent experience building and deploying AI-powered applications",
+                "Implement and deploy generative AI solutions in production",
+                "Improve generative AI quality, relevance, and reliability through prompt engineering and AI best practices",
+                "Communicate technical solutions, risks, and recommendations to leadership, business stakeholders, and clients",
+                "Stay current with software engineering, AI, machine learning, and cloud advances and recommend practical innovations",
+                "Provide technical leadership, mentor team members, resolve complex technical challenges, and foster collaborative engineering",
+                "Strong analytical, problem-solving, and troubleshooting capabilities",
+                "Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering organizations"
+              ],
+              "not_evidenced": [],
+              "partly": [],
+              "path_id": null,
+              "satisfies_required": true
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 82,
+              "exclusions": 0,
+              "input_source": "compiled",
+              "path_id": null,
+              "preferences": 1,
+              "proficiencies": 12,
+              "unresolved": 14,
+              "work_mode": 0
+            }
+          ],
+          "satisfies": [
+            null
+          ]
+        },
+        "B": {
+          "attribution": [
+            {
+              "met": [],
+              "not_evidenced": [
+                "Full Stack Software Development",
+                "hands-on Full Stack Software Development",
+                "Solution Design",
+                "hands-on Solution Design",
+                "Data Engineering",
+                "hands-on Data Engineering",
+                "AI/ML Implementation",
+                "Python",
+                "hands-on Python",
+                "Java",
+                "hands-on Java",
+                "API Development",
+                "Service Development",
+                "Distributed Systems",
+                "hands-on Distributed Systems",
+                "Generative AI",
+                "hands-on Generative AI",
+                "Large Language Models",
+                "Retrieval-Augmented Generation",
+                "Agentic AI",
+                "AI Orchestration",
+                "Prompt Engineering",
+                "MCP",
+                "A2A",
+                "AI Application Development Patterns",
+                "NLP Frameworks",
+                "DevOps",
+                "CI/CD",
+                "Terraform",
+                "AKS",
+                "EKS",
+                "GitHub Actions",
+                "Containerized Deployments",
+                "React",
+                "Bootstrap",
+                "Related User Interface Frameworks",
+                "Azure DevOps",
+                "working knowledge of Azure DevOps",
+                "Jira",
+                "working knowledge of Jira",
+                "Modern Software Delivery Practices",
+                "working knowledge of Modern Software Delivery Practices",
+                "Snowflake",
+                "Databricks",
+                "Modern Data Platforms",
+                "Data Integration",
+                "ETL",
+                "Data Quality",
+                "Data Discovery",
+                "Enterprise Data Management",
+                "Third-Party and Enterprise API Integration",
+                "Metadata Management Tools",
+                "working knowledge of Metadata Management Tools",
+                "Data Governance",
+                "working knowledge of Data Governance",
+                "TensorFlow|PyTorch|scikit-learn|Similar Machine Learning Libraries",
+                "Azure|AWS",
+                "Enterprise-scale applications",
+                "Enterprise data integration across SaaS applications",
+                "Production generative AI solutions",
+                "Staff-level hands-on engineering individual contributor",
+                "Understand client requirements and design systems that solve client problems",
+                "Build proofs of concept",
+                "Collaborate with existing teams to enhance existing products and features",
+                "Work on a hybrid basis in Hyderabad",
+                "Translate business and product requirements into end-to-end solutions, user stories, and technical deliverables",
+                "Design and develop scalable, secure, maintainable enterprise applications integrated into existing products",
+                "Contribute directly to development, code reviews, technical design discussions, and architecture reviews",
+                "Own solution design decisions aligned with security, compliance, performance, and operational requirements",
+                "Champion engineering best practices, coding standards, testing strategies, and quality metrics",
+                "Evaluate and adopt emerging technologies to improve application and AI-system scalability, maintainability, performance, and reliability",
+                "Collaborate with data engineers and data scientists on data quality, availability, and successful AI/ML deployment",
+                "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads",
+                "Recent experience building and deploying AI-powered applications",
+                "Implement and deploy generative AI solutions in production",
+                "Improve generative AI quality, relevance, and reliability through prompt engineering and AI best practices",
+                "Communicate technical solutions, risks, and recommendations to leadership, business stakeholders, and clients",
+                "Stay current with software engineering, AI, machine learning, and cloud advances and recommend practical innovations",
+                "Provide technical leadership, mentor team members, resolve complex technical challenges, and foster collaborative engineering",
+                "Strong analytical, problem-solving, and troubleshooting capabilities",
+                "Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering organizations"
+              ],
+              "partly": [],
+              "path_id": null,
+              "satisfies_required": false
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 82,
+              "exclusions": 0,
+              "input_source": "compiled",
+              "path_id": null,
+              "preferences": 1,
+              "proficiencies": 12,
+              "unresolved": 14,
+              "work_mode": 0
+            }
+          ],
+          "satisfies": []
+        },
+        "C": {
+          "attribution": [
+            {
+              "met": [
+                "Full Stack Software Development",
+                "hands-on Full Stack Software Development",
+                "Solution Design",
+                "hands-on Solution Design",
+                "Data Engineering",
+                "hands-on Data Engineering",
+                "AI/ML Implementation",
+                "Python",
+                "hands-on Python",
+                "Java",
+                "hands-on Java",
+                "API Development",
+                "Service Development",
+                "Distributed Systems",
+                "hands-on Distributed Systems",
+                "Generative AI",
+                "hands-on Generative AI",
+                "Large Language Models",
+                "Retrieval-Augmented Generation",
+                "Agentic AI",
+                "AI Orchestration",
+                "Prompt Engineering",
+                "MCP",
+                "A2A",
+                "AI Application Development Patterns",
+                "NLP Frameworks",
+                "DevOps",
+                "CI/CD",
+                "Terraform",
+                "AKS",
+                "EKS",
+                "GitHub Actions",
+                "Containerized Deployments",
+                "React",
+                "Bootstrap",
+                "Related User Interface Frameworks",
+                "Azure DevOps",
+                "working knowledge of Azure DevOps",
+                "Jira",
+                "working knowledge of Jira",
+                "Modern Software Delivery Practices",
+                "working knowledge of Modern Software Delivery Practices",
+                "Snowflake",
+                "Databricks",
+                "Modern Data Platforms",
+                "Data Integration",
+                "ETL",
+                "Data Quality",
+                "Data Discovery",
+                "Enterprise Data Management",
+                "Third-Party and Enterprise API Integration",
+                "Metadata Management Tools",
+                "working knowledge of Metadata Management Tools",
+                "Data Governance",
+                "working knowledge of Data Governance",
+                "TensorFlow|PyTorch|scikit-learn|Similar Machine Learning Libraries",
+                "Azure|AWS",
+                "Enterprise-scale applications",
+                "Enterprise data integration across SaaS applications",
+                "Production generative AI solutions",
+                "Staff-level hands-on engineering individual contributor",
+                "Understand client requirements and design systems that solve client problems",
+                "Build proofs of concept",
+                "Collaborate with existing teams to enhance existing products and features",
+                "Work on a hybrid basis in Hyderabad",
+                "Translate business and product requirements into end-to-end solutions, user stories, and technical deliverables",
+                "Design and develop scalable, secure, maintainable enterprise applications integrated into existing products",
+                "Contribute directly to development, code reviews, technical design discussions, and architecture reviews",
+                "Own solution design decisions aligned with security, compliance, performance, and operational requirements",
+                "Champion engineering best practices, coding standards, testing strategies, and quality metrics",
+                "Evaluate and adopt emerging technologies to improve application and AI-system scalability, maintainability, performance, and reliability",
+                "Collaborate with data engineers and data scientists on data quality, availability, and successful AI/ML deployment",
+                "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads",
+                "Recent experience building and deploying AI-powered applications",
+                "Implement and deploy generative AI solutions in production",
+                "Improve generative AI quality, relevance, and reliability through prompt engineering and AI best practices",
+                "Communicate technical solutions, risks, and recommendations to leadership, business stakeholders, and clients",
+                "Stay current with software engineering, AI, machine learning, and cloud advances and recommend practical innovations",
+                "Provide technical leadership, mentor team members, resolve complex technical challenges, and foster collaborative engineering",
+                "Strong analytical, problem-solving, and troubleshooting capabilities",
+                "Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering organizations"
+              ],
+              "not_evidenced": [],
+              "partly": [],
+              "path_id": null,
+              "satisfies_required": true
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 82,
+              "exclusions": 0,
+              "input_source": "compiled",
+              "path_id": null,
+              "preferences": 1,
+              "proficiencies": 12,
+              "unresolved": 14,
+              "work_mode": 0
+            }
+          ],
+          "satisfies": [
+            null
+          ]
+        },
+        "D": {
+          "attribution": [
+            {
+              "met": [],
+              "not_evidenced": [
+                "Full Stack Software Development",
+                "hands-on Full Stack Software Development",
+                "Solution Design",
+                "hands-on Solution Design",
+                "Data Engineering",
+                "hands-on Data Engineering",
+                "AI/ML Implementation",
+                "Python",
+                "hands-on Python",
+                "Java",
+                "hands-on Java",
+                "API Development",
+                "Service Development",
+                "Distributed Systems",
+                "hands-on Distributed Systems",
+                "Generative AI",
+                "hands-on Generative AI",
+                "Large Language Models",
+                "Retrieval-Augmented Generation",
+                "Agentic AI",
+                "AI Orchestration",
+                "Prompt Engineering",
+                "MCP",
+                "A2A",
+                "AI Application Development Patterns",
+                "NLP Frameworks",
+                "DevOps",
+                "CI/CD",
+                "Terraform",
+                "AKS",
+                "EKS",
+                "GitHub Actions",
+                "Containerized Deployments",
+                "React",
+                "Bootstrap",
+                "Related User Interface Frameworks",
+                "Azure DevOps",
+                "working knowledge of Azure DevOps",
+                "Jira",
+                "working knowledge of Jira",
+                "Modern Software Delivery Practices",
+                "working knowledge of Modern Software Delivery Practices",
+                "Snowflake",
+                "Databricks",
+                "Modern Data Platforms",
+                "Data Integration",
+                "ETL",
+                "Data Quality",
+                "Data Discovery",
+                "Enterprise Data Management",
+                "Third-Party and Enterprise API Integration",
+                "Metadata Management Tools",
+                "working knowledge of Metadata Management Tools",
+                "Data Governance",
+                "working knowledge of Data Governance",
+                "TensorFlow|PyTorch|scikit-learn|Similar Machine Learning Libraries",
+                "Azure|AWS",
+                "Enterprise-scale applications",
+                "Enterprise data integration across SaaS applications",
+                "Production generative AI solutions",
+                "Staff-level hands-on engineering individual contributor",
+                "Understand client requirements and design systems that solve client problems",
+                "Build proofs of concept",
+                "Collaborate with existing teams to enhance existing products and features",
+                "Work on a hybrid basis in Hyderabad",
+                "Translate business and product requirements into end-to-end solutions, user stories, and technical deliverables",
+                "Design and develop scalable, secure, maintainable enterprise applications integrated into existing products",
+                "Contribute directly to development, code reviews, technical design discussions, and architecture reviews",
+                "Own solution design decisions aligned with security, compliance, performance, and operational requirements",
+                "Champion engineering best practices, coding standards, testing strategies, and quality metrics",
+                "Evaluate and adopt emerging technologies to improve application and AI-system scalability, maintainability, performance, and reliability",
+                "Collaborate with data engineers and data scientists on data quality, availability, and successful AI/ML deployment",
+                "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads",
+                "Recent experience building and deploying AI-powered applications",
+                "Implement and deploy generative AI solutions in production",
+                "Improve generative AI quality, relevance, and reliability through prompt engineering and AI best practices",
+                "Communicate technical solutions, risks, and recommendations to leadership, business stakeholders, and clients",
+                "Stay current with software engineering, AI, machine learning, and cloud advances and recommend practical innovations",
+                "Provide technical leadership, mentor team members, resolve complex technical challenges, and foster collaborative engineering",
+                "Strong analytical, problem-solving, and troubleshooting capabilities",
+                "Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering organizations"
+              ],
+              "partly": [],
+              "path_id": null,
+              "satisfies_required": false
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 82,
+              "exclusions": 0,
+              "input_source": "compiled",
+              "path_id": null,
+              "preferences": 1,
+              "proficiencies": 12,
+              "unresolved": 14,
+              "work_mode": 0
+            }
+          ],
+          "satisfies": []
+        }
+      },
+      "expected": {
+        "A": [
+          null
+        ],
+        "B": [],
+        "C": [
+          null
+        ],
+        "D": []
+      },
+      "match": {
+        "A": true,
+        "B": true,
+        "C": true,
+        "D": true
+      },
+      "overlay": false,
+      "path_only_required": null,
+      "paths": [
+        null
+      ],
+      "required_items_by_path": {
+        "None": 81
+      },
+      "role": "R2",
+      "run": 1
+    },
+    {
+      "candidates": {
+        "A": {
+          "attribution": [
+            {
+              "met": [
+                "Financial analysis",
+                "Financial planning",
+                "Budgeting",
+                "Forecasting",
+                "Variance analysis",
+                "Financial modeling",
+                "Scenario analysis",
+                "Sensitivity analysis",
+                "Microsoft Excel",
+                "advanced proficiency in Microsoft Excel",
+                "Power BI|Similar business intelligence/reporting platform",
+                "SAP|Oracle|Comparable ERP platforms",
+                "FP&A, Business Finance, Commercial Finance, or closely related financial planning roles",
+                "Meaningful FP&A or business-finance ownership",
+                "Commercial judgment",
+                "Stakeholder management",
+                "Strong business partnering and communication",
+                "Experience presenting financial analysis and recommendations to senior stakeholders",
+                "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+              ],
+              "not_evidenced": [],
+              "partly": [],
+              "path_id": null,
+              "satisfies_required": true
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 35,
+              "exclusions": 1,
+              "input_source": "compiled",
+              "path_id": null,
+              "preferences": 22,
+              "proficiencies": 1,
+              "unresolved": 1,
+              "work_mode": 1
+            }
+          ],
+          "satisfies": [
+            null
+          ]
+        },
+        "B": {
+          "attribution": [
+            {
+              "met": [],
+              "not_evidenced": [
+                "Financial analysis",
+                "Financial planning",
+                "Budgeting",
+                "Forecasting",
+                "Variance analysis",
+                "Financial modeling",
+                "Scenario analysis",
+                "Sensitivity analysis",
+                "Microsoft Excel",
+                "advanced proficiency in Microsoft Excel",
+                "Power BI|Similar business intelligence/reporting platform",
+                "SAP|Oracle|Comparable ERP platforms",
+                "FP&A, Business Finance, Commercial Finance, or closely related financial planning roles",
+                "Meaningful FP&A or business-finance ownership",
+                "Commercial judgment",
+                "Stakeholder management",
+                "Strong business partnering and communication",
+                "Experience presenting financial analysis and recommendations to senior stakeholders",
+                "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+              ],
+              "partly": [],
+              "path_id": null,
+              "satisfies_required": false
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 35,
+              "exclusions": 1,
+              "input_source": "compiled",
+              "path_id": null,
+              "preferences": 22,
+              "proficiencies": 1,
+              "unresolved": 1,
+              "work_mode": 1
+            }
+          ],
+          "satisfies": []
+        },
+        "C": {
+          "attribution": [
+            {
+              "met": [
+                "Financial analysis",
+                "Financial planning",
+                "Budgeting",
+                "Forecasting",
+                "Variance analysis",
+                "Financial modeling",
+                "Scenario analysis",
+                "Sensitivity analysis",
+                "Microsoft Excel",
+                "advanced proficiency in Microsoft Excel",
+                "Power BI|Similar business intelligence/reporting platform",
+                "SAP|Oracle|Comparable ERP platforms",
+                "FP&A, Business Finance, Commercial Finance, or closely related financial planning roles",
+                "Meaningful FP&A or business-finance ownership",
+                "Commercial judgment",
+                "Stakeholder management",
+                "Strong business partnering and communication",
+                "Experience presenting financial analysis and recommendations to senior stakeholders",
+                "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+              ],
+              "not_evidenced": [],
+              "partly": [],
+              "path_id": null,
+              "satisfies_required": true
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 35,
+              "exclusions": 1,
+              "input_source": "compiled",
+              "path_id": null,
+              "preferences": 22,
+              "proficiencies": 1,
+              "unresolved": 1,
+              "work_mode": 1
+            }
+          ],
+          "satisfies": [
+            null
+          ]
+        },
+        "D": {
+          "attribution": [
+            {
+              "met": [],
+              "not_evidenced": [
+                "Financial analysis",
+                "Financial planning",
+                "Budgeting",
+                "Forecasting",
+                "Variance analysis",
+                "Financial modeling",
+                "Scenario analysis",
+                "Sensitivity analysis",
+                "Microsoft Excel",
+                "advanced proficiency in Microsoft Excel",
+                "Power BI|Similar business intelligence/reporting platform",
+                "SAP|Oracle|Comparable ERP platforms",
+                "FP&A, Business Finance, Commercial Finance, or closely related financial planning roles",
+                "Meaningful FP&A or business-finance ownership",
+                "Commercial judgment",
+                "Stakeholder management",
+                "Strong business partnering and communication",
+                "Experience presenting financial analysis and recommendations to senior stakeholders",
+                "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+              ],
+              "partly": [],
+              "path_id": null,
+              "satisfies_required": false
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 35,
+              "exclusions": 1,
+              "input_source": "compiled",
+              "path_id": null,
+              "preferences": 22,
+              "proficiencies": 1,
+              "unresolved": 1,
+              "work_mode": 1
+            }
+          ],
+          "satisfies": []
+        }
+      },
+      "expected": {
+        "A": [
+          null
+        ],
+        "B": [],
+        "C": [
+          null
+        ],
+        "D": []
+      },
+      "match": {
+        "A": true,
+        "B": true,
+        "C": true,
+        "D": true
+      },
+      "overlay": false,
+      "path_only_required": null,
+      "paths": [
+        null
+      ],
+      "required_items_by_path": {
+        "None": 19
+      },
+      "role": "R3",
+      "run": 1
+    },
+    {
+      "candidates": {
+        "A": {
+          "attribution": [
+            {
+              "met": [
+                "Full Stack Software Development",
+                "hands-on Full Stack Software Development",
+                "Solution Design",
+                "hands-on Solution Design",
+                "Data Engineering",
+                "hands-on Data Engineering",
+                "AI/ML Implementation",
+                "Python",
+                "hands-on Python",
+                "Java",
+                "hands-on Java",
+                "API Development",
+                "Service Development",
+                "Distributed Systems",
+                "hands-on Distributed Systems",
+                "Generative AI",
+                "hands-on Generative AI",
+                "Large Language Models",
+                "Retrieval-Augmented Generation",
+                "Agentic AI",
+                "AI Orchestration",
+                "Prompt Engineering",
+                "MCP",
+                "A2A",
+                "AI Application Development Patterns",
+                "NLP Frameworks",
+                "DevOps",
+                "CI/CD",
+                "Terraform",
+                "AKS",
+                "EKS",
+                "GitHub Actions",
+                "Containerized Deployments",
+                "React",
+                "Bootstrap",
+                "Related User Interface Frameworks",
+                "Azure DevOps",
+                "working knowledge of Azure DevOps",
+                "Jira",
+                "working knowledge of Jira",
+                "Modern Software Delivery Practices",
+                "working knowledge of Modern Software Delivery Practices",
+                "Snowflake",
+                "Databricks",
+                "Modern Data Platforms",
+                "Data Integration",
+                "ETL",
+                "Data Quality",
+                "Data Discovery",
+                "Enterprise Data Management",
+                "Third-Party and Enterprise API Integration",
+                "Metadata Management Tools",
+                "working knowledge of Metadata Management Tools",
+                "Data Governance",
+                "working knowledge of Data Governance",
+                "Synthetic Alpha Tool",
+                "TensorFlow|PyTorch|scikit-learn|Similar Machine Learning Libraries",
+                "Azure|AWS",
+                "Enterprise-scale applications",
+                "Enterprise data integration across SaaS applications",
+                "Production generative AI solutions",
+                "Staff-level hands-on engineering individual contributor",
+                "Understand client requirements and design systems that solve client problems",
+                "Build proofs of concept",
+                "Collaborate with existing teams to enhance existing products and features",
+                "Work on a hybrid basis in Hyderabad",
+                "Translate business and product requirements into end-to-end solutions, user stories, and technical deliverables",
+                "Design and develop scalable, secure, maintainable enterprise applications integrated into existing products",
+                "Contribute directly to development, code reviews, technical design discussions, and architecture reviews",
+                "Own solution design decisions aligned with security, compliance, performance, and operational requirements",
+                "Champion engineering best practices, coding standards, testing strategies, and quality metrics",
+                "Evaluate and adopt emerging technologies to improve application and AI-system scalability, maintainability, performance, and reliability",
+                "Collaborate with data engineers and data scientists on data quality, availability, and successful AI/ML deployment",
+                "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads",
+                "Recent experience building and deploying AI-powered applications",
+                "Implement and deploy generative AI solutions in production",
+                "Improve generative AI quality, relevance, and reliability through prompt engineering and AI best practices",
+                "Communicate technical solutions, risks, and recommendations to leadership, business stakeholders, and clients",
+                "Stay current with software engineering, AI, machine learning, and cloud advances and recommend practical innovations",
+                "Provide technical leadership, mentor team members, resolve complex technical challenges, and foster collaborative engineering",
+                "Strong analytical, problem-solving, and troubleshooting capabilities",
+                "Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering organizations"
+              ],
+              "not_evidenced": [],
+              "partly": [],
+              "path_id": "PATH A",
+              "satisfies_required": true
+            },
+            {
+              "met": [
+                "Full Stack Software Development",
+                "hands-on Full Stack Software Development",
+                "Solution Design",
+                "hands-on Solution Design",
+                "Data Engineering",
+                "hands-on Data Engineering",
+                "AI/ML Implementation",
+                "Python",
+                "hands-on Python",
+                "Java",
+                "hands-on Java",
+                "API Development",
+                "Service Development",
+                "Distributed Systems",
+                "hands-on Distributed Systems",
+                "Generative AI",
+                "hands-on Generative AI",
+                "Large Language Models",
+                "Retrieval-Augmented Generation",
+                "Agentic AI",
+                "AI Orchestration",
+                "Prompt Engineering",
+                "MCP",
+                "A2A",
+                "AI Application Development Patterns",
+                "NLP Frameworks",
+                "DevOps",
+                "CI/CD",
+                "Terraform",
+                "AKS",
+                "EKS",
+                "GitHub Actions",
+                "Containerized Deployments",
+                "React",
+                "Bootstrap",
+                "Related User Interface Frameworks",
+                "Azure DevOps",
+                "working knowledge of Azure DevOps",
+                "Jira",
+                "working knowledge of Jira",
+                "Modern Software Delivery Practices",
+                "working knowledge of Modern Software Delivery Practices",
+                "Snowflake",
+                "Databricks",
+                "Modern Data Platforms",
+                "Data Integration",
+                "ETL",
+                "Data Quality",
+                "Data Discovery",
+                "Enterprise Data Management",
+                "Third-Party and Enterprise API Integration",
+                "Metadata Management Tools",
+                "working knowledge of Metadata Management Tools",
+                "Data Governance",
+                "working knowledge of Data Governance",
+                "TensorFlow|PyTorch|scikit-learn|Similar Machine Learning Libraries",
+                "Azure|AWS",
+                "Enterprise-scale applications",
+                "Enterprise data integration across SaaS applications",
+                "Production generative AI solutions",
+                "Staff-level hands-on engineering individual contributor",
+                "Understand client requirements and design systems that solve client problems",
+                "Build proofs of concept",
+                "Collaborate with existing teams to enhance existing products and features",
+                "Work on a hybrid basis in Hyderabad",
+                "Translate business and product requirements into end-to-end solutions, user stories, and technical deliverables",
+                "Design and develop scalable, secure, maintainable enterprise applications integrated into existing products",
+                "Contribute directly to development, code reviews, technical design discussions, and architecture reviews",
+                "Own solution design decisions aligned with security, compliance, performance, and operational requirements",
+                "Champion engineering best practices, coding standards, testing strategies, and quality metrics",
+                "Evaluate and adopt emerging technologies to improve application and AI-system scalability, maintainability, performance, and reliability",
+                "Collaborate with data engineers and data scientists on data quality, availability, and successful AI/ML deployment",
+                "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads",
+                "Recent experience building and deploying AI-powered applications",
+                "Implement and deploy generative AI solutions in production",
+                "Improve generative AI quality, relevance, and reliability through prompt engineering and AI best practices",
+                "Communicate technical solutions, risks, and recommendations to leadership, business stakeholders, and clients",
+                "Stay current with software engineering, AI, machine learning, and cloud advances and recommend practical innovations",
+                "Provide technical leadership, mentor team members, resolve complex technical challenges, and foster collaborative engineering",
+                "Strong analytical, problem-solving, and troubleshooting capabilities",
+                "Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering organizations"
+              ],
+              "not_evidenced": [
+                "Synthetic Beta Tool"
+              ],
+              "partly": [],
+              "path_id": "PATH B",
+              "satisfies_required": false
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 83,
+              "exclusions": 0,
+              "input_source": "compiled",
+              "path_id": "PATH A",
+              "preferences": 1,
+              "proficiencies": 12,
+              "unresolved": 14,
+              "work_mode": 0
+            },
+            {
+              "asked": 83,
+              "exclusions": 0,
+              "input_source": "compiled",
+              "path_id": "PATH B",
+              "preferences": 1,
+              "proficiencies": 12,
+              "unresolved": 14,
+              "work_mode": 0
+            }
+          ],
+          "satisfies": [
+            "PATH A"
+          ]
+        },
+        "B": {
+          "attribution": [
+            {
+              "met": [
+                "Full Stack Software Development",
+                "hands-on Full Stack Software Development",
+                "Solution Design",
+                "hands-on Solution Design",
+                "Data Engineering",
+                "hands-on Data Engineering",
+                "AI/ML Implementation",
+                "Python",
+                "hands-on Python",
+                "Java",
+                "hands-on Java",
+                "API Development",
+                "Service Development",
+                "Distributed Systems",
+                "hands-on Distributed Systems",
+                "Generative AI",
+                "hands-on Generative AI",
+                "Large Language Models",
+                "Retrieval-Augmented Generation",
+                "Agentic AI",
+                "AI Orchestration",
+                "Prompt Engineering",
+                "MCP",
+                "A2A",
+                "AI Application Development Patterns",
+                "NLP Frameworks",
+                "DevOps",
+                "CI/CD",
+                "Terraform",
+                "AKS",
+                "EKS",
+                "GitHub Actions",
+                "Containerized Deployments",
+                "React",
+                "Bootstrap",
+                "Related User Interface Frameworks",
+                "Azure DevOps",
+                "working knowledge of Azure DevOps",
+                "Jira",
+                "working knowledge of Jira",
+                "Modern Software Delivery Practices",
+                "working knowledge of Modern Software Delivery Practices",
+                "Snowflake",
+                "Databricks",
+                "Modern Data Platforms",
+                "Data Integration",
+                "ETL",
+                "Data Quality",
+                "Data Discovery",
+                "Enterprise Data Management",
+                "Third-Party and Enterprise API Integration",
+                "Metadata Management Tools",
+                "working knowledge of Metadata Management Tools",
+                "Data Governance",
+                "working knowledge of Data Governance",
+                "TensorFlow|PyTorch|scikit-learn|Similar Machine Learning Libraries",
+                "Azure|AWS",
+                "Enterprise-scale applications",
+                "Enterprise data integration across SaaS applications",
+                "Production generative AI solutions",
+                "Staff-level hands-on engineering individual contributor",
+                "Understand client requirements and design systems that solve client problems",
+                "Build proofs of concept",
+                "Collaborate with existing teams to enhance existing products and features",
+                "Work on a hybrid basis in Hyderabad",
+                "Translate business and product requirements into end-to-end solutions, user stories, and technical deliverables",
+                "Design and develop scalable, secure, maintainable enterprise applications integrated into existing products",
+                "Contribute directly to development, code reviews, technical design discussions, and architecture reviews",
+                "Own solution design decisions aligned with security, compliance, performance, and operational requirements",
+                "Champion engineering best practices, coding standards, testing strategies, and quality metrics",
+                "Evaluate and adopt emerging technologies to improve application and AI-system scalability, maintainability, performance, and reliability",
+                "Collaborate with data engineers and data scientists on data quality, availability, and successful AI/ML deployment",
+                "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads",
+                "Recent experience building and deploying AI-powered applications",
+                "Implement and deploy generative AI solutions in production",
+                "Improve generative AI quality, relevance, and reliability through prompt engineering and AI best practices",
+                "Communicate technical solutions, risks, and recommendations to leadership, business stakeholders, and clients",
+                "Stay current with software engineering, AI, machine learning, and cloud advances and recommend practical innovations",
+                "Provide technical leadership, mentor team members, resolve complex technical challenges, and foster collaborative engineering",
+                "Strong analytical, problem-solving, and troubleshooting capabilities",
+                "Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering organizations"
+              ],
+              "not_evidenced": [
+                "Synthetic Alpha Tool"
+              ],
+              "partly": [],
+              "path_id": "PATH A",
+              "satisfies_required": false
+            },
+            {
+              "met": [
+                "Full Stack Software Development",
+                "hands-on Full Stack Software Development",
+                "Solution Design",
+                "hands-on Solution Design",
+                "Data Engineering",
+                "hands-on Data Engineering",
+                "AI/ML Implementation",
+                "Python",
+                "hands-on Python",
+                "Java",
+                "hands-on Java",
+                "API Development",
+                "Service Development",
+                "Distributed Systems",
+                "hands-on Distributed Systems",
+                "Generative AI",
+                "hands-on Generative AI",
+                "Large Language Models",
+                "Retrieval-Augmented Generation",
+                "Agentic AI",
+                "AI Orchestration",
+                "Prompt Engineering",
+                "MCP",
+                "A2A",
+                "AI Application Development Patterns",
+                "NLP Frameworks",
+                "DevOps",
+                "CI/CD",
+                "Terraform",
+                "AKS",
+                "EKS",
+                "GitHub Actions",
+                "Containerized Deployments",
+                "React",
+                "Bootstrap",
+                "Related User Interface Frameworks",
+                "Azure DevOps",
+                "working knowledge of Azure DevOps",
+                "Jira",
+                "working knowledge of Jira",
+                "Modern Software Delivery Practices",
+                "working knowledge of Modern Software Delivery Practices",
+                "Snowflake",
+                "Databricks",
+                "Modern Data Platforms",
+                "Data Integration",
+                "ETL",
+                "Data Quality",
+                "Data Discovery",
+                "Enterprise Data Management",
+                "Third-Party and Enterprise API Integration",
+                "Metadata Management Tools",
+                "working knowledge of Metadata Management Tools",
+                "Data Governance",
+                "working knowledge of Data Governance",
+                "Synthetic Beta Tool",
+                "TensorFlow|PyTorch|scikit-learn|Similar Machine Learning Libraries",
+                "Azure|AWS",
+                "Enterprise-scale applications",
+                "Enterprise data integration across SaaS applications",
+                "Production generative AI solutions",
+                "Staff-level hands-on engineering individual contributor",
+                "Understand client requirements and design systems that solve client problems",
+                "Build proofs of concept",
+                "Collaborate with existing teams to enhance existing products and features",
+                "Work on a hybrid basis in Hyderabad",
+                "Translate business and product requirements into end-to-end solutions, user stories, and technical deliverables",
+                "Design and develop scalable, secure, maintainable enterprise applications integrated into existing products",
+                "Contribute directly to development, code reviews, technical design discussions, and architecture reviews",
+                "Own solution design decisions aligned with security, compliance, performance, and operational requirements",
+                "Champion engineering best practices, coding standards, testing strategies, and quality metrics",
+                "Evaluate and adopt emerging technologies to improve application and AI-system scalability, maintainability, performance, and reliability",
+                "Collaborate with data engineers and data scientists on data quality, availability, and successful AI/ML deployment",
+                "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads",
+                "Recent experience building and deploying AI-powered applications",
+                "Implement and deploy generative AI solutions in production",
+                "Improve generative AI quality, relevance, and reliability through prompt engineering and AI best practices",
+                "Communicate technical solutions, risks, and recommendations to leadership, business stakeholders, and clients",
+                "Stay current with software engineering, AI, machine learning, and cloud advances and recommend practical innovations",
+                "Provide technical leadership, mentor team members, resolve complex technical challenges, and foster collaborative engineering",
+                "Strong analytical, problem-solving, and troubleshooting capabilities",
+                "Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering organizations"
+              ],
+              "not_evidenced": [],
+              "partly": [],
+              "path_id": "PATH B",
+              "satisfies_required": true
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 83,
+              "exclusions": 0,
+              "input_source": "compiled",
+              "path_id": "PATH A",
+              "preferences": 1,
+              "proficiencies": 12,
+              "unresolved": 14,
+              "work_mode": 0
+            },
+            {
+              "asked": 83,
+              "exclusions": 0,
+              "input_source": "compiled",
+              "path_id": "PATH B",
+              "preferences": 1,
+              "proficiencies": 12,
+              "unresolved": 14,
+              "work_mode": 0
+            }
+          ],
+          "satisfies": [
+            "PATH B"
+          ]
+        },
+        "C": {
+          "attribution": [
+            {
+              "met": [
+                "Full Stack Software Development",
+                "hands-on Full Stack Software Development",
+                "Solution Design",
+                "hands-on Solution Design",
+                "Data Engineering",
+                "hands-on Data Engineering",
+                "AI/ML Implementation",
+                "Python",
+                "hands-on Python",
+                "Java",
+                "hands-on Java",
+                "API Development",
+                "Service Development",
+                "Distributed Systems",
+                "hands-on Distributed Systems",
+                "Generative AI",
+                "hands-on Generative AI",
+                "Large Language Models",
+                "Retrieval-Augmented Generation",
+                "Agentic AI",
+                "AI Orchestration",
+                "Prompt Engineering",
+                "MCP",
+                "A2A",
+                "AI Application Development Patterns",
+                "NLP Frameworks",
+                "DevOps",
+                "CI/CD",
+                "Terraform",
+                "AKS",
+                "EKS",
+                "GitHub Actions",
+                "Containerized Deployments",
+                "React",
+                "Bootstrap",
+                "Related User Interface Frameworks",
+                "Azure DevOps",
+                "working knowledge of Azure DevOps",
+                "Jira",
+                "working knowledge of Jira",
+                "Modern Software Delivery Practices",
+                "working knowledge of Modern Software Delivery Practices",
+                "Snowflake",
+                "Databricks",
+                "Modern Data Platforms",
+                "Data Integration",
+                "ETL",
+                "Data Quality",
+                "Data Discovery",
+                "Enterprise Data Management",
+                "Third-Party and Enterprise API Integration",
+                "Metadata Management Tools",
+                "working knowledge of Metadata Management Tools",
+                "Data Governance",
+                "working knowledge of Data Governance",
+                "Synthetic Alpha Tool",
+                "TensorFlow|PyTorch|scikit-learn|Similar Machine Learning Libraries",
+                "Azure|AWS",
+                "Enterprise-scale applications",
+                "Enterprise data integration across SaaS applications",
+                "Production generative AI solutions",
+                "Staff-level hands-on engineering individual contributor",
+                "Understand client requirements and design systems that solve client problems",
+                "Build proofs of concept",
+                "Collaborate with existing teams to enhance existing products and features",
+                "Work on a hybrid basis in Hyderabad",
+                "Translate business and product requirements into end-to-end solutions, user stories, and technical deliverables",
+                "Design and develop scalable, secure, maintainable enterprise applications integrated into existing products",
+                "Contribute directly to development, code reviews, technical design discussions, and architecture reviews",
+                "Own solution design decisions aligned with security, compliance, performance, and operational requirements",
+                "Champion engineering best practices, coding standards, testing strategies, and quality metrics",
+                "Evaluate and adopt emerging technologies to improve application and AI-system scalability, maintainability, performance, and reliability",
+                "Collaborate with data engineers and data scientists on data quality, availability, and successful AI/ML deployment",
+                "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads",
+                "Recent experience building and deploying AI-powered applications",
+                "Implement and deploy generative AI solutions in production",
+                "Improve generative AI quality, relevance, and reliability through prompt engineering and AI best practices",
+                "Communicate technical solutions, risks, and recommendations to leadership, business stakeholders, and clients",
+                "Stay current with software engineering, AI, machine learning, and cloud advances and recommend practical innovations",
+                "Provide technical leadership, mentor team members, resolve complex technical challenges, and foster collaborative engineering",
+                "Strong analytical, problem-solving, and troubleshooting capabilities",
+                "Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering organizations"
+              ],
+              "not_evidenced": [],
+              "partly": [],
+              "path_id": "PATH A",
+              "satisfies_required": true
+            },
+            {
+              "met": [
+                "Full Stack Software Development",
+                "hands-on Full Stack Software Development",
+                "Solution Design",
+                "hands-on Solution Design",
+                "Data Engineering",
+                "hands-on Data Engineering",
+                "AI/ML Implementation",
+                "Python",
+                "hands-on Python",
+                "Java",
+                "hands-on Java",
+                "API Development",
+                "Service Development",
+                "Distributed Systems",
+                "hands-on Distributed Systems",
+                "Generative AI",
+                "hands-on Generative AI",
+                "Large Language Models",
+                "Retrieval-Augmented Generation",
+                "Agentic AI",
+                "AI Orchestration",
+                "Prompt Engineering",
+                "MCP",
+                "A2A",
+                "AI Application Development Patterns",
+                "NLP Frameworks",
+                "DevOps",
+                "CI/CD",
+                "Terraform",
+                "AKS",
+                "EKS",
+                "GitHub Actions",
+                "Containerized Deployments",
+                "React",
+                "Bootstrap",
+                "Related User Interface Frameworks",
+                "Azure DevOps",
+                "working knowledge of Azure DevOps",
+                "Jira",
+                "working knowledge of Jira",
+                "Modern Software Delivery Practices",
+                "working knowledge of Modern Software Delivery Practices",
+                "Snowflake",
+                "Databricks",
+                "Modern Data Platforms",
+                "Data Integration",
+                "ETL",
+                "Data Quality",
+                "Data Discovery",
+                "Enterprise Data Management",
+                "Third-Party and Enterprise API Integration",
+                "Metadata Management Tools",
+                "working knowledge of Metadata Management Tools",
+                "Data Governance",
+                "working knowledge of Data Governance",
+                "Synthetic Beta Tool",
+                "TensorFlow|PyTorch|scikit-learn|Similar Machine Learning Libraries",
+                "Azure|AWS",
+                "Enterprise-scale applications",
+                "Enterprise data integration across SaaS applications",
+                "Production generative AI solutions",
+                "Staff-level hands-on engineering individual contributor",
+                "Understand client requirements and design systems that solve client problems",
+                "Build proofs of concept",
+                "Collaborate with existing teams to enhance existing products and features",
+                "Work on a hybrid basis in Hyderabad",
+                "Translate business and product requirements into end-to-end solutions, user stories, and technical deliverables",
+                "Design and develop scalable, secure, maintainable enterprise applications integrated into existing products",
+                "Contribute directly to development, code reviews, technical design discussions, and architecture reviews",
+                "Own solution design decisions aligned with security, compliance, performance, and operational requirements",
+                "Champion engineering best practices, coding standards, testing strategies, and quality metrics",
+                "Evaluate and adopt emerging technologies to improve application and AI-system scalability, maintainability, performance, and reliability",
+                "Collaborate with data engineers and data scientists on data quality, availability, and successful AI/ML deployment",
+                "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads",
+                "Recent experience building and deploying AI-powered applications",
+                "Implement and deploy generative AI solutions in production",
+                "Improve generative AI quality, relevance, and reliability through prompt engineering and AI best practices",
+                "Communicate technical solutions, risks, and recommendations to leadership, business stakeholders, and clients",
+                "Stay current with software engineering, AI, machine learning, and cloud advances and recommend practical innovations",
+                "Provide technical leadership, mentor team members, resolve complex technical challenges, and foster collaborative engineering",
+                "Strong analytical, problem-solving, and troubleshooting capabilities",
+                "Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering organizations"
+              ],
+              "not_evidenced": [],
+              "partly": [],
+              "path_id": "PATH B",
+              "satisfies_required": true
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 83,
+              "exclusions": 0,
+              "input_source": "compiled",
+              "path_id": "PATH A",
+              "preferences": 1,
+              "proficiencies": 12,
+              "unresolved": 14,
+              "work_mode": 0
+            },
+            {
+              "asked": 83,
+              "exclusions": 0,
+              "input_source": "compiled",
+              "path_id": "PATH B",
+              "preferences": 1,
+              "proficiencies": 12,
+              "unresolved": 14,
+              "work_mode": 0
+            }
+          ],
+          "satisfies": [
+            "PATH A",
+            "PATH B"
+          ]
+        },
+        "D": {
+          "attribution": [
+            {
+              "met": [],
+              "not_evidenced": [
+                "Full Stack Software Development",
+                "hands-on Full Stack Software Development",
+                "Solution Design",
+                "hands-on Solution Design",
+                "Data Engineering",
+                "hands-on Data Engineering",
+                "AI/ML Implementation",
+                "Python",
+                "hands-on Python",
+                "Java",
+                "hands-on Java",
+                "API Development",
+                "Service Development",
+                "Distributed Systems",
+                "hands-on Distributed Systems",
+                "Generative AI",
+                "hands-on Generative AI",
+                "Large Language Models",
+                "Retrieval-Augmented Generation",
+                "Agentic AI",
+                "AI Orchestration",
+                "Prompt Engineering",
+                "MCP",
+                "A2A",
+                "AI Application Development Patterns",
+                "NLP Frameworks",
+                "DevOps",
+                "CI/CD",
+                "Terraform",
+                "AKS",
+                "EKS",
+                "GitHub Actions",
+                "Containerized Deployments",
+                "React",
+                "Bootstrap",
+                "Related User Interface Frameworks",
+                "Azure DevOps",
+                "working knowledge of Azure DevOps",
+                "Jira",
+                "working knowledge of Jira",
+                "Modern Software Delivery Practices",
+                "working knowledge of Modern Software Delivery Practices",
+                "Snowflake",
+                "Databricks",
+                "Modern Data Platforms",
+                "Data Integration",
+                "ETL",
+                "Data Quality",
+                "Data Discovery",
+                "Enterprise Data Management",
+                "Third-Party and Enterprise API Integration",
+                "Metadata Management Tools",
+                "working knowledge of Metadata Management Tools",
+                "Data Governance",
+                "working knowledge of Data Governance",
+                "Synthetic Alpha Tool",
+                "TensorFlow|PyTorch|scikit-learn|Similar Machine Learning Libraries",
+                "Azure|AWS",
+                "Enterprise-scale applications",
+                "Enterprise data integration across SaaS applications",
+                "Production generative AI solutions",
+                "Staff-level hands-on engineering individual contributor",
+                "Understand client requirements and design systems that solve client problems",
+                "Build proofs of concept",
+                "Collaborate with existing teams to enhance existing products and features",
+                "Work on a hybrid basis in Hyderabad",
+                "Translate business and product requirements into end-to-end solutions, user stories, and technical deliverables",
+                "Design and develop scalable, secure, maintainable enterprise applications integrated into existing products",
+                "Contribute directly to development, code reviews, technical design discussions, and architecture reviews",
+                "Own solution design decisions aligned with security, compliance, performance, and operational requirements",
+                "Champion engineering best practices, coding standards, testing strategies, and quality metrics",
+                "Evaluate and adopt emerging technologies to improve application and AI-system scalability, maintainability, performance, and reliability",
+                "Collaborate with data engineers and data scientists on data quality, availability, and successful AI/ML deployment",
+                "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads",
+                "Recent experience building and deploying AI-powered applications",
+                "Implement and deploy generative AI solutions in production",
+                "Improve generative AI quality, relevance, and reliability through prompt engineering and AI best practices",
+                "Communicate technical solutions, risks, and recommendations to leadership, business stakeholders, and clients",
+                "Stay current with software engineering, AI, machine learning, and cloud advances and recommend practical innovations",
+                "Provide technical leadership, mentor team members, resolve complex technical challenges, and foster collaborative engineering",
+                "Strong analytical, problem-solving, and troubleshooting capabilities",
+                "Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering organizations"
+              ],
+              "partly": [],
+              "path_id": "PATH A",
+              "satisfies_required": false
+            },
+            {
+              "met": [],
+              "not_evidenced": [
+                "Full Stack Software Development",
+                "hands-on Full Stack Software Development",
+                "Solution Design",
+                "hands-on Solution Design",
+                "Data Engineering",
+                "hands-on Data Engineering",
+                "AI/ML Implementation",
+                "Python",
+                "hands-on Python",
+                "Java",
+                "hands-on Java",
+                "API Development",
+                "Service Development",
+                "Distributed Systems",
+                "hands-on Distributed Systems",
+                "Generative AI",
+                "hands-on Generative AI",
+                "Large Language Models",
+                "Retrieval-Augmented Generation",
+                "Agentic AI",
+                "AI Orchestration",
+                "Prompt Engineering",
+                "MCP",
+                "A2A",
+                "AI Application Development Patterns",
+                "NLP Frameworks",
+                "DevOps",
+                "CI/CD",
+                "Terraform",
+                "AKS",
+                "EKS",
+                "GitHub Actions",
+                "Containerized Deployments",
+                "React",
+                "Bootstrap",
+                "Related User Interface Frameworks",
+                "Azure DevOps",
+                "working knowledge of Azure DevOps",
+                "Jira",
+                "working knowledge of Jira",
+                "Modern Software Delivery Practices",
+                "working knowledge of Modern Software Delivery Practices",
+                "Snowflake",
+                "Databricks",
+                "Modern Data Platforms",
+                "Data Integration",
+                "ETL",
+                "Data Quality",
+                "Data Discovery",
+                "Enterprise Data Management",
+                "Third-Party and Enterprise API Integration",
+                "Metadata Management Tools",
+                "working knowledge of Metadata Management Tools",
+                "Data Governance",
+                "working knowledge of Data Governance",
+                "Synthetic Beta Tool",
+                "TensorFlow|PyTorch|scikit-learn|Similar Machine Learning Libraries",
+                "Azure|AWS",
+                "Enterprise-scale applications",
+                "Enterprise data integration across SaaS applications",
+                "Production generative AI solutions",
+                "Staff-level hands-on engineering individual contributor",
+                "Understand client requirements and design systems that solve client problems",
+                "Build proofs of concept",
+                "Collaborate with existing teams to enhance existing products and features",
+                "Work on a hybrid basis in Hyderabad",
+                "Translate business and product requirements into end-to-end solutions, user stories, and technical deliverables",
+                "Design and develop scalable, secure, maintainable enterprise applications integrated into existing products",
+                "Contribute directly to development, code reviews, technical design discussions, and architecture reviews",
+                "Own solution design decisions aligned with security, compliance, performance, and operational requirements",
+                "Champion engineering best practices, coding standards, testing strategies, and quality metrics",
+                "Evaluate and adopt emerging technologies to improve application and AI-system scalability, maintainability, performance, and reliability",
+                "Collaborate with data engineers and data scientists on data quality, availability, and successful AI/ML deployment",
+                "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads",
+                "Recent experience building and deploying AI-powered applications",
+                "Implement and deploy generative AI solutions in production",
+                "Improve generative AI quality, relevance, and reliability through prompt engineering and AI best practices",
+                "Communicate technical solutions, risks, and recommendations to leadership, business stakeholders, and clients",
+                "Stay current with software engineering, AI, machine learning, and cloud advances and recommend practical innovations",
+                "Provide technical leadership, mentor team members, resolve complex technical challenges, and foster collaborative engineering",
+                "Strong analytical, problem-solving, and troubleshooting capabilities",
+                "Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering organizations"
+              ],
+              "partly": [],
+              "path_id": "PATH B",
+              "satisfies_required": false
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 83,
+              "exclusions": 0,
+              "input_source": "compiled",
+              "path_id": "PATH A",
+              "preferences": 1,
+              "proficiencies": 12,
+              "unresolved": 14,
+              "work_mode": 0
+            },
+            {
+              "asked": 83,
+              "exclusions": 0,
+              "input_source": "compiled",
+              "path_id": "PATH B",
+              "preferences": 1,
+              "proficiencies": 12,
+              "unresolved": 14,
+              "work_mode": 0
+            }
+          ],
+          "satisfies": []
+        }
+      },
+      "expected": {
+        "A": [
+          "PATH A"
+        ],
+        "B": [
+          "PATH B"
+        ],
+        "C": [
+          "PATH A",
+          "PATH B"
+        ],
+        "D": []
+      },
+      "match": {
+        "A": true,
+        "B": true,
+        "C": true,
+        "D": true
+      },
+      "overlay": true,
+      "path_only_required": {
+        "PATH A": 1,
+        "PATH B": 1
+      },
+      "paths": [
+        "PATH A",
+        "PATH B"
+      ],
+      "required_items_by_path": {
+        "PATH A": 82,
+        "PATH B": 82
+      },
+      "role": "R2",
+      "run": 1
+    },
+    {
+      "candidates": {
+        "A": {
+          "attribution": [
+            {
+              "met": [
+                "Financial analysis",
+                "Financial planning",
+                "Budgeting",
+                "Forecasting",
+                "Variance analysis",
+                "Financial modeling",
+                "Scenario analysis",
+                "Sensitivity analysis",
+                "Microsoft Excel",
+                "advanced proficiency in Microsoft Excel",
+                "Synthetic Alpha Tool",
+                "Power BI|Similar business intelligence/reporting platform",
+                "SAP|Oracle|Comparable ERP platforms",
+                "FP&A, Business Finance, Commercial Finance, or closely related financial planning roles",
+                "Meaningful FP&A or business-finance ownership",
+                "Commercial judgment",
+                "Stakeholder management",
+                "Strong business partnering and communication",
+                "Experience presenting financial analysis and recommendations to senior stakeholders",
+                "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+              ],
+              "not_evidenced": [],
+              "partly": [],
+              "path_id": "PATH A",
+              "satisfies_required": true
+            },
+            {
+              "met": [
+                "Financial analysis",
+                "Financial planning",
+                "Budgeting",
+                "Forecasting",
+                "Variance analysis",
+                "Financial modeling",
+                "Scenario analysis",
+                "Sensitivity analysis",
+                "Microsoft Excel",
+                "advanced proficiency in Microsoft Excel",
+                "Power BI|Similar business intelligence/reporting platform",
+                "SAP|Oracle|Comparable ERP platforms",
+                "FP&A, Business Finance, Commercial Finance, or closely related financial planning roles",
+                "Meaningful FP&A or business-finance ownership",
+                "Commercial judgment",
+                "Stakeholder management",
+                "Strong business partnering and communication",
+                "Experience presenting financial analysis and recommendations to senior stakeholders",
+                "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+              ],
+              "not_evidenced": [
+                "Synthetic Beta Tool"
+              ],
+              "partly": [],
+              "path_id": "PATH B",
+              "satisfies_required": false
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 36,
+              "exclusions": 1,
+              "input_source": "compiled",
+              "path_id": "PATH A",
+              "preferences": 22,
+              "proficiencies": 1,
+              "unresolved": 1,
+              "work_mode": 1
+            },
+            {
+              "asked": 36,
+              "exclusions": 1,
+              "input_source": "compiled",
+              "path_id": "PATH B",
+              "preferences": 22,
+              "proficiencies": 1,
+              "unresolved": 1,
+              "work_mode": 1
+            }
+          ],
+          "satisfies": [
+            "PATH A"
+          ]
+        },
+        "B": {
+          "attribution": [
+            {
+              "met": [
+                "Financial analysis",
+                "Financial planning",
+                "Budgeting",
+                "Forecasting",
+                "Variance analysis",
+                "Financial modeling",
+                "Scenario analysis",
+                "Sensitivity analysis",
+                "Microsoft Excel",
+                "advanced proficiency in Microsoft Excel",
+                "Power BI|Similar business intelligence/reporting platform",
+                "SAP|Oracle|Comparable ERP platforms",
+                "FP&A, Business Finance, Commercial Finance, or closely related financial planning roles",
+                "Meaningful FP&A or business-finance ownership",
+                "Commercial judgment",
+                "Stakeholder management",
+                "Strong business partnering and communication",
+                "Experience presenting financial analysis and recommendations to senior stakeholders",
+                "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+              ],
+              "not_evidenced": [
+                "Synthetic Alpha Tool"
+              ],
+              "partly": [],
+              "path_id": "PATH A",
+              "satisfies_required": false
+            },
+            {
+              "met": [
+                "Financial analysis",
+                "Financial planning",
+                "Budgeting",
+                "Forecasting",
+                "Variance analysis",
+                "Financial modeling",
+                "Scenario analysis",
+                "Sensitivity analysis",
+                "Microsoft Excel",
+                "advanced proficiency in Microsoft Excel",
+                "Synthetic Beta Tool",
+                "Power BI|Similar business intelligence/reporting platform",
+                "SAP|Oracle|Comparable ERP platforms",
+                "FP&A, Business Finance, Commercial Finance, or closely related financial planning roles",
+                "Meaningful FP&A or business-finance ownership",
+                "Commercial judgment",
+                "Stakeholder management",
+                "Strong business partnering and communication",
+                "Experience presenting financial analysis and recommendations to senior stakeholders",
+                "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+              ],
+              "not_evidenced": [],
+              "partly": [],
+              "path_id": "PATH B",
+              "satisfies_required": true
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 36,
+              "exclusions": 1,
+              "input_source": "compiled",
+              "path_id": "PATH A",
+              "preferences": 22,
+              "proficiencies": 1,
+              "unresolved": 1,
+              "work_mode": 1
+            },
+            {
+              "asked": 36,
+              "exclusions": 1,
+              "input_source": "compiled",
+              "path_id": "PATH B",
+              "preferences": 22,
+              "proficiencies": 1,
+              "unresolved": 1,
+              "work_mode": 1
+            }
+          ],
+          "satisfies": [
+            "PATH B"
+          ]
+        },
+        "C": {
+          "attribution": [
+            {
+              "met": [
+                "Financial analysis",
+                "Financial planning",
+                "Budgeting",
+                "Forecasting",
+                "Variance analysis",
+                "Financial modeling",
+                "Scenario analysis",
+                "Sensitivity analysis",
+                "Microsoft Excel",
+                "advanced proficiency in Microsoft Excel",
+                "Synthetic Alpha Tool",
+                "Power BI|Similar business intelligence/reporting platform",
+                "SAP|Oracle|Comparable ERP platforms",
+                "FP&A, Business Finance, Commercial Finance, or closely related financial planning roles",
+                "Meaningful FP&A or business-finance ownership",
+                "Commercial judgment",
+                "Stakeholder management",
+                "Strong business partnering and communication",
+                "Experience presenting financial analysis and recommendations to senior stakeholders",
+                "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+              ],
+              "not_evidenced": [],
+              "partly": [],
+              "path_id": "PATH A",
+              "satisfies_required": true
+            },
+            {
+              "met": [
+                "Financial analysis",
+                "Financial planning",
+                "Budgeting",
+                "Forecasting",
+                "Variance analysis",
+                "Financial modeling",
+                "Scenario analysis",
+                "Sensitivity analysis",
+                "Microsoft Excel",
+                "advanced proficiency in Microsoft Excel",
+                "Synthetic Beta Tool",
+                "Power BI|Similar business intelligence/reporting platform",
+                "SAP|Oracle|Comparable ERP platforms",
+                "FP&A, Business Finance, Commercial Finance, or closely related financial planning roles",
+                "Meaningful FP&A or business-finance ownership",
+                "Commercial judgment",
+                "Stakeholder management",
+                "Strong business partnering and communication",
+                "Experience presenting financial analysis and recommendations to senior stakeholders",
+                "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+              ],
+              "not_evidenced": [],
+              "partly": [],
+              "path_id": "PATH B",
+              "satisfies_required": true
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 36,
+              "exclusions": 1,
+              "input_source": "compiled",
+              "path_id": "PATH A",
+              "preferences": 22,
+              "proficiencies": 1,
+              "unresolved": 1,
+              "work_mode": 1
+            },
+            {
+              "asked": 36,
+              "exclusions": 1,
+              "input_source": "compiled",
+              "path_id": "PATH B",
+              "preferences": 22,
+              "proficiencies": 1,
+              "unresolved": 1,
+              "work_mode": 1
+            }
+          ],
+          "satisfies": [
+            "PATH A",
+            "PATH B"
+          ]
+        },
+        "D": {
+          "attribution": [
+            {
+              "met": [],
+              "not_evidenced": [
+                "Financial analysis",
+                "Financial planning",
+                "Budgeting",
+                "Forecasting",
+                "Variance analysis",
+                "Financial modeling",
+                "Scenario analysis",
+                "Sensitivity analysis",
+                "Microsoft Excel",
+                "advanced proficiency in Microsoft Excel",
+                "Synthetic Alpha Tool",
+                "Power BI|Similar business intelligence/reporting platform",
+                "SAP|Oracle|Comparable ERP platforms",
+                "FP&A, Business Finance, Commercial Finance, or closely related financial planning roles",
+                "Meaningful FP&A or business-finance ownership",
+                "Commercial judgment",
+                "Stakeholder management",
+                "Strong business partnering and communication",
+                "Experience presenting financial analysis and recommendations to senior stakeholders",
+                "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+              ],
+              "partly": [],
+              "path_id": "PATH A",
+              "satisfies_required": false
+            },
+            {
+              "met": [],
+              "not_evidenced": [
+                "Financial analysis",
+                "Financial planning",
+                "Budgeting",
+                "Forecasting",
+                "Variance analysis",
+                "Financial modeling",
+                "Scenario analysis",
+                "Sensitivity analysis",
+                "Microsoft Excel",
+                "advanced proficiency in Microsoft Excel",
+                "Synthetic Beta Tool",
+                "Power BI|Similar business intelligence/reporting platform",
+                "SAP|Oracle|Comparable ERP platforms",
+                "FP&A, Business Finance, Commercial Finance, or closely related financial planning roles",
+                "Meaningful FP&A or business-finance ownership",
+                "Commercial judgment",
+                "Stakeholder management",
+                "Strong business partnering and communication",
+                "Experience presenting financial analysis and recommendations to senior stakeholders",
+                "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+              ],
+              "partly": [],
+              "path_id": "PATH B",
+              "satisfies_required": false
+            }
+          ],
+          "judge_inputs": [
+            {
+              "asked": 36,
+              "exclusions": 1,
+              "input_source": "compiled",
+              "path_id": "PATH A",
+              "preferences": 22,
+              "proficiencies": 1,
+              "unresolved": 1,
+              "work_mode": 1
+            },
+            {
+              "asked": 36,
+              "exclusions": 1,
+              "input_source": "compiled",
+              "path_id": "PATH B",
+              "preferences": 22,
+              "proficiencies": 1,
+              "unresolved": 1,
+              "work_mode": 1
+            }
+          ],
+          "satisfies": []
+        }
+      },
+      "expected": {
+        "A": [
+          "PATH A"
+        ],
+        "B": [
+          "PATH B"
+        ],
+        "C": [
+          "PATH A",
+          "PATH B"
+        ],
+        "D": []
+      },
+      "match": {
+        "A": true,
+        "B": true,
+        "C": true,
+        "D": true
+      },
+      "overlay": true,
+      "path_only_required": {
+        "PATH A": 1,
+        "PATH B": 1
+      },
+      "paths": [
+        "PATH A",
+        "PATH B"
+      ],
+      "required_items_by_path": {
+        "PATH A": 20,
+        "PATH B": 20
+      },
+      "role": "R3",
+      "run": 1
+    }
+  ],
+  "qualifiers_not_supported": {
+    "R1": {
+      "proficiency": 11,
+      "relationship": 3
+    },
+    "R2": {
+      "proficiency": 55,
+      "relationship": 32
+    },
+    "R3": {
+      "leadership_kind": 2
+    }
+  }
+}

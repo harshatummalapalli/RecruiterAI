@@ -27,7 +27,9 @@ from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple
 from backend.models.structured_intent import StructuredHiringIntent
 from backend.services import crustdata_capabilities as cap
 from backend.services import role_family_taxonomy as tax
-from backend.services.source_provenance import (ABSENT, COMPARISON, TARGET, SourceTexts, classify_title, number_stated, quote_in_sources, stated)
+from backend.services.source_provenance import (ABSENT, COMPARISON, TARGET, SourceTexts, classify_title, depth_supported, focus, leadership_stated, level_stated,
+                                                mode_stated, number_in_text, number_stated, quote_in_sources, requiredness_supported, sentences_about, stated,
+                                                temporal_supported)
 
 # Field sets for keyword skill retrieval by temporal relationship.
 _CURRENT_SKILL_FIELDS = ["experience.employment_details.current.description", "basic_profile.headline", "basic_profile.summary"]
@@ -155,6 +157,9 @@ class AtomRecord:
     route: str = ""                  # the audit route that carries the atom: provider_hard_filter | downstream_evidence | downstream_exclusion | admission_level_fit | context_or_evidence | disclose | "" (record only)
     row_source: str = ""             # the audit row (CompiledConstraint.source) that carries it
     downstream_text: str = ""        # the recruiter-meaning text a downstream consumer reads for this atom
+    # Qualifiers the intent CLAIMED that its cited source does not support (a temporal scope, a requiredness, a depth, an alternative level, ...). The fields
+    # `strength` / `relationship` above are the EFFECTIVE ones (an unsupported claim is not used); each entry here keeps the claim and why it was not used.
+    unsupported_qualifiers: List[Dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass
@@ -395,7 +400,7 @@ class _Scope:
 
     def atom(self, it: Optional[_It], concept: str, value: str, fate: str, destination: str, justification: str, *, strength=None,
              proficiency=None, relationship=None, components=None, kind="MEANING", obj: Any = None, idx: Optional[int] = None, origin: Optional[str] = None,
-             prov: Optional[Dict[str, Any]] = None, text: Optional[str] = None) -> None:
+             prov: Optional[Dict[str, Any]] = None, text: Optional[str] = None, unsupported: Optional[List[Dict[str, Any]]] = None) -> None:
         o = obj if obj is not None else (it.obj if it is not None else None)
         origin = origin or (it.origin if it is not None else "global")
         i = idx if idx is not None else (it.idx if it is not None else 0)
@@ -404,7 +409,7 @@ class _Scope:
             route=row.route if row else "", row_source=row.source if row else "", downstream_text=(text or (row_text(row) if row and row.route in ("downstream_evidence", "downstream_exclusion") else str(value))),
             atom_id=f"{origin}|{concept}[{i}]", concept=concept, scope=origin, value=str(value), provenance=prov or _prov(o),
             strength=strength, proficiency=proficiency, relationship=relationship, fate=fate, destination=destination,
-            justification=justification, components=list(components or []), kind=kind)
+            justification=justification, components=list(components or []), kind=kind, unsupported_qualifiers=list(unsupported or []))
         self.atoms.append((origin, rec))
         self.last_id = rec.atom_id
         if fate == UNRESOLVED:
@@ -467,6 +472,37 @@ class _Scope:
             return {"state": "absent", "sources": [], "quote": None, "classified": "source_text"}
         return {"state": "unrecorded" if self.mode == "legacy" else "absent", "sources": [], "quote": None}
 
+    def support_text(self, prov: Dict[str, Any], label: str) -> Optional[str]:
+        """The source text ABOUT this atom, to check its qualifiers against. None = nothing to check (a legacy / knowledge-backed / already-blocked atom).
+        "" = the atom cites a source but no checkable text exists, so any qualifier that needs a cue is unsupported."""
+        if prov["state"] != "source":
+            return None
+        text = prov.get("quote")
+        if not text and self.sources is not None:
+            hit = stated(label, self.sources)
+            text = hit[1] if hit else None
+        return focus(label, text) if text else ""
+
+    def qualify(self, prov: Dict[str, Any], label: str, strength: Optional[str], relationship: Optional[str] = None, fallback_relationship: Optional[str] = None):
+        """Semantic provenance: a hard filter needs support for the COMPLETE constraint, not only its value. A claimed `current` / `past` needs a present / past-use
+        cue in the source text about the value; a claimed `required` is unsupported where that text says preferred / a plus. An unsupported claim is NOT used:
+        the effective relationship falls back (None = unspecified) and the effective strength to `preferred`; the claim and the reason stay in the audit.
+        Returns (effective strength, effective relationship, unsupported list)."""
+        text = self.support_text(prov, label)
+        if text is None:
+            return strength, relationship, []
+        unsupported: List[Dict[str, Any]] = []
+        eff_s, eff_r = strength, relationship
+        if relationship in ("current", "past") and not temporal_supported(relationship, text):
+            eff_r = fallback_relationship
+            unsupported.append({"qualifier": "relationship", "claimed": relationship, "effective": fallback_relationship,
+                                "reason": f"the cited source does not state {'present' if relationship == 'current' else 'past'} use of this: an unsupported temporal scope is never a hard filter"})
+        if strength == "required" and not requiredness_supported(strength, text):
+            eff_s = "preferred"
+            unsupported.append({"qualifier": "strength", "claimed": "required", "effective": "preferred",
+                                "reason": "the cited source states this only as preferred / a plus: an unsupported requiredness is never a hard filter"})
+        return eff_s, eff_r, unsupported
+
     @staticmethod
     def _soft_fate(strength: Optional[str]) -> str:
         return VERIFIED_DOWNSTREAM if strength == "required" else PREFERENCE_CONTEXT
@@ -488,8 +524,11 @@ class _Scope:
         if it is None:
             return
         loc = it.obj
-        st = loc.strength
-        prov = self.prov(loc, ", ".join(list(loc.entries) + list(_g(loc, "countries", []) or [])))
+        label0 = ", ".join(list(loc.entries) + list(_g(loc, "countries", []) or []))
+        prov = self.prov(loc, label0)
+        st, _r, uns = self.qualify(prov, label0, loc.strength)
+        text = self.support_text(prov, label0) or (prov.get("quote") if prov["state"] == "source" else None)
+        text = (prov.get("quote") or text) if prov["state"] == "source" else None       # the whole cited text about the place (None = nothing to check against)
         rec = self.retired(loc, list(loc.entries) + list(_g(loc, "countries", []) or []) + [e.split(",")[0] for e in loc.entries])
         entries = list(loc.entries)
         countries = list(_g(loc, "countries", []) or [])
@@ -498,6 +537,7 @@ class _Scope:
         hard = st == "required" and not _blocked(prov) and rec is None
 
         def aset(concept, value, i, fate, dest, just, **kw):
+            kw.setdefault("unsupported", uns)
             self.atom(it, concept, value, fate, dest, just, strength=st, idx=i, prov=prov, **kw)
 
         def off(concept, value, i):
@@ -583,7 +623,11 @@ class _Scope:
         radius = loc.radius
         if radius:
             val = f"{radius.value} {radius.unit} around {radius.around}"
-            if hard:
+            if hard and text is not None and not number_in_text(radius.value, text):
+                why = f"the distance {radius.value} is not in the cited source text: an unsupported geographic qualifier is never a hard filter"
+                aset("location.radius", val, 0, UNRESOLVED, "not compiled", why,
+                     unsupported=uns + [{"qualifier": "radius", "claimed": radius.value, "effective": None, "reason": why}])
+            elif hard:
                 unit = {"miles": "mi", "mile": "mi", "mi": "mi", "km": "km", "kilometers": "km"}.get(radius.unit.lower(), "mi")
                 around_parts = [p.strip() for p in radius.around.split(",")]
                 if around_parts:
@@ -594,6 +638,18 @@ class _Scope:
             else:
                 off("location.radius", val, 0)
 
+        if remote and text is not None and not mode_stated("remote", text):
+            why = "remote is not stated in the cited source text: an unsupported geographic qualifier is not used"
+            self.row("location.remote", st, "disclose", [], capability="qualifier_unsupported", note=why)
+            aset("location.remote", remote, 0, UNRESOLVED, "audit row 'location.remote' (disclose)", why,
+                 unsupported=uns + [{"qualifier": "remote", "claimed": remote, "effective": None, "reason": why}])
+            remote = None
+        if work_mode and text is not None and not mode_stated(work_mode, text):
+            why = f"work mode {work_mode!r} is not stated in the cited source text: an unsupported qualifier is not used (and it is never converted to another mode)"
+            self.row("location.work_mode", st, "disclose", [], capability="qualifier_unsupported", note=why)
+            aset("location.work_mode", work_mode, 0, UNRESOLVED, "audit row 'location.work_mode' (disclose)", why,
+                 unsupported=uns + [{"qualifier": "work_mode", "claimed": work_mode, "effective": None, "reason": why}])
+            work_mode = None
         if remote:
             if remote == "not_allowed" and st == "required" and rec is None:
                 self.row("location.remote", st, "downstream_evidence", [], note="remote candidates are not acceptable for this scope; no provider filter exists",
@@ -623,8 +679,10 @@ class _Scope:
         if it is None:
             return
         ex = it.obj
-        st = ex.strength
-        prov = self.prov(ex, f"{ex.minimum_years or ex.maximum_years} years")
+        label0 = f"{ex.minimum_years or ex.maximum_years} years"
+        prov = self.prov(ex, label0)
+        st, _r, uns = self.qualify(prov, label0, ex.strength)
+        text = self.support_text(prov, label0)
         rec = self.retired(ex, ["experience", "years"])
         hard = st == "required" and not _blocked(prov) and rec is None
         items = []
@@ -635,10 +693,17 @@ class _Scope:
         if not items:
             return
         if hard:
-            self.row("experience", st, "provider_hard_filter", ["years_of_experience_raw"])
+            ok = [i for i in items if text is None or number_in_text(i[3], text)]
+            if ok:
+                self.row("experience", st, "provider_hard_filter", ["years_of_experience_raw"])
             for concept, label, op, val, i in items:
-                self.conditions.append(_leaf("years_of_experience_raw", op, val))
-                self.atom(it, concept, label, ENFORCED, "provider filter: years_of_experience_raw", "enforced", strength=st, idx=i, prov=prov)
+                if (concept, label, op, val, i) in ok:
+                    self.conditions.append(_leaf("years_of_experience_raw", op, val))
+                    self.atom(it, concept, label, ENFORCED, "provider filter: years_of_experience_raw", "enforced", strength=st, idx=i, prov=prov, unsupported=uns)
+                else:
+                    why = f"the number {val} is not in the cited source text: an unsupported bound is never a hard filter"
+                    self.atom(it, concept, label, UNRESOLVED, "not compiled", why, strength=st, idx=i, prov=prov,
+                              unsupported=uns + [{"qualifier": "value", "claimed": val, "effective": None, "reason": why}])
         else:
             if rec is None:
                 self.row("experience", st, "context_or_evidence" if not _blocked(prov) else "disclose", ["years_of_experience_raw"],
@@ -647,10 +712,10 @@ class _Scope:
                 if rec is not None:
                     self.retire(it, concept, label, rec, strength=st, idx=i, prov=prov)
                 elif _blocked(prov):
-                    self.atom(it, concept, label, UNRESOLVED, "not compiled", _why(prov), strength=st, idx=i, prov=prov)
+                    self.atom(it, concept, label, UNRESOLVED, "not compiled", _why(prov), strength=st, idx=i, prov=prov, unsupported=uns)
                 else:
                     self.atom(it, concept, label, PREFERENCE_CONTEXT, "audit row 'experience' (context_or_evidence)",
-                              f"experience strength is {st!r}: a non-required range is preserved as context, not enforced", strength=st, idx=i, prov=prov)
+                              f"experience strength is {st!r}: a non-required range is preserved as context, not enforced", strength=st, idx=i, prov=prov, unsupported=uns)
 
     def role_family(self) -> None:
         """A title is a provider filter only if the source states it as the thing to hire (or, in a legacy intent that records no provenance,
@@ -670,27 +735,40 @@ class _Scope:
                           strength="required", idx=i, origin="global", prov=pv)
                 continue
             fam = tax.lookup(src)
+            # the approved equivalent titles travel with the atom, so a downstream consumer reads the title family from the compiled context, not from the legacy intent
+            equivalents = [{"component": "retrieval_title", "value": t, "fate": NORMALIZED, "justification": f"approved role-family taxonomy ({fam.version})"}
+                           for t in (fam.approved_retrieval_titles if fam else [])]
             self.atom(None, "role_family", src, NORMALIZED if fam else ENFORCED, "provider filter: current title",
                       (f"expanded by the approved role-family taxonomy ({fam.version}) to {fam.approved_retrieval_titles}" if fam
                        else "no taxonomy entry: the source title is used verbatim (no expansion)"),
-                      strength="required", idx=i, origin="global", prov=pv)
+                      strength="required", idx=i, origin="global", prov=pv, components=equivalents)
 
     def seniority(self) -> None:
         it = self.v.seniority
         if it is None:
             return
         sn = it.obj
-        st = sn.strength
-        leadership = list(_g(sn, "leadership", []) or [])
-        alternatives = list(_g(sn, "alternatives", []) or [])
         prov = self.prov(sn, sn.value)
+        st, _r, uns = self.qualify(prov, sn.value, sn.strength)
+        # The text a level alternative / leadership kind may be supported by: the cited quote AND every source sentence that states the level itself
+        # (a recruiter often says "'Lead' may mean people OR technical leadership" in a different sentence from the one the atom cites).
+        whole = None
+        if prov["state"] == "source":
+            parts = [prov.get("quote") or ""]
+            if self.sources is not None:
+                parts += sentences_about(sn.value, self.sources)
+            whole = " ".join(p for p in parts if p)
+        alternatives = [a for a in (_g(sn, "alternatives", []) or [])]
+        leadership = [m for m in (_g(sn, "leadership", []) or [])]
+        alt_ok = [a for a in alternatives if whole is None or level_stated(a, whole)]
+        lead_ok = [m for m in leadership if whole is None or leadership_stated(m, whole)]
         known = _approved_levels()
         rec = self.retired(sn, [sn.value])
         note = f"value={sn.value}; enforced by Phase-1a admission gate"
-        if alternatives:
-            note += f"; also accepts levels={alternatives}"
-        if leadership:
-            note += f"; leadership={' or '.join(leadership)}"
+        if alt_ok:
+            note += f"; also accepts levels={alt_ok}"
+        if lead_ok:
+            note += f"; leadership={' or '.join(lead_ok)}"
 
         def level_fate(level: str) -> Tuple[str, str]:
             if level.strip().lower() in known:
@@ -704,14 +782,24 @@ class _Scope:
         if value_fate == UNRESOLVED:
             note += "; level not in approved taxonomy: preserved verbatim, not remapped"
         self.row("seniority", st, "admission_level_fit", [], note=note)
-        self.atom(it, "seniority.value", sn.value, value_fate, "audit row 'seniority' (admission_level_fit)", why, strength=st, prov=prov)
+        self.atom(it, "seniority.value", sn.value, value_fate, "audit row 'seniority' (admission_level_fit)", why, strength=st, prov=prov, unsupported=uns)
         for j, a in enumerate(alternatives):
+            if a not in alt_ok:
+                w = f"the level {a!r} is not stated in the cited source: an unsupported alternative level is not accepted"
+                self.atom(it, "seniority.alternatives", a, UNRESOLVED, "audit row 'seniority' (admission_level_fit)", w, strength=st, idx=j, prov=prov,
+                          unsupported=[{"qualifier": "alternative_level", "claimed": a, "effective": None, "reason": w}])
+                continue
             f, w = level_fate(a)
             self.atom(it, "seniority.alternatives", a, f, "audit row 'seniority' (admission_level_fit)", "an accepted alternative level: " + w, strength=st, idx=j, prov=prov)
-        if leadership:
-            self.row("seniority.leadership", st, "downstream_evidence", [], note=f"leadership kinds accepted: {leadership}",
-                     semantic=" or ".join(f"{m} leadership" for m in leadership).capitalize())
-            for j, m in enumerate(leadership):
+        if lead_ok:
+            self.row("seniority.leadership", st, "downstream_evidence", [], note=f"leadership kinds accepted: {lead_ok}",
+                     semantic=" or ".join(f"{m} leadership" for m in lead_ok).capitalize())
+        for j, m in enumerate(leadership):
+            if m not in lead_ok:
+                w = f"{m!r} leadership is not stated in the cited source: an unsupported leadership kind is never required"
+                self.atom(it, "seniority.leadership", m, UNRESOLVED, "not compiled", w, strength=st, idx=j, prov=prov,
+                          unsupported=[{"qualifier": "leadership_kind", "claimed": m, "effective": None, "reason": w}])
+            else:
                 self.atom(it, "seniority.leadership", m, self._soft_fate(st), "downstream checklist",
                           "a leadership requirement no provider field can express; verified downstream", strength=st, idx=j, prov=prov, text=f"{m} leadership")
 
@@ -725,15 +813,24 @@ class _Scope:
                 if getattr(s, "proficiency", None):
                     self.retire(it, "skill.proficiency", f"{s.name} = {s.proficiency}", rec, strength=s.strength, proficiency=s.proficiency, prov=prov)
                 continue
-            self._skill_like(it, s.name, f"skill:{s.name}", "skill", s.strength, s.relationship, prov, [s.name])
+            eff_s, eff_r, _uns = self._skill_like(it, s.name, f"skill:{s.name}", "skill", s.strength, s.relationship, prov, [s.name])
             prof = getattr(s, "proficiency", None)
-            if prof:
-                text = _PROFICIENCY_TEXT.get(prof, "{n} (" + prof + ")").format(n=s.name)
-                self.row(f"proficiency:{s.name}={prof}", s.strength, "downstream_evidence", [], note=f"depth {prof} is not provider-filterable; verified downstream",
-                         semantic=text)
-                self.atom(it, "skill.proficiency", f"{s.name} = {prof}", self._soft_fate(s.strength), "downstream checklist",
-                          "no provider field states depth; the stated level travels with the skill unchanged" + ("" if s.strength == "required" else f" (preference: strength {s.strength!r})"),
-                          strength=s.strength, proficiency=prof, relationship=s.relationship, prov=prov)
+            if not prof:
+                continue
+            label = f"{s.name} = {prof}"
+            ptext = self.support_text(prov, s.name)
+            if ptext is not None and not depth_supported(prof, ptext):
+                # a depth the cited source does not state is not handed to the Judge as a requirement: it stays visible, unresolved, with the claim
+                why = f"the cited source states no {prof} depth for {s.name!r}: an unsupported depth is never required downstream"
+                self.row(f"proficiency:{s.name}={prof}", eff_s, "disclose", [], capability="depth_unsupported", note=why)
+                self.atom(it, "skill.proficiency", label, UNRESOLVED, "audit row (disclose)", why, strength=eff_s, proficiency=None, relationship=eff_r, prov=prov,
+                          unsupported=[{"qualifier": "proficiency", "claimed": prof, "effective": None, "reason": why}])
+                continue
+            text = _PROFICIENCY_TEXT.get(prof, "{n} (" + prof + ")").format(n=s.name)
+            self.row(f"proficiency:{s.name}={prof}", eff_s, "downstream_evidence", [], note=f"depth {prof} is not provider-filterable; verified downstream", semantic=text)
+            self.atom(it, "skill.proficiency", label, self._soft_fate(eff_s), "downstream checklist",
+                      "no provider field states depth; the stated level travels with the skill unchanged" + ("" if eff_s == "required" else f" (preference: strength {eff_s!r})"),
+                      strength=eff_s, proficiency=prof, relationship=eff_r, prov=prov)
 
     def skill_groups(self) -> None:
         for it in self.v.skill_any_of:
@@ -745,17 +842,19 @@ class _Scope:
                 continue
             self._skill_like(it, " | ".join(g.any_of), f"skill_any_of:{'|'.join(g.any_of)}", "skill_any_of", g.strength, g.relationship, prov, g.any_of)
 
-    def _skill_like(self, it: _It, label: str, source: str, concept: str, strength: str, rel: Optional[str], prov: Dict[str, Any], terms: List[str]) -> None:
+    def _skill_like(self, it: _It, label: str, source: str, concept: str, strength: str, rel: Optional[str], prov: Dict[str, Any], terms: List[str]):
+        strength, rel, uns = self.qualify(prov, label, strength, rel)       # semantic provenance: the claimed qualifiers need support too
         fields = _skill_fields(rel)
-        common = dict(strength=strength, relationship=rel, prov=prov)
+        common = dict(strength=strength, relationship=rel, prov=prov, unsupported=uns)
+        extra = ("; " + "; ".join(f"claimed {u['qualifier']} {u['claimed']!r} is unsupported by the cited source and is not used" for u in uns)) if uns else ""
         if rel is None:
             # UNSPECIFIED != CURRENT. The source did not say when; nothing is invented. Not provider-enforceable without a time scope.
             self.row(source, strength, "downstream_evidence", fields, temporal=None, capability="unspecified_relationship",
-                     note="relationship unspecified: not treated as current; verified downstream (no time-scoped provider filter is invented)")
+                     note="relationship unspecified: not treated as current; verified downstream (no time-scoped provider filter is invented)" + extra)
             self.atom(it, concept, label, self._soft_fate(strength), "downstream checklist",
-                      "temporal relationship unspecified: never defaulted to current, so no current-role provider filter" + ("" if strength == "required" else f"; strength {strength!r} is a preference"),
+                      "temporal relationship unspecified: never defaulted to current, so no current-role provider filter" + ("" if strength == "required" else f"; strength {strength!r} is a preference") + extra,
                       **common)
-            return
+            return strength, rel, uns
         route = self.hard_ok(fields[0], strength)
         if route in _HARD_ROUTES and _blocked(prov):
             self.row(source, strength, "downstream_evidence", fields, temporal=rel, capability="provenance_gate",
@@ -771,10 +870,11 @@ class _Scope:
             self.atom(it, concept, label, ENFORCED, f"provider filter: {rel}-role text", f"required with an explicit {rel!r} relationship; capability {route}", **common)
         else:
             self.row(source, strength, "downstream_evidence", fields, temporal=rel, capability=route,
-                     note="preferred/unverified -> judge/context, no hard filter")
+                     note="preferred/unverified -> judge/context, no hard filter" + extra)
             why = (f"strength {strength!r} is a preference, never a hard filter" if strength != "required"
-                   else f"relationship {rel!r} has no verified provider field (capability {route}); verified downstream")
+                   else f"relationship {rel!r} has no verified provider field (capability {route}); verified downstream") + extra
             self.atom(it, concept, label, self._soft_fate(strength), "downstream checklist", why, **common)
+        return strength, rel, uns
 
     def company_scale(self) -> None:
         it = self.v.company_scale
@@ -784,26 +884,27 @@ class _Scope:
         prov = self.prov(cs, f"{cs.minimum_employees} employees", number=cs.minimum_employees)
         rec = self.retired(cs, ["company size", "headcount", "employees"])
         label = f">={cs.minimum_employees} employees"
-        common = dict(strength=cs.strength, relationship=cs.relationship, prov=prov)
+        eff_s, eff_r, uns = self.qualify(prov, f"{cs.minimum_employees} employees", cs.strength, cs.relationship)
+        common = dict(strength=eff_s, relationship=eff_r, prov=prov, unsupported=uns)
         if rec is not None:
-            self.retire(it, "company_scale", label, rec, **common)
+            self.retire(it, "company_scale", label, rec, strength=cs.strength, relationship=cs.relationship, prov=prov)
             return
-        route = self.hard_ok(_HEADCOUNT, cs.strength)
-        if cs.relationship == "current" and route in _HARD_ROUTES and not _blocked(prov):
+        route = self.hard_ok(_HEADCOUNT, eff_s)
+        if eff_r == "current" and route in _HARD_ROUTES and not _blocked(prov):
             self.conditions.append(_leaf(_HEADCOUNT, "=>", cs.minimum_employees))
             allowed, warn = cap.can_hard_filter(_HEADCOUNT)
             if warn:
                 self.warnings.append(warn)
-            self.row("company_scale", cs.strength, "provider_hard_filter", [_HEADCOUNT], temporal=cs.relationship, capability=route,
+            self.row("company_scale", eff_s, "provider_hard_filter", [_HEADCOUNT], temporal=eff_r, capability=route,
                      note="completeness unestablished; verify downstream where possible")
             self.atom(it, "company_scale", label, ENFORCED, "provider filter: current headcount", "explicit current relationship; verified provider field", **common)
-        elif cs.strength != "required":
-            self.row("company_scale", cs.strength, "downstream_evidence", [_HEADCOUNT], temporal=cs.relationship, capability=route)
-            self.atom(it, "company_scale", label, PREFERENCE_CONTEXT, "downstream checklist", f"strength {cs.strength!r} is a preference, never a hard filter", **common)
+        elif eff_s != "required":
+            self.row("company_scale", eff_s, "downstream_evidence", [_HEADCOUNT], temporal=eff_r, capability=route)
+            self.atom(it, "company_scale", label, PREFERENCE_CONTEXT, "downstream checklist", f"strength {eff_s!r} is a preference, never a hard filter", **common)
         else:
             reason = (_why(prov) if _blocked(prov) else
-                      f"the only verified headcount field is the CURRENT employer's; the stated relationship is {cs.relationship!r}, so no current-employer filter is invented")
-            self.row("company_scale", cs.strength, "disclose", [_HEADCOUNT], temporal=cs.relationship, capability="relationship_not_current", note=reason)
+                      f"the only verified headcount field is the CURRENT employer's; the stated relationship is {eff_r!r}, so no current-employer filter is invented")
+            self.row("company_scale", eff_s, "disclose", [_HEADCOUNT], temporal=eff_r, capability="relationship_not_current", note=reason)
             self.atom(it, "company_scale", label, UNRESOLVED, "audit row 'company_scale' (disclose)", reason, **common)
 
     def education(self) -> None:
@@ -813,7 +914,8 @@ class _Scope:
         ed = it.obj
         prov = self.prov(ed, " ".join(list(ed.degrees) + list(ed.streams)))
         rec = self.retired(ed, list(ed.degrees) + list(ed.streams) + ["education", "degree"])
-        common = dict(strength=ed.strength, prov=prov)
+        st, _r, uns = self.qualify(prov, " ".join(list(ed.degrees) + list(ed.streams)), ed.strength)
+        common = dict(strength=st, prov=prov, unsupported=uns)
         atoms = [("education.degree", d, j) for j, d in enumerate(ed.degrees)] + [("education.stream", s, j) for j, s in enumerate(ed.streams)]
         if not atoms:
             return
@@ -821,16 +923,16 @@ class _Scope:
             for concept, v, j in atoms:
                 self.retire(it, concept, v, rec, idx=j, **common)
             return
-        if ed.strength != "required" or _blocked(prov):
+        if st != "required" or _blocked(prov):
             reason = _why(prov) if _blocked(prov) else \
-                f"education strength is {ed.strength!r}: a non-required qualification is preserved as a preference, not enforced"
-            self.row("education", ed.strength, "disclose" if _blocked(prov) else "context_or_evidence", [_DEGREE, _STREAM],
+                f"education strength is {st!r}: a non-required qualification is preserved as a preference, not enforced"
+            self.row("education", st, "disclose" if _blocked(prov) else "context_or_evidence", [_DEGREE, _STREAM],
                      note=f"degrees={ed.degrees}; streams={ed.streams}; {reason}", capability=None if _blocked(prov) else "context_or_evidence")
             for concept, v, j in atoms:
                 self.atom(it, concept, v, UNRESOLVED if _blocked(prov) else PREFERENCE_CONTEXT, "audit row 'education'", reason, idx=j, **common)
             return
-        degree_route = self.hard_ok(_DEGREE, ed.strength) if ed.degrees else None
-        stream_route = self.hard_ok(_STREAM, ed.strength) if ed.streams else None
+        degree_route = self.hard_ok(_DEGREE, st) if ed.degrees else None
+        stream_route = self.hard_ok(_STREAM, st) if ed.streams else None
         degree_grp = _or([_leaf(_DEGREE, "(.)", d) for d in _expand_degrees(ed.degrees)]) if (degree_route in _HARD_ROUTES) else None
         stream_grp = _or([_leaf(_STREAM, "(.)", s) for s in ed.streams]) if (stream_route in _HARD_ROUTES) else None
         members = [g for g in (degree_grp, stream_grp) if g]
@@ -842,7 +944,7 @@ class _Scope:
         if stream_route == "enforce_but_not_verifiable":
             self.warnings.append("education stream: filterable but response-gated (not displayable); verify via Harvest if needed")
         if degree_grp or stream_grp:
-            self.row("education", ed.strength, "provider_hard_filter", [f for f, g in ((_DEGREE, degree_grp), (_STREAM, stream_grp)) if g],
+            self.row("education", st, "provider_hard_filter", [f for f, g in ((_DEGREE, degree_grp), (_STREAM, stream_grp)) if g],
                      capability=stream_route or degree_route, note="degree + stream grouped on the same school entry (all_of)")
         for concept, v, j in atoms:
             grp = degree_grp if concept == "education.degree" else stream_grp
@@ -859,22 +961,23 @@ class _Scope:
             c = it.obj
             prov = self.prov(c, c.name)
             rec = self.retired(c, [c.name])
-            common = dict(strength=c.strength, relationship=c.relationship, prov=prov)
+            eff_s, eff_r, uns = self.qualify(prov, c.name, c.strength, c.relationship, fallback_relationship="any")
+            common = dict(strength=eff_s, relationship=eff_r, prov=prov, unsupported=uns)
             if rec is not None:
-                self.retire(it, "company", c.name, rec, **common)
+                self.retire(it, "company", c.name, rec, strength=c.strength, relationship=c.relationship, prov=prov)
                 continue
-            fld = {"current": _CUR_COMPANY, "past": _PAST_COMPANY}.get(c.relationship, _ANY_COMPANY)
-            route = self.hard_ok(fld, c.strength)
+            fld = {"current": _CUR_COMPANY, "past": _PAST_COMPANY}.get(eff_r, _ANY_COMPANY)
+            route = self.hard_ok(fld, eff_s)
             if route in _HARD_ROUTES and not _blocked(prov):
                 self.conditions.append(_leaf(fld, "in", [c.name]))
-                self.row(f"company:{c.name}", c.strength, "provider_hard_filter", [fld], temporal=c.relationship, capability=route)
+                self.row(f"company:{c.name}", eff_s, "provider_hard_filter", [fld], temporal=eff_r, capability=route)
                 self.atom(it, "company", c.name, ENFORCED, "provider filter: company name", "required company", **common)
             else:
-                self.row(f"company:{c.name}", c.strength, "context_or_evidence", [fld], temporal=c.relationship, capability=route,
+                self.row(f"company:{c.name}", eff_s, "context_or_evidence", [fld], temporal=eff_r, capability=route,
                          note="no verified provider preference mechanism -> context/evidence, not a filter")
                 self.atom(it, "company", c.name, PREFERENCE_CONTEXT, "audit row (context_or_evidence)",
                           (_why(prov) if _blocked(prov) else
-                           f"strength {c.strength!r}: a company preference is never a hard company filter; no provider preference mechanism exists"), **common)
+                           f"strength {eff_s!r}: a company preference is never a hard company filter; no provider preference mechanism exists"), **common)
 
     def exclusions(self) -> None:
         by_kind = {"current_company": _CUR_COMPANY, "exclude_current_company": _CUR_COMPANY, "exclude_past_company": _PAST_COMPANY,

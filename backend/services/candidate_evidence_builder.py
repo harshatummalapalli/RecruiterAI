@@ -33,6 +33,7 @@ from backend.models.candidate_evidence import (
     UncertaintyNote,
 )
 from backend.models.search_intent import SearchIntent
+from backend.services.consumer_input import judged_signals, resolve as resolve_consumer_input
 
 # A conservative, generic (not role-specific) pattern for a self-reported
 # total-years claim in a candidate's own "about" text (e.g. "11+ years",
@@ -557,6 +558,26 @@ def _classify_level(
     )
 
 
+def _classify_level_for_facts(
+    evidence: CandidateEvidence, facts: Any, floor: Optional[bool]
+) -> Tuple[Optional[str], str]:
+    """`_classify_level` (unchanged) for the target level, and, when the compiled context accepts alternative levels, once for each accepted level.
+    "aligned" at ANY accepted level is aligned. Otherwise a confident "above" / "below" stands only when every accepted level agrees on it; anything
+    else is "unclear" (admission never gates on it). No accepted levels (always the case for a legacy intent) is exactly `_classify_level`."""
+    fit, basis = _classify_level(evidence, facts.target_level, floor)
+    if not facts.accepted_levels:
+        return fit, basis
+    results = [(fit, basis)] + [_classify_level(evidence, lvl, floor) for lvl in facts.accepted_levels]
+    for f, b in results:
+        if f == "aligned":
+            return f, b
+    fits = {f for f, _b in results if f is not None}
+    if fits in ({"above"}, {"below"}):
+        return results[0]
+    return "unclear", (f"The profile's level does not clearly match the target {facts.target_level} role or its accepted alternatives "
+                       f"({', '.join(facts.accepted_levels)}); fit cannot be confirmed from the profile.")
+
+
 def _parse_role_date(value: Any) -> Optional[date]:
     if not value or not isinstance(value, str):
         return None
@@ -614,11 +635,7 @@ def _alignment_from_judgments(
     by_key = {(j.get("tier"), j.get("signal_text")): j for j in (evidence.requirement_judgments or [])}
     matched: List[MatchedSignal] = []
     unmatched: List[MatchedSignal] = []
-    for tier, sentences in (
-        ("core", intent.core_signals),
-        ("supporting", intent.supporting_signals),
-        ("differentiator", intent.differentiator_signals),
-    ):
+    for tier, sentences in judged_signals(intent).items():
         for sentence in sentences:
             judgment = by_key.get((tier, sentence))
             if judgment and judgment.get("verdict") == "met":
@@ -649,13 +666,17 @@ def _alignment_from_judgments(
 
 
 def _build_role_alignment(evidence: CandidateEvidence, intent: SearchIntent) -> RoleAlignment:
+    # The facts come from `consumer_input.resolve`: the compiled context when the intent has one, else the legacy fields (unchanged). The rules below
+    # (`_classify_*`, the level ladder) are not touched; only where their inputs come from.
+    consumed = resolve_consumer_input(intent)
+    facts = consumed.facts
     title_relevance, title_basis = _classify_title_relevance(
-        evidence.current_title, evidence.headline, intent.role.title, intent.titles.include_titles
+        evidence.current_title, evidence.headline, consumed.role_title, consumed.include_titles
     )
-    minimum_years = intent.experience.minimum_years or None
-    seniority_alignment, seniority_basis = _classify_seniority(evidence, intent.role.seniority, minimum_years)
+    minimum_years = facts.minimum_years
+    seniority_alignment, seniority_basis = _classify_seniority(evidence, facts.target_level, minimum_years)
     floor, floor_basis = _classify_experience_floor(evidence, minimum_years)
-    level_fit, level_basis = _classify_level(evidence, intent.role.seniority, floor)
+    level_fit, level_basis = _classify_level_for_facts(evidence, facts, floor)
     level_kwargs = dict(
         experience_floor=floor, experience_floor_basis=floor_basis, level_fit=level_fit, level_basis=level_basis
     )
@@ -675,11 +696,7 @@ def _build_role_alignment(evidence: CandidateEvidence, intent: SearchIntent) -> 
     matched: List[MatchedSignal] = []
     seen_matches: set = set()  # (tier, term.key) — avoid duplicate bullets for the same corroborated concept
     unmatched: List[MatchedSignal] = []
-    tiered_signals = [
-        ("core", intent.core_signals),
-        ("supporting", intent.supporting_signals),
-        ("differentiator", intent.differentiator_signals),
-    ]
+    tiered_signals = list(judged_signals(intent).items())
     for tier, sentences in tiered_signals:
         for sentence in sentences:
             terms = _extract_signal_terms(sentence)

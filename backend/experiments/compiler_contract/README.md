@@ -25,4 +25,8 @@ Reproduce: `python -m backend.experiments.compiler_contract.hardened_verify && p
 Production additions: `backend/services/source_provenance.py` (source classification), `downstream_context.py` (per-path contexts, Judge adapter, legacy-consumer gaps), `path_merge.py` (merge data contract).
 Tests: `tests/test_runtime_integration.py`. Reproduce: `python -m backend.experiments.compiler_contract.runtime_verify && python -m backend.experiments.compiler_contract.build_runtime_report`
 
-Status: runtime integration verified offline; the Judge and admission are not wired (LEGACY DOWNSTREAM CONSUMER); waiting for architecture review.
+Downstream consumer integration (this phase): `RESULTS_DOWNSTREAM_INTEGRATION.md` (generated), `backend/services/DOWNSTREAM_CONSUMER_CONTRACT.md` (the contract), `backend/services/consumer_input.py` (the one seam: `resolve(intent)` -> `JudgeChecklist`, `AdmissionFacts`, title facts, recorded disagreements; legacy fallback when `SearchIntent.compiled_context` is None), `downstream_verify.py` (synthetic candidates A/B/C/D through the real Judge with a scripted model; measurements to `results/downstream/summary.json`).
+Tests: `tests/test_downstream_consumers.py`. Reproduce: `python -m backend.experiments.compiler_contract.downstream_verify && python -m backend.experiments.compiler_contract.build_downstream_report`
+(`RESULTS_RUNTIME_INTEGRATION.md` is a frozen deliverable of the runtime phase and is pinned by hash; its generator is kept for provenance only.)
+
+Status: downstream consumer integration verified offline with synthetic candidates; no provider, no retrieval, no deployment; waiting for architecture review.

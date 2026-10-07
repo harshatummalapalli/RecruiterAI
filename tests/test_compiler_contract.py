@@ -56,7 +56,12 @@ def mk(**kw) -> ExperimentalHiringIntent:
     return ExperimentalHiringIntent.model_validate({**copy.deepcopy(BASE), **kw})
 
 
-def basis(sources=("jd",), quote="the stated text here"):
+# The default quote states every QUALIFIER these mechanics tests exercise (a present / past use, a depth, a distance, a work arrangement), so that a claim in an
+# intent is SUPPORTED by its cited source. Qualifier support is tested on its own (tests/test_downstream_consumers.py, matrix A-F).
+SUPPORTING_QUOTE = "currently and previously worked on this, hands-on and advanced, 5 to 9 years, 25 miles, remote or hybrid or onsite"
+
+
+def basis(sources=("jd",), quote=SUPPORTING_QUOTE):
     return {"sources": list(sources), "quote": quote}
 
 
@@ -358,7 +363,7 @@ def test_J_a_preferred_skills_proficiency_is_a_preference():
 
 @pytest.mark.parametrize("mode", ["remote", "hybrid", "onsite"])
 def test_K_work_mode_is_not_silently_dropped_and_not_remapped(mode):
-    p = compile_intent(mk(location={"entries": ["Hyderabad, India"], "work_mode": mode, "strength": "required", "basis": basis(quote="Hyderabad, India")}))
+    p = compile_intent(mk(location={"entries": ["Hyderabad, India"], "work_mode": mode, "strength": "required", "basis": basis(quote=f"Hyderabad, India, {mode}")}))
     a = atom(p, "location.work_mode")
     assert a.fate == "UNRESOLVED" and a.value == mode and "never converted to another mode" in a.justification
     r = row(p, "location.work_mode")

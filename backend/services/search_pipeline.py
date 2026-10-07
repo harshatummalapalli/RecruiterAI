@@ -42,6 +42,7 @@ from backend.providers.base import BaseProvider
 from backend.providers.harvest import HarvestEnrichmentService
 from backend.services.admission import partition_by_eligibility
 from backend.services.candidate_evidence_builder import build_candidate_evidence
+from backend.services.consumer_input import judged_signals
 from backend.services import candidate_presentation as presentation_rules
 from backend.services.candidate_merger import CandidateMerger
 from backend.services.candidate_ranker import CandidateRanker
@@ -598,7 +599,7 @@ def run_search_pipeline(
         judging_enabled = bool(
             requirement_judge
             and requirement_judge.is_available()
-            and (intent.core_signals or intent.supporting_signals or intent.differentiator_signals)
+            and any(judged_signals(intent).values())
         )
 
         def _obtain_harvest(candidate: Candidate) -> HarvestEvidence:
@@ -712,7 +713,7 @@ def run_search_pipeline(
         evidence_coverage = {
             "candidates": len(evidence),
             "with_verified_judgments": judged_candidates,
-            "core_requirements_total": len(intent.core_signals),
+            "core_requirements_total": len(judged_signals(intent)["core"]),
             "avg_core_met": round(sum(core_met) / len(core_met), 2) if core_met else 0,
             "avg_supporting_met": round(sum(supporting_met) / len(supporting_met), 2) if supporting_met else 0,
             "candidates_with_no_core_evidence": no_core_evidence,
