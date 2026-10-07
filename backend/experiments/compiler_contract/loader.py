@@ -70,3 +70,14 @@ def relationship_omission_in_raw_output() -> Dict[str, Any]:
                 omitted += "relationship" not in cs
         per_role[role] = {"atoms": atoms, "relationship_omitted_in_raw_output": omitted}
     return {"available": True, "per_role": per_role}
+
+
+INPUTS = Path(__file__).resolve().parents[1] / "intake_strategy" / "inputs"
+_SOURCE_FILES = {"R1": ("role1_jd.txt", "role1_recruiter_brief.txt"), "R2": ("role2_jd.txt", "role2_recruiter_brief.txt"), "R3": ("role3_jd.txt", None)}
+
+
+def sources_for(role: str):
+    """The verbatim JD (and recruiter brief, where one exists) the role's intents were extracted from. Role 3 is JD-only: it has no brief and none is invented."""
+    from backend.services.source_provenance import SourceTexts
+    jd, brief = _SOURCE_FILES[role]
+    return SourceTexts(jd=(INPUTS / jd).read_text(encoding="utf-8"), recruiter_brief=(INPUTS / brief).read_text(encoding="utf-8") if brief else "")

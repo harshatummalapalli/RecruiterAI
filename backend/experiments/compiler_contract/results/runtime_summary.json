@@ -1,0 +1,126 @@
+{
+  "compiler_version": "v2-2026-10-07",
+  "contract_version": "compiler-contract-1",
+  "runs": {
+    "R1/1": {
+      "atoms": 66,
+      "silent_at_boundary": 0,
+      "problems": 0,
+      "leaks": 0,
+      "hard_filter_violations": 0,
+      "contexts": 2
+    },
+    "R1/2": {
+      "atoms": 69,
+      "silent_at_boundary": 0,
+      "problems": 0,
+      "leaks": 0,
+      "hard_filter_violations": 0,
+      "contexts": 2
+    },
+    "R1/3": {
+      "atoms": 66,
+      "silent_at_boundary": 0,
+      "problems": 0,
+      "leaks": 0,
+      "hard_filter_violations": 0,
+      "contexts": 2
+    },
+    "R1/4": {
+      "atoms": 67,
+      "silent_at_boundary": 0,
+      "problems": 0,
+      "leaks": 0,
+      "hard_filter_violations": 0,
+      "contexts": 2
+    },
+    "R1/5": {
+      "atoms": 66,
+      "silent_at_boundary": 0,
+      "problems": 0,
+      "leaks": 0,
+      "hard_filter_violations": 0,
+      "contexts": 2
+    },
+    "R2/1": {
+      "atoms": 108,
+      "silent_at_boundary": 0,
+      "problems": 0,
+      "leaks": 0,
+      "hard_filter_violations": 0,
+      "contexts": 1
+    },
+    "R2/2": {
+      "atoms": 103,
+      "silent_at_boundary": 0,
+      "problems": 0,
+      "leaks": 0,
+      "hard_filter_violations": 0,
+      "contexts": 1
+    },
+    "R2/3": {
+      "atoms": 100,
+      "silent_at_boundary": 0,
+      "problems": 0,
+      "leaks": 0,
+      "hard_filter_violations": 0,
+      "contexts": 1
+    },
+    "R2/4": {
+      "atoms": 105,
+      "silent_at_boundary": 0,
+      "problems": 0,
+      "leaks": 0,
+      "hard_filter_violations": 0,
+      "contexts": 1
+    },
+    "R2/5": {
+      "atoms": 104,
+      "silent_at_boundary": 0,
+      "problems": 0,
+      "leaks": 0,
+      "hard_filter_violations": 0,
+      "contexts": 1
+    },
+    "R3/1": {
+      "atoms": 56,
+      "silent_at_boundary": 0,
+      "problems": 0,
+      "leaks": 0,
+      "hard_filter_violations": 0,
+      "contexts": 1
+    },
+    "R3/2": {
+      "atoms": 57,
+      "silent_at_boundary": 0,
+      "problems": 0,
+      "leaks": 0,
+      "hard_filter_violations": 0,
+      "contexts": 1
+    },
+    "R3/3": {
+      "atoms": 58,
+      "silent_at_boundary": 0,
+      "problems": 0,
+      "leaks": 0,
+      "hard_filter_violations": 0,
+      "contexts": 1
+    },
+    "R3/4": {
+      "atoms": 55,
+      "silent_at_boundary": 0,
+      "problems": 0,
+      "leaks": 0,
+      "hard_filter_violations": 0,
+      "contexts": 1
+    },
+    "R3/5": {
+      "atoms": 57,
+      "silent_at_boundary": 0,
+      "problems": 0,
+      "leaks": 0,
+      "hard_filter_violations": 0,
+      "contexts": 1
+    }
+  }
+}

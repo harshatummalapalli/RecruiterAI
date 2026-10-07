@@ -20,7 +20,33 @@ from backend.experiments.compiler_contract.signature import leaves
 from backend.experiments.intake_strategy.experimental_schema import ExperimentalHiringIntent
 from backend.models.structured_intent import CompanyScale, SkillAnyOf, SkillReq, StructuredHiringIntent, parse_structured_intent
 from backend.services import compiler_audit as audit
-from backend.services.search_compiler import FATES, canonicalize, compile_intent
+from backend.services.search_compiler import FATES, _intent_records_provenance, canonicalize
+from backend.services.search_compiler import compile_intent as _compile_intent
+from backend.services.source_provenance import SourceTexts
+
+# An intent that records provenance names its role in a source text; the runtime passes that text to the compiler. A legacy intent (no provenance anywhere) is compiled
+# without one, exactly as before.
+def _quotes(x, acc):
+    if isinstance(x, dict):
+        if isinstance(x.get("basis"), dict) and x["basis"].get("quote"):
+            acc.append(x["basis"]["quote"])
+        for v in x.values():
+            _quotes(v, acc)
+    elif isinstance(x, list):
+        for v in x:
+            _quotes(v, acc)
+    return acc
+
+
+def source_for(intent) -> SourceTexts:
+    """A faithful source for a synthetic intent: it states the role and contains every quote the intent cites (these tests exercise mechanics; the
+    verification of an unfaithful quote is tested on its own)."""
+    return SourceTexts(jd="We are hiring a Probe Role at a company with 100 employees. " + " ".join(_quotes(intent.model_dump(), [])))
+
+
+def compile_intent(intent):
+    return _compile_intent(intent, source_for(intent) if _intent_records_provenance(intent) else None)
+
 
 GOLDEN = Path(__file__).parent / "fixtures" / "structured_intent"
 BASE = {"role_archetype": {"value": "hybrid", "confidence": 0.5, "rationale": "t"}, "role_family": ["Probe Role"]}
@@ -205,7 +231,7 @@ def test_E_a_preferred_education_is_no_longer_invisible():
 
 def _paths_intent():
     return mk(
-        experience={"minimum_years": 3, "strength": "required"},
+        experience={"minimum_years": 3, "strength": "required", "basis": basis(("jd",), "3+ years of experience")},
         skills=[{"name": "SQL", "strength": "required", "relationship": "any", "basis": basis(("jd", "recruiter_brief"))},
                 {"name": "Power Query", "strength": "required", "relationship": "any", "basis": basis(("jd",))}],
         sourcing_paths=[
@@ -257,9 +283,10 @@ def test_H_global_atoms_overridden_in_every_path_are_justified_not_silent():
 def test_H_inheritance_equals_the_frozen_effective_view_on_the_real_role1_intents():
     for n in range(1, 6):
         it = loader.load_intent("R1", n)
-        plan = compile_intent(it)
+        src = loader.sources_for("R1")
+        plan = _compile_intent(it, src)
         for cp in plan.paths:
-            frozen = compile_intent(path_intent(it, cp.path_id))
+            frozen = _compile_intent(path_intent(it, cp.path_id), src)
             assert canonicalize(cp.filter_tree) == canonicalize(frozen.filter_tree), (n, cp.path_id)
 
 
@@ -454,8 +481,9 @@ def test_N_every_atom_record_has_exactly_one_closed_set_fate_and_a_justification
             assert a.fate in FATES and a.destination and a.justification and a.provenance and a.scope, (k, a)
 
 
-def test_N_the_audit_shows_the_fields_the_brief_requires(verified):
-    rec = audit.build_audit_record(verified[("R3", 2)]["intent"], verified[("R3", 2)]["plan"])
+def test_N_the_audit_shows_the_fields_the_brief_requires():
+    it = loader.load_intent("R3", 2)
+    rec = audit.build_audit_record(it, _compile_intent(it, loader.sources_for("R3")))
     a = next(x for x in rec["atom_audit"] if x["concept"] == "skill.proficiency")
     for key in ("concept", "scope", "provenance", "strength", "proficiency", "relationship", "fate", "destination", "justification", "value"):
         assert key in a

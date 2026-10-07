@@ -19,4 +19,10 @@ Reproduce: `python -m backend.experiments.compiler_contract.run_contract baselin
 `tests/test_compiler_contract.py` (matrix A-O). The BEFORE modules (`fate.py`, `paths.py`, `probes.py`, `signature.py`, `run_contract.py`) deliberately measure the legacy copy.
 Reproduce: `python -m backend.experiments.compiler_contract.hardened_verify && python -m backend.experiments.compiler_contract.build_hardening_report`
 
-Status: compiler hardened offline; waiting for architecture review.
+## Runtime-integration phase (offline)
+`RESULTS_RUNTIME_INTEGRATION.md` (generated tables), `backend/services/RUNTIME_INTEGRATION_CONTRACT.md` (the contract), `runtime_verify.py` (removes every atom, recompiles with the source text, rebuilds the downstream contexts, checks where each atom lands),
+`results/runtime/` + `runtime_summary.json`, `compiler_contract1_snapshot.py` (the contract-1 compiler, pinned, so the earlier hardening results stay reproducible).
+Production additions: `backend/services/source_provenance.py` (source classification), `downstream_context.py` (per-path contexts, Judge adapter, legacy-consumer gaps), `path_merge.py` (merge data contract).
+Tests: `tests/test_runtime_integration.py`. Reproduce: `python -m backend.experiments.compiler_contract.runtime_verify && python -m backend.experiments.compiler_contract.build_runtime_report`
+
+Status: runtime integration verified offline; the Judge and admission are not wired (LEGACY DOWNSTREAM CONSUMER); waiting for architecture review.

@@ -36,7 +36,7 @@ A provider hard filter is emitted only when the underlying value is **explicitly
 
 - Atom level: an atom whose only source is `inferred` never produces a leaf (skill, group, company, experience, education, location, explicit exclusion). A skill or group stays `VERIFIED_DOWNSTREAM`; a company stays `PREFERENCE_CONTEXT` (never a filter); the others are `UNRESOLVED`.
 - Component level (location): for a `City, State, Country` entry the city is the stated place; the state and the country are each enforced only if the cited `basis.quote` contains them. JD says `Hyderabad, India`, the model wrote `Hyderabad, Telangana, India`: the compiler emits `country = India` and `city = Hyderabad`, and records `state = Telangana` as `DROPPED_WITH_JUSTIFICATION` ("not in the cited source text and no approved normalization"). There is no approved city→state table, so none is invented.
-- `unrecorded` (a production-shaped intent has no `basis`) keeps its legacy behaviour, and the audit says `unrecorded`.
+- **Updated in the runtime-integration phase (see `RUNTIME_INTEGRATION_CONTRACT.md` §1):** the gate is generic over every hard-filter-capable field. `compile_intent(intent, sources=None)` takes the JD / brief; a cited quote is verified against it; an atom with no carrier for provenance (a `role_family` title, a `CompanyScale`) or no basis is classified from the source text (a title is a target, only a comparison, or absent); and an atom without provenance in an intent that records provenance is `absent` and never a hard filter. `unrecorded` (an intent that records provenance nowhere, i.e. a production-shaped intent) keeps its legacy behaviour, and the audit says so. A title the source mentions only as a comparison ("more like a ...") can therefore never reach a title filter, with no role-specific logic.
 - The compiler trusts `basis` as verified by the intake validators (verbatim quote checks). It does not re-read the JD.
 - Nothing is invented: no company, radius, seniority, title alternative, experience bound, or provider semantic that the intent does not carry.
 
@@ -105,7 +105,7 @@ A production-shaped `StructuredHiringIntent` (no extension fields, no `basis`) c
 
 ## 12. Known limits (not solved here; recorded)
 
-- `role_family` and `company_scale` carry no provenance: a source-mentioned analogy title or an unsupported explicit `current` is enforced exactly as stated (the intake validators `title_analogy` and `unsupported_current_relationship` are not run at the compiler boundary).
+- An explicit `current` the source does not support is still enforced as stated (an explicit meaning is never altered); the intake validator `unsupported_current_relationship` is not run at the compiler boundary. (The analogy-title limit recorded in the first version of this file is closed by the source-text classification above.)
 - The capability map has no entry for the any-time description field, so required `any` and unspecified skills are never provider-enforced; `work_mode` has no provider or profile capability.
 - Taxonomy: two role families; degree surface forms for three technical degrees; the approved level list is `seniority.json` only.
 - The compiled plan is built in shadow mode only; path results are not merged or deduplicated; the Judge does not yet consume `exclusion_checklist`.

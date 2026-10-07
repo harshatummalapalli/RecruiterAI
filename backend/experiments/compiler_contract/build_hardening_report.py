@@ -17,7 +17,8 @@ from backend.experiments.compiler_contract.signature import leaves
 from backend.experiments.intake_strategy.experimental_schema import ExperimentalHiringIntent
 from backend.models.structured_intent import SkillReq
 from backend.services import compiler_audit as audit
-from backend.services.search_compiler import COMPILER_VERSION, compile_intent
+# The hardening report is the record of compiler contract-1 as it was; its live tables are therefore built with the pinned contract-1 snapshot.
+from backend.experiments.compiler_contract.compiler_contract1_snapshot import COMPILER_VERSION, compile_intent
 
 HERE = Path(__file__).resolve().parent
 RES = HERE / "results"

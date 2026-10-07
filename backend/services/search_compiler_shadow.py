@@ -112,10 +112,12 @@ def run_shadow(search_id: str, jd_text: str, legacy_mapped_plan, recruiter_brief
     try:
         from backend.services.structured_intent_extractor import extract_structured_intent
         from backend.services.search_compiler import compile_intent, semantic_diff
+        from backend.services.source_provenance import SourceTexts
         from backend.services import compiler_audit as audit
 
         si = extract_structured_intent(jd_text, recruiter_brief=recruiter_brief)
-        plan = compile_intent(si)
+        # the JD / brief the intent was extracted from let the compiler's provenance gate verify quotes and classify titles
+        plan = compile_intent(si, SourceTexts(jd=jd_text or "", recruiter_brief=recruiter_brief or ""))
         legacy_tree = _legacy_tree(legacy_mapped_plan)
 
         record = audit.build_audit_record(si, plan, search_id=search_id)

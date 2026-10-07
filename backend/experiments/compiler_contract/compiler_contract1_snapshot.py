@@ -27,7 +27,6 @@ from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple
 from backend.models.structured_intent import StructuredHiringIntent
 from backend.services import crustdata_capabilities as cap
 from backend.services import role_family_taxonomy as tax
-from backend.services.source_provenance import (ABSENT, COMPARISON, TARGET, SourceTexts, classify_title, number_stated, quote_in_sources, stated)
 
 # Field sets for keyword skill retrieval by temporal relationship.
 _CURRENT_SKILL_FIELDS = ["experience.employment_details.current.description", "basic_profile.headline", "basic_profile.summary"]
@@ -152,9 +151,6 @@ class AtomRecord:
     justification: str
     components: List[Dict[str, Any]] = field(default_factory=list)   # sub-values with their own fate (e.g. a location's state)
     kind: str = "MEANING"            # MEANING | RECORD (a reconciliation decision) | METADATA
-    route: str = ""                  # the audit route that carries the atom: provider_hard_filter | downstream_evidence | downstream_exclusion | admission_level_fit | context_or_evidence | disclose | "" (record only)
-    row_source: str = ""             # the audit row (CompiledConstraint.source) that carries it
-    downstream_text: str = ""        # the recruiter-meaning text a downstream consumer reads for this atom
 
 
 @dataclass
@@ -167,7 +163,6 @@ class CompiledPath:
     retrieval_title_family: List[str]
     warnings: List[str] = field(default_factory=list)
     normalizations: List[Dict[str, Any]] = field(default_factory=list)
-    atom_audit: List[AtomRecord] = field(default_factory=list)   # EVERY atom that applies in this path (inherited global atoms included), with its fate here
 
 
 @dataclass
@@ -185,21 +180,6 @@ class CompiledPlan:
     # One independent plan per sourcing path. The plans are ALTERNATIVES (an OR), never cumulative ANDs. Empty for an intent with no paths.
     paths: List[CompiledPath] = field(default_factory=list)
     contract_version: str = CONTRACT_VERSION
-    provenance_mode: str = "legacy"          # "recorded": the intent carries provenance, so an atom without it is not trusted
-    sources_supplied: bool = False
-
-
-_ROW_PREFIXES = ("evidence:", "skill:", "skill_any_of:", "company:", "domain:")
-
-
-def row_text(c: "CompiledConstraint") -> str:
-    """The recruiter-meaning text of an audit row (what a downstream consumer reads): its explicit `semantic`, else its source without the routing prefix."""
-    if getattr(c, "semantic", ""):
-        return c.semantic
-    for p in _ROW_PREFIXES:
-        if c.source.startswith(p):
-            return c.source[len(p):]
-    return c.source
 
 
 def _leaf(f: str, t: str, v: Any) -> Dict[str, Any]:
@@ -223,8 +203,8 @@ def _skill_fields(temporal: Optional[str]) -> List[str]:
 
 
 def _prov(obj: Any) -> Dict[str, Any]:
-    """What the atom's own `basis` claims. MODEL_ONLY (inference, no JD / brief / approved knowledge) can never be a hard filter.
-    UNRECORDED = the atom carries no `basis`; `_Scope.prov` decides what that means (legacy intent vs a provenance-carrying intent)."""
+    """What the intent claims supports an atom. MODEL_ONLY (inference, no JD / brief / approved knowledge) can never be a hard filter.
+    UNRECORDED (a production-shaped intent carries no `basis`) keeps its legacy behaviour; the audit says so."""
     b = getattr(obj, "basis", None)
     if b is None:
         return {"state": "unrecorded", "sources": [], "quote": None}
@@ -238,39 +218,8 @@ def _prov(obj: Any) -> Dict[str, Any]:
     return {"state": state, "sources": sources, "quote": b.quote}
 
 
-# Provenance states. A hard provider filter needs SOURCE (the JD / brief states it) or KNOWLEDGE (approved versioned normalization), or
-# UNRECORDED in a LEGACY intent (an intent that records no provenance anywhere: its atoms cannot be second-guessed, and the audit says so).
-# Everything else is blocked from being a filter and keeps an explicit fate and reason.
-_BLOCKING = {
-    "model_only": "model-only inference (no JD, brief or approved-knowledge support) is never a hard provider filter",
-    "absent": "no provenance is recorded for this atom in an intent that records provenance, and the source text does not state it: never a hard provider filter",
-    "comparison": "the source mentions this only as a comparison (an analogy), never as the thing to hire: never a hard provider filter",
-    "unverified_quote": "the cited quote is not in the supplied source text, so the source claim cannot be verified: never a hard provider filter",
-}
-
-
 def _blocked(prov: Dict[str, Any]) -> bool:
-    return prov["state"] in _BLOCKING
-
-
-def _why(prov: Dict[str, Any]) -> str:
-    return _BLOCKING.get(prov["state"], "")
-
-
-def _intent_records_provenance(intent: Any) -> bool:
-    """True if ANY atom of the intent carries a `basis`. Such an intent claims provenance, so an atom without it is not trusted."""
-    def walk(x: Any) -> bool:
-        if isinstance(x, dict):
-            if x.get("basis") is not None:
-                return True
-            return any(walk(v) for v in x.values())
-        if isinstance(x, list):
-            return any(walk(v) for v in x)
-        return False
-    try:
-        return walk(intent.model_dump())
-    except AttributeError:
-        return False
+    return prov["state"] == "model_only"
 
 
 def _supports(prov: Dict[str, Any], text: str) -> bool:
@@ -372,16 +321,13 @@ def _path_view(intent: Any, path: Any) -> _View:
 
 
 class _Scope:
-    def __init__(self, view: _View, mode: str = "legacy", sources: Optional[SourceTexts] = None):
+    def __init__(self, view: _View):
         self.v = view
-        self.mode = mode                      # "legacy" (no atom records provenance) | "recorded"
-        self.sources = sources if (sources is not None and sources.present) else None
         self.conditions: List[Dict[str, Any]] = []
         self.audit: List[CompiledConstraint] = []
         self.atoms: List[Tuple[str, AtomRecord]] = []    # (origin, record)
         self.retired_ids: Set[str] = set()
         self.last_id = ""
-        self._last_row: Optional[CompiledConstraint] = None
         self.warnings: List[str] = []
         self.normalizations: List[Dict[str, Any]] = []
         self.titles: List[str] = []
@@ -390,18 +336,15 @@ class _Scope:
     def row(self, source, strength, route, fields=None, temporal=None, capability=None, note="", semantic="") -> CompiledConstraint:
         c = CompiledConstraint(source, strength, route, list(fields or []), temporal, capability, note, scope=self.v.scope, semantic=semantic)
         self.audit.append(c)
-        self._last_row = c
         return c
 
     def atom(self, it: Optional[_It], concept: str, value: str, fate: str, destination: str, justification: str, *, strength=None,
              proficiency=None, relationship=None, components=None, kind="MEANING", obj: Any = None, idx: Optional[int] = None, origin: Optional[str] = None,
-             prov: Optional[Dict[str, Any]] = None, text: Optional[str] = None) -> None:
+             prov: Optional[Dict[str, Any]] = None) -> None:
         o = obj if obj is not None else (it.obj if it is not None else None)
         origin = origin or (it.origin if it is not None else "global")
         i = idx if idx is not None else (it.idx if it is not None else 0)
-        row = self._last_row
         rec = AtomRecord(
-            route=row.route if row else "", row_source=row.source if row else "", downstream_text=(text or (row_text(row) if row and row.route in ("downstream_evidence", "downstream_exclusion") else str(value))),
             atom_id=f"{origin}|{concept}[{i}]", concept=concept, scope=origin, value=str(value), provenance=prov or _prov(o),
             strength=strength, proficiency=proficiency, relationship=relationship, fate=fate, destination=destination,
             justification=justification, components=list(components or []), kind=kind)
@@ -430,7 +373,6 @@ class _Scope:
         return None
 
     def retire(self, it: _It, concept: str, value: str, rec: Any, **kw) -> None:
-        self._last_row = None            # a retired atom has no row of its own
         self._retire(it, concept, value, rec, **kw)
         self.retired_ids.add(self.last_id)
 
@@ -441,31 +383,6 @@ class _Scope:
         else:
             self.atom(it, concept, value, DROPPED_WITH_JUSTIFICATION, "reconciliation record",
                       f"retired by reconciliation: {rec.action} — {rec.topic}. The final reconciled meaning is compiled instead: {rec.result}", **kw)
-
-    def prov(self, obj: Any, label: str = "", *, number: Optional[int] = None, title: bool = False) -> Dict[str, Any]:
-        """The provenance of an atom, decided generically: its own `basis` (its quote verified against the supplied source text when there is
-        one); else the source text itself (is the value stated? is a title a target or only a comparison?); else, with no text to check, UNRECORDED
-        in a legacy intent and ABSENT in an intent that records provenance."""
-        base = _prov(obj)
-        if base["state"] != "unrecorded":
-            if self.sources is not None and base["state"] == "source" and base["quote"]:
-                where = quote_in_sources(base["quote"], self.sources)
-                base["quote_verified"] = where is not None
-                if where is None:
-                    base["state"] = "unverified_quote"
-            return base
-        if self.sources is not None and (label or number is not None):
-            if title:
-                ts = classify_title(label, self.sources)
-                if ts.state == TARGET:
-                    return {"state": "source", "sources": [ts.source], "quote": ts.evidence, "classified": "source_text"}
-                return {"state": "comparison" if ts.state == COMPARISON else "absent", "sources": [ts.source] if ts.source else [],
-                        "quote": ts.evidence, "classified": "source_text"}
-            hit = number_stated(number, self.sources) if number is not None else stated(label, self.sources)
-            if hit:
-                return {"state": "source", "sources": [hit[0]], "quote": hit[1], "classified": "source_text"}
-            return {"state": "absent", "sources": [], "quote": None, "classified": "source_text"}
-        return {"state": "unrecorded" if self.mode == "legacy" else "absent", "sources": [], "quote": None}
 
     @staticmethod
     def _soft_fate(strength: Optional[str]) -> str:
@@ -489,7 +406,7 @@ class _Scope:
             return
         loc = it.obj
         st = loc.strength
-        prov = self.prov(loc, ", ".join(list(loc.entries) + list(_g(loc, "countries", []) or [])))
+        prov = _prov(loc)
         rec = self.retired(loc, list(loc.entries) + list(_g(loc, "countries", []) or []) + [e.split(",")[0] for e in loc.entries])
         entries = list(loc.entries)
         countries = list(_g(loc, "countries", []) or [])
@@ -505,22 +422,21 @@ class _Scope:
             if rec is not None:
                 self.retire(it, concept, value, rec, strength=st, idx=i, prov=prov)
             elif _blocked(prov):
-                aset(concept, value, i, UNRESOLVED, "not compiled", _why(prov))
+                aset(concept, value, i, UNRESOLVED, "not compiled", "model-only inference (no JD, brief or approved-knowledge support) is never a hard provider filter")
             else:
                 aset(concept, value, i, PREFERENCE_CONTEXT, "audit row 'location' (context_or_evidence)",
                      f"location strength is {st!r}: a non-required place is preserved as context, not enforced")
 
         entry_cond: Optional[Dict[str, Any]] = None
         country_cond: Optional[Dict[str, Any]] = None
-        later: List[Tuple[tuple, dict]] = []      # atoms are recorded AFTER the audit row that carries them, so each record names its row
         if (entries or countries or loc.radius) and not hard:
-            soft = not _blocked(prov) and rec is None
-            self.row("location", st, "context_or_evidence" if soft else "disclose", ["basic_profile.location.*"],
-                     note=f"entries={entries}; countries={countries}; not a hard filter", capability="context_or_evidence" if soft else None)
             for j, e in enumerate(entries):
                 off("location.entry", e, j)
             for j, c in enumerate(countries):
                 off("location.country", c, j)
+            soft = not _blocked(prov) and rec is None
+            self.row("location", st, "context_or_evidence" if soft else "disclose", ["basic_profile.location.*"],
+                     note=f"entries={entries}; countries={countries}; not a hard filter", capability="context_or_evidence" if soft else None)
         if hard and entries:
             leaves: List[Dict[str, Any]] = []
             comp_by_entry: List[List[Dict[str, Any]]] = []
@@ -561,12 +477,12 @@ class _Scope:
                 comps = comp_by_entry[j if len(entries) > 1 else 0]
                 dropped = [c for c in comps if c["fate"] != ENFORCED]
                 norm = any(n["source_value"] == e.split(",")[0].strip() for n in self.normalizations)
-                later.append((("location.entry", e, j, NORMALIZED if norm else ENFORCED, "provider filter: " + ", ".join(sorted({l["field"].rsplit(".", 1)[-1] for l in leaves})),
-                     "enforced as the stated place" + (f"; {len(dropped)} component(s) not enforced (see components)" if dropped else "")), dict(components=comps)))
+                aset("location.entry", e, j, NORMALIZED if norm else ENFORCED, "provider filter: " + ", ".join(sorted({l["field"].rsplit(".", 1)[-1] for l in leaves})),
+                     "enforced as the stated place" + (f"; {len(dropped)} component(s) not enforced (see components)" if dropped else ""), components=comps)
         if hard and countries:
             country_cond = _leaf("basic_profile.location.country", "in", countries)
             for j, c in enumerate(countries):
-                later.append((("location.country", c, j, ENFORCED, "provider filter: country", "a country-wide area is a country filter"), {}))
+                aset("location.country", c, j, ENFORCED, "provider filter: country", "a country-wide area is a country filter")
         if hard and (entry_cond or country_cond):
             if entry_cond and country_cond:
                 self.conditions.append({"op": "or", "conditions": [entry_cond, country_cond]})
@@ -577,8 +493,6 @@ class _Scope:
                 else:
                     self.conditions.append(c)
             self.row("location", st, "provider_hard_filter", ["basic_profile.location.*"], note=f"entries={entries}" + (f"; countries={countries}" if countries else ""))
-            for a, kw in later:
-                aset(*a, **kw)
 
         radius = loc.radius
         if radius:
@@ -624,7 +538,7 @@ class _Scope:
             return
         ex = it.obj
         st = ex.strength
-        prov = self.prov(ex, f"{ex.minimum_years or ex.maximum_years} years")
+        prov = _prov(ex)
         rec = self.retired(ex, ["experience", "years"])
         hard = st == "required" and not _blocked(prov) and rec is None
         items = []
@@ -635,45 +549,37 @@ class _Scope:
         if not items:
             return
         if hard:
-            self.row("experience", st, "provider_hard_filter", ["years_of_experience_raw"])
             for concept, label, op, val, i in items:
                 self.conditions.append(_leaf("years_of_experience_raw", op, val))
                 self.atom(it, concept, label, ENFORCED, "provider filter: years_of_experience_raw", "enforced", strength=st, idx=i, prov=prov)
+            self.row("experience", st, "provider_hard_filter", ["years_of_experience_raw"])
         else:
-            if rec is None:
-                self.row("experience", st, "context_or_evidence" if not _blocked(prov) else "disclose", ["years_of_experience_raw"],
-                         note=f"{ex.minimum_years}..{ex.maximum_years} (strength {st}): not a hard filter")
             for concept, label, _op, _val, i in items:
                 if rec is not None:
                     self.retire(it, concept, label, rec, strength=st, idx=i, prov=prov)
                 elif _blocked(prov):
-                    self.atom(it, concept, label, UNRESOLVED, "not compiled", _why(prov), strength=st, idx=i, prov=prov)
+                    self.atom(it, concept, label, UNRESOLVED, "not compiled", "model-only inference is never a hard provider filter", strength=st, idx=i, prov=prov)
                 else:
                     self.atom(it, concept, label, PREFERENCE_CONTEXT, "audit row 'experience' (context_or_evidence)",
                               f"experience strength is {st!r}: a non-required range is preserved as context, not enforced", strength=st, idx=i, prov=prov)
+            if rec is None:
+                self.row("experience", st, "context_or_evidence" if not _blocked(prov) else "disclose", ["years_of_experience_raw"],
+                         note=f"{ex.minimum_years}..{ex.maximum_years} (strength {st}): not a hard filter")
 
     def role_family(self) -> None:
-        """A title is a provider filter only if the source states it as the thing to hire (or, in a legacy intent that records no provenance,
-        it is trusted as before). A title the source mentions only as a COMPARISON ("more like a ...") or never states is not a filter."""
-        provs = [self.prov(None, src, title=True) for src in self.v.role_family]
-        allowed = [src for src, pv in zip(self.v.role_family, provs) if not _blocked(pv)]
-        titles, used_tax, notes = tax.expand_retrieval_titles(allowed) if allowed else ([], False, [])
-        notes = notes + [f"{src!r} withheld: {_why(pv)}" for src, pv in zip(self.v.role_family, provs) if _blocked(pv)]
+        titles, used_tax, notes = tax.expand_retrieval_titles(self.v.role_family)
         self.titles = titles
         group = _or([_leaf(_CUR_TITLE, "(.)", t) for t in titles])
         if group:
             self.conditions.append(group)
-        self.row("role_family", "required", "provider_hard_filter" if titles else "disclose", [_CUR_TITLE], note="; ".join(notes))
-        for i, (src, pv) in enumerate(zip(self.v.role_family, provs)):
-            if _blocked(pv):
-                self.atom(None, "role_family", src, UNRESOLVED, "audit row 'role_family' (disclose)", _why(pv) + (f" [{pv['quote']}]" if pv.get("quote") else ""),
-                          strength="required", idx=i, origin="global", prov=pv)
-                continue
+        self.row("role_family", "required", "provider_hard_filter", [_CUR_TITLE], note="; ".join(notes))
+        for i, src in enumerate(self.v.role_family):
             fam = tax.lookup(src)
-            self.atom(None, "role_family", src, NORMALIZED if fam else ENFORCED, "provider filter: current title",
+            fate = NORMALIZED if fam else ENFORCED
+            self.atom(None, "role_family", src, fate, "provider filter: current title",
                       (f"expanded by the approved role-family taxonomy ({fam.version}) to {fam.approved_retrieval_titles}" if fam
                        else "no taxonomy entry: the source title is used verbatim (no expansion)"),
-                      strength="required", idx=i, origin="global", prov=pv)
+                      strength="required", idx=i, origin="global", prov={"state": "unrecorded", "sources": [], "quote": None})
 
     def seniority(self) -> None:
         it = self.v.seniority
@@ -683,7 +589,7 @@ class _Scope:
         st = sn.strength
         leadership = list(_g(sn, "leadership", []) or [])
         alternatives = list(_g(sn, "alternatives", []) or [])
-        prov = self.prov(sn, sn.value)
+        prov = _prov(sn)
         known = _approved_levels()
         rec = self.retired(sn, [sn.value])
         note = f"value={sn.value}; enforced by Phase-1a admission gate"
@@ -713,12 +619,12 @@ class _Scope:
                      semantic=" or ".join(f"{m} leadership" for m in leadership).capitalize())
             for j, m in enumerate(leadership):
                 self.atom(it, "seniority.leadership", m, self._soft_fate(st), "downstream checklist",
-                          "a leadership requirement no provider field can express; verified downstream", strength=st, idx=j, prov=prov, text=f"{m} leadership")
+                          "a leadership requirement no provider field can express; verified downstream", strength=st, idx=j, prov=prov)
 
     def skills(self) -> None:
         for it in self.v.skills:
             s = it.obj
-            prov = self.prov(s, s.name)
+            prov = _prov(s)
             rec = self.retired(s, [s.name])
             if rec is not None:
                 self.retire(it, "skill", s.name, rec, strength=s.strength, relationship=s.relationship, proficiency=getattr(s, "proficiency", None), prov=prov)
@@ -738,7 +644,7 @@ class _Scope:
     def skill_groups(self) -> None:
         for it in self.v.skill_any_of:
             g = it.obj
-            prov = self.prov(g, " ".join(g.any_of))
+            prov = _prov(g)
             rec = self.retired(g, list(g.any_of))
             if rec is not None:
                 self.retire(it, "skill_any_of", " | ".join(g.any_of), rec, strength=g.strength, relationship=g.relationship, prov=prov)
@@ -759,8 +665,8 @@ class _Scope:
         route = self.hard_ok(fields[0], strength)
         if route in _HARD_ROUTES and _blocked(prov):
             self.row(source, strength, "downstream_evidence", fields, temporal=rel, capability="provenance_gate",
-                     note=f"{_why(prov)}; verified downstream")
-            self.atom(it, concept, label, VERIFIED_DOWNSTREAM, "downstream checklist", "provenance gate: " + _why(prov), **common)
+                     note="model-only inference (no JD, brief or approved-knowledge support): never a provider filter; verified downstream")
+            self.atom(it, concept, label, VERIFIED_DOWNSTREAM, "downstream checklist", "provenance gate: model-only inference is never a hard provider filter", **common)
         elif route in _HARD_ROUTES:
             grp = _or([_leaf(f, "(.)", term) for term in terms for f in fields])
             if grp:
@@ -781,7 +687,7 @@ class _Scope:
         if it is None:
             return
         cs = it.obj
-        prov = self.prov(cs, f"{cs.minimum_employees} employees", number=cs.minimum_employees)
+        prov = _prov(cs)
         rec = self.retired(cs, ["company size", "headcount", "employees"])
         label = f">={cs.minimum_employees} employees"
         common = dict(strength=cs.strength, relationship=cs.relationship, prov=prov)
@@ -801,7 +707,7 @@ class _Scope:
             self.row("company_scale", cs.strength, "downstream_evidence", [_HEADCOUNT], temporal=cs.relationship, capability=route)
             self.atom(it, "company_scale", label, PREFERENCE_CONTEXT, "downstream checklist", f"strength {cs.strength!r} is a preference, never a hard filter", **common)
         else:
-            reason = (_why(prov) if _blocked(prov) else
+            reason = ("model-only inference is never a hard provider filter" if _blocked(prov) else
                       f"the only verified headcount field is the CURRENT employer's; the stated relationship is {cs.relationship!r}, so no current-employer filter is invented")
             self.row("company_scale", cs.strength, "disclose", [_HEADCOUNT], temporal=cs.relationship, capability="relationship_not_current", note=reason)
             self.atom(it, "company_scale", label, UNRESOLVED, "audit row 'company_scale' (disclose)", reason, **common)
@@ -811,7 +717,7 @@ class _Scope:
         if it is None:
             return
         ed = it.obj
-        prov = self.prov(ed, " ".join(list(ed.degrees) + list(ed.streams)))
+        prov = _prov(ed)
         rec = self.retired(ed, list(ed.degrees) + list(ed.streams) + ["education", "degree"])
         common = dict(strength=ed.strength, prov=prov)
         atoms = [("education.degree", d, j) for j, d in enumerate(ed.degrees)] + [("education.stream", s, j) for j, s in enumerate(ed.streams)]
@@ -822,7 +728,7 @@ class _Scope:
                 self.retire(it, concept, v, rec, idx=j, **common)
             return
         if ed.strength != "required" or _blocked(prov):
-            reason = _why(prov) if _blocked(prov) else \
+            reason = "model-only inference is never a hard provider filter" if _blocked(prov) else \
                 f"education strength is {ed.strength!r}: a non-required qualification is preserved as a preference, not enforced"
             self.row("education", ed.strength, "disclose" if _blocked(prov) else "context_or_evidence", [_DEGREE, _STREAM],
                      note=f"degrees={ed.degrees}; streams={ed.streams}; {reason}", capability=None if _blocked(prov) else "context_or_evidence")
@@ -857,7 +763,7 @@ class _Scope:
     def companies(self) -> None:
         for it in self.v.companies:
             c = it.obj
-            prov = self.prov(c, c.name)
+            prov = _prov(c)
             rec = self.retired(c, [c.name])
             common = dict(strength=c.strength, relationship=c.relationship, prov=prov)
             if rec is not None:
@@ -873,7 +779,7 @@ class _Scope:
                 self.row(f"company:{c.name}", c.strength, "context_or_evidence", [fld], temporal=c.relationship, capability=route,
                          note="no verified provider preference mechanism -> context/evidence, not a filter")
                 self.atom(it, "company", c.name, PREFERENCE_CONTEXT, "audit row (context_or_evidence)",
-                          (_why(prov) if _blocked(prov) else
+                          ("model-only inference is never a hard provider filter" if _blocked(prov) else
                            f"strength {c.strength!r}: a company preference is never a hard company filter; no provider preference mechanism exists"), **common)
 
     def exclusions(self) -> None:
@@ -881,7 +787,7 @@ class _Scope:
                    "exclude_any_company": _ANY_COMPANY}
         for it in self.v.exclusions:
             x = it.obj
-            prov = self.prov(x, x.value)
+            prov = _prov(x)
             rec = self.retired(x, [x.value])
             common = dict(strength="required", prov=prov)
             label = f"{x.kind}: {x.value}"
@@ -890,8 +796,8 @@ class _Scope:
                 continue
             if x.kind in by_kind or x.kind in ("title", "exclude_title"):
                 if _blocked(prov):
-                    self.row(f"{x.kind}:{x.value}", "required", "disclose", [], note=_why(prov))
-                    self.atom(it, f"exclusion.{x.kind}", label, UNRESOLVED, "audit row (disclose)", _why(prov), **common)
+                    self.row(f"{x.kind}:{x.value}", "required", "disclose", [], note="model-only inference is never a provider filter")
+                    self.atom(it, f"exclusion.{x.kind}", label, UNRESOLVED, "audit row (disclose)", "model-only inference is never a hard provider filter", **common)
                 elif x.kind in by_kind:
                     fld = by_kind[x.kind]
                     self.conditions.append(_leaf(fld, "not_in", [x.value]))
@@ -908,7 +814,7 @@ class _Scope:
     def semantic_exclusions(self) -> None:
         for it in self.v.semantic_exclusions:
             x = it.obj
-            prov = self.prov(x, x.concept)
+            prov = _prov(x)
             rec = self.retired(x, [x.concept] + list(x.includes))
             if rec is not None:
                 self.retire(it, "semantic_exclusion", x.concept, rec, strength="required", prov=prov)
@@ -922,7 +828,7 @@ class _Scope:
     def domain(self) -> None:
         for it in self.v.domain:
             d = it.obj
-            prov = self.prov(d, d.name)
+            prov = _prov(d)
             rec = self.retired(d, [d.name])
             if rec is not None:
                 self.retire(it, "domain", d.name, rec, strength=d.strength, prov=prov)
@@ -936,7 +842,7 @@ class _Scope:
     def evidence(self) -> None:
         for it in self.v.evidence_signals:
             e = it.obj
-            prov = self.prov(e, e.name)
+            prov = _prov(e)
             rec = self.retired(e, [e.name])
             if rec is not None:
                 self.retire(it, "evidence_signal", e.name, rec, strength=e.strength, prov=prov)
@@ -945,7 +851,6 @@ class _Scope:
             self.atom(it, "evidence_signal", e.name, self._soft_fate(e.strength), "downstream checklist", "verified by the Judge; never a provider filter", strength=e.strength, prov=prov)
 
     def metadata(self) -> None:
-        self._last_row = None
         arche = _g(self.v.intent, "role_archetype", None)
         if arche is not None:
             self.atom(None, "role_archetype", arche.value, DROPPED_WITH_JUSTIFICATION, "atom audit",
@@ -953,7 +858,6 @@ class _Scope:
                       kind="METADATA", origin="global", prov={"state": "unrecorded", "sources": [], "quote": None})
 
     def reconciliations(self, recs: List[Any]) -> None:
-        self._last_row = None
         for i, r in enumerate(recs):
             fate = UNRESOLVED if r.action == "unresolved" else DROPPED_WITH_JUSTIFICATION
             just = (f"the sources conflict and the brief does not settle it; surfaced, no side enforced: {r.result}" if fate == UNRESOLVED else
@@ -963,11 +867,19 @@ class _Scope:
                       prov={"state": "source", "sources": ["jd", "recruiter_brief"], "quote": r.brief_quote})
 
     def run(self) -> None:
-        for step in (self.location, self.experience, self.role_family, self.seniority, self.skills, self.skill_groups, self.company_scale,
-                     self.education, self.companies, self.exclusions, self.semantic_exclusions, self.domain, self.evidence):
-            self._last_row = None
-            step()
-        self._last_row = None
+        self.location()
+        self.experience()
+        self.role_family()
+        self.seniority()
+        self.skills()
+        self.skill_groups()
+        self.company_scale()
+        self.education()
+        self.companies()
+        self.exclusions()
+        self.semantic_exclusions()
+        self.domain()
+        self.evidence()
 
 
 def _tree(conditions: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -982,27 +894,24 @@ def _dedupe(seq: List[Any]) -> List[Any]:
     return out
 
 
-def compile_intent(intent: StructuredHiringIntent, sources: Optional[SourceTexts] = None) -> CompiledPlan:
-    """`sources` (the JD / brief the intent was extracted from) lets the provenance gate classify what an atom cannot carry (a title, a headcount)
-    and verify every cited quote. Without it, an atom with no recorded provenance is trusted ONLY in a legacy intent that records none anywhere."""
-    mode = "recorded" if _intent_records_provenance(intent) else "legacy"
+def compile_intent(intent: StructuredHiringIntent) -> CompiledPlan:
     paths = list(_g(intent, "sourcing_paths", []) or [])
     if not paths:
-        s = _Scope(_global_view(intent), mode, sources)
+        s = _Scope(_global_view(intent))
         s.run()
         s.metadata()
         s.reconciliations(list(_g(intent, "reconciliations", []) or []))
         return CompiledPlan(filter_tree=_tree(s.conditions), audit=s.audit, retrieval_title_family=s.titles, taxonomy_version=tax.TAXONOMY_VERSION,
-                            warnings=_dedupe(s.warnings), normalizations=s.normalizations, atom_audit=[r for _o, r in s.atoms], provenance_mode=mode, sources_supplied=s.sources is not None)
-    return _compile_paths(intent, paths, mode, sources)
+                            warnings=_dedupe(s.warnings), normalizations=s.normalizations, atom_audit=[r for _o, r in s.atoms])
+    return _compile_paths(intent, paths)
 
 
-def _compile_paths(intent: Any, paths: List[Any], mode: str = "legacy", sources: Optional[SourceTexts] = None) -> CompiledPlan:
+def _compile_paths(intent: Any, paths: List[Any]) -> CompiledPlan:
     """Each path is compiled INDEPENDENTLY from its own effective view. The plans are alternatives (an OR), never cumulative ANDs.
     Atom records: a path-scoped atom has one record (its path); a GLOBAL atom has ONE record whose fate is the one it has where it applies,
     with the paths that inherit it, retire it, or override it named in the destination / justification."""
     path_ids = [p.id for p in paths]
-    base = _Scope(_global_view(intent), mode, sources)          # what each global atom is, before any path overrides it
+    base = _Scope(_global_view(intent))          # what each global atom is, before any path overrides it
     base.run()
     base.metadata()
     base.reconciliations(list(_g(intent, "reconciliations", []) or []))
@@ -1011,11 +920,10 @@ def _compile_paths(intent: Any, paths: List[Any], mode: str = "legacy", sources:
     inherited: Dict[str, Tuple[AtomRecord, List[str]]] = {}   # global atom id -> (record as compiled in the first inheriting path, paths)
     retired_in: Dict[str, List[str]] = {}
     for p in paths:
-        sc = _Scope(_path_view(intent, p), mode, sources)
+        sc = _Scope(_path_view(intent, p))
         sc.run()
         compiled.append(CompiledPath(path_id=p.id, label=p.label, strategy=p.strategy, filter_tree=_tree(sc.conditions), audit=sc.audit,
-                                     retrieval_title_family=sc.titles, warnings=_dedupe(sc.warnings), normalizations=sc.normalizations,
-                                     atom_audit=[r for _o, r in sc.atoms]))
+                                     retrieval_title_family=sc.titles, warnings=_dedupe(sc.warnings), normalizations=sc.normalizations))
         for origin, rec in sc.atoms:
             if origin != "global":
                 scope_records[rec.atom_id] = rec
@@ -1053,7 +961,7 @@ def _compile_paths(intent: Any, paths: List[Any], mode: str = "legacy", sources:
         filter_tree={"op": "or", "conditions": [{"op": "and", "conditions": c.filter_tree["conditions"]} for c in compiled]},
         audit=audit, retrieval_title_family=compiled[0].retrieval_title_family, taxonomy_version=tax.TAXONOMY_VERSION,
         warnings=_dedupe([w for c in compiled for w in c.warnings]), normalizations=_dedupe([n for c in compiled for n in c.normalizations]),
-        atom_audit=out, paths=compiled, provenance_mode=mode, sources_supplied=base.sources is not None)
+        atom_audit=out, paths=compiled)
 
 
 def canonicalize(tree: Dict[str, Any]) -> Any:

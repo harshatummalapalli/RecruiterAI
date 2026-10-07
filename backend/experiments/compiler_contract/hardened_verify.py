@@ -22,7 +22,8 @@ from backend.experiments.compiler_contract.atoms import Atom, enumerate_atoms
 from backend.experiments.compiler_contract.signature import leaves
 from backend.experiments.intake_strategy.experimental_schema import ExperimentalHiringIntent
 from backend.services import compiler_audit
-from backend.services.search_compiler import COMPILER_VERSION, CONTRACT_VERSION, FATES, CompiledPlan, canonicalize, compile_intent
+# This module verifies compiler CONTRACT-1 as it was (the pinned snapshot, no source text). The live compiler, with sources and the downstream context, is verified by runtime_verify.py.
+from backend.experiments.compiler_contract.compiler_contract1_snapshot import COMPILER_VERSION, CONTRACT_VERSION, FATES, CompiledPlan, canonicalize, compile_intent
 
 OUT = Path(__file__).resolve().parent / "results"
 

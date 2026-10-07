@@ -26,7 +26,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from backend.models.structured_intent import StructuredHiringIntent
 from backend.services import crustdata_capabilities as cap
 from backend.services import role_family_taxonomy as tax
-from backend.services.search_compiler import COMPILER_VERSION, CompiledPlan, canonicalize
+from backend.services.search_compiler import COMPILER_VERSION, CompiledPlan, canonicalize, row_text
 
 # compiler audit route -> execution category
 _ROUTE_CATEGORY = {
@@ -68,13 +68,13 @@ def judge_checklist(plan: CompiledPlan, path_id: Optional[str] = None) -> List[T
     out: List[Tuple[str, str]] = []
     for c in _rows_for(plan, path_id):
         if c.route == "downstream_evidence":
-            out.append((_STRENGTH_TIER.get(c.strength, "differentiator"), getattr(c, "semantic", "") or _semantic_name(c.source)))
+            out.append((_STRENGTH_TIER.get(c.strength, "differentiator"), row_text(c)))
     return out
 
 
 def exclusion_checklist(plan: CompiledPlan, path_id: Optional[str] = None) -> List[str]:
     """Semantic negatives (a work type to screen OUT), preserved as meaning for the Judge. Never a company or title filter."""
-    return [getattr(c, "semantic", "") or _semantic_name(c.source) for c in _rows_for(plan, path_id) if c.route == "downstream_exclusion"]
+    return [row_text(c) for c in _rows_for(plan, path_id) if c.route == "downstream_exclusion"]
 
 
 def intent_hash(intent: StructuredHiringIntent) -> str:
@@ -127,7 +127,11 @@ def build_audit_record(
         "downstream_exclusions": [] if paths else exclusion_checklist(plan),
         "warnings": list(plan.warnings),
         "atom_audit": atom_audit_records(plan),
+        "provenance_mode": getattr(plan, "provenance_mode", None),
+        "sources_supplied": getattr(plan, "sources_supplied", None),
     }
+    from backend.services.downstream_context import build_downstream_contexts   # lazy: downstream_context imports this module
+    record["downstream_contexts"] = [c.to_dict() for c in build_downstream_contexts(plan)]
     if paths:
         # Sourcing paths are ALTERNATIVES. Each has its own plan, requirements and checklist; none is visible to another.
         record["paths"] = [{
