@@ -1,0 +1,1184 @@
+{
+  "table": [
+    {
+      "id": "fidelity_experience_12",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "fidelity_education",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "fidelity_python_and_java",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "fidelity_genai_and_ai_concepts",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "fidelity_devops_ui_data_apis",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "fidelity_familiarity_items",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "fidelity_cloud_or",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "fidelity_ml_libraries_or",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "fidelity_soft_and_engineering",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "fidelity_brief_profile",
+      "as_run": "PARTIALx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "fidelity_role_family",
+      "as_run": "FAILx5",
+      "corrected": "FAILx5",
+      "class": {
+        "EXTRACTION": 5
+      }
+    },
+    {
+      "id": "seniority_staff",
+      "as_run": "PARTIALx5",
+      "corrected": "PARTIALx5",
+      "class": {
+        "EXTRACTION": 5
+      }
+    },
+    {
+      "id": "fidelity_geography_hyderabad",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "strength_requirements_not_weakened",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "no_second_path",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "no_invented_exclusion",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "no_preference_hardened",
+      "as_run": "FAILx5",
+      "corrected": "FAILx5",
+      "class": {
+        "EXTRACTION": 5
+      }
+    },
+    {
+      "id": "no_role1_concepts",
+      "as_run": "FAILx5",
+      "corrected": "FAILx5",
+      "class": {
+        "EXTRACTION": 5
+      }
+    },
+    {
+      "id": "no_company_filter",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "no_hard_seniority_from_responsibilities",
+      "as_run": "PARTIALx5",
+      "corrected": "PARTIALx5",
+      "class": {
+        "EXTRACTION": 5
+      }
+    },
+    {
+      "id": "no_invented_proficiency",
+      "as_run": "FAILx5",
+      "corrected": "FAILx5",
+      "class": {
+        "EXTRACTION": 5
+      }
+    },
+    {
+      "id": "advanced_proficiency",
+      "as_run": "PARTIALx5",
+      "corrected": "PARTIALx5",
+      "class": {
+        "REPRESENTATION": 5
+      }
+    },
+    {
+      "id": "hybrid_work_mode",
+      "as_run": "PARTIALx5",
+      "corrected": "PARTIALx5",
+      "class": {
+        "REPRESENTATION": 5
+      }
+    },
+    {
+      "id": "reconciliation_discipline",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "provenance_preserved",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "provenance_location_from_brief",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "generic_validators_clean",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    }
+  ],
+  "per_run": [
+    {
+      "run": 1,
+      "role_family": [
+        "Software Engineer",
+        "Solution Architect",
+        "Forward Deployed Engineer"
+      ],
+      "seniority_typed": null,
+      "staff_in_text": [
+        "Staff-level hands-on engineering individual contributor"
+      ],
+      "remote": null,
+      "hybrid_in_text": [
+        "Work on a hybrid basis in Hyderabad"
+      ],
+      "counts": {
+        "skills": 43,
+        "any_of": 2,
+        "evidence_signals": 21,
+        "domain": 4,
+        "required_evidence_signals": 21,
+        "reconciliations": 0
+      },
+      "hands_on": {
+        "total": 20,
+        "A_source_states_depth": [
+          "Python",
+          "Java",
+          "Generative AI"
+        ],
+        "B_defensible_by_hands_on_framing": [
+          "Full Stack Software Development",
+          "API Development",
+          "Service Development",
+          "Distributed Systems",
+          "Third-Party and Enterprise API Integration"
+        ],
+        "C_no_depth_wording": [
+          "Solution Design",
+          "Data Engineering",
+          "AI/ML Implementation",
+          "Large Language Models",
+          "Retrieval-Augmented Generation",
+          "Agentic AI",
+          "AI Orchestration",
+          "Prompt Engineering",
+          "React",
+          "Bootstrap",
+          "Related User Interface Frameworks",
+          "Data Integration"
+        ]
+      },
+      "hands_on_quote_states_depth": "7/20",
+      "required_skills_relationship": {
+        "any": 33,
+        "current": 10
+      },
+      "required_signals_from_responsibilities_only": [
+        "Staff-level hands-on engineering individual contributor",
+        "Translate business and product requirements into end-to-end solutions, user stories, and t",
+        "Design and develop scalable, secure, maintainable enterprise applications integrated into ",
+        "Contribute directly to development, code reviews, technical design discussions, and archit",
+        "Own solution design decisions aligned with security, compliance, performance, and operatio",
+        "Champion engineering best practices, coding standards, testing strategies, and quality met",
+        "Evaluate and adopt emerging technologies to improve application and AI-system scalability,",
+        "Collaborate with data engineers and data scientists on data quality, availability, and suc",
+        "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure ",
+        "Recent experience building and deploying AI-powered applications",
+        "Improve generative AI quality, relevance, and reliability through prompt engineering and A",
+        "Communicate technical solutions, risks, and recommendations to leadership, business stakeh",
+        "Stay current with software engineering, AI, machine learning, and cloud advances and recom",
+        "Provide technical leadership, mentor team members, resolve complex technical challenges, a"
+      ],
+      "required_signals_from_requirements": 3,
+      "aks_and_eks_both_required_separately": true,
+      "domain_atoms": [
+        [
+          "Enterprise-scale applications",
+          "required"
+        ],
+        [
+          "Enterprise data integration across SaaS applications",
+          "required"
+        ],
+        [
+          "Production generative AI solutions",
+          "required"
+        ],
+        [
+          "Client-facing AI solutions and existing product enhancement",
+          "context"
+        ]
+      ],
+      "validator_errors": {},
+      "diagnostic_codes": {
+        "quote_weakly_related": 6
+      }
+    },
+    {
+      "run": 2,
+      "role_family": [
+        "Software Engineer",
+        "Solution Architect",
+        "Forward Deployed Engineer"
+      ],
+      "seniority_typed": null,
+      "staff_in_text": [
+        "Staff-level hands-on individual contributor"
+      ],
+      "remote": null,
+      "hybrid_in_text": [
+        "Hybrid working availability"
+      ],
+      "counts": {
+        "skills": 42,
+        "any_of": 2,
+        "evidence_signals": 21,
+        "domain": 2,
+        "required_evidence_signals": 21,
+        "reconciliations": 0
+      },
+      "hands_on": {
+        "total": 18,
+        "A_source_states_depth": [
+          "Python",
+          "Java",
+          "Generative AI"
+        ],
+        "B_defensible_by_hands_on_framing": [
+          "Full Stack Software Development",
+          "API Development",
+          "Service Development",
+          "Distributed Systems"
+        ],
+        "C_no_depth_wording": [
+          "Solution Design",
+          "AI/ML Implementation",
+          "Large Language Models (LLMs)",
+          "Retrieval-Augmented Generation (RAG)",
+          "Agentic AI",
+          "AI Orchestration",
+          "Prompt Engineering",
+          "React",
+          "Bootstrap",
+          "Related User Interface Frameworks",
+          "Data Integration"
+        ]
+      },
+      "hands_on_quote_states_depth": "4/18",
+      "required_skills_relationship": {
+        "any": 32,
+        "current": 10
+      },
+      "required_signals_from_responsibilities_only": [
+        "Recent experience building and deploying AI-powered applications",
+        "Translate business requirements into end-to-end solutions and actionable user stories and ",
+        "Design scalable, secure, maintainable solutions integrated into existing products and stra",
+        "Contribute directly to development, code reviews, technical design discussions, and archit",
+        "Own solution design decisions aligned with security, compliance, performance, and operatio",
+        "Champion engineering practices, coding standards, testing strategies, and quality metrics",
+        "Evaluate emerging technologies and recommend practical innovations to improve scalability,",
+        "Collaborate with data engineers and data scientists on data quality, availability, and AI/",
+        "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure ",
+        "Improve generative AI quality, relevance, and reliability",
+        "Communicate technical solutions, risks, and recommendations",
+        "Stay current with software engineering, AI, machine learning, and cloud advancements",
+        "Provide technical leadership, mentor team members, resolve complex challenges, and foster "
+      ],
+      "required_signals_from_requirements": 4,
+      "aks_and_eks_both_required_separately": true,
+      "domain_atoms": [
+        [
+          "Enterprise application development",
+          "required"
+        ],
+        [
+          "Enterprise data integration across SaaS applications",
+          "required"
+        ]
+      ],
+      "validator_errors": {},
+      "diagnostic_codes": {
+        "quote_weakly_related": 5
+      }
+    },
+    {
+      "run": 3,
+      "role_family": [
+        "Software Engineer",
+        "Solution Architect",
+        "Forward Deployed Engineer"
+      ],
+      "seniority_typed": null,
+      "staff_in_text": [
+        "Staff-level hands-on individual contributor in software engineering and solution architecture"
+      ],
+      "remote": null,
+      "hybrid_in_text": [
+        "Work on a hybrid basis in Hyderabad"
+      ],
+      "counts": {
+        "skills": 36,
+        "any_of": 2,
+        "evidence_signals": 27,
+        "domain": 3,
+        "required_evidence_signals": 27,
+        "reconciliations": 0
+      },
+      "hands_on": {
+        "total": 15,
+        "A_source_states_depth": [
+          "Python",
+          "Java",
+          "Generative AI"
+        ],
+        "B_defensible_by_hands_on_framing": [
+          "Full Stack Software Development",
+          "API Integration"
+        ],
+        "C_no_depth_wording": [
+          "Solution Design",
+          "Data Engineering",
+          "AI/ML Implementation",
+          "Large Language Models (LLMs)",
+          "Retrieval-Augmented Generation (RAG)",
+          "Agentic AI",
+          "AI Orchestration",
+          "Prompt Engineering",
+          "React",
+          "Bootstrap"
+        ]
+      },
+      "hands_on_quote_states_depth": "6/15",
+      "required_skills_relationship": {
+        "any": 31,
+        "current": 5
+      },
+      "required_signals_from_responsibilities_only": [
+        "Staff-level hands-on individual contributor in software engineering and solution architect",
+        "Recent experience building and deploying AI-powered applications",
+        "Partner with business and product stakeholders on end-to-end solutions and help Product Ow",
+        "Design scalable, secure, maintainable solutions integrated into existing products and stra",
+        "Contribute directly to development, code reviews, technical design discussions, architectu",
+        "Drive solution design decisions aligned with security, compliance, performance, and operat",
+        "Champion engineering best practices, coding standards, testing strategies, and quality met",
+        "Design, develop, and maintain APIs, services, and integrations supporting enterprise appli",
+        "Integrate and optimize internal and external data across enterprise SaaS applications",
+        "Collaborate with data engineers and data scientists to ensure data quality, availability, ",
+        "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure ",
+        "Improve generative AI quality, relevance, and reliability through prompt engineering and A",
+        "Communicate technical solutions, risks, and recommendations to leadership, business stakeh",
+        "Evaluate and adopt emerging technologies to improve application and AI system scalability,",
+        "Stay current with software engineering, AI, machine learning, and cloud advances and recom",
+        "Provide technical leadership, mentor team members, resolve complex technical challenges, a"
+      ],
+      "required_signals_from_requirements": 8,
+      "aks_and_eks_both_required_separately": true,
+      "domain_atoms": [
+        [
+          "Enterprise applications and AI-driven solutions",
+          "required"
+        ],
+        [
+          "Enterprise data integration across SaaS applications",
+          "required"
+        ],
+        [
+          "Client-facing solution development",
+          "required"
+        ]
+      ],
+      "validator_errors": {},
+      "diagnostic_codes": {
+        "quote_weakly_related": 4
+      }
+    },
+    {
+      "run": 4,
+      "role_family": [
+        "Software Engineer",
+        "Solution Architect",
+        "Forward Deployed Engineer"
+      ],
+      "seniority_typed": null,
+      "staff_in_text": [
+        "Staff-level individual contributor engineering scope"
+      ],
+      "remote": null,
+      "hybrid_in_text": [
+        "Availability to work on a hybrid basis"
+      ],
+      "counts": {
+        "skills": 42,
+        "any_of": 2,
+        "evidence_signals": 24,
+        "domain": 4,
+        "required_evidence_signals": 24,
+        "reconciliations": 0
+      },
+      "hands_on": {
+        "total": 15,
+        "A_source_states_depth": [
+          "Python",
+          "Java",
+          "Generative AI"
+        ],
+        "B_defensible_by_hands_on_framing": [
+          "Full Stack Software Development",
+          "API Development",
+          "Service Development",
+          "Distributed Systems"
+        ],
+        "C_no_depth_wording": [
+          "Solution Design",
+          "Data Engineering",
+          "AI/ML Implementation",
+          "Prompt Engineering",
+          "AI Orchestration",
+          "React",
+          "Bootstrap",
+          "Related User Interface Frameworks"
+        ]
+      },
+      "hands_on_quote_states_depth": "5/15",
+      "required_skills_relationship": {
+        "any": 41,
+        "current": 1
+      },
+      "required_signals_from_responsibilities_only": [
+        "Staff-level individual contributor engineering scope",
+        "Recent experience building and deploying AI-powered applications",
+        "Partners with business and product stakeholders and helps Product Owners translate initiat",
+        "Designs scalable, secure, maintainable solutions integrated into existing products and sol",
+        "Active contribution to software development, code reviews, technical design discussions, a",
+        "Solution decisions aligned with security, compliance, performance, and operational require",
+        "Champions engineering best practices, coding standards, testing strategies, and quality me",
+        "Integrates and optimizes internal and external data across enterprise SaaS applications",
+        "Designs, develops, and maintains APIs, services, and integrations for enterprise applicati",
+        "Evaluates emerging technologies to improve application and AI system scalability, maintain",
+        "Collaborates with data engineers and data scientists on data quality, availability, and AI",
+        "Designs, implements, and maintains data pipelines, processing frameworks, and infrastructu",
+        "Improves generative AI quality, relevance, and reliability through prompt engineering and ",
+        "Communicates technical solutions, risks, and recommendations to leadership, business stake",
+        "Stays current with software engineering, AI, machine learning, and cloud advances and reco",
+        "Provides technical leadership, mentors team members, resolves complex technical challenges"
+      ],
+      "required_signals_from_requirements": 5,
+      "aks_and_eks_both_required_separately": true,
+      "domain_atoms": [
+        [
+          "Enterprise-scale applications",
+          "required"
+        ],
+        [
+          "Production generative AI solutions",
+          "required"
+        ],
+        [
+          "Enterprise data integration across SaaS applications",
+          "required"
+        ],
+        [
+          "Client-facing solution engineering and existing product enhancement",
+          "context"
+        ]
+      ],
+      "validator_errors": {},
+      "diagnostic_codes": {
+        "quote_weakly_related": 5
+      }
+    },
+    {
+      "run": 5,
+      "role_family": [
+        "Software Engineer",
+        "Solution Architect",
+        "Forward Deployed Engineer"
+      ],
+      "seniority_typed": null,
+      "staff_in_text": [
+        "Staff-level engineering role"
+      ],
+      "remote": null,
+      "hybrid_in_text": [
+        "Ability to work on a hybrid basis"
+      ],
+      "counts": {
+        "skills": 41,
+        "any_of": 2,
+        "evidence_signals": 23,
+        "domain": 3,
+        "required_evidence_signals": 23,
+        "reconciliations": 0
+      },
+      "hands_on": {
+        "total": 18,
+        "A_source_states_depth": [
+          "Python",
+          "Java",
+          "Generative AI"
+        ],
+        "B_defensible_by_hands_on_framing": [
+          "Full Stack Software Development",
+          "API Development",
+          "Service Development",
+          "Distributed Systems"
+        ],
+        "C_no_depth_wording": [
+          "Data Engineering",
+          "AI/ML Implementation",
+          "Large Language Models",
+          "Retrieval-Augmented Generation",
+          "Agentic AI",
+          "AI Orchestration Patterns",
+          "Prompt Engineering",
+          "React",
+          "Bootstrap",
+          "Related User Interface Frameworks",
+          "Data Integration"
+        ]
+      },
+      "hands_on_quote_states_depth": "9/18",
+      "required_skills_relationship": {
+        "any": 35,
+        "current": 6
+      },
+      "required_signals_from_responsibilities_only": [
+        "Staff-level engineering role",
+        "Recent experience building and deploying AI-powered applications",
+        "Partner with business and product stakeholders on requirements, end-to-end solution design",
+        "Design scalable, secure, maintainable solutions integrated into existing products and stra",
+        "Active software development, code review, technical design, architecture review, and techn",
+        "Own solution design decisions aligned with security, compliance, performance, and operatio",
+        "Champion engineering practices, coding standards, testing strategies, and quality metrics",
+        "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure ",
+        "Collaborate with data engineers and data scientists on data quality, availability, and suc",
+        "Evaluate and adopt emerging technologies to improve application and AI system scalability,",
+        "Stay current with software engineering, AI, machine learning, and cloud advances and recom",
+        "Technical leadership, mentoring, complex technical problem resolution, and collaborative e",
+        "Communicate technical solutions, risks, and recommendations to leadership, business stakeh",
+        "Apply AI best practices to improve generative AI solution quality and reliability"
+      ],
+      "required_signals_from_requirements": 5,
+      "aks_and_eks_both_required_separately": true,
+      "domain_atoms": [
+        [
+          "Enterprise-scale applications and AI-driven solutions",
+          "required"
+        ],
+        [
+          "Enterprise data integration across SaaS applications",
+          "required"
+        ],
+        [
+          "Client solutions and existing product enhancement",
+          "context"
+        ]
+      ],
+      "validator_errors": {},
+      "diagnostic_codes": {
+        "quote_weakly_related": 4
+      }
+    }
+  ],
+  "downstream": [
+    {
+      "run": 1,
+      "hard_filter_leaves": 46,
+      "top_level_conditions": 16,
+      "retrieval_title_family": [
+        "Software Engineer",
+        "Backend Engineer",
+        "Backend Developer",
+        "Python Developer",
+        "Solution Architect",
+        "Forward Deployed Engineer"
+      ],
+      "title_filter": [
+        "Software Engineer",
+        "Backend Engineer",
+        "Backend Developer",
+        "Python Developer",
+        "Solution Architect",
+        "Forward Deployed Engineer"
+      ],
+      "experience_leaf": [
+        [
+          "=>",
+          12
+        ]
+      ],
+      "location_leaves": [
+        [
+          "country",
+          [
+            "India"
+          ]
+        ],
+        [
+          "state",
+          [
+            "Telangana"
+          ]
+        ],
+        [
+          "city",
+          [
+            "Hyderabad"
+          ]
+        ]
+      ],
+      "required_skill_groups_as_hard_ands": 11,
+      "audit_routes": {
+        "provider_hard_filter": 14,
+        "downstream_evidence": 56
+      },
+      "warnings": [
+        "skill 'AI/ML Implementation': filtered on response-gated text; not displayable from the provider",
+        "skill 'API Development': filtered on response-gated text; not displayable from the provider",
+        "skill 'Service Development': filtered on response-gated text; not displayable from the provider"
+      ],
+      "seniority_audit": []
+    },
+    {
+      "run": 2,
+      "hard_filter_leaves": 46,
+      "top_level_conditions": 16,
+      "retrieval_title_family": [
+        "Software Engineer",
+        "Backend Engineer",
+        "Backend Developer",
+        "Python Developer",
+        "Solution Architect",
+        "Forward Deployed Engineer"
+      ],
+      "title_filter": [
+        "Software Engineer",
+        "Backend Engineer",
+        "Backend Developer",
+        "Python Developer",
+        "Solution Architect",
+        "Forward Deployed Engineer"
+      ],
+      "experience_leaf": [
+        [
+          "=>",
+          12
+        ]
+      ],
+      "location_leaves": [
+        [
+          "country",
+          [
+            "India"
+          ]
+        ],
+        [
+          "state",
+          [
+            "Telangana"
+          ]
+        ],
+        [
+          "city",
+          [
+            "Hyderabad"
+          ]
+        ]
+      ],
+      "required_skill_groups_as_hard_ands": 11,
+      "audit_routes": {
+        "provider_hard_filter": 14,
+        "downstream_evidence": 55
+      },
+      "warnings": [
+        "skill 'Solution Design': filtered on response-gated text; not displayable from the provider",
+        "skill 'AI/ML Implementation': filtered on response-gated text; not displayable from the provider",
+        "skill 'API Development': filtered on response-gated text; not displayable from the provider"
+      ],
+      "seniority_audit": []
+    },
+    {
+      "run": 3,
+      "hard_filter_leaves": 31,
+      "top_level_conditions": 11,
+      "retrieval_title_family": [
+        "Software Engineer",
+        "Backend Engineer",
+        "Backend Developer",
+        "Python Developer",
+        "Solution Architect",
+        "Forward Deployed Engineer"
+      ],
+      "title_filter": [
+        "Software Engineer",
+        "Backend Engineer",
+        "Backend Developer",
+        "Python Developer",
+        "Solution Architect",
+        "Forward Deployed Engineer"
+      ],
+      "experience_leaf": [
+        [
+          "=>",
+          12
+        ]
+      ],
+      "location_leaves": [
+        [
+          "country",
+          [
+            "India"
+          ]
+        ],
+        [
+          "state",
+          [
+            "Telangana"
+          ]
+        ],
+        [
+          "city",
+          [
+            "Hyderabad"
+          ]
+        ]
+      ],
+      "required_skill_groups_as_hard_ands": 6,
+      "audit_routes": {
+        "provider_hard_filter": 9,
+        "downstream_evidence": 60
+      },
+      "warnings": [
+        "skill 'Large Language Models (LLMs)': filtered on response-gated text; not displayable from the provider",
+        "skill 'Retrieval-Augmented Generation (RAG)': filtered on response-gated text; not displayable from the provider",
+        "skill 'Agentic AI': filtered on response-gated text; not displayable from the provider"
+      ],
+      "seniority_audit": []
+    },
+    {
+      "run": 4,
+      "hard_filter_leaves": 19,
+      "top_level_conditions": 7,
+      "retrieval_title_family": [
+        "Software Engineer",
+        "Backend Engineer",
+        "Backend Developer",
+        "Python Developer",
+        "Solution Architect",
+        "Forward Deployed Engineer"
+      ],
+      "title_filter": [
+        "Software Engineer",
+        "Backend Engineer",
+        "Backend Developer",
+        "Python Developer",
+        "Solution Architect",
+        "Forward Deployed Engineer"
+      ],
+      "experience_leaf": [
+        [
+          "=>",
+          12
+        ]
+      ],
+      "location_leaves": [
+        [
+          "country",
+          [
+            "India"
+          ]
+        ],
+        [
+          "state",
+          [
+            "Telangana"
+          ]
+        ],
+        [
+          "city",
+          [
+            "Hyderabad"
+          ]
+        ]
+      ],
+      "required_skill_groups_as_hard_ands": 2,
+      "audit_routes": {
+        "provider_hard_filter": 5,
+        "downstream_evidence": 67
+      },
+      "warnings": [
+        "skill 'Generative AI': filtered on response-gated text; not displayable from the provider",
+        "education stream: filterable but response-gated (not displayable); verify via Harvest if needed"
+      ],
+      "seniority_audit": []
+    },
+    {
+      "run": 5,
+      "hard_filter_leaves": 34,
+      "top_level_conditions": 12,
+      "retrieval_title_family": [
+        "Software Engineer",
+        "Backend Engineer",
+        "Backend Developer",
+        "Python Developer",
+        "Solution Architect",
+        "Forward Deployed Engineer"
+      ],
+      "title_filter": [
+        "Software Engineer",
+        "Backend Engineer",
+        "Backend Developer",
+        "Python Developer",
+        "Solution Architect",
+        "Forward Deployed Engineer"
+      ],
+      "experience_leaf": [
+        [
+          "=>",
+          12
+        ]
+      ],
+      "location_leaves": [
+        [
+          "country",
+          [
+            "India"
+          ]
+        ],
+        [
+          "state",
+          [
+            "Telangana"
+          ]
+        ],
+        [
+          "city",
+          [
+            "Hyderabad"
+          ]
+        ]
+      ],
+      "required_skill_groups_as_hard_ands": 7,
+      "audit_routes": {
+        "provider_hard_filter": 10,
+        "downstream_evidence": 60
+      },
+      "warnings": [
+        "skill 'Large Language Models': filtered on response-gated text; not displayable from the provider",
+        "skill 'Retrieval-Augmented Generation': filtered on response-gated text; not displayable from the provider",
+        "skill 'Agentic AI': filtered on response-gated text; not displayable from the provider"
+      ],
+      "seniority_audit": []
+    }
+  ],
+  "stability": {
+    "runs": 5,
+    "parsed": 5,
+    "errors": [],
+    "components": {
+      "paths": {
+        "modal_value": "0",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "0": 5
+        }
+      },
+      "exclusions": {
+        "modal_value": "0",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "0": 5
+        }
+      },
+      "companies": {
+        "modal_value": "0",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "0": 5
+        }
+      },
+      "domain_atoms": {
+        "modal_value": "4",
+        "agreement": "2/5",
+        "distinct": 3,
+        "values": {
+          "4": 2,
+          "2": 1,
+          "3": 2
+        }
+      },
+      "role_family": {
+        "modal_value": "('forward deployed engineer', 'software engineer', 'solution architect')",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "('forward deployed engineer', 'software engineer', 'solution architect')": 5
+        }
+      },
+      "seniority": {
+        "modal_value": "None",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "None": 5
+        }
+      },
+      "experience": {
+        "modal_value": "(12, 'required')",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "(12, 'required')": 5
+        }
+      },
+      "education": {
+        "modal_value": "((\"bachelor's\", \"master's\"), 'required')",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "((\"bachelor's\", \"master's\"), 'required')": 5
+        }
+      },
+      "location": {
+        "modal_value": "(('hyderabad',), (), None, False)",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "(('hyderabad',), (), None, False)": 5
+        }
+      },
+      "proficiency": {
+        "modal_value": "'{\"azure_devops\": [\"working_knowledge\"], \"genai\": [\"hands_on\", \"none\"], \"java\": [\"hands_on\"], \"jira\": [\"working_knowledge\"], \"metadata\": [\"working_knowledge\"], \"python\": [\"hands_on\"]}'",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "'{\"azure_devops\": [\"working_knowledge\"], \"genai\": [\"hands_on\", \"none\"], \"java\": [\"hands_on\"], \"jira\": [\"working_knowledge\"], \"metadata\": [\"working_knowledge\"], \"python\": [\"hands_on\"]}'": 5
+        }
+      },
+      "cloud_in_or_group": {
+        "modal_value": "True",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "True": 5
+        }
+      },
+      "ml_in_or_group": {
+        "modal_value": "True",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "True": 5
+        }
+      },
+      "facts_present": {
+        "modal_value": "'28/28'",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "'28/28'": 5
+        }
+      },
+      "required_atoms": {
+        "modal_value": "73",
+        "agreement": "2/5",
+        "distinct": 4,
+        "values": {
+          "74": 1,
+          "72": 1,
+          "73": 2,
+          "76": 1
+        }
+      },
+      "reconciliation_actions": {
+        "modal_value": "()",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "()": 5
+        }
+      },
+      "validator_errors": {
+        "modal_value": "()",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "()": 5
+        }
+      },
+      "non_pass": {
+        "modal_value": "('advanced_proficiency', 'fidelity_role_family', 'hybrid_work_mode', 'no_hard_seniority_from_responsibilities', 'no_invented_proficiency', 'no_preference_hardened', 'no_role1_concepts', 'seniority_staff')",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "('advanced_proficiency', 'fidelity_role_family', 'hybrid_work_mode', 'no_hard_seniority_from_responsibilities', 'no_invented_proficiency', 'no_preference_hardened', 'no_role1_concepts', 'seniority_staff')": 5
+        }
+      }
+    },
+    "assertion_statuses": {
+      "fidelity_experience_12": {
+        "PASS": 5
+      },
+      "fidelity_education": {
+        "PASS": 5
+      },
+      "fidelity_python_and_java": {
+        "PASS": 5
+      },
+      "fidelity_genai_and_ai_concepts": {
+        "PASS": 5
+      },
+      "fidelity_devops_ui_data_apis": {
+        "PASS": 5
+      },
+      "fidelity_familiarity_items": {
+        "PASS": 5
+      },
+      "fidelity_cloud_or": {
+        "PASS": 5
+      },
+      "fidelity_ml_libraries_or": {
+        "PASS": 5
+      },
+      "fidelity_soft_and_engineering": {
+        "PASS": 5
+      },
+      "fidelity_brief_profile": {
+        "PASS": 5
+      },
+      "fidelity_role_family": {
+        "FAIL": 5
+      },
+      "seniority_staff": {
+        "PARTIAL": 5
+      },
+      "fidelity_geography_hyderabad": {
+        "PASS": 5
+      },
+      "strength_requirements_not_weakened": {
+        "PASS": 5
+      },
+      "no_second_path": {
+        "PASS": 5
+      },
+      "no_invented_exclusion": {
+        "PASS": 5
+      },
+      "no_preference_hardened": {
+        "FAIL": 5
+      },
+      "no_role1_concepts": {
+        "FAIL": 5
+      },
+      "no_company_filter": {
+        "PASS": 5
+      },
+      "no_hard_seniority_from_responsibilities": {
+        "PARTIAL": 5
+      },
+      "no_invented_proficiency": {
+        "FAIL": 5
+      },
+      "advanced_proficiency": {
+        "PARTIAL": 5
+      },
+      "hybrid_work_mode": {
+        "PARTIAL": 5
+      },
+      "reconciliation_discipline": {
+        "PASS": 5
+      },
+      "provenance_preserved": {
+        "PASS": 5
+      },
+      "provenance_location_from_brief": {
+        "PASS": 5
+      },
+      "generic_validators_clean": {
+        "PASS": 5
+      }
+    },
+    "diagnostic_codes_across_runs": {
+      "quote_weakly_related": 24
+    }
+  },
+  "tokens": {
+    "input": 24185,
+    "output": 28413,
+    "elapsed_s": [
+      76.07,
+      72.61,
+      74.06,
+      77.73,
+      76.93
+    ]
+  },
+  "parsed": "5/5"
+}

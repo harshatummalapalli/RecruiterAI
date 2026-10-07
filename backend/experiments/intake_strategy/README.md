@@ -42,3 +42,9 @@ reasoning effort are whatever `structured_intent_extractor` already uses; nothin
 
     OPENAI_API_KEY=... python -m backend.experiments.intake_strategy.run_experimental --runs 5
     python -m backend.experiments.intake_strategy.compare_arms
+
+## Cross-role validation (Role 2)
+
+`ROLE2_GROUND_TRUTH.md` (written and committed before any model run), `inputs/role2_*.txt`, `gold_role2.py`, `run_role2.py`, `compare_role2.py`,
+`RESULTS_ROLE2.md` (verdict: NEW REPRESENTATION GAP FOUND), `results/role2/`. The frozen schema, `prompt_v3.txt` and validators were run unchanged;
+Role 1 files are pinned by hash in `tests/test_experiment_role2.py`.

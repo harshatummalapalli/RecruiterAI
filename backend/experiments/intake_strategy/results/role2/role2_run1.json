@@ -1,0 +1,2389 @@
+{
+ "run": 1,
+ "error": null,
+ "transient_retries": [],
+ "intent": {
+  "role_archetype": {
+   "value": "hybrid",
+   "confidence": 0.97,
+   "rationale": "The role combines explicitly named engineering and solution-architecture roles with substantive full-stack, data-engineering, and AI implementation requirements."
+  },
+  "role_family": [
+   "Software Engineer",
+   "Solution Architect",
+   "Forward Deployed Engineer"
+  ],
+  "seniority": null,
+  "skills": [
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "strong expertise in Full Stack Software Development, Solution Design, Data Engineering, and AI/ML implementation."
+    },
+    "strength": "required",
+    "name": "Full Stack Software Development",
+    "relationship": "any",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "quote": "strong expertise in Full Stack Software Development, Solution Design, Data Engineering, and AI/ML implementation."
+    },
+    "strength": "required",
+    "name": "Solution Design",
+    "relationship": "any",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "strong expertise in Full Stack Software Development, Solution Design, Data Engineering, and AI/ML implementation."
+    },
+    "strength": "required",
+    "name": "Data Engineering",
+    "relationship": "any",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "recent experience building and deploying AI-powered applications."
+    },
+    "strength": "required",
+    "name": "AI/ML Implementation",
+    "relationship": "current",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Advanced proficiency in Python and Java with strong experience building APIs, services, and distributed systems."
+    },
+    "strength": "required",
+    "name": "Python",
+    "relationship": "any",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Advanced proficiency in Python and Java with strong experience building APIs, services, and distributed systems."
+    },
+    "strength": "required",
+    "name": "Java",
+    "relationship": "any",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Design, develop, and maintain APIs, services, and integrations that support enterprise applications and AI solutions."
+    },
+    "strength": "required",
+    "name": "API Development",
+    "relationship": "current",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Design, develop, and maintain APIs, services, and integrations that support enterprise applications and AI solutions."
+    },
+    "strength": "required",
+    "name": "Service Development",
+    "relationship": "current",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Advanced proficiency in Python and Java with strong experience building APIs, services, and distributed systems."
+    },
+    "strength": "required",
+    "name": "Distributed Systems",
+    "relationship": "any",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Hands-on experience implementing and deploying Generative AI solutions in production environments."
+    },
+    "strength": "required",
+    "name": "Generative AI",
+    "relationship": "current",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), Agentic AI frameworks, and modern AI orchestration patterns."
+    },
+    "strength": "required",
+    "name": "Large Language Models",
+    "relationship": "current",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), Agentic AI frameworks, and modern AI orchestration patterns."
+    },
+    "strength": "required",
+    "name": "Retrieval-Augmented Generation",
+    "relationship": "current",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), Agentic AI frameworks, and modern AI orchestration patterns."
+    },
+    "strength": "required",
+    "name": "Agentic AI",
+    "relationship": "current",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), Agentic AI frameworks, and modern AI orchestration patterns."
+    },
+    "strength": "required",
+    "name": "AI Orchestration",
+    "relationship": "current",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Apply prompt engineering techniques and AI best practices to improve the quality, relevance, and reliability of generative AI solutions."
+    },
+    "strength": "required",
+    "name": "Prompt Engineering",
+    "relationship": "current",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Strong understanding of LLMs, RAG architectures, Agentic AI, Prompt Engineering, MCP, A2A, and modern AI application development patterns."
+    },
+    "strength": "required",
+    "name": "MCP",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Strong understanding of LLMs, RAG architectures, Agentic AI, Prompt Engineering, MCP, A2A, and modern AI application development patterns."
+    },
+    "strength": "required",
+    "name": "A2A",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Strong understanding of LLMs, RAG architectures, Agentic AI, Prompt Engineering, MCP, A2A, and modern AI application development patterns."
+    },
+    "strength": "required",
+    "name": "AI Application Development Patterns",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience working with NLP frameworks and machine learning libraries such as TensorFlow, PyTorch, scikit-learn, or similar technologies."
+    },
+    "strength": "required",
+    "name": "NLP Frameworks",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments."
+    },
+    "strength": "required",
+    "name": "DevOps",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments."
+    },
+    "strength": "required",
+    "name": "CI/CD",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments."
+    },
+    "strength": "required",
+    "name": "Terraform",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments."
+    },
+    "strength": "required",
+    "name": "AKS",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments."
+    },
+    "strength": "required",
+    "name": "EKS",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments."
+    },
+    "strength": "required",
+    "name": "GitHub Actions",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments."
+    },
+    "strength": "required",
+    "name": "Containerized Deployments",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience building modern user interfaces using React, Bootstrap, and related frameworks."
+    },
+    "strength": "required",
+    "name": "React",
+    "relationship": "any",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience building modern user interfaces using React, Bootstrap, and related frameworks."
+    },
+    "strength": "required",
+    "name": "Bootstrap",
+    "relationship": "any",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience building modern user interfaces using React, Bootstrap, and related frameworks."
+    },
+    "strength": "required",
+    "name": "Related User Interface Frameworks",
+    "relationship": "any",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Familiarity with Azure DevOps, Jira, and modern software delivery practices."
+    },
+    "strength": "required",
+    "name": "Azure DevOps",
+    "relationship": "any",
+    "proficiency": "working_knowledge"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Familiarity with Azure DevOps, Jira, and modern software delivery practices."
+    },
+    "strength": "required",
+    "name": "Jira",
+    "relationship": "any",
+    "proficiency": "working_knowledge"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Familiarity with Azure DevOps, Jira, and modern software delivery practices."
+    },
+    "strength": "required",
+    "name": "Modern Software Delivery Practices",
+    "relationship": "any",
+    "proficiency": "working_knowledge"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience working with Snowflake, Databricks, and modern data platforms."
+    },
+    "strength": "required",
+    "name": "Snowflake",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience working with Snowflake, Databricks, and modern data platforms."
+    },
+    "strength": "required",
+    "name": "Databricks",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience working with Snowflake, Databricks, and modern data platforms."
+    },
+    "strength": "required",
+    "name": "Modern Data Platforms",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Integrate and optimize data from various internal and external systems, understanding the challenges associated with enterprise data integration across SaaS applications."
+    },
+    "strength": "required",
+    "name": "Data Integration",
+    "relationship": "current",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Strong understanding of Data Integration, ETL, Data Quality, Data Discovery, and enterprise data management concepts."
+    },
+    "strength": "required",
+    "name": "ETL",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Strong understanding of Data Integration, ETL, Data Quality, Data Discovery, and enterprise data management concepts."
+    },
+    "strength": "required",
+    "name": "Data Quality",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Strong understanding of Data Integration, ETL, Data Quality, Data Discovery, and enterprise data management concepts."
+    },
+    "strength": "required",
+    "name": "Data Discovery",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Strong understanding of Data Integration, ETL, Data Quality, Data Discovery, and enterprise data management concepts."
+    },
+    "strength": "required",
+    "name": "Enterprise Data Management",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience integrating third-party and enterprise APIs."
+    },
+    "strength": "required",
+    "name": "Third-Party and Enterprise API Integration",
+    "relationship": "any",
+    "proficiency": "hands_on"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Familiarity with metadata management tools and data governance concepts."
+    },
+    "strength": "required",
+    "name": "Metadata Management Tools",
+    "relationship": "any",
+    "proficiency": "working_knowledge"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Familiarity with metadata management tools and data governance concepts."
+    },
+    "strength": "required",
+    "name": "Data Governance",
+    "relationship": "any",
+    "proficiency": "working_knowledge"
+   }
+  ],
+  "skill_any_of": [
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience working with NLP frameworks and machine learning libraries such as TensorFlow, PyTorch, scikit-learn, or similar technologies."
+    },
+    "strength": "required",
+    "any_of": [
+     "TensorFlow",
+     "PyTorch",
+     "scikit-learn",
+     "Similar Machine Learning Libraries"
+    ],
+    "relationship": "any"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience with cloud platforms and services including Azure and/or AWS."
+    },
+    "strength": "required",
+    "any_of": [
+     "Azure",
+     "AWS"
+    ],
+    "relationship": "any"
+   }
+  ],
+  "companies": [],
+  "company_scale": null,
+  "education": {
+   "basis": {
+    "sources": [
+     "jd"
+    ],
+    "quote": "Bachelor's or Master's degree in Computer Science, Information Technology, Software Engineering, or a related field."
+   },
+   "strength": "required",
+   "degrees": [
+    "Bachelor's",
+    "Master's"
+   ],
+   "streams": [
+    "Computer Science",
+    "Information Technology",
+    "Software Engineering",
+    "Related field"
+   ]
+  },
+  "experience": {
+   "basis": {
+    "sources": [
+     "jd"
+    ],
+    "quote": "12+ years of experience in Full Stack Software Development, Solution Design, Data Engineering, and AI/ML implementation."
+   },
+   "strength": "required",
+   "minimum_years": 12,
+   "maximum_years": null
+  },
+  "location": {
+   "basis": {
+    "sources": [
+     "recruiter_brief"
+    ],
+    "quote": "Location is Hyderabad and need someone who can work on a Hybrid basis."
+   },
+   "strength": "required",
+   "entries": [
+    "Hyderabad, Telangana, India"
+   ],
+   "radius": null,
+   "countries": [],
+   "remote": null
+  },
+  "exclusions": [],
+  "evidence_signals": [
+   {
+    "basis": {
+     "sources": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "quote": "Staff Software Engineer/ Solution Architect - AI Solutions"
+    },
+    "strength": "required",
+    "name": "Staff-level hands-on engineering individual contributor"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "quote": "more like a Forward Deployed Engineer who understands the client requirements, builds POC's, designs the system."
+    },
+    "strength": "required",
+    "name": "Understand client requirements and design systems that solve client problems"
+   },
+   {
+    "basis": {
+     "sources": [
+      "recruiter_brief"
+     ],
+     "quote": "builds POC's"
+    },
+    "strength": "required",
+    "name": "Build proofs of concept"
+   },
+   {
+    "basis": {
+     "sources": [
+      "recruiter_brief"
+     ],
+     "quote": "he would be working closely with the existing teams on enhancing the existing products and features."
+    },
+    "strength": "required",
+    "name": "Collaborate with existing teams to enhance existing products and features"
+   },
+   {
+    "basis": {
+     "sources": [
+      "recruiter_brief"
+     ],
+     "quote": "Location is Hyderabad and need someone who can work on a Hybrid basis."
+    },
+    "strength": "required",
+    "name": "Work on a hybrid basis in Hyderabad"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Partner with business and product stakeholders to understand requirements, design end-to-end solutions, and help Product Owners break down initiatives into actionable user stories and technical deliverables."
+    },
+    "strength": "required",
+    "name": "Translate business and product requirements into end-to-end solutions, user stories, and technical deliverables"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Design and develop scalable, secure, and maintainable software solutions that can be integrated into existing products and strategic solution offerings."
+    },
+    "strength": "required",
+    "name": "Design and develop scalable, secure, maintainable enterprise applications integrated into existing products"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Actively contribute to software development, code reviews, technical design discussions, and architecture reviews."
+    },
+    "strength": "required",
+    "name": "Contribute directly to development, code reviews, technical design discussions, and architecture reviews"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Drive solution design decisions while ensuring alignment with security, compliance, performance, and operational requirements."
+    },
+    "strength": "required",
+    "name": "Own solution design decisions aligned with security, compliance, performance, and operational requirements"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Champion engineering best practices, coding standards, testing strategies, and quality metrics across development teams."
+    },
+    "strength": "required",
+    "name": "Champion engineering best practices, coding standards, testing strategies, and quality metrics"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Evaluate and adopt emerging technologies to improve scalability, maintainability, performance, and reliability of applications and AI systems."
+    },
+    "strength": "required",
+    "name": "Evaluate and adopt emerging technologies to improve application and AI-system scalability, maintainability, performance, and reliability"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Collaborate with data engineers and data scientists to ensure data quality, availability, and successful deployment of AI and machine learning capabilities."
+    },
+    "strength": "required",
+    "name": "Collaborate with data engineers and data scientists on data quality, availability, and successful AI/ML deployment"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Design, implement, and maintain data pipelines, processing frameworks, and supporting infrastructure required for AI and machine learning workloads."
+    },
+    "strength": "required",
+    "name": "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "recent experience building and deploying AI-powered applications."
+    },
+    "strength": "required",
+    "name": "Recent experience building and deploying AI-powered applications"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Hands-on experience implementing and deploying Generative AI solutions in production environments."
+    },
+    "strength": "required",
+    "name": "Implement and deploy generative AI solutions in production"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Apply prompt engineering techniques and AI best practices to improve the quality, relevance, and reliability of generative AI solutions."
+    },
+    "strength": "required",
+    "name": "Improve generative AI quality, relevance, and reliability through prompt engineering and AI best practices"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Communicate technical solutions, risks, and recommendations effectively to leadership, business stakeholders, and clients."
+    },
+    "strength": "required",
+    "name": "Communicate technical solutions, risks, and recommendations to leadership, business stakeholders, and clients"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Stay current with advancements in software engineering, AI, machine learning, and cloud technologies, recommending practical innovations for our products and operations."
+    },
+    "strength": "required",
+    "name": "Stay current with software engineering, AI, machine learning, and cloud advances and recommend practical innovations"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Provide technical leadership, mentor team members, resolve complex technical challenges, and foster a collaborative engineering culture."
+    },
+    "strength": "required",
+    "name": "Provide technical leadership, mentor team members, resolve complex technical challenges, and foster collaborative engineering"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Strong analytical, problem-solving, and troubleshooting skills."
+    },
+    "strength": "required",
+    "name": "Strong analytical, problem-solving, and troubleshooting capabilities"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Excellent communication and stakeholder management skills with the ability to effectively engage clients, business stakeholders, leadership teams, and engineering organizations."
+    },
+    "strength": "required",
+    "name": "Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering organizations"
+   }
+  ],
+  "domain": [
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Strong hands-on software engineering background with proven experience designing and developing enterprise-scale applications."
+    },
+    "strength": "required",
+    "name": "Enterprise-scale applications"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Integrate and optimize data from various internal and external systems, understanding the challenges associated with enterprise data integration across SaaS applications."
+    },
+    "strength": "required",
+    "name": "Enterprise data integration across SaaS applications"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Hands-on experience implementing and deploying Generative AI solutions in production environments."
+    },
+    "strength": "required",
+    "name": "Production generative AI solutions"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "quote": "he would be working closely with the existing teams on enhancing the existing products and features."
+    },
+    "strength": "context",
+    "name": "Client-facing AI solutions and existing product enhancement"
+   }
+  ],
+  "semantic_exclusions": [],
+  "sourcing_paths": [],
+  "reconciliations": []
+ },
+ "gold": {
+  "schema_gaps": {
+   "advanced_proficiency": {
+    "representable": false,
+    "values": [
+     "hands_on",
+     "working_knowledge"
+    ],
+    "source": "JD: 'Advanced proficiency in Python and Java'"
+   },
+   "hybrid_work_mode": {
+    "representable": false,
+    "values": [
+     "allowed",
+     "not_allowed"
+    ],
+    "source": "brief: 'need someone who can work on a Hybrid basis'"
+   }
+  },
+  "critical": [
+   {
+    "id": "fidelity_experience_12",
+    "title": "12+ years, required, a single record",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "12+/required"
+   },
+   {
+    "id": "fidelity_education",
+    "title": "Bachelor's or Master's in CS / IT / Software Engineering / related, required",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "[\"Bachelor's\", \"Master's\"] ['Computer Science', 'Information Technology', 'Software Engineering', 'Related field']"
+   },
+   {
+    "id": "fidelity_python_and_java",
+    "title": "Python AND Java, both required",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "both present and required"
+   },
+   {
+    "id": "fidelity_genai_and_ai_concepts",
+    "title": "Generative AI (production) and LLM / RAG / Agentic AI / Prompt Engineering / MCP / A2A",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "all present"
+   },
+   {
+    "id": "fidelity_devops_ui_data_apis",
+    "title": "DevOps/CI-CD, React, Bootstrap, Snowflake, Databricks, data topics, API integration",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "all present"
+   },
+   {
+    "id": "fidelity_familiarity_items",
+    "title": "Azure DevOps, Jira, metadata management / data governance present",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "all present"
+   },
+   {
+    "id": "fidelity_cloud_or",
+    "title": "Azure and/or AWS kept as alternatives",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "options kept: ['aws', 'azure']; kinds=['any_of']"
+   },
+   {
+    "id": "fidelity_ml_libraries_or",
+    "title": "TensorFlow / PyTorch / scikit-learn kept as alternatives",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "options kept: ['pytorch', 'sklearn', 'tensorflow']; kinds=['any_of']"
+   },
+   {
+    "id": "fidelity_soft_and_engineering",
+    "title": "Analytical, communication, hands-on engineering, solution design retained",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "all present"
+   },
+   {
+    "id": "fidelity_brief_profile",
+    "title": "Brief profile kept: IC engineer; client problem design; POCs; existing products/teams",
+    "status": "PARTIAL",
+    "failure_class": "EXTRACTION",
+    "evidence": "ic=True client=True poc=False existing=True"
+   },
+   {
+    "id": "fidelity_role_family",
+    "title": "Role family = Software Engineer, Solution Architect (the JD title), nothing added",
+    "status": "FAIL",
+    "failure_class": "EXTRACTION",
+    "evidence": "invented titles ['forward deployed engineer']"
+   },
+   {
+    "id": "seniority_staff",
+    "title": "Seniority is Staff (the JD title), nothing stronger",
+    "status": "PARTIAL",
+    "failure_class": "EXTRACTION",
+    "evidence": "the title's level was dropped"
+   },
+   {
+    "id": "fidelity_geography_hyderabad",
+    "title": "Geography: city Hyderabad, no country area, no radius",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "['Hyderabad, Telangana, India']"
+   },
+   {
+    "id": "strength_requirements_not_weakened",
+    "title": "Stated requirements are not weakened to preferred/context",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "none weakened (the sources contain no preference wording)"
+   },
+   {
+    "id": "no_second_path",
+    "title": "No sourcing path / path-scoped structure invented",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "paths=[] path-scoped reconciliations=[]"
+   },
+   {
+    "id": "no_invented_exclusion",
+    "title": "No exclusion invented (none is stated)",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "exclusions=[]"
+   },
+   {
+    "id": "no_preference_hardened",
+    "title": "No analogy or 'familiarity' wording hardened into a stronger requirement",
+    "status": "FAIL",
+    "failure_class": "EXTRACTION",
+    "evidence": "'Forward Deployed Engineer' analogy turned into a title / company"
+   },
+   {
+    "id": "no_role1_concepts",
+    "title": "No Role 1 concept used that the sources do not call for",
+    "status": "FAIL",
+    "failure_class": "EXTRACTION",
+    "evidence": "domain=[('Enterprise-scale applications', 'required'), ('Enterprise data integration across SaaS applicatio', 'required'), ('Production generative AI solutions', 'required')]"
+   },
+   {
+    "id": "no_company_filter",
+    "title": "No company constraint inferred (none is stated)",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "[]"
+   },
+   {
+    "id": "no_hard_seniority_from_responsibilities",
+    "title": "No hard seniority / people-leadership requirement inferred from responsibility language",
+    "status": "PARTIAL",
+    "failure_class": "EXTRACTION",
+    "evidence": "a responsibility ('technical leadership / mentor') was hardened into a required atom (the Requirements section asks for none; the brief says IC): ['Provide technical leadership, mentor team members, resolve complex technical challenges, and foster collaborative engineering']"
+   },
+   {
+    "id": "no_invented_proficiency",
+    "title": "No proficiency invented (only where the source states a depth, and not contradicted)",
+    "status": "FAIL",
+    "failure_class": "EXTRACTION",
+    "evidence": "[('Full Stack Software Development', 'hands_on', 'no depth is stated for this item'), ('Solution Design', 'hands_on', 'no depth is stated for this item'), ('Data Engineering', 'hands_on', 'no depth is stated for this item'), ('AI/ML Implementation', 'hands_on', 'no depth is stated for this item'), ('API Development', 'hands_on', 'no depth is stated for this item'), ('Service Development', 'hands_on', 'no depth is stated for this item'), ('Distributed Systems', 'hands_on', 'no depth is stated for this item'), ('Large Language Models', 'hands_on', 'no depth is stated for this item'), ('Retrieval-Augmented Generation', 'hands_on', 'no depth is stated for this item'), ('Agentic AI', 'hands_on', 'no depth is stated for this item'), ('AI Orchestration', 'hands_on', 'no depth is stated for this item'), ('Prompt Engineering', 'hands_on', 'no depth is stated for this item'), ('React', 'hands_on', 'no depth is stated for this item'), ('Bootstrap', 'hands_on', 'no depth is stated for this item'), ('Related User Interface Frameworks', 'hands_on', 'no depth is stated for this item'), ('Modern Software Delivery Practices', 'working_knowledge', 'no depth is stated for this item'), ('Data Integration', 'hands_on', 'no depth is stated for this item'), ('Third-Party and Enterprise API Integration', 'hands_on', 'no depth is stated for this item')]"
+   },
+   {
+    "id": "advanced_proficiency",
+    "title": "Python/Java 'advanced proficiency' (schema cannot state 'advanced')",
+    "status": "PARTIAL",
+    "failure_class": "REPRESENTATION",
+    "evidence": "proficiency=[('Python', 'hands_on'), ('Java', 'hands_on')]; 'advanced' in text=False; the enum ['hands_on', 'working_knowledge'] has no value for it"
+   },
+   {
+    "id": "hybrid_work_mode",
+    "title": "Hybrid working basis (schema cannot state 'hybrid')",
+    "status": "PARTIAL",
+    "failure_class": "REPRESENTATION",
+    "evidence": "coped with the nearest representation: remote=None, 'hybrid' in text=True; the enum ['allowed', 'not_allowed'] has no hybrid"
+   },
+   {
+    "id": "reconciliation_discipline",
+    "title": "No JD requirement waived/narrowed/contradicted without a brief statement; no invented conflict",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "0 record(s): []"
+   },
+   {
+    "id": "provenance_preserved",
+    "title": "Every atom carries a verified basis; nothing required is inferred",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "73 atoms; status={'verified': 73}; missing_basis=0 (constraint-bearing 0); unsupported/misattributed=0"
+   },
+   {
+    "id": "provenance_location_from_brief",
+    "title": "Hyderabad is attributed to the recruiter brief (the JD has no location)",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "claimed=['recruiter_brief'] status=verified label=added_by_brief"
+   },
+   {
+    "id": "generic_validators_clean",
+    "title": "Generic validators: no error",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "none fired"
+   }
+  ],
+  "validation": {
+   "atoms": [
+    {
+     "ref": "experience",
+     "kind": "experience",
+     "text": "12+ years",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "location",
+     "kind": "location",
+     "text": "Hyderabad, Telangana, India",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.33,
+     "claimed": [
+      "recruiter_brief"
+     ],
+     "verified": [
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "added_by_brief"
+    },
+    {
+     "ref": "skills[0]",
+     "kind": "skill",
+     "text": "Full Stack Software Development",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[1]",
+     "kind": "skill",
+     "text": "Solution Design",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "verified": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "stated_in_both"
+    },
+    {
+     "ref": "skills[2]",
+     "kind": "skill",
+     "text": "Data Engineering",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[3]",
+     "kind": "skill",
+     "text": "AI/ML Implementation",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[4]",
+     "kind": "skill",
+     "text": "Python",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[5]",
+     "kind": "skill",
+     "text": "Java",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[6]",
+     "kind": "skill",
+     "text": "API Development",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[7]",
+     "kind": "skill",
+     "text": "Service Development",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.5,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[8]",
+     "kind": "skill",
+     "text": "Distributed Systems",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[9]",
+     "kind": "skill",
+     "text": "Generative AI",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[10]",
+     "kind": "skill",
+     "text": "Large Language Models",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[11]",
+     "kind": "skill",
+     "text": "Retrieval-Augmented Generation",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[12]",
+     "kind": "skill",
+     "text": "Agentic AI",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[13]",
+     "kind": "skill",
+     "text": "AI Orchestration",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[14]",
+     "kind": "skill",
+     "text": "Prompt Engineering",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[15]",
+     "kind": "skill",
+     "text": "MCP",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[16]",
+     "kind": "skill",
+     "text": "A2A",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[17]",
+     "kind": "skill",
+     "text": "AI Application Development Patterns",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[18]",
+     "kind": "skill",
+     "text": "NLP Frameworks",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[19]",
+     "kind": "skill",
+     "text": "DevOps",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[20]",
+     "kind": "skill",
+     "text": "CI/CD",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[21]",
+     "kind": "skill",
+     "text": "Terraform",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[22]",
+     "kind": "skill",
+     "text": "AKS",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[23]",
+     "kind": "skill",
+     "text": "EKS",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[24]",
+     "kind": "skill",
+     "text": "GitHub Actions",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[25]",
+     "kind": "skill",
+     "text": "Containerized Deployments",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[26]",
+     "kind": "skill",
+     "text": "React",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[27]",
+     "kind": "skill",
+     "text": "Bootstrap",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[28]",
+     "kind": "skill",
+     "text": "Related User Interface Frameworks",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[29]",
+     "kind": "skill",
+     "text": "Azure DevOps",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[30]",
+     "kind": "skill",
+     "text": "Jira",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[31]",
+     "kind": "skill",
+     "text": "Modern Software Delivery Practices",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[32]",
+     "kind": "skill",
+     "text": "Snowflake",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[33]",
+     "kind": "skill",
+     "text": "Databricks",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[34]",
+     "kind": "skill",
+     "text": "Modern Data Platforms",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[35]",
+     "kind": "skill",
+     "text": "Data Integration",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[36]",
+     "kind": "skill",
+     "text": "ETL",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[37]",
+     "kind": "skill",
+     "text": "Data Quality",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[38]",
+     "kind": "skill",
+     "text": "Data Discovery",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[39]",
+     "kind": "skill",
+     "text": "Enterprise Data Management",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[40]",
+     "kind": "skill",
+     "text": "Third-Party and Enterprise API Integration",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.5,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[41]",
+     "kind": "skill",
+     "text": "Metadata Management Tools",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[42]",
+     "kind": "skill",
+     "text": "Data Governance",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "domain[0]",
+     "kind": "domain",
+     "text": "Enterprise-scale applications",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "domain[1]",
+     "kind": "domain",
+     "text": "Enterprise data integration across SaaS applications",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "domain[2]",
+     "kind": "domain",
+     "text": "Production generative AI solutions",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "domain[3]",
+     "kind": "domain",
+     "text": "Client-facing AI solutions and existing product enhancement",
+     "strength": "context",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 0.33,
+     "claimed": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "verified": [
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "added_by_brief"
+    },
+    {
+     "ref": "skill_any_of[0]",
+     "kind": "skill_any_of",
+     "text": "TensorFlow or PyTorch or scikit-learn or Similar Machine Learning Libraries",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skill_any_of[1]",
+     "kind": "skill_any_of",
+     "text": "Azure or AWS",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "education",
+     "kind": "education",
+     "text": "Bachelor's, Master's, Computer Science, Information Technology, Software Engineering, Related field",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[0]",
+     "kind": "evidence_signal",
+     "text": "Staff-level hands-on engineering individual contributor",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.0,
+     "claimed": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[1]",
+     "kind": "evidence_signal",
+     "text": "Understand client requirements and design systems that solve client problems",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.75,
+     "claimed": [
+      "jd",
+      "recruiter_brief"
+     ],
+     "verified": [
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "added_by_brief"
+    },
+    {
+     "ref": "evidence_signals[2]",
+     "kind": "evidence_signal",
+     "text": "Build proofs of concept",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.33,
+     "claimed": [
+      "recruiter_brief"
+     ],
+     "verified": [
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "added_by_brief"
+    },
+    {
+     "ref": "evidence_signals[3]",
+     "kind": "evidence_signal",
+     "text": "Collaborate with existing teams to enhance existing products and features",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.71,
+     "claimed": [
+      "recruiter_brief"
+     ],
+     "verified": [
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "added_by_brief"
+    },
+    {
+     "ref": "evidence_signals[4]",
+     "kind": "evidence_signal",
+     "text": "Work on a hybrid basis in Hyderabad",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "recruiter_brief"
+     ],
+     "verified": [
+      "recruiter_brief"
+     ],
+     "status": "verified",
+     "label": "added_by_brief"
+    },
+    {
+     "ref": "evidence_signals[5]",
+     "kind": "evidence_signal",
+     "text": "Translate business and product requirements into end-to-end solutions, user stories, and technical deliverables",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.91,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[6]",
+     "kind": "evidence_signal",
+     "text": "Design and develop scalable, secure, maintainable enterprise applications integrated into existing products",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.82,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[7]",
+     "kind": "evidence_signal",
+     "text": "Contribute directly to development, code reviews, technical design discussions, and architecture reviews",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.9,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[8]",
+     "kind": "evidence_signal",
+     "text": "Own solution design decisions aligned with security, compliance, performance, and operational requirements",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.8,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[9]",
+     "kind": "evidence_signal",
+     "text": "Champion engineering best practices, coding standards, testing strategies, and quality metrics",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[10]",
+     "kind": "evidence_signal",
+     "text": "Evaluate and adopt emerging technologies to improve application and AI-system scalability, maintainability, performance, and reliability",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.91,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[11]",
+     "kind": "evidence_signal",
+     "text": "Collaborate with data engineers and data scientists on data quality, availability, and successful AI/ML deployment",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.91,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[12]",
+     "kind": "evidence_signal",
+     "text": "Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.9,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[13]",
+     "kind": "evidence_signal",
+     "text": "Recent experience building and deploying AI-powered applications",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[14]",
+     "kind": "evidence_signal",
+     "text": "Implement and deploy generative AI solutions in production",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[15]",
+     "kind": "evidence_signal",
+     "text": "Improve generative AI quality, relevance, and reliability through prompt engineering and AI best practices",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.92,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[16]",
+     "kind": "evidence_signal",
+     "text": "Communicate technical solutions, risks, and recommendations to leadership, business stakeholders, and clients",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[17]",
+     "kind": "evidence_signal",
+     "text": "Stay current with software engineering, AI, machine learning, and cloud advances and recommend practical innovations",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[18]",
+     "kind": "evidence_signal",
+     "text": "Provide technical leadership, mentor team members, resolve complex technical challenges, and foster collaborative engineering",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[19]",
+     "kind": "evidence_signal",
+     "text": "Strong analytical, problem-solving, and troubleshooting capabilities",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.75,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[20]",
+     "kind": "evidence_signal",
+     "text": "Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering organizations",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.91,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    }
+   ],
+   "status_counts": {
+    "verified": 73
+   },
+   "reconciliations": [],
+   "diagnostics": [
+    {
+     "code": "quote_weakly_related",
+     "ref": "location",
+     "detail": "'Hyderabad, Telangana, India': only 33% of its words appear in its quote (informational)"
+    },
+    {
+     "code": "quote_weakly_related",
+     "ref": "skills[3]",
+     "detail": "'AI/ML Implementation': only 0% of its words appear in its quote (informational)"
+    },
+    {
+     "code": "quote_weakly_related",
+     "ref": "skills[6]",
+     "detail": "'API Development': only 0% of its words appear in its quote (informational)"
+    },
+    {
+     "code": "quote_weakly_related",
+     "ref": "domain[3]",
+     "detail": "'Client-facing AI solutions and existing product enhancement': only 33% of its words appear in its quote (informational)"
+    },
+    {
+     "code": "quote_weakly_related",
+     "ref": "evidence_signals[0]",
+     "detail": "'Staff-level hands-on engineering individual contributor': only 0% of its words appear in its quote (informational)"
+    },
+    {
+     "code": "quote_weakly_related",
+     "ref": "evidence_signals[2]",
+     "detail": "'Build proofs of concept': only 33% of its words appear in its quote (informational)"
+    }
+   ],
+   "errors": {},
+   "paths_located": {}
+  }
+ },
+ "model_calls": [
+  {
+   "model": "gpt-6.1-sol",
+   "reasoning": {
+    "effort": "medium"
+   },
+   "raw_text": "{\n  \"role_archetype\": {\n    \"value\": \"hybrid\",\n    \"confidence\": 0.97,\n    \"rationale\": \"The role combines explicitly named engineering and solution-architecture roles with substantive full-stack, data-engineering, and AI implementation requirements.\"\n  },\n  \"role_family\": [\n    \"Software Engineer\",\n    \"Solution Architect\",\n    \"Forward Deployed Engineer\"\n  ],\n  \"skills\": [\n    {\n      \"name\": \"Full Stack Software Development\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"strong expertise in Full Stack Software Development, Solution Design, Data Engineering, and AI/ML implementation.\"\n      }\n    },\n    {\n      \"name\": \"Solution Design\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\"jd\", \"recruiter_brief\"],\n        \"quote\": \"strong expertise in Full Stack Software Development, Solution Design, Data Engineering, and AI/ML implementation.\"\n      }\n    },\n    {\n      \"name\": \"Data Engineering\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"strong expertise in Full Stack Software Development, Solution Design, Data Engineering, and AI/ML implementation.\"\n      }\n    },\n    {\n      \"name\": \"AI/ML Implementation\",\n      \"relationship\": \"current\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"recent experience building and deploying AI-powered applications.\"\n      }\n    },\n    {\n      \"name\": \"Python\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Advanced proficiency in Python and Java with strong experience building APIs, services, and distributed systems.\"\n      }\n    },\n    {\n      \"name\": \"Java\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Advanced proficiency in Python and Java with strong experience building APIs, services, and distributed systems.\"\n      }\n    },\n    {\n      \"name\": \"API Development\",\n      \"relationship\": \"current\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Design, develop, and maintain APIs, services, and integrations that support enterprise applications and AI solutions.\"\n      }\n    },\n    {\n      \"name\": \"Service Development\",\n      \"relationship\": \"current\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Design, develop, and maintain APIs, services, and integrations that support enterprise applications and AI solutions.\"\n      }\n    },\n    {\n      \"name\": \"Distributed Systems\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Advanced proficiency in Python and Java with strong experience building APIs, services, and distributed systems.\"\n      }\n    },\n    {\n      \"name\": \"Generative AI\",\n      \"relationship\": \"current\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Hands-on experience implementing and deploying Generative AI solutions in production environments.\"\n      }\n    },\n    {\n      \"name\": \"Large Language Models\",\n      \"relationship\": \"current\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), Agentic AI frameworks, and modern AI orchestration patterns.\"\n      }\n    },\n    {\n      \"name\": \"Retrieval-Augmented Generation\",\n      \"relationship\": \"current\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), Agentic AI frameworks, and modern AI orchestration patterns.\"\n      }\n    },\n    {\n      \"name\": \"Agentic AI\",\n      \"relationship\": \"current\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), Agentic AI frameworks, and modern AI orchestration patterns.\"\n      }\n    },\n    {\n      \"name\": \"AI Orchestration\",\n      \"relationship\": \"current\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented Generation (RAG), Agentic AI frameworks, and modern AI orchestration patterns.\"\n      }\n    },\n    {\n      \"name\": \"Prompt Engineering\",\n      \"relationship\": \"current\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Apply prompt engineering techniques and AI best practices to improve the quality, relevance, and reliability of generative AI solutions.\"\n      }\n    },\n    {\n      \"name\": \"MCP\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Strong understanding of LLMs, RAG architectures, Agentic AI, Prompt Engineering, MCP, A2A, and modern AI application development patterns.\"\n      }\n    },\n    {\n      \"name\": \"A2A\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Strong understanding of LLMs, RAG architectures, Agentic AI, Prompt Engineering, MCP, A2A, and modern AI application development patterns.\"\n      }\n    },\n    {\n      \"name\": \"AI Application Development Patterns\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Strong understanding of LLMs, RAG architectures, Agentic AI, Prompt Engineering, MCP, A2A, and modern AI application development patterns.\"\n      }\n    },\n    {\n      \"name\": \"NLP Frameworks\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience working with NLP frameworks and machine learning libraries such as TensorFlow, PyTorch, scikit-learn, or similar technologies.\"\n      }\n    },\n    {\n      \"name\": \"DevOps\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments.\"\n      }\n    },\n    {\n      \"name\": \"CI/CD\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments.\"\n      }\n    },\n    {\n      \"name\": \"Terraform\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments.\"\n      }\n    },\n    {\n      \"name\": \"AKS\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments.\"\n      }\n    },\n    {\n      \"name\": \"EKS\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments.\"\n      }\n    },\n    {\n      \"name\": \"GitHub Actions\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments.\"\n      }\n    },\n    {\n      \"name\": \"Containerized Deployments\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience with DevOps tools and practices including CI/CD pipelines, Terraform, AKS, EKS, GitHub Actions, and containerized deployments.\"\n      }\n    },\n    {\n      \"name\": \"React\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience building modern user interfaces using React, Bootstrap, and related frameworks.\"\n      }\n    },\n    {\n      \"name\": \"Bootstrap\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience building modern user interfaces using React, Bootstrap, and related frameworks.\"\n      }\n    },\n    {\n      \"name\": \"Related User Interface Frameworks\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience building modern user interfaces using React, Bootstrap, and related frameworks.\"\n      }\n    },\n    {\n      \"name\": \"Azure DevOps\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": \"working_knowledge\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Familiarity with Azure DevOps, Jira, and modern software delivery practices.\"\n      }\n    },\n    {\n      \"name\": \"Jira\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": \"working_knowledge\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Familiarity with Azure DevOps, Jira, and modern software delivery practices.\"\n      }\n    },\n    {\n      \"name\": \"Modern Software Delivery Practices\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": \"working_knowledge\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Familiarity with Azure DevOps, Jira, and modern software delivery practices.\"\n      }\n    },\n    {\n      \"name\": \"Snowflake\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience working with Snowflake, Databricks, and modern data platforms.\"\n      }\n    },\n    {\n      \"name\": \"Databricks\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience working with Snowflake, Databricks, and modern data platforms.\"\n      }\n    },\n    {\n      \"name\": \"Modern Data Platforms\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience working with Snowflake, Databricks, and modern data platforms.\"\n      }\n    },\n    {\n      \"name\": \"Data Integration\",\n      \"relationship\": \"current\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Integrate and optimize data from various internal and external systems, understanding the challenges associated with enterprise data integration across SaaS applications.\"\n      }\n    },\n    {\n      \"name\": \"ETL\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Strong understanding of Data Integration, ETL, Data Quality, Data Discovery, and enterprise data management concepts.\"\n      }\n    },\n    {\n      \"name\": \"Data Quality\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Strong understanding of Data Integration, ETL, Data Quality, Data Discovery, and enterprise data management concepts.\"\n      }\n    },\n    {\n      \"name\": \"Data Discovery\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Strong understanding of Data Integration, ETL, Data Quality, Data Discovery, and enterprise data management concepts.\"\n      }\n    },\n    {\n      \"name\": \"Enterprise Data Management\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Strong understanding of Data Integration, ETL, Data Quality, Data Discovery, and enterprise data management concepts.\"\n      }\n    },\n    {\n      \"name\": \"Third-Party and Enterprise API Integration\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": \"hands_on\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience integrating third-party and enterprise APIs.\"\n      }\n    },\n    {\n      \"name\": \"Metadata Management Tools\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": \"working_knowledge\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Familiarity with metadata management tools and data governance concepts.\"\n      }\n    },\n    {\n      \"name\": \"Data Governance\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": \"working_knowledge\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Familiarity with metadata management tools and data governance concepts.\"\n      }\n    }\n  ],\n  \"skill_any_of\": [\n    {\n      \"any_of\": [\n        \"TensorFlow\",\n        \"PyTorch\",\n        \"scikit-learn\",\n        \"Similar Machine Learning Libraries\"\n      ],\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience working with NLP frameworks and machine learning libraries such as TensorFlow, PyTorch, scikit-learn, or similar technologies.\"\n      }\n    },\n    {\n      \"any_of\": [\n        \"Azure\",\n        \"AWS\"\n      ],\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience with cloud platforms and services including Azure and/or AWS.\"\n      }\n    }\n  ],\n  \"education\": {\n    \"degrees\": [\n      \"Bachelor's\",\n      \"Master's\"\n    ],\n    \"streams\": [\n      \"Computer Science\",\n      \"Information Technology\",\n      \"Software Engineering\",\n      \"Related field\"\n    ],\n    \"strength\": \"required\",\n    \"basis\": {\n      \"sources\": [\"jd\"],\n      \"quote\": \"Bachelor's or Master's degree in Computer Science, Information Technology, Software Engineering, or a related field.\"\n    }\n  },\n  \"experience\": {\n    \"minimum_years\": 12,\n    \"maximum_years\": null,\n    \"strength\": \"required\",\n    \"basis\": {\n      \"sources\": [\"jd\"],\n      \"quote\": \"12+ years of experience in Full Stack Software Development, Solution Design, Data Engineering, and AI/ML implementation.\"\n    }\n  },\n  \"location\": {\n    \"countries\": [],\n    \"entries\": [\n      \"Hyderabad, Telangana, India\"\n    ],\n    \"remote\": null,\n    \"strength\": \"required\",\n    \"basis\": {\n      \"sources\": [\"recruiter_brief\"],\n      \"quote\": \"Location is Hyderabad and need someone who can work on a Hybrid basis.\"\n    }\n  },\n  \"evidence_signals\": [\n    {\n      \"name\": \"Staff-level hands-on engineering individual contributor\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\", \"recruiter_brief\"],\n        \"quote\": \"Staff Software Engineer/ Solution Architect - AI Solutions\"\n      }\n    },\n    {\n      \"name\": \"Understand client requirements and design systems that solve client problems\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\", \"recruiter_brief\"],\n        \"quote\": \"more like a Forward Deployed Engineer who understands the client requirements, builds POC's, designs the system.\"\n      }\n    },\n    {\n      \"name\": \"Build proofs of concept\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"recruiter_brief\"],\n        \"quote\": \"builds POC's\"\n      }\n    },\n    {\n      \"name\": \"Collaborate with existing teams to enhance existing products and features\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"recruiter_brief\"],\n        \"quote\": \"he would be working closely with the existing teams on enhancing the existing products and features.\"\n      }\n    },\n    {\n      \"name\": \"Work on a hybrid basis in Hyderabad\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"recruiter_brief\"],\n        \"quote\": \"Location is Hyderabad and need someone who can work on a Hybrid basis.\"\n      }\n    },\n    {\n      \"name\": \"Translate business and product requirements into end-to-end solutions, user stories, and technical deliverables\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Partner with business and product stakeholders to understand requirements, design end-to-end solutions, and help Product Owners break down initiatives into actionable user stories and technical deliverables.\"\n      }\n    },\n    {\n      \"name\": \"Design and develop scalable, secure, maintainable enterprise applications integrated into existing products\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Design and develop scalable, secure, and maintainable software solutions that can be integrated into existing products and strategic solution offerings.\"\n      }\n    },\n    {\n      \"name\": \"Contribute directly to development, code reviews, technical design discussions, and architecture reviews\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Actively contribute to software development, code reviews, technical design discussions, and architecture reviews.\"\n      }\n    },\n    {\n      \"name\": \"Own solution design decisions aligned with security, compliance, performance, and operational requirements\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Drive solution design decisions while ensuring alignment with security, compliance, performance, and operational requirements.\"\n      }\n    },\n    {\n      \"name\": \"Champion engineering best practices, coding standards, testing strategies, and quality metrics\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Champion engineering best practices, coding standards, testing strategies, and quality metrics across development teams.\"\n      }\n    },\n    {\n      \"name\": \"Evaluate and adopt emerging technologies to improve application and AI-system scalability, maintainability, performance, and reliability\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Evaluate and adopt emerging technologies to improve scalability, maintainability, performance, and reliability of applications and AI systems.\"\n      }\n    },\n    {\n      \"name\": \"Collaborate with data engineers and data scientists on data quality, availability, and successful AI/ML deployment\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Collaborate with data engineers and data scientists to ensure data quality, availability, and successful deployment of AI and machine learning capabilities.\"\n      }\n    },\n    {\n      \"name\": \"Design, implement, and maintain data pipelines, processing frameworks, and infrastructure for AI/ML workloads\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Design, implement, and maintain data pipelines, processing frameworks, and supporting infrastructure required for AI and machine learning workloads.\"\n      }\n    },\n    {\n      \"name\": \"Recent experience building and deploying AI-powered applications\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"recent experience building and deploying AI-powered applications.\"\n      }\n    },\n    {\n      \"name\": \"Implement and deploy generative AI solutions in production\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Hands-on experience implementing and deploying Generative AI solutions in production environments.\"\n      }\n    },\n    {\n      \"name\": \"Improve generative AI quality, relevance, and reliability through prompt engineering and AI best practices\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Apply prompt engineering techniques and AI best practices to improve the quality, relevance, and reliability of generative AI solutions.\"\n      }\n    },\n    {\n      \"name\": \"Communicate technical solutions, risks, and recommendations to leadership, business stakeholders, and clients\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Communicate technical solutions, risks, and recommendations effectively to leadership, business stakeholders, and clients.\"\n      }\n    },\n    {\n      \"name\": \"Stay current with software engineering, AI, machine learning, and cloud advances and recommend practical innovations\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Stay current with advancements in software engineering, AI, machine learning, and cloud technologies, recommending practical innovations for our products and operations.\"\n      }\n    },\n    {\n      \"name\": \"Provide technical leadership, mentor team members, resolve complex technical challenges, and foster collaborative engineering\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Provide technical leadership, mentor team members, resolve complex technical challenges, and foster a collaborative engineering culture.\"\n      }\n    },\n    {\n      \"name\": \"Strong analytical, problem-solving, and troubleshooting capabilities\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Strong analytical, problem-solving, and troubleshooting skills.\"\n      }\n    },\n    {\n      \"name\": \"Excellent communication and stakeholder management across clients, business stakeholders, leadership, and engineering organizations\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Excellent communication and stakeholder management skills with the ability to effectively engage clients, business stakeholders, leadership teams, and engineering organizations.\"\n      }\n    }\n  ],\n  \"domain\": [\n    {\n      \"name\": \"Enterprise-scale applications\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Strong hands-on software engineering background with proven experience designing and developing enterprise-scale applications.\"\n      }\n    },\n    {\n      \"name\": \"Enterprise data integration across SaaS applications\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Integrate and optimize data from various internal and external systems, understanding the challenges associated with enterprise data integration across SaaS applications.\"\n      }\n    },\n    {\n      \"name\": \"Production generative AI solutions\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Hands-on experience implementing and deploying Generative AI solutions in production environments.\"\n      }\n    },\n    {\n      \"name\": \"Client-facing AI solutions and existing product enhancement\",\n      \"strength\": \"context\",\n      \"basis\": {\n        \"sources\": [\"jd\", \"recruiter_brief\"],\n        \"quote\": \"he would be working closely with the existing teams on enhancing the existing products and features.\"\n      }\n    }\n  ]\n}",
+   "input_tokens": 4837,
+   "output_tokens": 5808,
+   "streamed": true
+  }
+ ],
+ "elapsed_s": 76.07
+}

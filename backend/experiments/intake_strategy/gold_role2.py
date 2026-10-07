@@ -74,9 +74,10 @@ _SOFT = {
     "hands_on_engineering": re.compile(r"hands-on|enterprise[- ]scale", I),
     "solution_design": re.compile(r"solution design|architecture review|system design|design\w* (technical )?solutions", I),
 }
+# post-run correction: the "poc" pattern originally missed the plural "proofs of concept" that all five real runs used
 _BRIEF = {
     "ic": re.compile(r"\bIC\b|individual contributor", re.I), "client": re.compile(r"\bclients?\b", I),
-    "poc": re.compile(r"\bpocs?\b|proof[- ]of[- ]concept", I), "existing": re.compile(r"existing (products?|teams?|features?)", I),
+    "poc": re.compile(r"\bpocs?\b|proofs?[- ]of[- ]concept", I), "existing": re.compile(r"existing (products?|teams?|features?)", I),
     "hybrid": re.compile(r"\bhybrid\b", I), "fde": re.compile(r"forward[- ]deployed", I),
 }
 _PEOPLE_MGMT = re.compile(r"manag\w* (a |the )?(team|people|engineers|staff)|direct reports|people management|people leadership|line management|supervis", I)

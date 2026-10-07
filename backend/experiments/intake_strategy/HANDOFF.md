@@ -112,3 +112,10 @@ failures by changing retrieval.
   hard-filter (which would remove every Path B candidate).
 - Open question for the owner: which "existing source-priority design" is meant. The only one found is the legacy
   `SearchBoundary` (recruiter's boundary overrides the JD for location). The structured path has none.
+
+## UPDATE 3 (cross-role validation): read `RESULTS_ROLE2.md`
+Role 2 (Staff Software Engineer / Solution Architect, one strategy, no paths) ran 5x on the frozen design. Verdict: NEW REPRESENTATION GAP FOUND
+(ordinal proficiency; work mode/hybrid), with `domain` to reconsider and a content-level over-application pattern (analogy as title, hands_on
+over-applied, responsibilities hardened to required). Structural discipline held (no invented path/exclusion/company/remote/leadership).
+Do not promote the schema yet. Compiler observations D1-D5 are recorded as follow-ups, not fixed. Next: owner decisions on the two gaps,
+then a third differently shaped role.

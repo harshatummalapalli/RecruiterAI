@@ -237,6 +237,19 @@ def test_responsibility_language_is_not_a_seniority_requirement() -> None:
     assert r["no_hard_seniority_from_responsibilities"]["status"] == gold.PASS      # a denial is not a requirement
 
 
+def test_poc_is_recognised_in_its_plural_and_spelled_out_forms() -> None:
+    """Post-run correction: five real runs wrote 'proofs of concept' and the first pattern missed it."""
+    for wording in ("Build proofs of concept", "Builds POCs and designs the system", "builds a proof of concept", "prototype POC work"):
+        raw = good2()
+        raw["evidence_signals"][2]["name"] = wording
+        _, r, _ = evaluate(raw)
+        assert r["fidelity_brief_profile"]["status"] == gold.PASS, wording
+    raw = good2()
+    raw["evidence_signals"][2]["name"] = "Designs the system"
+    _, r, _ = evaluate(raw)
+    assert r["fidelity_brief_profile"]["status"] == gold.PARTIAL
+
+
 def test_losing_a_stated_fact_is_a_fidelity_failure_not_a_schema_failure() -> None:
     raw = good2()
     raw["location"].update(remote=None)
