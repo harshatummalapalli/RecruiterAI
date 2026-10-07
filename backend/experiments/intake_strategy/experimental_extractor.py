@@ -20,9 +20,10 @@ from backend.services.structured_intent_extractor import (
 )
 
 PROMPT_V2 = Path(__file__).parent / "prompt_v2.txt"
-PROMPT_V3 = Path(__file__).parent / "prompt_v3.txt"  # hardening pass: scope, levels, typed geography, qualifier fidelity
-PROMPTS = {"v2": PROMPT_V2, "v3": PROMPT_V3}
-DEFAULT_PROMPT = "v3"
+PROMPT_V3 = Path(__file__).parent / "prompt_v3.txt"  # hardening pass: scope, levels, typed geography, qualifier fidelity (FROZEN: Role 2 ran on it)
+PROMPT_V4 = Path(__file__).parent / "prompt_v4.txt"  # post-Role-2: ordinal proficiency, work mode, title analogy, responsibilities, temporal scope
+PROMPTS = {"v2": PROMPT_V2, "v3": PROMPT_V3, "v4": PROMPT_V4}
+DEFAULT_PROMPT = "v3"  # unchanged: the frozen Role 1 / Role 2 runners keep their prompt. Role 3 selects "v4" explicitly
 
 
 def build_prompt(job_description: str, recruiter_brief: Optional[str] = None, version: str = DEFAULT_PROMPT) -> str:

@@ -19,8 +19,10 @@ justification and the alternatives rejected). In short:
     leadership            on seniority: which kinds of leadership satisfy "Lead" (people / technical)
     alternatives          on seniority: OTHER levels the source accepts for the same scope (an OR list). Every level,
                           including these, must be stated in the source for that scope; code checks it
-    countries / remote    on location: country-wide areas by name (never in `entries`), and whether remote work is
-                          allowed. `entries` stays for places below country level ("City, State, Country")
+    countries / remote    on location: country-wide areas by name (never in `entries`), and whether remote candidates are
+                          acceptable. `entries` stays for places below country level ("City, State, Country")
+    work_mode             on location: the role's working arrangement (remote / hybrid / onsite; None = unspecified). A
+                          different fact from geography (WHERE) and from `remote` (whether remote candidates are acceptable)
 
 Nothing here names a provider field, an operator or a routing decision, and the production leak validator still runs
 over every new string.
@@ -47,8 +49,16 @@ from backend.models.structured_intent import (
 )
 
 SOURCES = ("jd", "recruiter_brief", "approved_knowledge", "inferred")
-PROFICIENCIES = ("hands_on", "working_knowledge")
+# Depth of a skill, ORDINAL: working_knowledge < hands_on < advanced. "advanced" exists because a real JD states "Advanced proficiency"
+# above "Hands-on experience" and the two-value enum could not keep that distinction. A value is only ever set when the cited wording
+# states that depth (validators_cross_role checks it); an unstated depth stays null, and a weaker statement is never read as hands_on.
+PROFICIENCIES = ("hands_on", "working_knowledge", "advanced")
+PROFICIENCY_RANK = {"working_knowledge": 1, "hands_on": 2, "advanced": 3}
+# remote = "remote candidates are acceptable" (a sourcing allowance, unchanged). It is NOT the working arrangement; see WORK_MODES.
 REMOTE_VALUES = ("allowed", "not_allowed")
+# The working arrangement the role itself has. None means unspecified (the source states none): there is no value for "unspecified"
+# because absence is the one unambiguous way to say it, and an explicit value would be a fourth thing a model could invent.
+WORK_MODES = ("remote", "hybrid", "onsite")
 STRATEGIES = ("domain_led", "capability_led", "hybrid")
 LEADERSHIP_MODES = ("people", "technical")
 # What a reconciliation says the recruiter brief did to a JD item. "unresolved" = the sources conflict and the brief
@@ -124,9 +134,18 @@ class XExperience(Experience, _Based):
 
 class XLocationReq(LocationReq, _Based):
     """`entries` = places below country level; `countries` = country-wide areas, by name only. Keeping them apart is what
-    stops a country being read as a city. `remote` is whether remote work is acceptable for this scope (None = unstated)."""
+    stops a country being read as a city. `remote` is whether remote candidates are acceptable for this scope (None = unstated).
+    `work_mode` is how the role is worked (remote / hybrid / onsite; None = unspecified). It lives on the location record so that a
+    path's location override carries it with the place, but it is a separate typed member: "hybrid" is never expressed through
+    `remote`, and `work_mode` never filters a place."""
     countries: List[str] = Field(default_factory=list)
     remote: Optional[str] = None
+    work_mode: Optional[str] = None
+
+    @field_validator("work_mode")
+    @classmethod
+    def _work_mode(cls, v: Optional[str]) -> Optional[str]:
+        return v if v is None else _member(v, WORK_MODES, "work_mode")
 
     @field_validator("remote")
     @classmethod
@@ -259,4 +278,6 @@ def schema_concepts() -> Dict[str, bool]:
         "typed_country": "countries" in XLocationReq.model_fields,
         "typed_remote": "remote" in XLocationReq.model_fields,
         "level_alternatives": "alternatives" in XSeniority.model_fields,
+        "ordinal_proficiency": "advanced" in PROFICIENCIES and PROFICIENCY_RANK["advanced"] > PROFICIENCY_RANK["hands_on"],
+        "work_mode": "work_mode" in XLocationReq.model_fields,
     }

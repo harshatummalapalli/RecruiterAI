@@ -119,3 +119,10 @@ Role 2 (Staff Software Engineer / Solution Architect, one strategy, no paths) ra
 over-applied, responsibilities hardened to required). Structural discipline held (no invented path/exclusion/company/remote/leadership).
 Do not promote the schema yet. Compiler observations D1-D5 are recorded as follow-ups, not fixed. Next: owner decisions on the two gaps,
 then a third differently shaped role.
+
+## UPDATE 4 (post-Role-2 changes): read `CHANGES_AFTER_ROLE2.md`
+Smallest changes Role 2 justified: `proficiency` gains `advanced`; `location.work_mode` (remote/hybrid/onsite, None = unspecified) is added beside the
+unchanged `remote`; five generic validators live in `validators_cross_role.py` (the frozen `validators.validate()` is untouched); `prompt_v4.txt` is a new
+file (v3 stays the default for the frozen runners). `domain` unchanged. "Staff" is a TAXONOMY follow-up. AKS/EKS is recorded as an extraction/grouping issue, no change.
+Role 1 and Role 2 are frozen and hash-pinned. NOT done: any model run on v4. Next: Role 3 (single path, non-engineering, named company preferences, an exclusion),
+ground truth written and committed before the run, `prompt_v4` selected explicitly, prompt not changed after seeing outputs. The promotion gate is in the brief.

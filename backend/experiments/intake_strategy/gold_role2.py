@@ -25,11 +25,7 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-from backend.experiments.intake_strategy.experimental_schema import (
-    PROFICIENCIES,
-    REMOTE_VALUES,
-    ExperimentalHiringIntent,
-)
+from backend.experiments.intake_strategy.experimental_schema import ExperimentalHiringIntent
 from backend.experiments.intake_strategy.gold_assertions import (
     EXTRACTION,
     FAIL,
@@ -44,6 +40,11 @@ from backend.experiments.intake_strategy.gold_experimental import provenance_sta
 from backend.experiments.intake_strategy.validators import validate
 
 PROVENANCE = "PROVENANCE"
+# The schema's enums AS THEY STOOD DURING ROLE 2. The two gaps were decided against these, and Role 2's results are frozen, so the
+# evaluator keeps them verbatim; re-evaluating the stored runs must reproduce the stored verdicts. After Role 2 the live schema gained
+# `advanced` and a separate `work_mode` (CHANGES_AFTER_ROLE2.md), which closes the gaps for LATER roles, not for Role 2's record.
+PROFICIENCIES = ("hands_on", "working_knowledge")
+REMOTE_VALUES = ("allowed", "not_allowed")
 I = re.IGNORECASE
 
 # (key, pattern): a stated JD / brief fact, found anywhere in the intent's claim-bearing text

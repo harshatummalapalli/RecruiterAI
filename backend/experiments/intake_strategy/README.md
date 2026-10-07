@@ -48,3 +48,10 @@ reasoning effort are whatever `structured_intent_extractor` already uses; nothin
 `ROLE2_GROUND_TRUTH.md` (written and committed before any model run), `inputs/role2_*.txt`, `gold_role2.py`, `run_role2.py`, `compare_role2.py`,
 `RESULTS_ROLE2.md` (verdict: NEW REPRESENTATION GAP FOUND), `results/role2/`. The frozen schema, `prompt_v3.txt` and validators were run unchanged;
 Role 1 files are pinned by hash in `tests/test_experiment_role2.py`.
+
+## After Role 2, before Role 3
+
+`CHANGES_AFTER_ROLE2.md`: ordinal proficiency (`advanced`), typed `work_mode` (separate from `remote` and from geography), five generic validators
+in `validators_cross_role.py` (title analogy, responsibility-only required, unsupported `current`, unsupported proficiency, unsupported work mode), and
+`prompt_v4.txt` (new file; `prompt_v3.txt` and the frozen runners are unchanged). `replay_cross_role_validators.py` replays them read-only over the stored runs.
+Role 1 and Role 2 inputs, results, evaluators and prompts are pinned by hash in `tests/test_experiment_cross_role_changes.py`. No model has run on the new design.

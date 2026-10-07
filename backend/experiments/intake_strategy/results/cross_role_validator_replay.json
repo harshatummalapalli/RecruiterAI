@@ -1,0 +1,407 @@
+{
+  "role1_v3": [
+    {
+      "file": "experimental_run1.json",
+      "cross_role_errors": {
+        "responsibility_only_required": 6,
+        "unsupported_current_relationship": 3,
+        "unsupported_proficiency": 2
+      },
+      "examples": [
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[2]",
+          "detail": "evidence_signal 'Analysis of large datasets to identify trends, anomalies, and potential security risks' is required but its only source is a statement of what the role does ('Review, analyse, and interpret large datasets to identify trends, anomalies, and potential security '); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[5]",
+          "detail": "evidence_signal 'Cross-functional collaboration on review findings and remediation support' is required but its only source is a statement of what the role does ('Collaborate with technology, security, legal, compliance, and business stakeholders to address revie'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[6]",
+          "detail": "evidence_signal 'Management reports, dashboards, and performance metrics supporting operational and business decisions' is required but its only source is a statement of what the role does ('Prepare management reports, dashboards, and performance metrics to support operational and business '); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[7]",
+          "detail": "evidence_signal 'Accurate documentation, procedures, audit trails, and quality records' is required but its only source is a statement of what the role does ('Maintain accurate documentation, procedures, audit trails, and quality records in accordance with or'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[8]",
+          "detail": "evidence_signal 'Operational workflow coordination, resource planning, and administrative support' is required but its only source is a statement of what the role does ('Assist the Review Manager with administrative activities, resource planning, workflow management, an'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[9]",
+          "detail": "evidence_signal 'Continuous improvement of operational efficiency, quality, and compliance' is required but its only source is a statement of what the role does ('Drive continuous improvement initiatives to enhance operational efficiency, quality, and compliance '); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        }
+      ]
+    },
+    {
+      "file": "experimental_run2.json",
+      "cross_role_errors": {
+        "responsibility_only_required": 6,
+        "unsupported_proficiency": 3
+      },
+      "examples": [
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[4]",
+          "detail": "evidence_signal 'Large-dataset analysis to identify trends and anomalies' is required but its only source is a statement of what the role does ('Review, analyse, and interpret large datasets to identify trends, anomalies, and potential security '); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[5]",
+          "detail": "evidence_signal 'Cross-functional collaboration on review findings and remediation' is required but its only source is a statement of what the role does ('Collaborate with technology, security, legal, compliance, and business stakeholders to address revie'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[6]",
+          "detail": "evidence_signal 'Management reporting, dashboards, and performance metrics' is required but its only source is a statement of what the role does ('Prepare management reports, dashboards, and performance metrics to support operational and business '); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[7]",
+          "detail": "evidence_signal 'Maintaining documentation, procedures, audit trails, and quality records' is required but its only source is a statement of what the role does ('Maintain accurate documentation, procedures, audit trails, and quality records in accordance with or'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[8]",
+          "detail": "evidence_signal 'Administrative support, resource planning, workflow management, and team coordination' is required but its only source is a statement of what the role does ('Assist the Review Manager with administrative activities, resource planning, workflow management, an'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[9]",
+          "detail": "evidence_signal 'Continuous improvement of operational efficiency, quality, and compliance' is required but its only source is a statement of what the role does ('Drive continuous improvement initiatives to enhance operational efficiency, quality, and compliance '); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        }
+      ]
+    },
+    {
+      "file": "experimental_run3.json",
+      "cross_role_errors": {
+        "responsibility_only_required": 6,
+        "unsupported_proficiency": 2
+      },
+      "examples": [
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[4]",
+          "detail": "evidence_signal 'Large-dataset analysis to identify trends, anomalies, and potential security risks' is required but its only source is a statement of what the role does ('Review, analyse, and interpret large datasets to identify trends, anomalies, and potential security '); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[6]",
+          "detail": "evidence_signal 'Cross-functional collaboration on review findings and remediation' is required but its only source is a statement of what the role does ('Collaborate with technology, security, legal, compliance, and business stakeholders to address revie'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[7]",
+          "detail": "evidence_signal 'Management reports, dashboards, and performance metrics' is required but its only source is a statement of what the role does ('Prepare management reports, dashboards, and performance metrics to support operational and business '); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[8]",
+          "detail": "evidence_signal 'Accurate documentation, procedures, audit trails, and quality records' is required but its only source is a statement of what the role does ('Maintain accurate documentation, procedures, audit trails, and quality records in accordance with or'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[9]",
+          "detail": "evidence_signal 'Operational coordination, resource planning, workflow management, and support for the Review Manager' is required but its only source is a statement of what the role does ('Assist the Review Manager with administrative activities, resource planning, workflow management, an'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[10]",
+          "detail": "evidence_signal 'Continuous improvement of operational efficiency, quality, and compliance' is required but its only source is a statement of what the role does ('Drive continuous improvement initiatives to enhance operational efficiency, quality, and compliance '); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        }
+      ]
+    },
+    {
+      "file": "experimental_run4.json",
+      "cross_role_errors": {
+        "responsibility_only_required": 7,
+        "unsupported_proficiency": 1
+      },
+      "examples": [
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[4]",
+          "detail": "evidence_signal 'Large-dataset analysis to identify trends, anomalies, and potential security risks' is required but its only source is a statement of what the role does ('Review, analyse, and interpret large datasets to identify trends, anomalies, and potential security '); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[5]",
+          "detail": "evidence_signal 'Cross-functional collaboration on review findings and remediation' is required but its only source is a statement of what the role does ('Collaborate with technology, security, legal, compliance, and business stakeholders to address revie'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[6]",
+          "detail": "evidence_signal 'Management reports, dashboards, and performance metrics supporting operational and business decisions' is required but its only source is a statement of what the role does ('Prepare management reports, dashboards, and performance metrics to support operational and business '); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[7]",
+          "detail": "evidence_signal 'Accurate documentation, procedures, audit trails, and quality records' is required but its only source is a statement of what the role does ('Maintain accurate documentation, procedures, audit trails, and quality records in accordance with or'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[8]",
+          "detail": "evidence_signal 'Operational workflow coordination, resource planning, and administrative support to the Review Manager' is required but its only source is a statement of what the role does ('Assist the Review Manager with administrative activities, resource planning, workflow management, an'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[9]",
+          "detail": "evidence_signal 'Ability to lead, mentor, coach, and support analysts with ongoing performance feedback' is required but its only source is a statement of what the role does ('Coach, develop, and provide ongoing feedback to team members to enhance performance and capability.'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        }
+      ]
+    },
+    {
+      "file": "experimental_run5.json",
+      "cross_role_errors": {
+        "responsibility_only_required": 6,
+        "unsupported_proficiency": 3
+      },
+      "examples": [
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[4]",
+          "detail": "evidence_signal 'Analysis of large datasets to identify trends, anomalies, and potential security risks' is required but its only source is a statement of what the role does ('Review, analyse, and interpret large datasets to identify trends, anomalies, and potential security '); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[5]",
+          "detail": "evidence_signal 'Collaboration with technology, security, legal, compliance, and business stakeholders on findings and remediation' is required but its only source is a statement of what the role does ('Collaborate with technology, security, legal, compliance, and business stakeholders to address revie'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[6]",
+          "detail": "evidence_signal 'Management reporting, dashboards, and performance metrics supporting operational and business decisions' is required but its only source is a statement of what the role does ('Prepare management reports, dashboards, and performance metrics to support operational and business '); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[7]",
+          "detail": "evidence_signal 'Accurate documentation, procedures, audit trails, and quality records' is required but its only source is a statement of what the role does ('Maintain accurate documentation, procedures, audit trails, and quality records in accordance with or'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[8]",
+          "detail": "evidence_signal 'Operational coordination, resource planning, and workflow management' is required but its only source is a statement of what the role does ('Assist the Review Manager with administrative activities, resource planning, workflow management, an'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[9]",
+          "detail": "evidence_signal 'Continuous improvement of operational efficiency, quality, and compliance outcomes' is required but its only source is a statement of what the role does ('Drive continuous improvement initiatives to enhance operational efficiency, quality, and compliance '); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        }
+      ]
+    }
+  ],
+  "role2": [
+    {
+      "file": "role2_run1.json",
+      "cross_role_errors": {
+        "title_analogy": 1,
+        "responsibility_only_required": 18,
+        "unsupported_current_relationship": 10,
+        "unsupported_proficiency": 13
+      },
+      "examples": [
+        {
+          "code": "title_analogy",
+          "ref": "role_family[Forward Deployed Engineer]",
+          "detail": "'Forward Deployed Engineer' is mentioned only as a comparison (1 of 1 mention(s): 'Look for an IC Engineer who understands how to design a solution for a client problem, more like a Forward Dep'); a reference title is not a target title"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "skills[6]",
+          "detail": "skill 'API Development' is required but its only source is a statement of what the role does ('Design, develop, and maintain APIs, services, and integrations that support enterprise applications '); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "skills[7]",
+          "detail": "skill 'Service Development' is required but its only source is a statement of what the role does ('Design, develop, and maintain APIs, services, and integrations that support enterprise applications '); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "skills[10]",
+          "detail": "skill 'Large Language Models' is required but its only source is a statement of what the role does ('Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "skills[11]",
+          "detail": "skill 'Retrieval-Augmented Generation' is required but its only source is a statement of what the role does ('Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "skills[13]",
+          "detail": "skill 'AI Orchestration' is required but its only source is a statement of what the role does ('Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        }
+      ]
+    },
+    {
+      "file": "role2_run2.json",
+      "cross_role_errors": {
+        "title_analogy": 1,
+        "responsibility_only_required": 18,
+        "unsupported_current_relationship": 10,
+        "unsupported_proficiency": 13
+      },
+      "examples": [
+        {
+          "code": "title_analogy",
+          "ref": "role_family[Forward Deployed Engineer]",
+          "detail": "'Forward Deployed Engineer' is mentioned only as a comparison (1 of 1 mention(s): 'Look for an IC Engineer who understands how to design a solution for a client problem, more like a Forward Dep'); a reference title is not a target title"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "skills[6]",
+          "detail": "skill 'API Development' is required but its only source is a statement of what the role does ('Design, develop, and maintain APIs, services, and integrations that support enterprise applications '); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "skills[7]",
+          "detail": "skill 'Service Development' is required but its only source is a statement of what the role does ('Design, develop, and maintain APIs, services, and integrations that support enterprise applications '); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "skills[10]",
+          "detail": "skill 'Large Language Models (LLMs)' is required but its only source is a statement of what the role does ('Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "skills[11]",
+          "detail": "skill 'Retrieval-Augmented Generation (RAG)' is required but its only source is a statement of what the role does ('Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "skills[13]",
+          "detail": "skill 'AI Orchestration' is required but its only source is a statement of what the role does ('Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        }
+      ]
+    },
+    {
+      "file": "role2_run3.json",
+      "cross_role_errors": {
+        "title_analogy": 1,
+        "responsibility_only_required": 19,
+        "unsupported_current_relationship": 5,
+        "unsupported_proficiency": 9
+      },
+      "examples": [
+        {
+          "code": "title_analogy",
+          "ref": "role_family[Forward Deployed Engineer]",
+          "detail": "'Forward Deployed Engineer' is mentioned only as a comparison (1 of 1 mention(s): 'Look for an IC Engineer who understands how to design a solution for a client problem, more like a Forward Dep'); a reference title is not a target title"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "skills[7]",
+          "detail": "skill 'Large Language Models (LLMs)' is required but its only source is a statement of what the role does ('Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "skills[8]",
+          "detail": "skill 'Retrieval-Augmented Generation (RAG)' is required but its only source is a statement of what the role does ('Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "skills[10]",
+          "detail": "skill 'AI Orchestration' is required but its only source is a statement of what the role does ('Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "domain[0]",
+          "detail": "domain 'Enterprise applications and AI-driven solutions' is required but its only source is a statement of what the role does ('As a Staff Software Engineer/ Solution Architect, you will work closely with business stakeholders, '); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "domain[1]",
+          "detail": "domain 'Enterprise data integration across SaaS applications' is required but its only source is a statement of what the role does ('Integrate and optimize data from various internal and external systems, understanding the challenges'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        }
+      ]
+    },
+    {
+      "file": "role2_run4.json",
+      "cross_role_errors": {
+        "title_analogy": 1,
+        "responsibility_only_required": 16,
+        "unsupported_current_relationship": 1,
+        "unsupported_proficiency": 7
+      },
+      "examples": [
+        {
+          "code": "title_analogy",
+          "ref": "role_family[Forward Deployed Engineer]",
+          "detail": "'Forward Deployed Engineer' is mentioned only as a comparison (1 of 1 mention(s): 'Look for an IC Engineer who understands how to design a solution for a client problem, more like a Forward Dep'); a reference title is not a target title"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "skills[17]",
+          "detail": "skill 'AI Orchestration' is required but its only source is a statement of what the role does ('Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "domain[2]",
+          "detail": "domain 'Enterprise data integration across SaaS applications' is required but its only source is a statement of what the role does ('Integrate and optimize data from various internal and external systems, understanding the challenges'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[8]",
+          "detail": "evidence_signal 'Partners with business and product stakeholders and helps Product Owners translate initiatives into user stories and technical deliverables' is required but its only source is a statement of what the role does ('Partner with business and product stakeholders to understand requirements, design end-to-end solutio'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[9]",
+          "detail": "evidence_signal 'Designs scalable, secure, maintainable solutions integrated into existing products and solution offerings' is required but its only source is a statement of what the role does ('Design and develop scalable, secure, and maintainable software solutions that can be integrated into'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[10]",
+          "detail": "evidence_signal 'Active contribution to software development, code reviews, technical design discussions, and architecture reviews' is required but its only source is a statement of what the role does ('Actively contribute to software development, code reviews, technical design discussions, and archite'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        }
+      ]
+    },
+    {
+      "file": "role2_run5.json",
+      "cross_role_errors": {
+        "title_analogy": 1,
+        "responsibility_only_required": 16,
+        "unsupported_current_relationship": 6,
+        "unsupported_proficiency": 10
+      },
+      "examples": [
+        {
+          "code": "title_analogy",
+          "ref": "role_family[Forward Deployed Engineer]",
+          "detail": "'Forward Deployed Engineer' is mentioned only as a comparison (1 of 1 mention(s): 'Look for an IC Engineer who understands how to design a solution for a client problem, more like a Forward Dep'); a reference title is not a target title"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "skills[9]",
+          "detail": "skill 'Large Language Models' is required but its only source is a statement of what the role does ('Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "skills[10]",
+          "detail": "skill 'Retrieval-Augmented Generation' is required but its only source is a statement of what the role does ('Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "skills[12]",
+          "detail": "skill 'AI Orchestration Patterns' is required but its only source is a statement of what the role does ('Build and deploy AI-powered applications utilizing Large Language Models (LLMs), Retrieval-Augmented'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "domain[1]",
+          "detail": "domain 'Enterprise data integration across SaaS applications' is required but its only source is a statement of what the role does ('Integrate and optimize data from various internal and external systems, understanding the challenges'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        },
+        {
+          "code": "responsibility_only_required",
+          "ref": "evidence_signals[8]",
+          "detail": "evidence_signal 'Partner with business and product stakeholders on requirements, end-to-end solution design, user stories, and technical deliverables' is required but its only source is a statement of what the role does ('Partner with business and product stakeholders to understand requirements, design end-to-end solutio'); a responsibility is context unless the sources also state it as a qualification or the brief makes it a selection criterion"
+        }
+      ]
+    }
+  ]
+}
