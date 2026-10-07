@@ -15,6 +15,13 @@ CompiledPlan ── paths[] ── build_downstream_contexts ──▶ Downstrea
                       (what the Judge asks)    (what admission's inputs use)   (role title + approved equivalents)
 ```
 
+## 0. Architecture-review decisions (binding on this contract)
+1. **A preferred requirement never gates admission.** (Level, accepted levels and experience floor gate only when REQUIRED; a preferred / context / unresolved / unsupported fact is carried in `AdmissionFacts.ungated`, visible and never invented.)
+2. **Accepted seniority alternatives have OR semantics.** A candidate is `aligned` when aligned at the target level OR any accepted level; a confident `above` / `below` needs every accepted level to agree.
+3. **Verb-implied proficiency is not inferred.** A depth the source does not state stays `UNRESOLVED` (visible, with the claim) and is never asked of the Judge. The checks stay conservative.
+4. **Pipeline wiring is completed before any live validation** (§9 maps every connection point; nothing is enabled).
+5. **The shadow receives the JD AND the recruiter / HM brief**, not the JD alone (§9).
+
 ## 1. Single source of truth
 `SearchIntent.compiled_context` is `None` or a `DownstreamContext`.
 * **Present → source `compiled`.** Every semantic fact the Judge, the evidence builder and admission use comes from the context. The legacy `core_signals` / `supporting_signals` / `differentiator_signals`, `role.seniority`, `experience.minimum_years`, `role.title`, `titles.include_titles` are **not read for meaning**. Nothing is reconstructed from them after compilation.
@@ -39,7 +46,7 @@ Built only from that path's own context entries. **Never merged across paths.** 
 | list | polarity | contents | does the Judge evaluate it? |
 |---|---|---|---|
 | `requirements` | `must_have` | every `VERIFIED_DOWNSTREAM` atom routed to downstream evidence, with tier, proficiency, relationship, provenance | **yes**, at its tier |
-| `exclusions` | `must_not_have` | semantic exclusions (the profile the candidate must NOT have) | received and visible; **not evaluated** (the Judge has no negative verdict yet: §8) |
+| `exclusions` | `must_not_have` | semantic exclusions (the profile the candidate must NOT have) | **yes, in a separate exclusion pass** (`present` / `not_present`; `present` needs a quote verified in the cited passage; never part of the positive requirement judgments; §3a) |
 | `preferences` | `prefer` | `PREFERENCE_CONTEXT` atoms; never in the core tier | the ones routed to evidence are judged at their own (non-core) tier; context-only ones (a preferred company, an education) are carried, not judged |
 | `unresolved` | `undecided` | `UNRESOLVED` atoms with the reason (an unknown level, a work mode no provider filters, an unsupported qualifier) | no, never; visible, never invented |
 | `already_enforced` | informational | what the provider already enforced | no (not re-required independently) |
@@ -49,6 +56,9 @@ Each `ChecklistItem`: `item_id` (the compiled atom id), `concept`, `text` (recru
 Two rules in the checklist: (a) leadership kinds the source accepts as alternatives ("people **or** technical") are **one** item with `alternatives`, so an OR is not turned into an AND; (b) a preference that would inherit a required strength (the "remote is acceptable" allowance inside a required place) is carried without the core tier.
 
 `JudgeOutcome` additionally records `input_source`, the `checklist` the Judge was given, and the `disagreements`. The scripted/real model sees only requirement texts (no provenance, no path); provenance and path live on the interface and in the outcome. The verified-quote gate and the review pass are unchanged.
+
+### 3a. The exclusion pass (new in this phase)
+`RequirementJudge` makes ONE extra call per candidate, and only when the checklist has exclusions (never for a legacy intent). It has its own prompt (`_EXCLUSION_PROMPT`); the requirement prompt and the requirement/review passes are unchanged. The model sees the passages and the exclusion texts only. Verdicts: `present` (the profile IS the excluded profile, exactly as worded; a qualified exclusion applies only when the whole qualification holds) or `not_present`; a `present` without a quote that really appears in the cited passage is `not_present` with a note (`unverified_quote`). The result is `JudgeOutcome.exclusion_judgments` (text, item id, path, provenance, verdict, quote, source). A failure of this pass never touches the requirement judgments (`exclusion_failed`). The prompt was revised once after the first real-model run (an exclusion worded as a statement of what does NOT count, e.g. "X backgrounds are not equivalent to Y", was read as a description and answered `not_present`); both versions and their results are in `RESULTS_REAL_JUDGE_VALIDATION.md`. **What a `present` verdict DOES downstream is not defined**: nothing in ranking, admission or presentation reads it yet (architecture decision, §8).
 
 ## 4. The path contract
 A candidate can satisfy Path A, Path B, both, or neither. The Judge is run against **each path's own** checklist (`search_intents_from_contexts(contexts, base)` gives one `SearchIntent` per path). `attribute_path(path_id, checklist, judgments)` → `PathAttribution(met, partly, not_evidenced, satisfies_required)`: `satisfies_required` is true iff every judged must-have item **of that path** has a verified `met`. It is a flag for attribution, **not a score**: no path is ranked above another, no path weight exists, and the attribution is not used by ranking or admission. A requirement stated by only one path never appears in the other path's Judge input (tested), and a global atom reaches every path that inherits it, marked `inherited`. `merge_path_results` (runtime contract §6) is unchanged and carries each contributing path's own obligations.
@@ -82,12 +92,51 @@ Admission's rules are untouched (`evaluate_eligibility`, the level ladder, `_cla
 | title facts | `role.title`, `titles.include_titles` | the `role_family` atom's value and its approved equivalent titles (`components`) |
 
 * **Unresolved is never invented:** a level with no approved mapping (`Staff`, `Principal`, `Senior Manager`, …), an unsupported alternative or an unsupported bound is **not gated on**; it is kept in `AdmissionFacts.ungated` with its fate and reason.
-* **A preference never gates:** a preferred level is `ungated` and visible. (The legacy path gated on it. This is a documented consequence of "compiled wins", tested: a `Director` is not excluded by a *preferred* Senior level.)
-* **Accepted alternative levels** use the **unchanged** level rule once per accepted level: `aligned` at any accepted level is `aligned`; `above` / `below` stands only if every accepted level agrees; otherwise `unclear` (admission never gates on it). With no alternatives (always so for a legacy intent) this is exactly the old rule.
+* **A preferred requirement never gates (decision 1):** a preferred level, accepted level or experience range is `ungated` and visible. (The legacy path gated on it; tested: a `Director` is not excluded by a *preferred* Senior level, and a candidate with too few years is not excluded by a *preferred* range.)
+* **Accepted alternative levels are OR (decision 2)** and use the **unchanged** level rule once per accepted level: `aligned` at any accepted level is `aligned`; `above` / `below` stands only if every accepted level agrees; otherwise `unclear` (admission never gates on it). With no alternatives (always so for a legacy intent) this is exactly the old rule.
 
 ## 8. Known limits (recorded, not hidden)
-1. **No negative verdict.** The Judge receives semantic exclusions but cannot answer "has the excluded profile"; exclusions are visible on the interface and in the outcome, not evaluated. (Gap code `NO_NEGATIVE_SLOT` is closed at the input; the verdict is the open half.)
-2. **Per-path pipeline execution is not wired.** `search_pipeline` still runs one search per intent and the shadow does not hand the compiled context (or the recruiter brief) to it. The seam is live in the code but dormant in production until the pipeline sets `compiled_context` once per path (runtime contract §8.1). Nothing is deployed.
-3. `MatchedSignal.provenance` and `CandidateEvidence.contributing_path_ids` (runtime contract §8.4) are not added; provenance and path are on the Judge interface and the outcome.
-4. The depth / alternative / leadership / mode / distance checks are lexical. They are deliberately conservative: a depth the model inferred from a verb ("build and deploy" → hands-on) is withheld as `UNRESOLVED` (visible, with the claim) rather than required.
-5. `JudgeChecklist` groups leadership kinds; `to_judge_signals` (the earlier adapter) lists them separately. They agree on everything else (tested).
+1. **What a `present` exclusion does is undefined.** The Judge now evaluates exclusions (§3a) but no consumer acts on the verdict: not ranking, not admission, not the recruiter view. Whether it demotes, flags or excludes is an architecture decision (and, per decision 1, an exclusion is a requirement-side fact, not an admission threshold).
+2. **Per-path pipeline execution is not wired** (§9). Nothing is deployed and the seam stays dormant in production: `compiled_context` is `None` until the pipeline sets it.
+3. `MatchedSignal.provenance` and `CandidateEvidence.contributing_path_ids` are not added; provenance and path are on the Judge interface and in the outcome.
+4. The depth / alternative / leadership / mode / distance checks are lexical and deliberately conservative (decision 3).
+5. `JudgeChecklist` groups leadership kinds; `to_judge_signals` lists them separately. They agree on everything else (tested).
+6. **Quote-gate collapse (existing production behaviour, measured in `RESULTS_REAL_JUDGE_VALIDATION.md`).** When the real model writes an ellipsis inside quotes for every claim, the unchanged verified-quote gate discards them all and the run reads as "nothing evidenced". Not part of this contract; a decision is needed (re-ask on mass-discard, or verify the fragments around an ellipsis).
+7. What the model is shown is requirement and exclusion TEXT. Provenance, path, proficiency (beyond its wording), work mode and unresolved items live on the interface and in the outcome; the model is never given them to reconcile, which is also why it cannot reconstruct them. Unresolved items are never sent to the model at all.
+
+## 9. Pipeline connection map (prepared, NOT enabled)
+Today (legacy, live): `raw_input` (one text) → intake (`IntakeResult`) → `build_confirmed_hiring_intent` → `to_search_intent` → **legacy `SearchIntent`** → `SearchPlanner.build` → `QueryExpander.expand` → `CapabilityMapper.map` → `mapped_plan` (`api.py` `_confirmed_intent` / `_build_plan` / `start_cycle`) → `run_search_pipeline(intent, mapped_plan, jd_text=…, recruiter_brief=…)` → shadow hook → `run_adaptive_discovery` (provider) → merge → rank → `partition_by_eligibility` (admission) → harvest → `requirement_judge.judge_detailed(candidate, intent, harvest)` → evidence.
+
+| step | today | where the compiled flow connects | status |
+|---|---|---|---|
+| 1. sources | `snapshot["raw_input"]` is ONE text; the snapshot has no separate brief | the intake must capture the recruiter / HM brief as its own field (`snapshot["recruiter_brief"]`); `api.py` already forwards `snapshot.get("recruiter_brief")` to the pipeline and stores it on the record | **plumbing done; intake capture not done** (a UI/intake change, out of scope) |
+| 2. shadow | `run_shadow(search_id, jd_text, mapped_plan, recruiter_brief=…)` (JD + brief; the shadow record notes which sources it had) | — | **done** |
+| 3. intent | the shadow calls `extract_structured_intent(jd, brief)` (an extra model call, default off) | the live flow needs the `StructuredHiringIntent` as a first-class product of intake, extracted once from JD + brief and stored with the confirmation | not done |
+| 4. compile | `compile_intent(si, SourceTexts(jd, brief))` runs only inside the shadow | run it in `start_cycle` (after the confirmation, before `_build_plan`), keep the `CompiledPlan` with the record | not done |
+| 5. provider plan | `mapped_plan` is built by the LEGACY planner / capability mapper from the legacy intent | each path's `CompiledPath.filter_tree` must become the provider request. **No adapter from the compiled filter tree to the provider payload exists** (the shadow never sends it) | **gap** |
+| 6. contexts | — | `build_downstream_contexts(plan)` → one `DownstreamContext` per path; `search_intents_from_contexts(contexts, base=legacy_intent)` | adapters exist; not called |
+| 7. discovery | one `run_adaptive_discovery` per search | one per path with that path's plan; how N → 50 → 25 is split across paths is **undecided** | **decision needed** |
+| 8. merge | `CandidateMerger` | `merge_path_results` first, so a candidate keeps every contributing path id | contract only |
+| 9. admission | `partition_by_eligibility(…, alignment_of)` with `build_candidate_evidence(candidate, intent)` | the same call with the candidate's contributing path intent(s); which path's facts apply to a candidate found by several is **undecided** | **decision needed** |
+| 10. Judge | `judge_detailed(candidate, intent, harvest)` once | once per contributing path intent (cost scales with paths); the outcome's `checklist` / `exclusion_judgments` stored per path | not done |
+| 11. persistence | `candidate.raw_data["__requirement_judgments"]` | add `__exclusion_judgments`, the contributing path ids and the checklist | not done |
+| 12. UI | unchanged | none in this phase | out of scope |
+
+Connection order when authorised: (4) compile in `start_cycle` behind a flag → (6) contexts → (10) Judge on the context intent for the legacy-planned search (path-less global context, no provider change) → only then (5), (7)–(9) for per-path provider execution.
+
+## 10. Real-Judge validation (summary; the evidence is `RESULTS_REAL_JUDGE_VALIDATION.md`)
+The production Judge model (gpt-4o-mini, temperature 0; requirement and review prompts unchanged and hash-pinned) was run on **synthetic** candidates against the frozen Role 1-3 compiled contexts, 6 runs per scenario, no tuning between runs: 186 runs (+114 for the one documented exclusion-prompt revision), no CrustData, no retrieval.
+
+| contract property | result with the real model |
+|---|---|
+| nothing provider-shaped, compiler-internal or legacy reaches the model | **holds**: 0 hits over every request received (2157 calls) |
+| unresolved items, exclusions and context-only preferences are never asked as positives | **holds**: 0 violations over 162 compiled-context runs |
+| path obligations (Path A waives Power Query; Path B requires it; the domain is Path A's only) | **holds**: 13/13 expectations on every run, nothing leaks between paths |
+| unsupported `current` not invented; unsupported depth never asked; analogy title not a target | **holds**: 7/7 on every run |
+| compiled meaning beats a conflicting legacy meaning (Python required + current, vs unspecified; a company hard line vs a preference) | **holds**: 7/7 on every run, and the legacy-only control arm shows the outcome really changed |
+| admission: preferred never gates; alternatives are OR; an unresolved level is not invented | **holds** (deterministic gate, compiled facts) |
+| negatives are evaluated | **does NOT yet hold reliably**: the qualified Role 3 audit/tax exclusion works (not broadened), the Role 1 "X is not equivalent to Y" exclusion is read inconsistently (v1 0/6, v2 3/6 on Path A, 0/6 on Path B) |
+| proficiency is interpreted correctly | **not strictly**: advanced vs basic Excel and hands-on vs familiar are separated, but the production review pass downgraded `hands-on Java` on a quote that passes for `hands-on Python`, and several borderline verdicts flip between runs |
+| work mode / preferred company do not change a requirement verdict | strictly fails (the model flips single items between runs); indistinguishable from the model's own noise once quote-gate-damaged runs are set aside (supplementary) |
+
+Two causes sit outside this contract and are recorded in §8: the existing verified-quote gate discards a whole run when the model writes an ellipsis in its quotes, and a `present` exclusion has no downstream consumer. The results do not show that the Judge is accurate on real profiles.

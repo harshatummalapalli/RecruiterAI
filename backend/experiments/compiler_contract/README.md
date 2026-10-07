@@ -29,4 +29,7 @@ Downstream consumer integration (this phase): `RESULTS_DOWNSTREAM_INTEGRATION.md
 Tests: `tests/test_downstream_consumers.py`. Reproduce: `python -m backend.experiments.compiler_contract.downstream_verify && python -m backend.experiments.compiler_contract.build_downstream_report`
 (`RESULTS_RUNTIME_INTEGRATION.md` is a frozen deliverable of the runtime phase and is pinned by hash; its generator is kept for provenance only.)
 
-Status: downstream consumer integration verified offline with synthetic candidates; no provider, no retrieval, no deployment; waiting for architecture review.
+Real-Judge validation (this phase): `RESULTS_REAL_JUDGE_VALIDATION.md` (generated), `real_judge_scenarios.py` (hand-written SYNTHETIC profiles and expectations), `real_judge_run.py` (runs the production Judge model on them N times, no tuning between runs; `analyze`; `diagnose`), `build_real_judge_report.py`, `results/real_judge/` (every request and verdict, the analyses, the admission decisions).
+Tests: `tests/test_real_judge_validation.py` (offline). Reproduce: `python -m backend.experiments.compiler_contract.real_judge_run run --runs 6 && ... analyze && ... build_real_judge_report`
+
+Status: real-Judge validation of the downstream contract run on synthetic candidates only; no CrustData, no retrieval, no deployment; waiting for architecture review.

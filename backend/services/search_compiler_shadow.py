@@ -123,6 +123,8 @@ def run_shadow(search_id: str, jd_text: str, legacy_mapped_plan, recruiter_brief
         record = audit.build_audit_record(si, plan, search_id=search_id)
         record.update({
             "extraction_model": EXTRACTION_MODEL,
+            # what the intent was extracted from and the compiler verified against: the JD and the recruiter / HM brief (each present or not)
+            "source_texts": {"jd": bool((jd_text or "").strip()), "recruiter_brief": bool((recruiter_brief or "").strip())},
             "legacy_plan": legacy_tree,
             "semantic_diff": semantic_diff(legacy_tree, plan.filter_tree),
             "divergence": categorize_divergence(legacy_tree, plan),

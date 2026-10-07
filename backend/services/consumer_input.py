@@ -162,8 +162,8 @@ def judge_checklist_for(ctx: DownstreamContext) -> JudgeChecklist:
         if e.kind == JUDGE_REQUIREMENT:
             req.append(_item(e, ctx, MUST_HAVE, judged=e.route == "downstream_evidence"))
         elif e.kind == JUDGE_EXCLUSION:
-            # carried and visible. The Judge has no negative verdict yet, so an exclusion is received, not evaluated (an unresolved downstream issue)
-            exc.append(_item(e, ctx, MUST_NOT_HAVE, judged=False, reason="a semantic exclusion: the candidate must NOT have this profile; the Judge has no negative verdict yet"))
+            # never part of the positive requirements: the Judge evaluates it in its own exclusion pass (present / not_present, with a verified quote)
+            exc.append(_item(e, ctx, MUST_NOT_HAVE, judged=False, reason="a semantic exclusion: the candidate must NOT have this profile (evaluated by the Judge's exclusion pass, separately from the requirements)"))
         elif e.kind == PREFERENCE:
             pref.append(_item(e, ctx, PREFER, judged=e.route == "downstream_evidence", reason=e.justification))
         elif e.kind == UNRESOLVED_ITEM:

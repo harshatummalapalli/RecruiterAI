@@ -1,0 +1,532 @@
+{
+ "cases": [
+  {
+   "case": "R1 PATH A: Lead (+Senior alternative) are PREFERRED",
+   "facts": {
+    "accepted_levels": [],
+    "minimum_years": null,
+    "target_level": null
+   },
+   "note": "a preferred level never gates admission: every candidate is admitted; the legacy reading of the same level would have excluded some",
+   "rows": [
+    {
+     "candidate": "lead",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": null,
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": true,
+      "experience_floor": true,
+      "level_fit": "aligned",
+      "reason": null
+     },
+     "start_year": 2016,
+     "title": "Lead Data Analyst"
+    },
+    {
+     "candidate": "senior",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": null,
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": false,
+      "experience_floor": true,
+      "level_fit": "below",
+      "reason": "level_below_target"
+     },
+     "start_year": 2016,
+     "title": "Senior Data Analyst"
+    },
+    {
+     "candidate": "director",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": null,
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": false,
+      "experience_floor": true,
+      "level_fit": "above",
+      "reason": "level_above_target"
+     },
+     "start_year": 2016,
+     "title": "Director of Legal Operations"
+    },
+    {
+     "candidate": "junior",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": null,
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": false,
+      "experience_floor": true,
+      "level_fit": "below",
+      "reason": "level_below_target"
+     },
+     "start_year": 2016,
+     "title": "Junior Data Analyst"
+    },
+    {
+     "candidate": "no_level",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": null,
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": true,
+      "experience_floor": true,
+      "level_fit": "unclear",
+      "reason": null
+     },
+     "start_year": 2016,
+     "title": "Data Analyst"
+    },
+    {
+     "candidate": "short_tenure",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": null,
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": false,
+      "experience_floor": false,
+      "level_fit": "aligned",
+      "reason": "below_experience_floor"
+     },
+     "start_year": 2024,
+     "title": "Lead Data Analyst"
+    }
+   ],
+   "ungated": [
+    "Lead (PREFERENCE_CONTEXT)",
+    "Senior (PREFERENCE_CONTEXT)"
+   ]
+  },
+  {
+   "case": "R1 PATH B: Lead is REQUIRED, 6+ years",
+   "facts": {
+    "accepted_levels": [],
+    "minimum_years": 6,
+    "target_level": "Lead"
+   },
+   "note": "the required level and floor gate, with the unchanged rule",
+   "rows": [
+    {
+     "candidate": "lead",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": true,
+      "level_fit": "aligned",
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": true,
+      "experience_floor": true,
+      "level_fit": "aligned",
+      "reason": null
+     },
+     "start_year": 2016,
+     "title": "Lead Data Analyst"
+    },
+    {
+     "candidate": "senior",
+     "compiled": {
+      "admitted": false,
+      "experience_floor": true,
+      "level_fit": "below",
+      "reason": "level_below_target"
+     },
+     "legacy_would": {
+      "admitted": false,
+      "experience_floor": true,
+      "level_fit": "below",
+      "reason": "level_below_target"
+     },
+     "start_year": 2016,
+     "title": "Senior Data Analyst"
+    },
+    {
+     "candidate": "director",
+     "compiled": {
+      "admitted": false,
+      "experience_floor": true,
+      "level_fit": "above",
+      "reason": "level_above_target"
+     },
+     "legacy_would": {
+      "admitted": false,
+      "experience_floor": true,
+      "level_fit": "above",
+      "reason": "level_above_target"
+     },
+     "start_year": 2016,
+     "title": "Director of Legal Operations"
+    },
+    {
+     "candidate": "junior",
+     "compiled": {
+      "admitted": false,
+      "experience_floor": true,
+      "level_fit": "below",
+      "reason": "level_below_target"
+     },
+     "legacy_would": {
+      "admitted": false,
+      "experience_floor": true,
+      "level_fit": "below",
+      "reason": "level_below_target"
+     },
+     "start_year": 2016,
+     "title": "Junior Data Analyst"
+    },
+    {
+     "candidate": "no_level",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": true,
+      "level_fit": "unclear",
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": true,
+      "experience_floor": true,
+      "level_fit": "unclear",
+      "reason": null
+     },
+     "start_year": 2016,
+     "title": "Data Analyst"
+    },
+    {
+     "candidate": "short_tenure",
+     "compiled": {
+      "admitted": false,
+      "experience_floor": false,
+      "level_fit": "aligned",
+      "reason": "below_experience_floor"
+     },
+     "legacy_would": {
+      "admitted": false,
+      "experience_floor": false,
+      "level_fit": "aligned",
+      "reason": "below_experience_floor"
+     },
+     "start_year": 2024,
+     "title": "Lead Data Analyst"
+    }
+   ],
+   "ungated": []
+  },
+  {
+   "case": "synthetic: Senior required, Lead accepted as an alternative (OR)",
+   "facts": {
+    "accepted_levels": [
+     "Lead"
+    ],
+    "minimum_years": null,
+    "target_level": "Senior"
+   },
+   "note": "OR semantics: a Lead is aligned (not 'above'); a Senior is aligned; a Director is above both and is excluded; a Junior is below both",
+   "rows": [
+    {
+     "candidate": "lead",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": "aligned",
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": false,
+      "experience_floor": null,
+      "level_fit": "above",
+      "reason": "level_above_target"
+     },
+     "start_year": 2012,
+     "title": "Lead Engineer"
+    },
+    {
+     "candidate": "senior",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": "aligned",
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": "aligned",
+      "reason": null
+     },
+     "start_year": 2012,
+     "title": "Senior Engineer"
+    },
+    {
+     "candidate": "director",
+     "compiled": {
+      "admitted": false,
+      "experience_floor": null,
+      "level_fit": "above",
+      "reason": "level_above_target"
+     },
+     "legacy_would": {
+      "admitted": false,
+      "experience_floor": null,
+      "level_fit": "above",
+      "reason": "level_above_target"
+     },
+     "start_year": 2012,
+     "title": "Director of Engineering"
+    },
+    {
+     "candidate": "junior",
+     "compiled": {
+      "admitted": false,
+      "experience_floor": null,
+      "level_fit": "below",
+      "reason": "level_below_target"
+     },
+     "legacy_would": {
+      "admitted": false,
+      "experience_floor": null,
+      "level_fit": "below",
+      "reason": "level_below_target"
+     },
+     "start_year": 2012,
+     "title": "Junior Engineer"
+    },
+    {
+     "candidate": "no_level",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": "unclear",
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": "unclear",
+      "reason": null
+     },
+     "start_year": 2012,
+     "title": "Engineer"
+    }
+   ],
+   "ungated": []
+  },
+  {
+   "case": "synthetic: Senior is PREFERRED",
+   "facts": {
+    "accepted_levels": [],
+    "minimum_years": null,
+    "target_level": null
+   },
+   "note": "preferred never rejects",
+   "rows": [
+    {
+     "candidate": "lead",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": null,
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": false,
+      "experience_floor": null,
+      "level_fit": "above",
+      "reason": "level_above_target"
+     },
+     "start_year": 2012,
+     "title": "Lead Engineer"
+    },
+    {
+     "candidate": "senior",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": null,
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": "aligned",
+      "reason": null
+     },
+     "start_year": 2012,
+     "title": "Senior Engineer"
+    },
+    {
+     "candidate": "director",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": null,
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": false,
+      "experience_floor": null,
+      "level_fit": "above",
+      "reason": "level_above_target"
+     },
+     "start_year": 2012,
+     "title": "Director of Engineering"
+    },
+    {
+     "candidate": "junior",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": null,
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": false,
+      "experience_floor": null,
+      "level_fit": "below",
+      "reason": "level_below_target"
+     },
+     "start_year": 2012,
+     "title": "Junior Engineer"
+    },
+    {
+     "candidate": "no_level",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": null,
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": "unclear",
+      "reason": null
+     },
+     "start_year": 2012,
+     "title": "Engineer"
+    }
+   ],
+   "ungated": [
+    "Senior (PREFERENCE_CONTEXT)"
+   ]
+  },
+  {
+   "case": "synthetic: Staff (no approved level mapping) is UNRESOLVED",
+   "facts": {
+    "accepted_levels": [],
+    "minimum_years": null,
+    "target_level": null
+   },
+   "note": "an unresolved level is not invented: nobody is gated on it, and it stays visible (ungated)",
+   "rows": [
+    {
+     "candidate": "lead",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": null,
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": "aligned",
+      "reason": null
+     },
+     "start_year": 2012,
+     "title": "Lead Engineer"
+    },
+    {
+     "candidate": "senior",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": null,
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": false,
+      "experience_floor": null,
+      "level_fit": "below",
+      "reason": "level_below_target"
+     },
+     "start_year": 2012,
+     "title": "Senior Engineer"
+    },
+    {
+     "candidate": "director",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": null,
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": false,
+      "experience_floor": null,
+      "level_fit": "above",
+      "reason": "level_above_target"
+     },
+     "start_year": 2012,
+     "title": "Director of Engineering"
+    },
+    {
+     "candidate": "junior",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": null,
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": false,
+      "experience_floor": null,
+      "level_fit": "below",
+      "reason": "level_below_target"
+     },
+     "start_year": 2012,
+     "title": "Junior Engineer"
+    },
+    {
+     "candidate": "no_level",
+     "compiled": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": null,
+      "reason": null
+     },
+     "legacy_would": {
+      "admitted": true,
+      "experience_floor": null,
+      "level_fit": "unclear",
+      "reason": null
+     },
+     "start_year": 2012,
+     "title": "Engineer"
+    }
+   ],
+   "ungated": [
+    "Staff (UNRESOLVED)"
+   ]
+  }
+ ]
+}

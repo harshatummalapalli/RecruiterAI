@@ -588,12 +588,47 @@ def test_SY_a_candidate_matching_a_preference_only_does_not_satisfy_a_path():
     assert any(j["verdict"] == "met" and j["tier"] != "core" for j in out.judgments)               # the preference itself IS evidenced, at its own (non-core) tier
 
 
-def test_SY_a_candidate_with_a_profile_that_states_an_exclusion_is_still_judged_on_the_positive_requirements_only():
+def test_SY_exclusions_are_evaluated_separately_from_the_positive_requirements():
     ctxs = dv.contexts_for("R3", 1)
     c = ci.judge_checklist_for(ctxs[0])
-    cand, harvest = dv.synthetic_candidate("neg", [i.text for i in c.exclusions] + [i.text for i in c.requirements if i.judged])
-    out = RequirementJudge(client=dv.ScriptedModel()).judge_detailed(cand, ci.search_intent_for_context(ctxs[0]), harvest)
-    assert out.checklist["exclusions"] and not any(j["signal_text"] in {i.text for i in c.exclusions} for j in out.judgments)   # received, not evaluated (documented gap)
+    excluded = [i.text for i in c.exclusions]
+    stated = [i.text for i in c.requirements if i.judged]
+    intent = ci.search_intent_for_context(ctxs[0])
+    cand, harvest = dv.synthetic_candidate("neg", excluded + stated)
+    model = dv.ScriptedModel()
+    out = RequirementJudge(client=model).judge_detailed(cand, intent, harvest)
+    assert not any(j["signal_text"] in set(excluded) for j in out.judgments)                        # the requirement judgments are positives only
+    assert [x["verdict"] for x in out.exclusion_judgments] == ["present"] * len(excluded)           # the profile states the excluded profile
+    assert all(x["quote"] and x["path_id"] == ctxs[0].path_id and x["provenance"]["state"] for x in out.exclusion_judgments)
+    assert model.exclusion_asked == [excluded]
+    clean, harvest2 = dv.synthetic_candidate("clean", stated)
+    out2 = RequirementJudge(client=dv.ScriptedModel()).judge_detailed(clean, intent, harvest2)
+    assert [x["verdict"] for x in out2.exclusion_judgments] == ["not_present"] * len(excluded)
+    assert out2.judgments == out.judgments                                                           # evaluating exclusions never changes a requirement verdict
+
+
+def test_SY_a_present_verdict_without_a_verified_quote_is_not_accepted():
+    ctxs = dv.contexts_for("R3", 1)
+    intent = ci.search_intent_for_context(ctxs[0])
+    cand, harvest = dv.synthetic_candidate("x", ["Worked on unrelated things"])
+
+    class Liar(dv.ScriptedModel):
+        def create(self, **kw):
+            body = json.loads(kw["input"][1]["content"])
+            if "exclusions" in body:
+                out = [{"x": x["x"], "verdict": "present", "p": 0, "quote": "a quote that is not in the profile"} for x in body["exclusions"]]
+                return type("R", (), {"output_text": json.dumps({"results": out}), "usage": None})()
+            return super().create(**kw)
+
+    out = RequirementJudge(client=Liar()).judge_detailed(cand, intent, harvest)
+    assert all(x["verdict"] == "not_present" and "unverified_quote" in x["note"] for x in out.exclusion_judgments)
+
+
+def test_SY_an_intent_without_exclusions_makes_no_exclusion_call_and_a_legacy_intent_has_none():
+    cand, harvest = dv.synthetic_candidate("x", ["Core one"])
+    m = dv.ScriptedModel()
+    out = RequirementJudge(client=m).judge_detailed(cand, SearchIntent(core_signals=["Core one"]), harvest)
+    assert out.exclusion_judgments is None and m.exclusion_asked == []
 
 
 # ======================================================================================================================

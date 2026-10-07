@@ -65,8 +65,11 @@ def test_stored_intents_are_the_frozen_ones(intents):
 def test_experiment_modules_make_no_model_or_provider_call():
     forbidden = re.compile(r"^\s*(?:from|import)\s+(?:openai|requests|httpx|urllib|socket|aiohttp|backend\.providers|backend\.experiments\.crustdata_retrieval|"
                            r"backend\.experiments\.intake_strategy\.run_|backend\.experiments\.intake_strategy\.experimental_extractor)", re.M)
+    # The ONE module allowed to call a model is the real-Judge runner (the Judge's own OpenAI model, validated on synthetic candidates). It is still forbidden every
+    # provider / HTTP / retrieval import.
+    no_provider = re.compile(forbidden.pattern.replace("(?:openai|", "(?:"), re.M)
     for f in CC.glob("*.py"):
-        assert not forbidden.search(f.read_text(encoding="utf-8")), f.name
+        assert not (no_provider if f.name == "real_judge_run.py" else forbidden).search(f.read_text(encoding="utf-8")), f.name
 
 
 def test_nothing_in_the_experiment_modifies_the_compiler_or_the_schema():

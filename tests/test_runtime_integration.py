@@ -579,10 +579,11 @@ def test_J_the_only_production_caller_of_the_compiler_is_the_shadow_audit():
     assert callers == {"backend/services/search_compiler_shadow.py"}
 
 
-def test_J_the_pipeline_reaches_the_compiler_only_through_the_shadow_hook_and_passes_it_the_jd_only():
-    """LEGACY DOWNSTREAM CONSUMER / WIRING GAP: search_pipeline calls `run_shadow(search_id, jd_text, mapped_plan)` and nothing else compiled; the recruiter brief is not passed."""
+def test_J_the_pipeline_reaches_the_compiler_only_through_the_shadow_hook_and_passes_it_the_jd_and_the_brief():
+    """Superseded the runtime-phase pin (the shadow received the JD only). Architecture review: the shadow must receive the JD AND the recruiter / HM brief."""
     text = (ROOT / "backend" / "services" / "search_pipeline.py").read_text(encoding="utf-8")
-    assert "run_shadow(search_id, jd_text, mapped_plan)" in text and "recruiter_brief" not in text.split("run_shadow(search_id")[1].split("\n")[0]
+    call = text.split("run_shadow(search_id")[1].split("\n")[0]
+    assert "jd_text" in call and "recruiter_brief=" in call and "run_shadow(search_id, jd_text, mapped_plan)" not in text
 
 
 def test_J_the_shadow_audit_passes_the_source_text_to_the_compiler():

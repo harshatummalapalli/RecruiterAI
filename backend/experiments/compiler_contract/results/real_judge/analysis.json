@@ -1,0 +1,5806 @@
+{
+ "asked_only_what_the_checklist_judges": {
+  "jobs_checked": 162,
+  "violations": []
+ },
+ "cells": 928,
+ "collapses": [
+  {
+   "job": "R3/Q3/ctx/run2",
+   "model_said_met": null,
+   "of_which_quotes_with_ellipsis": null,
+   "other_runs_met": [
+    19,
+    22,
+    17,
+    19,
+    18
+   ],
+   "verified_met": 0
+  },
+  {
+   "job": "R3/Q4/ctx/run3",
+   "model_said_met": null,
+   "of_which_quotes_with_ellipsis": null,
+   "other_runs_met": [
+    22,
+    7,
+    0,
+    23,
+    0
+   ],
+   "verified_met": 0
+  },
+  {
+   "job": "R3/Q4/ctx/run4",
+   "model_said_met": 23,
+   "of_which_quotes_with_ellipsis": 23,
+   "other_runs_met": [
+    22,
+    7,
+    0,
+    23,
+    0
+   ],
+   "verified_met": 0
+  },
+  {
+   "job": "R3/Q4/ctx/run6",
+   "model_said_met": 29,
+   "of_which_quotes_with_ellipsis": 29,
+   "other_runs_met": [
+    22,
+    7,
+    0,
+    0,
+    23
+   ],
+   "verified_met": 0
+  }
+ ],
+ "conflict": {
+  "CONFLICT": [
+   {
+    "asked": [
+     "Python"
+    ],
+    "candidate": "PY_NONE",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Currently works with Python (required)",
+      "winner": "compiled"
+     },
+     {
+      "compiled": "Python",
+      "field": "signal.core",
+      "legacy": null,
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 1,
+    "verdicts": {
+     "Python": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Python"
+    ],
+    "candidate": "PY_NONE",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Currently works with Python (required)",
+      "winner": "compiled"
+     },
+     {
+      "compiled": "Python",
+      "field": "signal.core",
+      "legacy": null,
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 2,
+    "verdicts": {
+     "Python": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Python"
+    ],
+    "candidate": "PY_NONE",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Currently works with Python (required)",
+      "winner": "compiled"
+     },
+     {
+      "compiled": "Python",
+      "field": "signal.core",
+      "legacy": null,
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 3,
+    "verdicts": {
+     "Python": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Python"
+    ],
+    "candidate": "PY_NONE",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Currently works with Python (required)",
+      "winner": "compiled"
+     },
+     {
+      "compiled": "Python",
+      "field": "signal.core",
+      "legacy": null,
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 4,
+    "verdicts": {
+     "Python": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Python"
+    ],
+    "candidate": "PY_NONE",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Currently works with Python (required)",
+      "winner": "compiled"
+     },
+     {
+      "compiled": "Python",
+      "field": "signal.core",
+      "legacy": null,
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 5,
+    "verdicts": {
+     "Python": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Python"
+    ],
+    "candidate": "PY_NONE",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Currently works with Python (required)",
+      "winner": "compiled"
+     },
+     {
+      "compiled": "Python",
+      "field": "signal.core",
+      "legacy": null,
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 6,
+    "verdicts": {
+     "Python": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Currently works with Python (required)"
+    ],
+    "candidate": "PY_NONE",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 1,
+    "verdicts": {
+     "Currently works with Python (required)": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Currently works with Python (required)"
+    ],
+    "candidate": "PY_NONE",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 2,
+    "verdicts": {
+     "Currently works with Python (required)": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Currently works with Python (required)"
+    ],
+    "candidate": "PY_NONE",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 3,
+    "verdicts": {
+     "Currently works with Python (required)": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Currently works with Python (required)"
+    ],
+    "candidate": "PY_NONE",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 4,
+    "verdicts": {
+     "Currently works with Python (required)": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Currently works with Python (required)"
+    ],
+    "candidate": "PY_NONE",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 5,
+    "verdicts": {
+     "Currently works with Python (required)": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Currently works with Python (required)"
+    ],
+    "candidate": "PY_NONE",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 6,
+    "verdicts": {
+     "Currently works with Python (required)": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Python"
+    ],
+    "candidate": "PY_NOW",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Currently works with Python (required)",
+      "winner": "compiled"
+     },
+     {
+      "compiled": "Python",
+      "field": "signal.core",
+      "legacy": null,
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 1,
+    "verdicts": {
+     "Python": "met"
+    }
+   },
+   {
+    "asked": [
+     "Python"
+    ],
+    "candidate": "PY_NOW",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Currently works with Python (required)",
+      "winner": "compiled"
+     },
+     {
+      "compiled": "Python",
+      "field": "signal.core",
+      "legacy": null,
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 2,
+    "verdicts": {
+     "Python": "met"
+    }
+   },
+   {
+    "asked": [
+     "Python"
+    ],
+    "candidate": "PY_NOW",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Currently works with Python (required)",
+      "winner": "compiled"
+     },
+     {
+      "compiled": "Python",
+      "field": "signal.core",
+      "legacy": null,
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 3,
+    "verdicts": {
+     "Python": "met"
+    }
+   },
+   {
+    "asked": [
+     "Python"
+    ],
+    "candidate": "PY_NOW",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Currently works with Python (required)",
+      "winner": "compiled"
+     },
+     {
+      "compiled": "Python",
+      "field": "signal.core",
+      "legacy": null,
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 4,
+    "verdicts": {
+     "Python": "met"
+    }
+   },
+   {
+    "asked": [
+     "Python"
+    ],
+    "candidate": "PY_NOW",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Currently works with Python (required)",
+      "winner": "compiled"
+     },
+     {
+      "compiled": "Python",
+      "field": "signal.core",
+      "legacy": null,
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 5,
+    "verdicts": {
+     "Python": "met"
+    }
+   },
+   {
+    "asked": [
+     "Python"
+    ],
+    "candidate": "PY_NOW",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Currently works with Python (required)",
+      "winner": "compiled"
+     },
+     {
+      "compiled": "Python",
+      "field": "signal.core",
+      "legacy": null,
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 6,
+    "verdicts": {
+     "Python": "met"
+    }
+   },
+   {
+    "asked": [
+     "Currently works with Python (required)"
+    ],
+    "candidate": "PY_NOW",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 1,
+    "verdicts": {
+     "Currently works with Python (required)": "met"
+    }
+   },
+   {
+    "asked": [
+     "Currently works with Python (required)"
+    ],
+    "candidate": "PY_NOW",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 2,
+    "verdicts": {
+     "Currently works with Python (required)": "met"
+    }
+   },
+   {
+    "asked": [
+     "Currently works with Python (required)"
+    ],
+    "candidate": "PY_NOW",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 3,
+    "verdicts": {
+     "Currently works with Python (required)": "met"
+    }
+   },
+   {
+    "asked": [
+     "Currently works with Python (required)"
+    ],
+    "candidate": "PY_NOW",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 4,
+    "verdicts": {
+     "Currently works with Python (required)": "met"
+    }
+   },
+   {
+    "asked": [
+     "Currently works with Python (required)"
+    ],
+    "candidate": "PY_NOW",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 5,
+    "verdicts": {
+     "Currently works with Python (required)": "met"
+    }
+   },
+   {
+    "asked": [
+     "Currently works with Python (required)"
+    ],
+    "candidate": "PY_NOW",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 6,
+    "verdicts": {
+     "Currently works with Python (required)": "met"
+    }
+   },
+   {
+    "asked": [
+     "Python"
+    ],
+    "candidate": "PY_PAST",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Currently works with Python (required)",
+      "winner": "compiled"
+     },
+     {
+      "compiled": "Python",
+      "field": "signal.core",
+      "legacy": null,
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 1,
+    "verdicts": {
+     "Python": "met"
+    }
+   },
+   {
+    "asked": [
+     "Python"
+    ],
+    "candidate": "PY_PAST",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Currently works with Python (required)",
+      "winner": "compiled"
+     },
+     {
+      "compiled": "Python",
+      "field": "signal.core",
+      "legacy": null,
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 2,
+    "verdicts": {
+     "Python": "met"
+    }
+   },
+   {
+    "asked": [
+     "Python"
+    ],
+    "candidate": "PY_PAST",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Currently works with Python (required)",
+      "winner": "compiled"
+     },
+     {
+      "compiled": "Python",
+      "field": "signal.core",
+      "legacy": null,
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 3,
+    "verdicts": {
+     "Python": "met"
+    }
+   },
+   {
+    "asked": [
+     "Python"
+    ],
+    "candidate": "PY_PAST",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Currently works with Python (required)",
+      "winner": "compiled"
+     },
+     {
+      "compiled": "Python",
+      "field": "signal.core",
+      "legacy": null,
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 4,
+    "verdicts": {
+     "Python": "met"
+    }
+   },
+   {
+    "asked": [
+     "Python"
+    ],
+    "candidate": "PY_PAST",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Currently works with Python (required)",
+      "winner": "compiled"
+     },
+     {
+      "compiled": "Python",
+      "field": "signal.core",
+      "legacy": null,
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 5,
+    "verdicts": {
+     "Python": "met"
+    }
+   },
+   {
+    "asked": [
+     "Python"
+    ],
+    "candidate": "PY_PAST",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Currently works with Python (required)",
+      "winner": "compiled"
+     },
+     {
+      "compiled": "Python",
+      "field": "signal.core",
+      "legacy": null,
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 6,
+    "verdicts": {
+     "Python": "met"
+    }
+   },
+   {
+    "asked": [
+     "Currently works with Python (required)"
+    ],
+    "candidate": "PY_PAST",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 1,
+    "verdicts": {
+     "Currently works with Python (required)": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Currently works with Python (required)"
+    ],
+    "candidate": "PY_PAST",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 2,
+    "verdicts": {
+     "Currently works with Python (required)": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Currently works with Python (required)"
+    ],
+    "candidate": "PY_PAST",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 3,
+    "verdicts": {
+     "Currently works with Python (required)": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Currently works with Python (required)"
+    ],
+    "candidate": "PY_PAST",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 4,
+    "verdicts": {
+     "Currently works with Python (required)": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Currently works with Python (required)"
+    ],
+    "candidate": "PY_PAST",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 5,
+    "verdicts": {
+     "Currently works with Python (required)": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Currently works with Python (required)"
+    ],
+    "candidate": "PY_PAST",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 6,
+    "verdicts": {
+     "Currently works with Python (required)": "not_evidenced"
+    }
+   }
+  ],
+  "CONFLICT_CO": [
+   {
+    "asked": [],
+    "candidate": "NO_QUUX",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Works at Quuxcorp",
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 1,
+    "verdicts": {}
+   },
+   {
+    "asked": [],
+    "candidate": "NO_QUUX",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Works at Quuxcorp",
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 2,
+    "verdicts": {}
+   },
+   {
+    "asked": [],
+    "candidate": "NO_QUUX",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Works at Quuxcorp",
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 3,
+    "verdicts": {}
+   },
+   {
+    "asked": [],
+    "candidate": "NO_QUUX",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Works at Quuxcorp",
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 4,
+    "verdicts": {}
+   },
+   {
+    "asked": [],
+    "candidate": "NO_QUUX",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Works at Quuxcorp",
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 5,
+    "verdicts": {}
+   },
+   {
+    "asked": [],
+    "candidate": "NO_QUUX",
+    "context": "compiled_vs_legacy",
+    "disagreements": [
+     {
+      "compiled": null,
+      "field": "signal.core",
+      "legacy": "Works at Quuxcorp",
+      "winner": "compiled"
+     }
+    ],
+    "input_source": "compiled",
+    "run": 6,
+    "verdicts": {}
+   },
+   {
+    "asked": [
+     "Works at Quuxcorp"
+    ],
+    "candidate": "NO_QUUX",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 1,
+    "verdicts": {
+     "Works at Quuxcorp": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Works at Quuxcorp"
+    ],
+    "candidate": "NO_QUUX",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 2,
+    "verdicts": {
+     "Works at Quuxcorp": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Works at Quuxcorp"
+    ],
+    "candidate": "NO_QUUX",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 3,
+    "verdicts": {
+     "Works at Quuxcorp": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Works at Quuxcorp"
+    ],
+    "candidate": "NO_QUUX",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 4,
+    "verdicts": {
+     "Works at Quuxcorp": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Works at Quuxcorp"
+    ],
+    "candidate": "NO_QUUX",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 5,
+    "verdicts": {
+     "Works at Quuxcorp": "not_evidenced"
+    }
+   },
+   {
+    "asked": [
+     "Works at Quuxcorp"
+    ],
+    "candidate": "NO_QUUX",
+    "context": "legacy_only_control",
+    "disagreements": null,
+    "input_source": "legacy",
+    "run": 6,
+    "verdicts": {
+     "Works at Quuxcorp": "not_evidenced"
+    }
+   }
+  ]
+ },
+ "exclusion_flips": [
+  {
+   "candidate": "A",
+   "context": "PATH A",
+   "group": "R1",
+   "item": "A strong SQL/Python analyst working at a security firm",
+   "verdicts": [
+    "present",
+    "present",
+    "not_present",
+    "present",
+    "present",
+    "present"
+   ]
+  },
+  {
+   "candidate": "A",
+   "context": "PATH B",
+   "group": "R1",
+   "item": "A strong SQL/Python analyst working at a security firm",
+   "verdicts": [
+    "present",
+    "not_present",
+    "present",
+    "present",
+    "present",
+    "present"
+   ]
+  },
+  {
+   "candidate": "C",
+   "context": "PATH A",
+   "group": "R1",
+   "item": "A strong SQL/Python analyst working at a security firm",
+   "verdicts": [
+    "present",
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present"
+   ]
+  },
+  {
+   "candidate": "C",
+   "context": "PATH A",
+   "group": "R1",
+   "item": "Cyber or incident wording alone without relevant substantive evidence",
+   "verdicts": [
+    "not_present",
+    "present",
+    "present",
+    "present",
+    "present",
+    "present"
+   ]
+  },
+  {
+   "candidate": "C",
+   "context": "PATH B",
+   "group": "R1",
+   "item": "Cyber or incident wording alone without relevant substantive evidence",
+   "verdicts": [
+    "present",
+    "present",
+    "present",
+    "not_present",
+    "present",
+    "present"
+   ]
+  }
+ ],
+ "exclusion_tally": [
+  {
+   "candidate": "A",
+   "context": "PATH A",
+   "exclusion": "A strong SQL/Python analyst working at a security firm",
+   "group": "R1",
+   "present_runs": 5,
+   "runs": 6
+  },
+  {
+   "candidate": "A",
+   "context": "PATH A",
+   "exclusion": "Cyber or incident wording alone without relevant substantive evidence",
+   "group": "R1",
+   "present_runs": 6,
+   "runs": 6
+  },
+  {
+   "candidate": "A",
+   "context": "PATH A",
+   "exclusion": "Generic cybersecurity or security-operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "A",
+   "context": "PATH B",
+   "exclusion": "A strong SQL/Python analyst working at a security firm",
+   "group": "R1",
+   "present_runs": 5,
+   "runs": 6
+  },
+  {
+   "candidate": "A",
+   "context": "PATH B",
+   "exclusion": "Cyber or incident wording alone without relevant substantive evidence",
+   "group": "R1",
+   "present_runs": 6,
+   "runs": 6
+  },
+  {
+   "candidate": "A",
+   "context": "PATH B",
+   "exclusion": "Generic cybersecurity or security-operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "B",
+   "context": "PATH A",
+   "exclusion": "A strong SQL/Python analyst working at a security firm",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "B",
+   "context": "PATH A",
+   "exclusion": "Cyber or incident wording alone without relevant substantive evidence",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "B",
+   "context": "PATH A",
+   "exclusion": "Generic cybersecurity or security-operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "B",
+   "context": "PATH B",
+   "exclusion": "A strong SQL/Python analyst working at a security firm",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "B",
+   "context": "PATH B",
+   "exclusion": "Cyber or incident wording alone without relevant substantive evidence",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "B",
+   "context": "PATH B",
+   "exclusion": "Generic cybersecurity or security-operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "C",
+   "context": "PATH A",
+   "exclusion": "A strong SQL/Python analyst working at a security firm",
+   "group": "R1",
+   "present_runs": 1,
+   "runs": 6
+  },
+  {
+   "candidate": "C",
+   "context": "PATH A",
+   "exclusion": "Cyber or incident wording alone without relevant substantive evidence",
+   "group": "R1",
+   "present_runs": 5,
+   "runs": 6
+  },
+  {
+   "candidate": "C",
+   "context": "PATH A",
+   "exclusion": "Generic cybersecurity or security-operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "C",
+   "context": "PATH B",
+   "exclusion": "A strong SQL/Python analyst working at a security firm",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "C",
+   "context": "PATH B",
+   "exclusion": "Cyber or incident wording alone without relevant substantive evidence",
+   "group": "R1",
+   "present_runs": 5,
+   "runs": 6
+  },
+  {
+   "candidate": "C",
+   "context": "PATH B",
+   "exclusion": "Generic cybersecurity or security-operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "D",
+   "context": "PATH A",
+   "exclusion": "A strong SQL/Python analyst working at a security firm",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "D",
+   "context": "PATH A",
+   "exclusion": "Cyber or incident wording alone without relevant substantive evidence",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "D",
+   "context": "PATH A",
+   "exclusion": "Generic cybersecurity or security-operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "D",
+   "context": "PATH B",
+   "exclusion": "A strong SQL/Python analyst working at a security firm",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "D",
+   "context": "PATH B",
+   "exclusion": "Cyber or incident wording alone without relevant substantive evidence",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "D",
+   "context": "PATH B",
+   "exclusion": "Generic cybersecurity or security-operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "E",
+   "context": "PATH A",
+   "exclusion": "A strong SQL/Python analyst working at a security firm",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "E",
+   "context": "PATH A",
+   "exclusion": "Cyber or incident wording alone without relevant substantive evidence",
+   "group": "R1",
+   "present_runs": 6,
+   "runs": 6
+  },
+  {
+   "candidate": "E",
+   "context": "PATH A",
+   "exclusion": "Generic cybersecurity or security-operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "E",
+   "context": "PATH B",
+   "exclusion": "A strong SQL/Python analyst working at a security firm",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "E",
+   "context": "PATH B",
+   "exclusion": "Cyber or incident wording alone without relevant substantive evidence",
+   "group": "R1",
+   "present_runs": 6,
+   "runs": 6
+  },
+  {
+   "candidate": "E",
+   "context": "PATH B",
+   "exclusion": "Generic cybersecurity or security-operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "F",
+   "context": "PATH A",
+   "exclusion": "A strong SQL/Python analyst working at a security firm",
+   "group": "R1",
+   "present_runs": 6,
+   "runs": 6
+  },
+  {
+   "candidate": "F",
+   "context": "PATH A",
+   "exclusion": "Cyber or incident wording alone without relevant substantive evidence",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "F",
+   "context": "PATH A",
+   "exclusion": "Generic cybersecurity or security-operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "F",
+   "context": "PATH B",
+   "exclusion": "A strong SQL/Python analyst working at a security firm",
+   "group": "R1",
+   "present_runs": 6,
+   "runs": 6
+  },
+  {
+   "candidate": "F",
+   "context": "PATH B",
+   "exclusion": "Cyber or incident wording alone without relevant substantive evidence",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "F",
+   "context": "PATH B",
+   "exclusion": "Generic cybersecurity or security-operations backgrounds are not equivalent to Cyber Incident Review or Data Breach Analysis",
+   "group": "R1",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "Q1",
+   "context": "ctx",
+   "exclusion": "Experience exclusively in statutory audit, tax, bookkeeping, or transaction processing without substantive FP&A or business-finance responsibilities",
+   "group": "R3",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "Q2",
+   "context": "ctx",
+   "exclusion": "Experience exclusively in statutory audit, tax, bookkeeping, or transaction processing without substantive FP&A or business-finance responsibilities",
+   "group": "R3",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "exclusion": "Experience exclusively in statutory audit, tax, bookkeeping, or transaction processing without substantive FP&A or business-finance responsibilities",
+   "group": "R3",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "exclusion": "Experience exclusively in statutory audit, tax, bookkeeping, or transaction processing without substantive FP&A or business-finance responsibilities",
+   "group": "R3",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "Q5",
+   "context": "ctx",
+   "exclusion": "Experience exclusively in statutory audit, tax, bookkeeping, or transaction processing without substantive FP&A or business-finance responsibilities",
+   "group": "R3",
+   "present_runs": 6,
+   "runs": 6
+  },
+  {
+   "candidate": "Q6",
+   "context": "ctx",
+   "exclusion": "Experience exclusively in statutory audit, tax, bookkeeping, or transaction processing without substantive FP&A or business-finance responsibilities",
+   "group": "R3",
+   "present_runs": 0,
+   "runs": 6
+  },
+  {
+   "candidate": "Q7",
+   "context": "ctx",
+   "exclusion": "Experience exclusively in statutory audit, tax, bookkeeping, or transaction processing without substantive FP&A or business-finance responsibilities",
+   "group": "R3",
+   "present_runs": 0,
+   "runs": 6
+  }
+ ],
+ "expectations": [
+  {
+   "candidate": "A",
+   "context": "PATH A",
+   "eid": "R1-A-domain",
+   "group": "R1",
+   "item": "Cyber Incident Review and/or Data Breach Analysis",
+   "kind": "req_met",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "A states the domain; Path A requires it"
+  },
+  {
+   "candidate": "C",
+   "context": "PATH A",
+   "eid": "R1-C-domain",
+   "group": "R1",
+   "item": "Cyber Incident Review and/or Data Breach Analysis",
+   "kind": "req_met",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "B",
+   "context": "PATH A",
+   "eid": "R1-B-no-domain",
+   "group": "R1",
+   "item": "Cyber Incident Review and/or Data Breach Analysis",
+   "kind": "req_not_met",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "B has no domain evidence: Path A is not satisfied by B"
+  },
+  {
+   "candidate": "D",
+   "context": "PATH A",
+   "eid": "R1-D-no-domain",
+   "group": "R1",
+   "item": "Cyber Incident Review and/or Data Breach Analysis",
+   "kind": "req_not_met",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "B",
+   "context": "PATH B",
+   "eid": "R1-B-pq",
+   "group": "R1",
+   "item": "Power Query",
+   "kind": "req_met",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "B",
+   "context": "PATH B",
+   "eid": "R1-B-pq-wk",
+   "group": "R1",
+   "item": "working knowledge of Power Query",
+   "kind": "req_met",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "C",
+   "context": "PATH B",
+   "eid": "R1-C-pq",
+   "group": "R1",
+   "item": "Power Query",
+   "kind": "req_met",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "A",
+   "context": "PATH B",
+   "eid": "R1-A-no-pq",
+   "group": "R1",
+   "item": "Power Query",
+   "kind": "req_not_met",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "A has no Power Query: Path B is not satisfied by A"
+  },
+  {
+   "candidate": "D",
+   "context": "PATH B",
+   "eid": "R1-D-no-pq",
+   "group": "R1",
+   "item": "Power Query",
+   "kind": "req_not_met",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "A",
+   "context": "PATH A",
+   "eid": "R1-PQ-waived-in-A",
+   "group": "R1",
+   "item": "Power Query",
+   "kind": "not_asked",
+   "observed": [
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "Path A waives Power Query: it must not be asked"
+  },
+  {
+   "candidate": "A",
+   "context": "PATH B",
+   "eid": "R1-PQ-asked-in-B",
+   "group": "R1",
+   "item": "Power Query",
+   "kind": "asked",
+   "observed": [
+    "asked",
+    "asked",
+    "asked",
+    "asked",
+    "asked",
+    "asked"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "Path B requires Power Query"
+  },
+  {
+   "candidate": "A",
+   "context": "PATH B",
+   "eid": "R1-domain-not-asked-in-B",
+   "group": "R1",
+   "item": "Cyber Incident Review and/or Data Breach Analysis",
+   "kind": "not_asked",
+   "observed": [
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "the domain is Path A's obligation only"
+  },
+  {
+   "candidate": "A",
+   "context": "PATH A",
+   "eid": "R1-domain-asked-in-A",
+   "group": "R1",
+   "item": "Cyber Incident Review and/or Data Breach Analysis",
+   "kind": "asked",
+   "observed": [
+    "asked",
+    "asked",
+    "asked",
+    "asked",
+    "asked",
+    "asked"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "E",
+   "context": "PATH A",
+   "eid": "R1-E-soc-present",
+   "group": "R1",
+   "item": "Generic cybersecurity or security-operations backgrounds are not equivalent",
+   "kind": "excl_present",
+   "observed": [
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present"
+   ],
+   "passed_runs": 0,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "FAIL",
+   "why": "a SOC background is the excluded profile"
+  },
+  {
+   "candidate": "E",
+   "context": "PATH B",
+   "eid": "R1-E-soc-present-B",
+   "group": "R1",
+   "item": "Generic cybersecurity or security-operations backgrounds are not equivalent",
+   "kind": "excl_present",
+   "observed": [
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present"
+   ],
+   "passed_runs": 0,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "FAIL",
+   "why": ""
+  },
+  {
+   "candidate": "E",
+   "context": "PATH A",
+   "eid": "R1-E-domain-not-met",
+   "group": "R1",
+   "item": "Cyber Incident Review and/or Data Breach Analysis",
+   "kind": "req_not_met",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "cyber operations wording is not the domain"
+  },
+  {
+   "candidate": "A",
+   "context": "PATH A",
+   "eid": "R1-A-soc-absent",
+   "group": "R1",
+   "item": "Generic cybersecurity or security-operations backgrounds are not equivalent",
+   "kind": "excl_not_present",
+   "observed": [
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "a candidate with the real domain is not the excluded profile"
+  },
+  {
+   "candidate": "C",
+   "context": "PATH A",
+   "eid": "R1-C-soc-absent",
+   "group": "R1",
+   "item": "Generic cybersecurity or security-operations backgrounds are not equivalent",
+   "kind": "excl_not_present",
+   "observed": [
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "B",
+   "context": "PATH B",
+   "eid": "R1-B-soc-absent",
+   "group": "R1",
+   "item": "Generic cybersecurity or security-operations backgrounds are not equivalent",
+   "kind": "excl_not_present",
+   "observed": [
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "D",
+   "context": "PATH A",
+   "eid": "R1-D-soc-absent",
+   "group": "R1",
+   "item": "Generic cybersecurity or security-operations backgrounds are not equivalent",
+   "kind": "excl_not_present",
+   "observed": [
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "F",
+   "context": "PATH A",
+   "eid": "R1-F-pref-met",
+   "group": "R1",
+   "item": "Relativity",
+   "kind": "pref_met",
+   "observed": [
+    "met",
+    "met",
+    "partly",
+    "met",
+    "partly",
+    "met"
+   ],
+   "passed_runs": 4,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "UNSTABLE",
+   "why": "the preference IS evidenced"
+  },
+  {
+   "candidate": "F",
+   "context": "PATH A",
+   "eid": "R1-F-pref-not-enough",
+   "group": "R1",
+   "item": "hands-on SQL",
+   "kind": "req_not_met",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "a preference does not stand in for a requirement"
+  },
+  {
+   "candidate": "F",
+   "context": "PATH B",
+   "eid": "R1-F-pref-not-enough-B",
+   "group": "R1",
+   "item": "hands-on Python",
+   "kind": "req_not_met",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "A",
+   "context": "PATH A",
+   "eid": "R1-A-pref-missing-still-A",
+   "group": "R1",
+   "item": "Cyber Incident Review and/or Data Breach Analysis",
+   "kind": "req_met",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "A lacks Relativity / Canopy: it still meets Path A's requirement"
+  },
+  {
+   "candidate": "A",
+   "context": "PATH A",
+   "eid": "R1-A-handson-sql",
+   "group": "R1",
+   "item": "hands-on SQL",
+   "kind": "req_met",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "F",
+   "context": "PATH B",
+   "eid": "R1-F-handson-sql-B",
+   "group": "R1",
+   "item": "hands-on SQL",
+   "kind": "req_not_met",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "P1",
+   "context": "ctx",
+   "eid": "R2-P1-handson-python",
+   "group": "R2",
+   "item": "hands-on Python",
+   "kind": "req_met",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "production Python every day is hands-on"
+  },
+  {
+   "candidate": "P1",
+   "context": "ctx",
+   "eid": "R2-P1-handson-java",
+   "group": "R2",
+   "item": "hands-on Java",
+   "kind": "req_met",
+   "observed": [
+    "partly",
+    "partly",
+    "partly",
+    "partly",
+    "partly",
+    "partly"
+   ],
+   "passed_runs": 0,
+   "review_downgrades": 6,
+   "runs": 6,
+   "status": "FAIL",
+   "why": ""
+  },
+  {
+   "candidate": "P2",
+   "context": "ctx",
+   "eid": "R2-P2-handson-python",
+   "group": "R2",
+   "item": "hands-on Python",
+   "kind": "req_not_met",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "familiar != hands-on: depths are distinct"
+  },
+  {
+   "candidate": "P2",
+   "context": "ctx",
+   "eid": "R2-P2-handson-java",
+   "group": "R2",
+   "item": "hands-on Java",
+   "kind": "req_not_met",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "P1",
+   "context": "ctx",
+   "eid": "R2-P1-wk-jira",
+   "group": "R2",
+   "item": "working knowledge of Jira",
+   "kind": "req_met",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "met",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 2,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "UNSTABLE",
+   "why": ""
+  },
+  {
+   "candidate": "P3",
+   "context": "ctx",
+   "eid": "R2-no-invented-depth-llm",
+   "group": "R2",
+   "item": "hands-on Large Language Models",
+   "kind": "not_asked",
+   "observed": [
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "the source states no depth: never required"
+  },
+  {
+   "candidate": "P3",
+   "context": "ctx",
+   "eid": "R2-no-invented-depth-rag",
+   "group": "R2",
+   "item": "hands-on Retrieval-Augmented Generation",
+   "kind": "not_asked",
+   "observed": [
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "P3",
+   "context": "ctx",
+   "eid": "R2-no-invented-depth-ai",
+   "group": "R2",
+   "item": "hands-on AI/ML Implementation",
+   "kind": "not_asked",
+   "observed": [
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "P3",
+   "context": "ctx",
+   "eid": "R2-plain-llm-asked",
+   "group": "R2",
+   "item": "Large Language Models",
+   "kind": "asked",
+   "observed": [
+    "asked",
+    "asked",
+    "asked",
+    "asked",
+    "asked",
+    "asked"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "P3",
+   "context": "ctx",
+   "eid": "R2-P3-llm-past-ok",
+   "group": "R2",
+   "item": "Large Language Models",
+   "kind": "req_met",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "the relationship is unspecified: past use counts, current is not invented"
+  },
+  {
+   "candidate": "P3",
+   "context": "ctx",
+   "eid": "R2-P3-rag-past-ok",
+   "group": "R2",
+   "item": "Retrieval-Augmented Generation",
+   "kind": "req_met",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "P3",
+   "context": "ctx",
+   "eid": "R2-P3-agentic-past-ok",
+   "group": "R2",
+   "item": "Agentic AI",
+   "kind": "req_met",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "P3",
+   "context": "ctx",
+   "eid": "R2-no-current-text",
+   "group": "R2",
+   "item": "Currently",
+   "kind": "not_asked",
+   "observed": [
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "no requirement text asks for present use"
+  },
+  {
+   "candidate": "P4",
+   "context": "ctx",
+   "eid": "R2-analogy-not-asked",
+   "group": "R2",
+   "item": "Forward Deployed Engineer",
+   "kind": "not_asked",
+   "observed": [
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "a comparison title is not a requirement"
+  },
+  {
+   "candidate": "P4",
+   "context": "ctx",
+   "eid": "R2-analogy-no-engineering",
+   "group": "R2",
+   "item": "hands-on Python",
+   "kind": "req_not_met",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "a matching analogy title does not evidence anything"
+  },
+  {
+   "candidate": "Q1",
+   "context": "ctx",
+   "eid": "R3-Q1-adv-excel",
+   "group": "R3",
+   "item": "advanced proficiency in Microsoft Excel",
+   "kind": "req_met",
+   "observed": [
+    "met",
+    "met",
+    "not_evidenced",
+    "met",
+    "not_evidenced",
+    "met"
+   ],
+   "passed_runs": 4,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "UNSTABLE",
+   "why": "advanced evidence meets an advanced requirement"
+  },
+  {
+   "candidate": "Q2",
+   "context": "ctx",
+   "eid": "R3-Q2-adv-excel",
+   "group": "R3",
+   "item": "advanced proficiency in Microsoft Excel",
+   "kind": "req_not_met",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "basic Excel does not meet advanced"
+  },
+  {
+   "candidate": "Q2",
+   "context": "ctx",
+   "eid": "R3-Q2-excel-plain",
+   "group": "R3",
+   "item": "Microsoft Excel",
+   "kind": "req_met",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "partly",
+    "met"
+   ],
+   "passed_runs": 5,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "UNSTABLE",
+   "why": "the plain skill (no depth) is met by use of Excel"
+  },
+  {
+   "candidate": "Q2",
+   "context": "ctx",
+   "eid": "R3-Q2-powerbi-wk",
+   "group": "R3",
+   "item": "Working knowledge of Power BI or a similar business intelligence/reporting platform",
+   "kind": "req_met",
+   "observed": [
+    "partly",
+    "partly",
+    "met",
+    "partly",
+    "partly",
+    "met"
+   ],
+   "passed_runs": 2,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "UNSTABLE",
+   "why": "working knowledge is the weaker requirement: light Power BI use meets it where it does not meet advanced Excel"
+  },
+  {
+   "candidate": "Q1",
+   "context": "ctx",
+   "eid": "R3-Q1-powerbi-wk",
+   "group": "R3",
+   "item": "Working knowledge of Power BI or a similar business intelligence/reporting platform",
+   "kind": "req_met",
+   "observed": [
+    "met",
+    "met",
+    "partly",
+    "partly",
+    "partly",
+    "met"
+   ],
+   "passed_runs": 3,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "UNSTABLE",
+   "why": ""
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "eid": "R3-workmode-not-asked",
+   "group": "R3",
+   "item": "hybrid",
+   "kind": "not_asked",
+   "observed": [
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "work mode is unresolved: never asked, never judged"
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "eid": "R3-workmode-not-asked-2",
+   "group": "R3",
+   "item": "Working arrangement",
+   "kind": "not_asked",
+   "observed": [
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "and never rewritten into a requirement"
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "eid": "R3-Q3-same-as-Q1",
+   "group": "R3",
+   "item": "Q1",
+   "kind": "same_verdicts_as",
+   "observed": [
+    "1 requirement item(s) differ: SAP|Oracle|Comparable ERP platforms",
+    "19 requirement item(s) differ: Budgeting; Commercial judgment; Experience presenting financial analysis and recommendations to senior stakeholders; FP&A, Business Finance, Commercial Finance, or closely related financial planning roles; Financial analysis; Financial modeling; Financial planning; Forecasting; Meaningful FP&A or business-finance ownership; Microsoft Excel; Power BI|Similar business intelligence/reporting platform; SAP|Oracle|Comparable ERP platforms; Scenario analysis; Sensitivity analysis; Stakeholder management; Strong business partnering and communication; Variance analysis; Working knowledge of Power BI or a similar business intelligence/reporting platform; advanced proficiency in Microsoft Excel",
+    "3 requirement item(s) differ: Power BI|Similar business intelligence/reporting platform; SAP|Oracle|Comparable ERP platforms; Working knowledge of Power BI or a similar business intelligence/reporting platform",
+    "3 requirement item(s) differ: Microsoft Excel; Working knowledge of Power BI or a similar business intelligence/reporting platform; advanced proficiency in Microsoft Excel",
+    "5 requirement item(s) differ: Microsoft Excel; Power BI|Similar business intelligence/reporting platform; SAP|Oracle|Comparable ERP platforms; Working knowledge of Power BI or a similar business intelligence/reporting platform; advanced proficiency in Microsoft Excel",
+    "1 requirement item(s) differ: Microsoft Excel"
+   ],
+   "passed_runs": 0,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "FAIL",
+   "why": "a remote candidate is not penalised on the requirements: work mode is not geography"
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "eid": "R3-company-not-asked",
+   "group": "R3",
+   "item": "Unilever",
+   "kind": "not_asked",
+   "observed": [
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "a preferred company is not a requirement"
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "eid": "R3-Q4-same-as-Q1",
+   "group": "R3",
+   "item": "Q1",
+   "kind": "same_verdicts_as",
+   "observed": [
+    "2 requirement item(s) differ: Power BI|Similar business intelligence/reporting platform; SAP|Oracle|Comparable ERP platforms",
+    "15 requirement item(s) differ: Budgeting; Commercial judgment; FP&A, Business Finance, Commercial Finance, or closely related financial planning roles; Financial analysis; Financial modeling; Financial planning; Forecasting; Meaningful FP&A or business-finance ownership; Microsoft Excel; Scenario analysis; Sensitivity analysis; Stakeholder management; Strong business partnering and communication; Variance analysis; advanced proficiency in Microsoft Excel",
+    "14 requirement item(s) differ: Budgeting; Commercial judgment; Experience presenting financial analysis and recommendations to senior stakeholders; FP&A, Business Finance, Commercial Finance, or closely related financial planning roles; Financial analysis; Financial modeling; Financial planning; Forecasting; Meaningful FP&A or business-finance ownership; Scenario analysis; Sensitivity analysis; Stakeholder management; Strong business partnering and communication; Variance analysis",
+    "18 requirement item(s) differ: Budgeting; Commercial judgment; Experience presenting financial analysis and recommendations to senior stakeholders; FP&A, Business Finance, Commercial Finance, or closely related financial planning roles; Financial analysis; Financial modeling; Financial planning; Forecasting; Meaningful FP&A or business-finance ownership; Microsoft Excel; Power BI|Similar business intelligence/reporting platform; SAP|Oracle|Comparable ERP platforms; Scenario analysis; Sensitivity analysis; Stakeholder management; Strong business partnering and communication; Variance analysis; advanced proficiency in Microsoft Excel",
+    "1 requirement item(s) differ: SAP|Oracle|Comparable ERP platforms",
+    "19 requirement item(s) differ: Budgeting; Commercial judgment; Experience presenting financial analysis and recommendations to senior stakeholders; FP&A, Business Finance, Commercial Finance, or closely related financial planning roles; Financial analysis; Financial modeling; Financial planning; Forecasting; Meaningful FP&A or business-finance ownership; Microsoft Excel; Power BI|Similar business intelligence/reporting platform; SAP|Oracle|Comparable ERP platforms; Scenario analysis; Sensitivity analysis; Stakeholder management; Strong business partnering and communication; Variance analysis; Working knowledge of Power BI or a similar business intelligence/reporting platform; advanced proficiency in Microsoft Excel"
+   ],
+   "passed_runs": 0,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "FAIL",
+   "why": "a preferred-company background does not change a requirement verdict"
+  },
+  {
+   "candidate": "Q5",
+   "context": "ctx",
+   "eid": "R3-Q5-excluded",
+   "group": "R3",
+   "item": "Experience exclusively in statutory audit",
+   "kind": "excl_present",
+   "observed": [
+    "present",
+    "present",
+    "present",
+    "present",
+    "present",
+    "present"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "exclusively audit / tax / bookkeeping, no FP&A"
+  },
+  {
+   "candidate": "Q6",
+   "context": "ctx",
+   "eid": "R3-Q6-not-broadened",
+   "group": "R3",
+   "item": "Experience exclusively in statutory audit",
+   "kind": "excl_not_present",
+   "observed": [
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "audit history plus substantive FP&A: the qualification does not hold"
+  },
+  {
+   "candidate": "Q7",
+   "context": "ctx",
+   "eid": "R3-Q7-not-broadened",
+   "group": "R3",
+   "item": "Experience exclusively in statutory audit",
+   "kind": "excl_not_present",
+   "observed": [
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "tax-adjacent FP&A is not the excluded profile"
+  },
+  {
+   "candidate": "Q1",
+   "context": "ctx",
+   "eid": "R3-Q1-not-excluded",
+   "group": "R3",
+   "item": "Experience exclusively in statutory audit",
+   "kind": "excl_not_present",
+   "observed": [
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present",
+    "not_present"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "PY_PAST",
+   "context": "compiled_vs_legacy",
+   "eid": "CF-compiled-asks-plain-python",
+   "group": "CONFLICT",
+   "item": "Python",
+   "kind": "asked",
+   "observed": [
+    "asked",
+    "asked",
+    "asked",
+    "asked",
+    "asked",
+    "asked"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "the compiled meaning is what is asked"
+  },
+  {
+   "candidate": "PY_PAST",
+   "context": "compiled_vs_legacy",
+   "eid": "CF-legacy-sentence-never-sent",
+   "group": "CONFLICT",
+   "item": "Currently",
+   "kind": "not_asked",
+   "observed": [
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "the legacy 'current' sentence never reaches the model"
+  },
+  {
+   "candidate": "PY_PAST",
+   "context": "compiled_vs_legacy",
+   "eid": "CF-past-python-meets-compiled",
+   "group": "CONFLICT",
+   "item": "Python",
+   "kind": "req_met",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "past Python meets an UNSPECIFIED relationship: current is not reconstructed from the legacy intent"
+  },
+  {
+   "candidate": "PY_NOW",
+   "context": "compiled_vs_legacy",
+   "eid": "CF-current-python-meets-compiled",
+   "group": "CONFLICT",
+   "item": "Python",
+   "kind": "req_met",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "PY_NONE",
+   "context": "compiled_vs_legacy",
+   "eid": "CF-no-python-fails-compiled",
+   "group": "CONFLICT",
+   "item": "Python",
+   "kind": "req_not_met",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "PY_PAST",
+   "context": "legacy_only_control",
+   "eid": "CF-control-legacy-would-reject-past",
+   "group": "CONFLICT",
+   "item": "Currently works with Python (required)",
+   "kind": "req_not_met",
+   "observed": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "CONTROL: with only the legacy sentence the same candidate is rejected: the compiled path is what changed the outcome"
+  },
+  {
+   "candidate": "PY_NOW",
+   "context": "legacy_only_control",
+   "eid": "CF-control-legacy-accepts-current",
+   "group": "CONFLICT",
+   "item": "Currently works with Python (required)",
+   "kind": "req_met",
+   "observed": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": ""
+  },
+  {
+   "candidate": "NO_QUUX",
+   "context": "compiled_vs_legacy",
+   "eid": "CO-compiled-company-not-asked",
+   "group": "CONFLICT_CO",
+   "item": "Quuxcorp",
+   "kind": "not_asked",
+   "observed": [
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked",
+    "not asked"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "a preferred company is not a requirement: the legacy hard line is not asked"
+  },
+  {
+   "candidate": "NO_QUUX",
+   "context": "legacy_only_control",
+   "eid": "CO-control-legacy-asks-company",
+   "group": "CONFLICT_CO",
+   "item": "Quuxcorp",
+   "kind": "asked",
+   "observed": [
+    "asked",
+    "asked",
+    "asked",
+    "asked",
+    "asked",
+    "asked"
+   ],
+   "passed_runs": 6,
+   "review_downgrades": 0,
+   "runs": 6,
+   "status": "PASS",
+   "why": "CONTROL: the legacy intent would have asked it as a requirement"
+  }
+ ],
+ "flips": [
+  {
+   "candidate": "B",
+   "context": "PATH B",
+   "group": "R1",
+   "item": "Data Privacy",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "B",
+   "context": "PATH B",
+   "group": "R1",
+   "item": "Experience with data privacy requirements",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "partly",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "B",
+   "context": "PATH B",
+   "group": "R1",
+   "item": "Information Security Principles",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "partly",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "C",
+   "context": "PATH A",
+   "group": "R1",
+   "item": "Cyber Incident Review and Data Breach Analysis",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "not_evidenced",
+    "met"
+   ]
+  },
+  {
+   "candidate": "C",
+   "context": "PATH A",
+   "group": "R1",
+   "item": "Data querying, analysis, automation, and reporting using SQL and Python",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "partly",
+    "met",
+    "partly",
+    "partly"
+   ]
+  },
+  {
+   "candidate": "C",
+   "context": "PATH B",
+   "group": "R1",
+   "item": "Large-dataset analysis to identify trends, anomalies, and potential security risks",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "C",
+   "context": "PATH B",
+   "group": "R1",
+   "item": "Quality oversight, security-standard adherence, and protocol compliance",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "met",
+    "not_evidenced",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "D",
+   "context": "PATH B",
+   "group": "R1",
+   "item": "Quality oversight, security-standard adherence, and protocol compliance",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met"
+   ]
+  },
+  {
+   "candidate": "F",
+   "context": "PATH A",
+   "group": "R1",
+   "item": "Canopy",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "partly",
+    "met",
+    "partly",
+    "met"
+   ]
+  },
+  {
+   "candidate": "F",
+   "context": "PATH A",
+   "group": "R1",
+   "item": "Legal Tech / Legal Solutions",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "F",
+   "context": "PATH A",
+   "group": "R1",
+   "item": "Relativity",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "partly",
+    "met",
+    "partly",
+    "met"
+   ]
+  },
+  {
+   "candidate": "P1",
+   "context": "ctx",
+   "group": "R2",
+   "item": "API Development",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "partly",
+    "met",
+    "partly",
+    "partly",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "P1",
+   "context": "ctx",
+   "group": "R2",
+   "item": "Jira",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "partly",
+    "partly",
+    "met",
+    "met",
+    "partly",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "P1",
+   "context": "ctx",
+   "group": "R2",
+   "item": "working knowledge of Azure DevOps",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "partly",
+    "partly",
+    "met",
+    "met",
+    "partly",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "P1",
+   "context": "ctx",
+   "group": "R2",
+   "item": "working knowledge of Jira",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "met",
+    "not_evidenced",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q1",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Large consumer or industrial organizations",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q1",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Large multinational or complex enterprise environments",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q1",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Large, complex organization",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q1",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Microsoft Excel",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "partly",
+    "met",
+    "partly",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q1",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Power BI|Similar business intelligence/reporting platform",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "partly",
+    "met",
+    "partly",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q1",
+   "context": "ctx",
+   "group": "R3",
+   "item": "SAP|Oracle|Comparable ERP platforms",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "met",
+    "not_evidenced",
+    "met",
+    "not_evidenced",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q1",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Working knowledge of Power BI or a similar business intelligence/reporting platform",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "partly",
+    "partly",
+    "partly",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q1",
+   "context": "ctx",
+   "group": "R3",
+   "item": "advanced proficiency in Microsoft Excel",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "not_evidenced",
+    "met",
+    "not_evidenced",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q2",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Experience supporting commercial, operations, or business-unit leadership",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q2",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Large consumer or industrial organizations",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q2",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Large multinational or complex enterprise environments",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q2",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Large, complex organization",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q2",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Lead annual budgeting, forecasting, and long-range planning for assigned business areas",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q2",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Microsoft Excel",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "met",
+    "met",
+    "partly",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q2",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Present financial insights and recommendations to senior leadership",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q2",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Working knowledge of Power BI or a similar business intelligence/reporting platform",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "partly",
+    "partly",
+    "met",
+    "partly",
+    "partly",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Budgeting",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Commercial judgment",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Develop and maintain financial models supporting planning, scenarios, investment decisions, and performance reviews",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Develop scenario and sensitivity models for revenue, cost, headcount, and investment decisions",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Experience presenting financial analysis and recommendations to senior stakeholders",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Experience supporting commercial, operations, or business-unit leadership",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "FP&A, Business Finance, Commercial Finance, or closely related financial planning roles",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Financial analysis",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Financial modeling",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Financial planning",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Forecasting",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Lead annual budgeting, forecasting, and long-range planning for assigned business areas",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Meaningful FP&A or business-finance ownership",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Microsoft Excel",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "partly",
+    "partly",
+    "met",
+    "partly"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Power BI|Similar business intelligence/reporting platform",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Present financial insights and recommendations to senior leadership",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "SAP|Oracle|Comparable ERP platforms",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Scenario analysis",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Sensitivity analysis",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Stakeholder management",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Strong business partnering and communication",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Variance analysis",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Working knowledge of Power BI or a similar business intelligence/reporting platform",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q3",
+   "context": "ctx",
+   "group": "R3",
+   "item": "advanced proficiency in Microsoft Excel",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "partly",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Analyze actuals against budget and forecast, identify variance drivers, and recommend actions",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Budgeting",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Commercial judgment",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Develop and maintain financial models supporting planning, scenarios, investment decisions, and performance reviews",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Develop scenario and sensitivity models for revenue, cost, headcount, and investment decisions",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Experience presenting financial analysis and recommendations to senior stakeholders",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Experience supporting commercial, operations, or business-unit leadership",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "FP&A, Business Finance, Commercial Finance, or closely related financial planning roles",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Financial analysis",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Financial modeling",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Financial planning",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Forecasting",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Large consumer or industrial organizations",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Large multinational or complex enterprise environments",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Large, complex organization",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Meaningful FP&A or business-finance ownership",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Microsoft Excel",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "partly",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Power BI|Similar business intelligence/reporting platform",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "partly",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "partly",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Present financial insights and recommendations to senior leadership",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "SAP|Oracle|Comparable ERP platforms",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Scenario analysis",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Sensitivity analysis",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Stakeholder management",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Strong business partnering and communication",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Variance analysis",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Working knowledge of Power BI or a similar business intelligence/reporting platform",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "partly",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q4",
+   "context": "ctx",
+   "group": "R3",
+   "item": "advanced proficiency in Microsoft Excel",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q6",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Develop and maintain financial models supporting planning, scenarios, investment decisions, and performance reviews",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q6",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Develop scenario and sensitivity models for revenue, cost, headcount, and investment decisions",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q6",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Experience supporting commercial, operations, or business-unit leadership",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q6",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Large consumer or industrial organizations",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q6",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Large multinational or complex enterprise environments",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q6",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Large, complex organization",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "not_evidenced",
+    "met",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q6",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Lead annual budgeting, forecasting, and long-range planning for assigned business areas",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q6",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Partner with business and functional leaders on the financial implications of strategic and operational initiatives",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q6",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Power BI|Similar business intelligence/reporting platform",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "partly",
+    "met",
+    "partly",
+    "partly"
+   ]
+  },
+  {
+   "candidate": "Q6",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Present financial insights and recommendations to senior leadership",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q6",
+   "context": "ctx",
+   "group": "R3",
+   "item": "SAP|Oracle|Comparable ERP platforms",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "met",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q7",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Analyze actuals against budget and forecast, identify variance drivers, and recommend actions",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q7",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Develop and maintain financial models supporting planning, scenarios, investment decisions, and performance reviews",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q7",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Develop scenario and sensitivity models for revenue, cost, headcount, and investment decisions",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q7",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Experience supporting commercial, operations, or business-unit leadership",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "met",
+    "met",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q7",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Large consumer or industrial organizations",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "met",
+    "met",
+    "met",
+    "not_evidenced",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q7",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Large multinational or complex enterprise environments",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "met",
+    "partly",
+    "met",
+    "not_evidenced",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q7",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Large, complex organization",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "met",
+    "partly",
+    "met",
+    "not_evidenced",
+    "not_evidenced"
+   ]
+  },
+  {
+   "candidate": "Q7",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Power BI|Similar business intelligence/reporting platform",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "met",
+    "partly",
+    "partly",
+    "met",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q7",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Present financial insights and recommendations to senior leadership",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "not_evidenced",
+    "met",
+    "met"
+   ]
+  },
+  {
+   "candidate": "Q7",
+   "context": "ctx",
+   "group": "R3",
+   "item": "Working knowledge of Power BI or a similar business intelligence/reporting platform",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "partly",
+    "met",
+    "met",
+    "met",
+    "partly",
+    "partly"
+   ]
+  },
+  {
+   "candidate": "Q7",
+   "context": "ctx",
+   "group": "R3",
+   "item": "advanced proficiency in Microsoft Excel",
+   "kind": "semantic (met vs not met)",
+   "verdicts": [
+    "partly",
+    "partly",
+    "partly",
+    "met",
+    "met",
+    "partly"
+   ]
+  }
+ ],
+ "invariance_baseline": [
+  {
+   "candidate": "Q3",
+   "eid": "R3-Q3-same-as-Q1",
+   "mean_items_differing_between_the_two_candidates": 2.33,
+   "mean_items_differing_between_two_runs_of_the_SAME_candidate": 2.8,
+   "other": "Q1",
+   "pairs": 30,
+   "rule": "healthy runs only: verified met >= 60% of that candidate's best run",
+   "runs_used": [
+    5,
+    6
+   ],
+   "same_run_pairs": 2.6,
+   "zero_difference_pairs": 4
+  },
+  {
+   "candidate": "Q4",
+   "eid": "R3-Q4-same-as-Q1",
+   "mean_items_differing_between_the_two_candidates": 2.67,
+   "mean_items_differing_between_two_runs_of_the_SAME_candidate": 2.8,
+   "other": "Q1",
+   "pairs": 12,
+   "rule": "healthy runs only: verified met >= 60% of that candidate's best run",
+   "runs_used": [
+    2,
+    6
+   ],
+   "same_run_pairs": 1.5,
+   "zero_difference_pairs": 0
+  }
+ ],
+ "leaks": [],
+ "legacy_leaks": [],
+ "minor_flips": 9,
+ "totals": {
+  "calls": 2157,
+  "estimated_cost_usd": 0.28,
+  "failed_jobs": 0,
+  "input_sources": [
+   "compiled",
+   "legacy"
+  ],
+  "input_tokens": 1094001,
+  "jobs": 186,
+  "models": [
+   "gpt-4o-mini"
+  ],
+  "output_tokens": 193742,
+  "retried_jobs": 6,
+  "review_failed": 0,
+  "temperatures": [
+   "0"
+  ]
+ },
+ "verdict_tables": {
+  "CONFLICT_CO|compiled_vs_legacy|NO_QUUX": [
+   {
+    "asked": 0,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 1
+   },
+   {
+    "asked": 0,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 2
+   },
+   {
+    "asked": 0,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 3
+   },
+   {
+    "asked": 0,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 4
+   },
+   {
+    "asked": 0,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 5
+   },
+   {
+    "asked": 0,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 6
+   }
+  ],
+  "CONFLICT_CO|legacy_only_control|NO_QUUX": [
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 1
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 2
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 3
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 4
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 5
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 6
+   }
+  ],
+  "CONFLICT|compiled_vs_legacy|PY_NONE": [
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 1
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 2
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 3
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 4
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 5
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 6
+   }
+  ],
+  "CONFLICT|compiled_vs_legacy|PY_NOW": [
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 1,
+    "partly": 0,
+    "run": 1
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 1,
+    "partly": 0,
+    "run": 2
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 1,
+    "partly": 0,
+    "run": 3
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 1,
+    "partly": 0,
+    "run": 4
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 1,
+    "partly": 0,
+    "run": 5
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 1,
+    "partly": 0,
+    "run": 6
+   }
+  ],
+  "CONFLICT|compiled_vs_legacy|PY_PAST": [
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 1,
+    "partly": 0,
+    "run": 1
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 1,
+    "partly": 0,
+    "run": 2
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 1,
+    "partly": 0,
+    "run": 3
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 1,
+    "partly": 0,
+    "run": 4
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 1,
+    "partly": 0,
+    "run": 5
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 1,
+    "partly": 0,
+    "run": 6
+   }
+  ],
+  "CONFLICT|legacy_only_control|PY_NONE": [
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 1
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 2
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 3
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 4
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 5
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 6
+   }
+  ],
+  "CONFLICT|legacy_only_control|PY_NOW": [
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 1,
+    "partly": 0,
+    "run": 1
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 1,
+    "partly": 0,
+    "run": 2
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 1,
+    "partly": 0,
+    "run": 3
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 1,
+    "partly": 0,
+    "run": 4
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 1,
+    "partly": 0,
+    "run": 5
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 1,
+    "partly": 0,
+    "run": 6
+   }
+  ],
+  "CONFLICT|legacy_only_control|PY_PAST": [
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 1
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 2
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 3
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 4
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 5
+   },
+   {
+    "asked": 1,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 6
+   }
+  ],
+  "R1|PATH A|A": [
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm",
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 19,
+    "partly": 1,
+    "run": 1
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm",
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 19,
+    "partly": 1,
+    "run": 2
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 19,
+    "partly": 1,
+    "run": 3
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm",
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 19,
+    "partly": 1,
+    "run": 4
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm",
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 19,
+    "partly": 1,
+    "run": 5
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm",
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 19,
+    "partly": 1,
+    "run": 6
+   }
+  ],
+  "R1|PATH A|B": [
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 17,
+    "partly": 0,
+    "run": 1
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 17,
+    "partly": 1,
+    "run": 2
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 17,
+    "partly": 0,
+    "run": 3
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 17,
+    "partly": 1,
+    "run": 4
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 17,
+    "partly": 1,
+    "run": 5
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 17,
+    "partly": 0,
+    "run": 6
+   }
+  ],
+  "R1|PATH A|C": [
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm"
+    ],
+    "met": 20,
+    "partly": 0,
+    "run": 1
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 20,
+    "partly": 0,
+    "run": 2
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 19,
+    "partly": 1,
+    "run": 3
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 20,
+    "partly": 0,
+    "run": 4
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 18,
+    "partly": 1,
+    "run": 5
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 19,
+    "partly": 1,
+    "run": 6
+   }
+  ],
+  "R1|PATH A|D": [
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 17,
+    "partly": 0,
+    "run": 1
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 17,
+    "partly": 0,
+    "run": 2
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 17,
+    "partly": 0,
+    "run": 3
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 17,
+    "partly": 0,
+    "run": 4
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 17,
+    "partly": 0,
+    "run": 5
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 17,
+    "partly": 1,
+    "run": 6
+   }
+  ],
+  "R1|PATH A|E": [
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 17,
+    "partly": 0,
+    "run": 1
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 17,
+    "partly": 0,
+    "run": 2
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 17,
+    "partly": 1,
+    "run": 3
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 17,
+    "partly": 1,
+    "run": 4
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 17,
+    "partly": 1,
+    "run": 5
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 17,
+    "partly": 1,
+    "run": 6
+   }
+  ],
+  "R1|PATH A|F": [
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm"
+    ],
+    "met": 2,
+    "partly": 0,
+    "run": 1
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm"
+    ],
+    "met": 2,
+    "partly": 0,
+    "run": 2
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm"
+    ],
+    "met": 0,
+    "partly": 3,
+    "run": 3
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm"
+    ],
+    "met": 3,
+    "partly": 1,
+    "run": 4
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm"
+    ],
+    "met": 0,
+    "partly": 3,
+    "run": 5
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm"
+    ],
+    "met": 2,
+    "partly": 0,
+    "run": 6
+   }
+  ],
+  "R1|PATH B|A": [
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm",
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 17,
+    "partly": 1,
+    "run": 1
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 17,
+    "partly": 1,
+    "run": 2
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm",
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 17,
+    "partly": 1,
+    "run": 3
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm",
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 17,
+    "partly": 1,
+    "run": 4
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm",
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 17,
+    "partly": 1,
+    "run": 5
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm",
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 17,
+    "partly": 1,
+    "run": 6
+   }
+  ],
+  "R1|PATH B|B": [
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 19,
+    "partly": 1,
+    "run": 1
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 19,
+    "partly": 1,
+    "run": 2
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 16,
+    "partly": 3,
+    "run": 3
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 19,
+    "partly": 1,
+    "run": 4
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 19,
+    "partly": 1,
+    "run": 5
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 19,
+    "partly": 1,
+    "run": 6
+   }
+  ],
+  "R1|PATH B|C": [
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 19,
+    "partly": 1,
+    "run": 1
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 19,
+    "partly": 1,
+    "run": 2
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 19,
+    "partly": 1,
+    "run": 3
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 19,
+    "partly": 1,
+    "run": 4
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 19,
+    "partly": 1,
+    "run": 5
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 19,
+    "partly": 1,
+    "run": 6
+   }
+  ],
+  "R1|PATH B|D": [
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 17,
+    "partly": 1,
+    "run": 1
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 16,
+    "partly": 1,
+    "run": 2
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 16,
+    "partly": 1,
+    "run": 3
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 16,
+    "partly": 1,
+    "run": 4
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 16,
+    "partly": 1,
+    "run": 5
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [],
+    "met": 17,
+    "partly": 1,
+    "run": 6
+   }
+  ],
+  "R1|PATH B|E": [
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 16,
+    "partly": 1,
+    "run": 1
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 16,
+    "partly": 1,
+    "run": 2
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 16,
+    "partly": 1,
+    "run": 3
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 16,
+    "partly": 1,
+    "run": 4
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 16,
+    "partly": 1,
+    "run": 5
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "Cyber or incident wording alone without relevant substantive"
+    ],
+    "met": 16,
+    "partly": 1,
+    "run": 6
+   }
+  ],
+  "R1|PATH B|F": [
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm"
+    ],
+    "met": 2,
+    "partly": 0,
+    "run": 1
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm"
+    ],
+    "met": 2,
+    "partly": 0,
+    "run": 2
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm"
+    ],
+    "met": 2,
+    "partly": 0,
+    "run": 3
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm"
+    ],
+    "met": 2,
+    "partly": 0,
+    "run": 4
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm"
+    ],
+    "met": 2,
+    "partly": 0,
+    "run": 5
+   },
+   {
+    "asked": 29,
+    "exclusions_present": [
+     "A strong SQL/Python analyst working at a security firm"
+    ],
+    "met": 2,
+    "partly": 0,
+    "run": 6
+   }
+  ],
+  "R2|ctx|P1": [
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 6,
+    "partly": 4,
+    "run": 1
+   },
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 7,
+    "partly": 4,
+    "run": 2
+   },
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 9,
+    "partly": 4,
+    "run": 3
+   },
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 9,
+    "partly": 5,
+    "run": 4
+   },
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 7,
+    "partly": 4,
+    "run": 5
+   },
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 7,
+    "partly": 2,
+    "run": 6
+   }
+  ],
+  "R2|ctx|P2": [
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 2,
+    "run": 1
+   },
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 2,
+    "run": 2
+   },
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 2,
+    "run": 3
+   },
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 2,
+    "run": 4
+   },
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 2,
+    "run": 5
+   },
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 2,
+    "run": 6
+   }
+  ],
+  "R2|ctx|P3": [
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 5,
+    "partly": 0,
+    "run": 1
+   },
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 5,
+    "partly": 0,
+    "run": 2
+   },
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 5,
+    "partly": 0,
+    "run": 3
+   },
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 5,
+    "partly": 0,
+    "run": 4
+   },
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 5,
+    "partly": 0,
+    "run": 5
+   },
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 5,
+    "partly": 0,
+    "run": 6
+   }
+  ],
+  "R2|ctx|P4": [
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 1
+   },
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 2
+   },
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 3
+   },
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 4
+   },
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 5
+   },
+   {
+    "asked": 82,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 6
+   }
+  ],
+  "R3|ctx|Q1": [
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 18,
+    "partly": 0,
+    "run": 1
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 22,
+    "partly": 0,
+    "run": 2
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 14,
+    "partly": 3,
+    "run": 3
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 18,
+    "partly": 1,
+    "run": 4
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 14,
+    "partly": 3,
+    "run": 5
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 19,
+    "partly": 0,
+    "run": 6
+   }
+  ],
+  "R3|ctx|Q2": [
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 13,
+    "partly": 5,
+    "run": 1
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 13,
+    "partly": 5,
+    "run": 2
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 17,
+    "partly": 4,
+    "run": 3
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 13,
+    "partly": 5,
+    "run": 4
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 18,
+    "partly": 8,
+    "run": 5
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 14,
+    "partly": 4,
+    "run": 6
+   }
+  ],
+  "R3|ctx|Q3": [
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 19,
+    "partly": 0,
+    "run": 1
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 2
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 22,
+    "partly": 1,
+    "run": 3
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 17,
+    "partly": 2,
+    "run": 4
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 19,
+    "partly": 0,
+    "run": 5
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 18,
+    "partly": 1,
+    "run": 6
+   }
+  ],
+  "R3|ctx|Q4": [
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 22,
+    "partly": 1,
+    "run": 1
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 7,
+    "partly": 0,
+    "run": 2
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 3
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 4
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 23,
+    "partly": 3,
+    "run": 5
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 0,
+    "partly": 0,
+    "run": 6
+   }
+  ],
+  "R3|ctx|Q5": [
+   {
+    "asked": 35,
+    "exclusions_present": [
+     "Experience exclusively in statutory audit, tax, bookkeeping,"
+    ],
+    "met": 0,
+    "partly": 0,
+    "run": 1
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [
+     "Experience exclusively in statutory audit, tax, bookkeeping,"
+    ],
+    "met": 0,
+    "partly": 0,
+    "run": 2
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [
+     "Experience exclusively in statutory audit, tax, bookkeeping,"
+    ],
+    "met": 0,
+    "partly": 0,
+    "run": 3
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [
+     "Experience exclusively in statutory audit, tax, bookkeeping,"
+    ],
+    "met": 0,
+    "partly": 0,
+    "run": 4
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [
+     "Experience exclusively in statutory audit, tax, bookkeeping,"
+    ],
+    "met": 0,
+    "partly": 0,
+    "run": 5
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [
+     "Experience exclusively in statutory audit, tax, bookkeeping,"
+    ],
+    "met": 0,
+    "partly": 0,
+    "run": 6
+   }
+  ],
+  "R3|ctx|Q6": [
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 27,
+    "partly": 0,
+    "run": 1
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 27,
+    "partly": 0,
+    "run": 2
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 17,
+    "partly": 1,
+    "run": 3
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 22,
+    "partly": 0,
+    "run": 4
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 26,
+    "partly": 1,
+    "run": 5
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 17,
+    "partly": 1,
+    "run": 6
+   }
+  ],
+  "R3|ctx|Q7": [
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 16,
+    "partly": 3,
+    "run": 1
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 20,
+    "partly": 3,
+    "run": 2
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 18,
+    "partly": 5,
+    "run": 3
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 22,
+    "partly": 1,
+    "run": 4
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 20,
+    "partly": 2,
+    "run": 5
+   },
+   {
+    "asked": 35,
+    "exclusions_present": [],
+    "met": 21,
+    "partly": 3,
+    "run": 6
+   }
+  ]
+ }
+}

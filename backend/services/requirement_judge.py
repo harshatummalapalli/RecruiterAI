@@ -123,6 +123,29 @@ Return only JSON: {"results":[{"i":<claim number>,"supports":true|false}]}
 Include every claim exactly once."""
 
 
+_EXCLUSION_PROMPT = """You check whether a candidate's profile shows an EXCLUDED profile.
+
+You get numbered PASSAGES copied from the candidate's profile and numbered EXCLUSIONS from the job. An exclusion describes a kind of
+profile the hiring team does NOT want. For every exclusion decide:
+- "present": the passages clearly show the candidate IS the excluded kind of profile, exactly as the exclusion words it.
+- "not_present": they do not.
+
+Rules:
+1. Apply the exclusion as worded; never broaden it. A qualified exclusion (for example "exclusively X without Y", or "X alone") applies
+   only when the whole qualification holds: a candidate with X AND Y, or with X plus other substantive experience, is "not_present".
+2. An exclusion is worded either as the profile itself ("experience exclusively in X") or as a statement of what does NOT count ("X
+   backgrounds are not equivalent to Y", "X alone is not enough", "X wording without substantive evidence"). Read the second form as:
+   a candidate whose relevant background is X, with no substantive evidence of Y itself, IS the excluded profile ("present"); a
+   candidate who shows Y itself is "not_present".
+3. Otherwise related, adjacent or partly overlapping experience is "not_present". Only the excluded profile itself is "present".
+4. For "present" you MUST give the passage number and a quote copied EXACTLY, character for character, from that passage (at most 220
+   characters). If you cannot quote it, answer "not_present".
+5. Do not use outside knowledge about the person or their employers.
+
+Return only JSON: {"results":[{"x":<exclusion number>,"verdict":"present|not_present","p":<passage number or null>,"quote":"<exact quote or empty>"}]}
+Include every exclusion exactly once."""
+
+
 CAREER_DATES_CAVEAT = (
     "This is total experience across all roles; years in any one specific discipline are not independently verified."
 )
@@ -181,6 +204,10 @@ class JudgeOutcome:
     input_source: str = "legacy"
     checklist: Optional[Dict[str, Any]] = None
     disagreements: Optional[List[Dict[str, Any]]] = None
+    # The semantic exclusions ("the candidate must NOT have this profile") evaluated against the profile: one entry per exclusion with a verdict
+    # present | not_present, and, for present, a quote that was verified to appear in the cited passage. None = nothing to evaluate / not evaluated.
+    exclusion_judgments: Optional[List[Dict[str, Any]]] = None
+    exclusion_failed: bool = False
 
     @property
     def estimated_cost_usd(self) -> float:
@@ -213,6 +240,70 @@ class RequirementJudge:
         return outcome
 
     def _judge(
+        self, candidate: Candidate, intent: SearchIntent, harvest_evidence: Optional[HarvestEvidence]
+    ) -> JudgeOutcome:
+        outcome = self._judge_requirements(candidate, intent, harvest_evidence)
+        consumer_input = resolve_consumer_input(intent)
+        exclusions = list(consumer_input.checklist.exclusions) if consumer_input.checklist is not None else []
+        if exclusions and not outcome.failed:
+            self._evaluate_exclusions(candidate, intent, harvest_evidence, exclusions, outcome)
+        return outcome
+
+    def _evaluate_exclusions(
+        self, candidate: Candidate, intent: SearchIntent, harvest_evidence: Optional[HarvestEvidence], exclusions: List[Any], outcome: JudgeOutcome
+    ) -> None:
+        """The negatives of the downstream contract: for each semantic exclusion, does the profile show the excluded profile? One extra call per candidate,
+        never at all for an intent without exclusions. Its own prompt (the requirement prompt is untouched) and the same verified-quote gate: a "present"
+        needs a quote that really appears in the passage it cites, otherwise it is "not_present". A failure here never touches the requirement judgments."""
+        try:
+            passages = build_passages(candidate, intent, harvest_evidence)
+            results: Dict[int, Dict[str, Any]] = {}
+            if passages:
+                client = self._client or OpenAI(api_key=get_openai_api_key())
+                payload = {
+                    "passages": [{"p": i, "label": p.label, "text": (p.text or "")[:MAX_PASSAGE_CHARS]} for i, p in enumerate(passages)],
+                    "exclusions": [{"x": i, "text": e.text} for i, e in enumerate(exclusions)],
+                }
+                response = client.responses.create(
+                    model=self._model,
+                    input=[{"role": "system", "content": _EXCLUSION_PROMPT}, {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}],
+                    text={"format": {"type": "json_object"}},
+                    temperature=0,
+                )
+                outcome.calls += 1
+                usage = getattr(response, "usage", None)
+                outcome.input_tokens += int(getattr(usage, "input_tokens", 0) or 0)
+                outcome.output_tokens += int(getattr(usage, "output_tokens", 0) or 0)
+                content = getattr(response, "output_text", None)
+                if not content:
+                    raise ValueError("empty exclusion response")
+                results = {int(r["x"]): r for r in json.loads(content).get("results", []) if isinstance(r, dict) and "x" in r and 0 <= int(r["x"]) < len(exclusions)}
+            judged: List[Dict[str, Any]] = []
+            for i, e in enumerate(exclusions):
+                entry: Dict[str, Any] = {"text": e.text, "item_id": e.item_id, "path_id": e.path_id, "provenance": dict(e.provenance), "verdict": "not_present"}
+                r = results.get(i)
+                if not passages:
+                    entry["note"] = "no profile text to evaluate"
+                elif r and r.get("verdict") == "present":
+                    quote = str(r.get("quote") or "").strip()
+                    try:
+                        passage = passages[int(r.get("p"))]
+                    except (TypeError, ValueError, IndexError):
+                        passage = None
+                    if passage is not None and len(quote) >= 3 and _normalize(quote) in _normalize(passage.text):
+                        entry.update(verdict="present", quote=quote, source=passage.label, evidence_detail=passage.detail)
+                    else:
+                        entry["note"] = "unverified_quote: a present verdict without a quote found in the cited passage is not accepted"
+                elif r is None and passages:
+                    entry["note"] = "the model gave no answer for this exclusion"
+                judged.append(entry)
+            outcome.exclusion_judgments = judged
+        except Exception:  # noqa: BLE001 - an exclusion failure must never break a search or the requirement judgments
+            logger.warning("Exclusion evaluation failed | candidate_id=%s", candidate.candidate_id, exc_info=True)
+            outcome.exclusion_failed = True
+            outcome.exclusion_judgments = None
+
+    def _judge_requirements(
         self, candidate: Candidate, intent: SearchIntent, harvest_evidence: Optional[HarvestEvidence]
     ) -> JudgeOutcome:
         consumer_input = resolve_consumer_input(intent)

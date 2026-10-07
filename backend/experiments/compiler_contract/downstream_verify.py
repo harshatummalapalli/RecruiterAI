@@ -44,12 +44,24 @@ class ScriptedModel:
         self.responses = self
         self.asked: List[List[str]] = []          # the requirement texts of each first-pass call, as the Judge sent them
         self.payloads: List[Dict[str, Any]] = []
+        self.exclusion_asked: List[List[str]] = []
 
     def create(self, **kwargs):
         body = json.loads(kwargs["input"][1]["content"])
         usage = SimpleNamespace(input_tokens=1, output_tokens=1)
         if "claims" in body:
             return SimpleNamespace(output_text=json.dumps({"results": [{"i": c["i"], "supports": True} for c in body["claims"]]}), usage=usage)
+        if "exclusions" in body:                      # the exclusion pass: "present" iff the exclusion's own text is in a passage
+            self.exclusion_asked.append([x["text"] for x in body["exclusions"]])
+            out = []
+            for x in body["exclusions"]:
+                hit = next((p for p in body["passages"] if x["text"].casefold() in p["text"].casefold()), None)
+                if hit is None:
+                    out.append({"x": x["x"], "verdict": "not_present", "p": None, "quote": ""})
+                else:
+                    start = hit["text"].casefold().index(x["text"].casefold())
+                    out.append({"x": x["x"], "verdict": "present", "p": hit["p"], "quote": hit["text"][start:start + len(x["text"])]})
+            return SimpleNamespace(output_text=json.dumps({"results": out}), usage=usage)
         self.payloads.append(body)
         self.asked.append([r["text"] for r in body["requirements"]])
         out = []
