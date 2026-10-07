@@ -299,14 +299,19 @@ def test_work_mode_hybrid_in_text_only_is_partial_because_the_typed_field_exists
     assert r["work_mode_hybrid_typed"]["status"] == PARTIAL
 
 
-def test_a_domain_at_preferred_is_not_penalised_but_required_is_role_shape_structure() -> None:
+def test_a_domain_is_optional_and_a_required_domain_restating_a_stated_requirement_is_not_over_application() -> None:
+    """Post-run correction: the committed ground truth never forbade a required domain; the first evaluator rule exceeded it."""
     raw = good3()
-    raw["domain"] = [{"name": "Large multinational or complex enterprise environments", "strength": "preferred", "basis": b(J_ENV)}]
-    _, r, _ = run(raw)
+    raw["domain"] = [{"name": "Large multinational or complex enterprise environments", "strength": "preferred", "basis": b(J_ENV)},
+                     {"name": "FP&A, Business Finance, Commercial Finance, or closely related financial planning roles", "strength": "required", "basis": b(J_EXP)}]
+    intent, r, _ = run(raw)
     assert r["no_role_shape_structure"]["status"] == PASS
-    raw["domain"][0]["strength"] = "required"
+    required = gold.observations(intent)["required_domain"]
+    assert len(required) == 1 and required[0][1] == "required" and required[0][0].startswith("FP&A, Business Finance, Commercial Finance")
+    assert gold.evaluate(intent, JD)["observations"]["domain"]                       # reported, never graded
+    raw["seniority"]["leadership"] = ["technical"]                                   # a genuinely invented structure is still caught
     _, r, _ = run(raw)
-    assert r["no_role_shape_structure"]["status"] == FAIL
+    assert r["no_role_shape_structure"]["status"] == FAIL and r["seniority_senior_manager"]["status"] == FAIL
 
 
 # ---------------------------------------------------------------------------- harness (fake client, no model)

@@ -1,0 +1,1506 @@
+{
+ "run": 1,
+ "error": null,
+ "transient_retries": [],
+ "intent": {
+  "role_archetype": {
+   "value": "title_defined",
+   "confidence": 0.96,
+   "rationale": "The FP&A and Business Finance management title defines a specific finance occupation, with the stated competencies supporting that role."
+  },
+  "role_family": [
+   "FP&A and Business Finance Manager"
+  ],
+  "seniority": {
+   "basis": {
+    "sources": [
+     "jd"
+    ],
+    "quote": "Senior Manager – FP&A and Business Finance"
+   },
+   "strength": "required",
+   "value": "Senior",
+   "leadership": [],
+   "alternatives": []
+  },
+  "skills": [
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "strong financial analysis and modeling capabilities"
+    },
+    "strength": "required",
+    "name": "Financial analysis",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Strong experience in financial planning, budgeting, forecasting, and variance analysis."
+    },
+    "strength": "required",
+    "name": "Financial planning",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Strong experience in financial planning, budgeting, forecasting, and variance analysis."
+    },
+    "strength": "required",
+    "name": "Budgeting",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Strong experience in financial planning, budgeting, forecasting, and variance analysis."
+    },
+    "strength": "required",
+    "name": "Forecasting",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Strong experience in financial planning, budgeting, forecasting, and variance analysis."
+    },
+    "strength": "required",
+    "name": "Variance analysis",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Strong financial modeling skills, including scenario and sensitivity analysis."
+    },
+    "strength": "required",
+    "name": "Financial modeling",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Strong financial modeling skills, including scenario and sensitivity analysis."
+    },
+    "strength": "required",
+    "name": "Scenario analysis",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Strong financial modeling skills, including scenario and sensitivity analysis."
+    },
+    "strength": "required",
+    "name": "Sensitivity analysis",
+    "relationship": "any",
+    "proficiency": null
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Advanced proficiency in Microsoft Excel."
+    },
+    "strength": "required",
+    "name": "Microsoft Excel",
+    "relationship": "any",
+    "proficiency": "advanced"
+   }
+  ],
+  "skill_any_of": [
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Working knowledge of Power BI or a similar business intelligence/reporting platform."
+    },
+    "strength": "required",
+    "any_of": [
+     "Power BI",
+     "Similar business intelligence/reporting platform"
+    ],
+    "relationship": "any"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience working with ERP systems such as SAP, Oracle, or comparable platforms."
+    },
+    "strength": "required",
+    "any_of": [
+     "SAP",
+     "Oracle",
+     "Comparable ERP platforms"
+    ],
+    "relationship": "any"
+   }
+  ],
+  "companies": [
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Unilever, Procter & Gamble, PepsiCo, Nestlé, Coca-Cola, Mondelez International"
+    },
+    "strength": "preferred",
+    "name": "Unilever",
+    "relationship": "any"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Unilever, Procter & Gamble, PepsiCo, Nestlé, Coca-Cola, Mondelez International"
+    },
+    "strength": "preferred",
+    "name": "Procter & Gamble",
+    "relationship": "any"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Unilever, Procter & Gamble, PepsiCo, Nestlé, Coca-Cola, Mondelez International"
+    },
+    "strength": "preferred",
+    "name": "PepsiCo",
+    "relationship": "any"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Unilever, Procter & Gamble, PepsiCo, Nestlé, Coca-Cola, Mondelez International"
+    },
+    "strength": "preferred",
+    "name": "Nestlé",
+    "relationship": "any"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Unilever, Procter & Gamble, PepsiCo, Nestlé, Coca-Cola, Mondelez International"
+    },
+    "strength": "preferred",
+    "name": "Coca-Cola",
+    "relationship": "any"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Unilever, Procter & Gamble, PepsiCo, Nestlé, Coca-Cola, Mondelez International"
+    },
+    "strength": "preferred",
+    "name": "Mondelez International",
+    "relationship": "any"
+   }
+  ],
+  "company_scale": null,
+  "education": {
+   "basis": {
+    "sources": [
+     "jd"
+    ],
+    "quote": "Bachelor’s degree in Finance, Accounting, Economics, Business, or a related discipline."
+   },
+   "strength": "required",
+   "degrees": [
+    "Bachelor’s degree"
+   ],
+   "streams": [
+    "Finance",
+    "Accounting",
+    "Economics",
+    "Business",
+    "Related discipline"
+   ]
+  },
+  "experience": {
+   "basis": {
+    "sources": [
+     "jd"
+    ],
+    "quote": "8–12 years of relevant experience in FP&A, Business Finance, Commercial Finance, or closely related financial planning roles."
+   },
+   "strength": "required",
+   "minimum_years": 8,
+   "maximum_years": 12
+  },
+  "location": {
+   "basis": {
+    "sources": [
+     "jd"
+    ],
+    "quote": "Location: Hyderabad, India\nWork Mode: Hybrid"
+   },
+   "strength": "required",
+   "entries": [
+    "Hyderabad, Telangana, India"
+   ],
+   "radius": null,
+   "countries": [],
+   "remote": null,
+   "work_mode": "hybrid"
+  },
+  "exclusions": [],
+  "evidence_signals": [
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "This role requires meaningful FP&A/business-finance ownership."
+    },
+    "strength": "required",
+    "name": "Meaningful FP&A or business-finance ownership"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "commercial judgment, stakeholder management, and the ability to communicate financial insights clearly to senior business leaders"
+    },
+    "strength": "required",
+    "name": "Commercial judgment"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "commercial judgment, stakeholder management, and the ability to communicate financial insights clearly to senior business leaders"
+    },
+    "strength": "required",
+    "name": "Stakeholder management"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Strong business partnering and communication skills."
+    },
+    "strength": "required",
+    "name": "Strong business partnering and communication"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience presenting financial analysis and recommendations to senior stakeholders."
+    },
+    "strength": "required",
+    "name": "Experience presenting financial analysis and recommendations to senior stakeholders"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Working knowledge of Power BI or a similar business intelligence/reporting platform."
+    },
+    "strength": "required",
+    "name": "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Professional qualification such as CA, CMA, ACCA, or MBA Finance is preferred."
+    },
+    "strength": "preferred",
+    "name": "Professional qualification such as CA, CMA, ACCA, or MBA Finance"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience supporting commercial, operations, or business-unit leadership is preferred."
+    },
+    "strength": "preferred",
+    "name": "Experience supporting commercial, operations, or business-unit leadership"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Lead the annual budgeting, forecasting, and long-range planning processes for assigned business areas."
+    },
+    "strength": "context",
+    "name": "Lead annual budgeting, forecasting, and long-range planning for assigned business areas"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Develop and maintain financial models to support planning, scenario analysis, investment decisions, and business performance reviews."
+    },
+    "strength": "context",
+    "name": "Develop and maintain financial models supporting planning, scenarios, investment decisions, and performance reviews"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Analyze actuals versus budget and forecast, identify key drivers of variance, and provide recommendations to business leaders."
+    },
+    "strength": "context",
+    "name": "Analyze actuals against budget and forecast, identify variance drivers, and recommend actions"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Prepare monthly and quarterly management reporting packs with clear commentary on business performance."
+    },
+    "strength": "context",
+    "name": "Prepare monthly and quarterly management reporting with clear performance commentary"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Partner with business and functional leaders to evaluate financial implications of strategic and operational initiatives."
+    },
+    "strength": "context",
+    "name": "Partner with business and functional leaders on the financial implications of strategic and operational initiatives"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Develop scenario analyses and sensitivity models for revenue, cost, headcount, and investment decisions."
+    },
+    "strength": "context",
+    "name": "Develop scenario and sensitivity models for revenue, cost, headcount, and investment decisions"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Improve financial planning and reporting processes through automation, standardization, and data-driven analysis."
+    },
+    "strength": "context",
+    "name": "Improve planning and reporting through automation, standardization, and data-driven analysis"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Present financial insights and recommendations to senior leadership."
+    },
+    "strength": "context",
+    "name": "Present financial insights and recommendations to senior leadership"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Work cross-functionally with Accounting, Commercial, Operations, and other business teams."
+    },
+    "strength": "context",
+    "name": "Work cross-functionally with Accounting, Commercial, Operations, and other business teams"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Support ad hoc financial analysis and strategic projects as required."
+    },
+    "strength": "context",
+    "name": "Support ad hoc financial analysis and strategic projects"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "translate financial information into actionable insights, improve forecasting accuracy, and support strategic and operational decisions"
+    },
+    "strength": "context",
+    "name": "Translate financial information into actionable insights, improve forecasting accuracy, and support business decisions"
+   }
+  ],
+  "domain": [
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "8–12 years of relevant experience in FP&A, Business Finance, Commercial Finance, or closely related financial planning roles."
+    },
+    "strength": "required",
+    "name": "FP&A, Business Finance, Commercial Finance, or closely related financial planning roles"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Experience in large multinational or complex enterprise environments is preferred."
+    },
+    "strength": "preferred",
+    "name": "Large multinational or complex enterprise environments"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "or similar large consumer/industrial organizations would be particularly relevant."
+    },
+    "strength": "preferred",
+    "name": "Large consumer or industrial organizations"
+   },
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "for a large, complex organization"
+    },
+    "strength": "context",
+    "name": "Large, complex organization"
+   }
+  ],
+  "semantic_exclusions": [
+   {
+    "basis": {
+     "sources": [
+      "jd"
+     ],
+     "quote": "Candidates whose experience is exclusively in statutory audit, tax, bookkeeping, or transaction processing, without substantive FP&A or business-finance responsibilities, are not suitable."
+    },
+    "concept": "Experience exclusively in statutory audit, tax, bookkeeping, or transaction processing without substantive FP&A or business-finance responsibilities",
+    "includes": [
+     "Exclusively statutory audit without substantive FP&A or business-finance responsibilities",
+     "Exclusively tax without substantive FP&A or business-finance responsibilities",
+     "Exclusively bookkeeping without substantive FP&A or business-finance responsibilities",
+     "Exclusively transaction processing without substantive FP&A or business-finance responsibilities"
+    ]
+   }
+  ],
+  "sourcing_paths": [],
+  "reconciliations": []
+ },
+ "gold": {
+  "critical": [
+   {
+    "id": "role_family_discipline",
+    "title": "Role family uses only the JD's function / title words; no adjacent or invented title",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "role_family=['FP&A and Business Finance Manager']"
+   },
+   {
+    "id": "seniority_senior_manager",
+    "title": "Seniority is Senior Manager (the title), nothing stronger",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "Senior/required; family=FP&A and Business Finance Manager"
+   },
+   {
+    "id": "experience_8_to_12",
+    "title": "Experience is the range 8-12 years, required",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "8-12 required"
+   },
+   {
+    "id": "education_bachelor_required",
+    "title": "Bachelor's in Finance / Accounting / Economics / Business / related, required, not merged with the professional qualification",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "['Bachelor’s degree'] ['Finance', 'Accounting', 'Economics', 'Business', 'Related discipline']"
+   },
+   {
+    "id": "geography_hyderabad_single",
+    "title": "One geography: the city Hyderabad; no country area, radius or second place",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "['Hyderabad, Telangana, India']/required"
+   },
+   {
+    "id": "work_mode_hybrid_typed",
+    "title": "Work mode is hybrid, typed; not remote, not on-site",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "work_mode=hybrid remote=None"
+   },
+   {
+    "id": "core_requirements_present",
+    "title": "Stated qualifications present (planning, budgeting, forecasting, variance, modeling, Excel, Power BI, presenting, partnering, communication, ERP, FP&A ownership)",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "all present"
+   },
+   {
+    "id": "core_requirements_required",
+    "title": "Stated qualifications are not weakened to preferred/context",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "none weakened"
+   },
+   {
+    "id": "excel_advanced",
+    "title": "Microsoft Excel is advanced proficiency",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "[('Microsoft Excel', 'advanced', 'required')]"
+   },
+   {
+    "id": "power_bi_working_knowledge",
+    "title": "Power BI (or a similar BI/reporting platform) is working knowledge",
+    "status": "PARTIAL",
+    "failure_class": "EXTRACTION",
+    "evidence": "depth lost: an OR group carries no proficiency (the lossless form is one atom whose name carries 'or similar')"
+   },
+   {
+    "id": "no_invented_proficiency",
+    "title": "Proficiency only on Excel (advanced) and Power BI (working knowledge); finance skills never promoted",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "none"
+   },
+   {
+    "id": "erp_examples_not_and",
+    "title": "ERP experience required; SAP / Oracle are examples, not two required skills",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "ERP kept as one requirement"
+   },
+   {
+    "id": "professional_qualification_preferred",
+    "title": "Professional qualification (CA / CMA / ACCA / MBA Finance) kept as a PREFERENCE",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "[('signal', 'preferred')]"
+   },
+   {
+    "id": "company_preference_kept_as_preference",
+    "title": "Named companies kept as PREFERRED, relationship any; never required, current, or a scale filter",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "['coca_cola', 'mondelez', 'nestle', 'pepsico', 'procter_gamble', 'unilever']"
+   },
+   {
+    "id": "background_preferences_preferred",
+    "title": "Large-enterprise and business-leadership-support backgrounds kept as preferences",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "both present as preferred/context"
+   },
+   {
+    "id": "semantic_exclusion_faithful",
+    "title": "The audit / tax / bookkeeping / transaction-processing exclusion kept with its qualifier",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "'Experience exclusively in statutory audit, tax, bookkeeping, or transaction processing without substantive FP&A or business-finance responsibilities Exclusively statutory audit without substantive FP&'"
+   },
+   {
+    "id": "no_sourcing_path_or_reconciliation",
+    "title": "No sourcing path, path-scoped structure or reconciliation (one strategy, no brief)",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "paths=[] reconciliations=[]"
+   },
+   {
+    "id": "no_invented_exclusion",
+    "title": "No exclusion beyond the one stated (no company / title / industry exclusion, no second negative)",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "[]"
+   },
+   {
+    "id": "no_role_shape_structure",
+    "title": "No Role 1 / Role 2 structure the JD does not call for (leadership, alternatives, countries, remote, a required domain)",
+    "status": "FAIL",
+    "failure_class": "EXTRACTION",
+    "evidence": "domain required [('FP&A, Business Finance, Commercial Finan', 'required')]"
+   },
+   {
+    "id": "no_unsupported_temporal_relationship",
+    "title": "Every relationship is `any`: the JD states no current or past application",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "all any"
+   },
+   {
+    "id": "no_responsibility_hardening",
+    "title": "Responsibility-only statements are not required (reporting packs, automation, cross-functional work, ad hoc projects)",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "required responsibility-only items=[]; frozen validator responsibility_only_required=0"
+   },
+   {
+    "id": "no_preference_hardened",
+    "title": "No preference (qualification, environment, companies, leadership support) hardened into a requirement",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "none"
+   },
+   {
+    "id": "no_fabricated_brief_source",
+    "title": "No atom cites a recruiter brief (there is none)",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "none"
+   },
+   {
+    "id": "provenance_preserved",
+    "title": "Every atom carries a verified JD basis; nothing required is inferred",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "45 atoms; status={'verified': 45}; missing_basis=0 (constraint-bearing 0); unsupported/misattributed=0"
+   },
+   {
+    "id": "generic_validators_clean",
+    "title": "Frozen generic validators (base + cross-role): no ERROR",
+    "status": "PASS",
+    "failure_class": null,
+    "evidence": "none fired"
+   }
+  ],
+  "validation": {
+   "atoms": [
+    {
+     "ref": "seniority",
+     "kind": "seniority",
+     "text": "Senior",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "experience",
+     "kind": "experience",
+     "text": "8+ years",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "location",
+     "kind": "location",
+     "text": "Hyderabad, Telangana, India",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.67,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[0]",
+     "kind": "skill",
+     "text": "Financial analysis",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[1]",
+     "kind": "skill",
+     "text": "Financial planning",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[2]",
+     "kind": "skill",
+     "text": "Budgeting",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[3]",
+     "kind": "skill",
+     "text": "Forecasting",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[4]",
+     "kind": "skill",
+     "text": "Variance analysis",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[5]",
+     "kind": "skill",
+     "text": "Financial modeling",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[6]",
+     "kind": "skill",
+     "text": "Scenario analysis",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[7]",
+     "kind": "skill",
+     "text": "Sensitivity analysis",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skills[8]",
+     "kind": "skill",
+     "text": "Microsoft Excel",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "domain[0]",
+     "kind": "domain",
+     "text": "FP&A, Business Finance, Commercial Finance, or closely related financial planning roles",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "domain[1]",
+     "kind": "domain",
+     "text": "Large multinational or complex enterprise environments",
+     "strength": "preferred",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "domain[2]",
+     "kind": "domain",
+     "text": "Large consumer or industrial organizations",
+     "strength": "preferred",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 0.75,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "domain[3]",
+     "kind": "domain",
+     "text": "Large, complex organization",
+     "strength": "context",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skill_any_of[0]",
+     "kind": "skill_any_of",
+     "text": "Power BI or Similar business intelligence/reporting platform",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "skill_any_of[1]",
+     "kind": "skill_any_of",
+     "text": "SAP or Oracle or Comparable ERP platforms",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "companies[0]",
+     "kind": "company",
+     "text": "Unilever",
+     "strength": "preferred",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "companies[1]",
+     "kind": "company",
+     "text": "Procter & Gamble",
+     "strength": "preferred",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "companies[2]",
+     "kind": "company",
+     "text": "PepsiCo",
+     "strength": "preferred",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "companies[3]",
+     "kind": "company",
+     "text": "Nestlé",
+     "strength": "preferred",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "companies[4]",
+     "kind": "company",
+     "text": "Coca-Cola",
+     "strength": "preferred",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "companies[5]",
+     "kind": "company",
+     "text": "Mondelez International",
+     "strength": "preferred",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "education",
+     "kind": "education",
+     "text": "Bachelor’s degree, Finance, Accounting, Economics, Business, Related discipline",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "semantic_exclusions[0]",
+     "kind": "semantic_exclusion",
+     "text": "Experience exclusively in statutory audit, tax, bookkeeping, or transaction processing without substantive FP&A or business-finance responsibilities",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[0]",
+     "kind": "evidence_signal",
+     "text": "Meaningful FP&A or business-finance ownership",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 0.75,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[1]",
+     "kind": "evidence_signal",
+     "text": "Commercial judgment",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[2]",
+     "kind": "evidence_signal",
+     "text": "Stakeholder management",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[3]",
+     "kind": "evidence_signal",
+     "text": "Strong business partnering and communication",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[4]",
+     "kind": "evidence_signal",
+     "text": "Experience presenting financial analysis and recommendations to senior stakeholders",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[5]",
+     "kind": "evidence_signal",
+     "text": "Working knowledge of Power BI or a similar business intelligence/reporting platform",
+     "strength": "required",
+     "scope": null,
+     "constraint": true,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[6]",
+     "kind": "evidence_signal",
+     "text": "Professional qualification such as CA, CMA, ACCA, or MBA Finance",
+     "strength": "preferred",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[7]",
+     "kind": "evidence_signal",
+     "text": "Experience supporting commercial, operations, or business-unit leadership",
+     "strength": "preferred",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[8]",
+     "kind": "evidence_signal",
+     "text": "Lead annual budgeting, forecasting, and long-range planning for assigned business areas",
+     "strength": "context",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[9]",
+     "kind": "evidence_signal",
+     "text": "Develop and maintain financial models supporting planning, scenarios, investment decisions, and performance reviews",
+     "strength": "context",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 0.91,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[10]",
+     "kind": "evidence_signal",
+     "text": "Analyze actuals against budget and forecast, identify variance drivers, and recommend actions",
+     "strength": "context",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 0.8,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[11]",
+     "kind": "evidence_signal",
+     "text": "Prepare monthly and quarterly management reporting with clear performance commentary",
+     "strength": "context",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[12]",
+     "kind": "evidence_signal",
+     "text": "Partner with business and functional leaders on the financial implications of strategic and operational initiatives",
+     "strength": "context",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[13]",
+     "kind": "evidence_signal",
+     "text": "Develop scenario and sensitivity models for revenue, cost, headcount, and investment decisions",
+     "strength": "context",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[14]",
+     "kind": "evidence_signal",
+     "text": "Improve planning and reporting through automation, standardization, and data-driven analysis",
+     "strength": "context",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[15]",
+     "kind": "evidence_signal",
+     "text": "Present financial insights and recommendations to senior leadership",
+     "strength": "context",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[16]",
+     "kind": "evidence_signal",
+     "text": "Work cross-functionally with Accounting, Commercial, Operations, and other business teams",
+     "strength": "context",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[17]",
+     "kind": "evidence_signal",
+     "text": "Support ad hoc financial analysis and strategic projects",
+     "strength": "context",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 1.0,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    },
+    {
+     "ref": "evidence_signals[18]",
+     "kind": "evidence_signal",
+     "text": "Translate financial information into actionable insights, improve forecasting accuracy, and support business decisions",
+     "strength": "context",
+     "scope": null,
+     "constraint": false,
+     "quote_overlap": 0.92,
+     "claimed": [
+      "jd"
+     ],
+     "verified": [
+      "jd"
+     ],
+     "status": "verified",
+     "label": "retained_from_jd"
+    }
+   ],
+   "status_counts": {
+    "verified": 45
+   },
+   "reconciliations": [],
+   "diagnostics": [],
+   "errors": {},
+   "paths_located": {},
+   "cross_role_errors": {}
+  }
+ },
+ "model_calls": [
+  {
+   "model": "gpt-6.1-sol",
+   "reasoning": {
+    "effort": "medium"
+   },
+   "raw_text": "{\n  \"role_archetype\": {\n    \"value\": \"title_defined\",\n    \"confidence\": 0.96,\n    \"rationale\": \"The FP&A and Business Finance management title defines a specific finance occupation, with the stated competencies supporting that role.\"\n  },\n  \"role_family\": [\n    \"FP&A and Business Finance Manager\"\n  ],\n  \"seniority\": {\n    \"value\": \"Senior\",\n    \"strength\": \"required\",\n    \"leadership\": [],\n    \"alternatives\": [],\n    \"basis\": {\n      \"sources\": [\"jd\"],\n      \"quote\": \"Senior Manager – FP&A and Business Finance\"\n    }\n  },\n  \"skills\": [\n    {\n      \"name\": \"Financial analysis\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"strong financial analysis and modeling capabilities\"\n      }\n    },\n    {\n      \"name\": \"Financial planning\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Strong experience in financial planning, budgeting, forecasting, and variance analysis.\"\n      }\n    },\n    {\n      \"name\": \"Budgeting\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Strong experience in financial planning, budgeting, forecasting, and variance analysis.\"\n      }\n    },\n    {\n      \"name\": \"Forecasting\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Strong experience in financial planning, budgeting, forecasting, and variance analysis.\"\n      }\n    },\n    {\n      \"name\": \"Variance analysis\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Strong experience in financial planning, budgeting, forecasting, and variance analysis.\"\n      }\n    },\n    {\n      \"name\": \"Financial modeling\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Strong financial modeling skills, including scenario and sensitivity analysis.\"\n      }\n    },\n    {\n      \"name\": \"Scenario analysis\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Strong financial modeling skills, including scenario and sensitivity analysis.\"\n      }\n    },\n    {\n      \"name\": \"Sensitivity analysis\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": null,\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Strong financial modeling skills, including scenario and sensitivity analysis.\"\n      }\n    },\n    {\n      \"name\": \"Microsoft Excel\",\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"proficiency\": \"advanced\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Advanced proficiency in Microsoft Excel.\"\n      }\n    }\n  ],\n  \"skill_any_of\": [\n    {\n      \"any_of\": [\n        \"Power BI\",\n        \"Similar business intelligence/reporting platform\"\n      ],\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Working knowledge of Power BI or a similar business intelligence/reporting platform.\"\n      }\n    },\n    {\n      \"any_of\": [\n        \"SAP\",\n        \"Oracle\",\n        \"Comparable ERP platforms\"\n      ],\n      \"relationship\": \"any\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience working with ERP systems such as SAP, Oracle, or comparable platforms.\"\n      }\n    }\n  ],\n  \"companies\": [\n    {\n      \"name\": \"Unilever\",\n      \"relationship\": \"any\",\n      \"strength\": \"preferred\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Unilever, Procter & Gamble, PepsiCo, Nestlé, Coca-Cola, Mondelez International\"\n      }\n    },\n    {\n      \"name\": \"Procter & Gamble\",\n      \"relationship\": \"any\",\n      \"strength\": \"preferred\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Unilever, Procter & Gamble, PepsiCo, Nestlé, Coca-Cola, Mondelez International\"\n      }\n    },\n    {\n      \"name\": \"PepsiCo\",\n      \"relationship\": \"any\",\n      \"strength\": \"preferred\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Unilever, Procter & Gamble, PepsiCo, Nestlé, Coca-Cola, Mondelez International\"\n      }\n    },\n    {\n      \"name\": \"Nestlé\",\n      \"relationship\": \"any\",\n      \"strength\": \"preferred\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Unilever, Procter & Gamble, PepsiCo, Nestlé, Coca-Cola, Mondelez International\"\n      }\n    },\n    {\n      \"name\": \"Coca-Cola\",\n      \"relationship\": \"any\",\n      \"strength\": \"preferred\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Unilever, Procter & Gamble, PepsiCo, Nestlé, Coca-Cola, Mondelez International\"\n      }\n    },\n    {\n      \"name\": \"Mondelez International\",\n      \"relationship\": \"any\",\n      \"strength\": \"preferred\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Unilever, Procter & Gamble, PepsiCo, Nestlé, Coca-Cola, Mondelez International\"\n      }\n    }\n  ],\n  \"education\": {\n    \"degrees\": [\"Bachelor’s degree\"],\n    \"streams\": [\n      \"Finance\",\n      \"Accounting\",\n      \"Economics\",\n      \"Business\",\n      \"Related discipline\"\n    ],\n    \"strength\": \"required\",\n    \"basis\": {\n      \"sources\": [\"jd\"],\n      \"quote\": \"Bachelor’s degree in Finance, Accounting, Economics, Business, or a related discipline.\"\n    }\n  },\n  \"experience\": {\n    \"minimum_years\": 8,\n    \"maximum_years\": 12,\n    \"strength\": \"required\",\n    \"basis\": {\n      \"sources\": [\"jd\"],\n      \"quote\": \"8–12 years of relevant experience in FP&A, Business Finance, Commercial Finance, or closely related financial planning roles.\"\n    }\n  },\n  \"location\": {\n    \"entries\": [\"Hyderabad, Telangana, India\"],\n    \"remote\": null,\n    \"work_mode\": \"hybrid\",\n    \"strength\": \"required\",\n    \"basis\": {\n      \"sources\": [\"jd\"],\n      \"quote\": \"Location: Hyderabad, India\\nWork Mode: Hybrid\"\n    }\n  },\n  \"evidence_signals\": [\n    {\n      \"name\": \"Meaningful FP&A or business-finance ownership\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"This role requires meaningful FP&A/business-finance ownership.\"\n      }\n    },\n    {\n      \"name\": \"Commercial judgment\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"commercial judgment, stakeholder management, and the ability to communicate financial insights clearly to senior business leaders\"\n      }\n    },\n    {\n      \"name\": \"Stakeholder management\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"commercial judgment, stakeholder management, and the ability to communicate financial insights clearly to senior business leaders\"\n      }\n    },\n    {\n      \"name\": \"Strong business partnering and communication\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Strong business partnering and communication skills.\"\n      }\n    },\n    {\n      \"name\": \"Experience presenting financial analysis and recommendations to senior stakeholders\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience presenting financial analysis and recommendations to senior stakeholders.\"\n      }\n    },\n    {\n      \"name\": \"Working knowledge of Power BI or a similar business intelligence/reporting platform\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Working knowledge of Power BI or a similar business intelligence/reporting platform.\"\n      }\n    },\n    {\n      \"name\": \"Professional qualification such as CA, CMA, ACCA, or MBA Finance\",\n      \"strength\": \"preferred\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Professional qualification such as CA, CMA, ACCA, or MBA Finance is preferred.\"\n      }\n    },\n    {\n      \"name\": \"Experience supporting commercial, operations, or business-unit leadership\",\n      \"strength\": \"preferred\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience supporting commercial, operations, or business-unit leadership is preferred.\"\n      }\n    },\n    {\n      \"name\": \"Lead annual budgeting, forecasting, and long-range planning for assigned business areas\",\n      \"strength\": \"context\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Lead the annual budgeting, forecasting, and long-range planning processes for assigned business areas.\"\n      }\n    },\n    {\n      \"name\": \"Develop and maintain financial models supporting planning, scenarios, investment decisions, and performance reviews\",\n      \"strength\": \"context\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Develop and maintain financial models to support planning, scenario analysis, investment decisions, and business performance reviews.\"\n      }\n    },\n    {\n      \"name\": \"Analyze actuals against budget and forecast, identify variance drivers, and recommend actions\",\n      \"strength\": \"context\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Analyze actuals versus budget and forecast, identify key drivers of variance, and provide recommendations to business leaders.\"\n      }\n    },\n    {\n      \"name\": \"Prepare monthly and quarterly management reporting with clear performance commentary\",\n      \"strength\": \"context\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Prepare monthly and quarterly management reporting packs with clear commentary on business performance.\"\n      }\n    },\n    {\n      \"name\": \"Partner with business and functional leaders on the financial implications of strategic and operational initiatives\",\n      \"strength\": \"context\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Partner with business and functional leaders to evaluate financial implications of strategic and operational initiatives.\"\n      }\n    },\n    {\n      \"name\": \"Develop scenario and sensitivity models for revenue, cost, headcount, and investment decisions\",\n      \"strength\": \"context\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Develop scenario analyses and sensitivity models for revenue, cost, headcount, and investment decisions.\"\n      }\n    },\n    {\n      \"name\": \"Improve planning and reporting through automation, standardization, and data-driven analysis\",\n      \"strength\": \"context\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Improve financial planning and reporting processes through automation, standardization, and data-driven analysis.\"\n      }\n    },\n    {\n      \"name\": \"Present financial insights and recommendations to senior leadership\",\n      \"strength\": \"context\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Present financial insights and recommendations to senior leadership.\"\n      }\n    },\n    {\n      \"name\": \"Work cross-functionally with Accounting, Commercial, Operations, and other business teams\",\n      \"strength\": \"context\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Work cross-functionally with Accounting, Commercial, Operations, and other business teams.\"\n      }\n    },\n    {\n      \"name\": \"Support ad hoc financial analysis and strategic projects\",\n      \"strength\": \"context\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Support ad hoc financial analysis and strategic projects as required.\"\n      }\n    },\n    {\n      \"name\": \"Translate financial information into actionable insights, improve forecasting accuracy, and support business decisions\",\n      \"strength\": \"context\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"translate financial information into actionable insights, improve forecasting accuracy, and support strategic and operational decisions\"\n      }\n    }\n  ],\n  \"domain\": [\n    {\n      \"name\": \"FP&A, Business Finance, Commercial Finance, or closely related financial planning roles\",\n      \"strength\": \"required\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"8–12 years of relevant experience in FP&A, Business Finance, Commercial Finance, or closely related financial planning roles.\"\n      }\n    },\n    {\n      \"name\": \"Large multinational or complex enterprise environments\",\n      \"strength\": \"preferred\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Experience in large multinational or complex enterprise environments is preferred.\"\n      }\n    },\n    {\n      \"name\": \"Large consumer or industrial organizations\",\n      \"strength\": \"preferred\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"or similar large consumer/industrial organizations would be particularly relevant.\"\n      }\n    },\n    {\n      \"name\": \"Large, complex organization\",\n      \"strength\": \"context\",\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"for a large, complex organization\"\n      }\n    }\n  ],\n  \"semantic_exclusions\": [\n    {\n      \"concept\": \"Experience exclusively in statutory audit, tax, bookkeeping, or transaction processing without substantive FP&A or business-finance responsibilities\",\n      \"includes\": [\n        \"Exclusively statutory audit without substantive FP&A or business-finance responsibilities\",\n        \"Exclusively tax without substantive FP&A or business-finance responsibilities\",\n        \"Exclusively bookkeeping without substantive FP&A or business-finance responsibilities\",\n        \"Exclusively transaction processing without substantive FP&A or business-finance responsibilities\"\n      ],\n      \"basis\": {\n        \"sources\": [\"jd\"],\n        \"quote\": \"Candidates whose experience is exclusively in statutory audit, tax, bookkeeping, or transaction processing, without substantive FP&A or business-finance responsibilities, are not suitable.\"\n      }\n    }\n  ]\n}",
+   "input_tokens": 5136,
+   "output_tokens": 3398,
+   "streamed": true
+  }
+ ],
+ "elapsed_s": 51.34
+}

@@ -1,0 +1,1654 @@
+{
+  "table": [
+    {
+      "id": "role_family_discipline",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "seniority_senior_manager",
+      "as_run": "PASSx3 FAILx2",
+      "corrected": "PASSx3 FAILx2",
+      "class": {
+        "EXTRACTION": 2
+      }
+    },
+    {
+      "id": "experience_8_to_12",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "education_bachelor_required",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "geography_hyderabad_single",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "work_mode_hybrid_typed",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "core_requirements_present",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "core_requirements_required",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "excel_advanced",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "power_bi_working_knowledge",
+      "as_run": "PARTIALx5",
+      "corrected": "PARTIALx5",
+      "class": {
+        "EXTRACTION": 5
+      }
+    },
+    {
+      "id": "no_invented_proficiency",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "erp_examples_not_and",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "professional_qualification_preferred",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "company_preference_kept_as_preference",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "background_preferences_preferred",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "semantic_exclusion_faithful",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "no_sourcing_path_or_reconciliation",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "no_invented_exclusion",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "no_role_shape_structure",
+      "as_run": "FAILx5",
+      "corrected": "PASSx3 FAILx2",
+      "class": {
+        "EXTRACTION": 2
+      }
+    },
+    {
+      "id": "no_unsupported_temporal_relationship",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "no_responsibility_hardening",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "no_preference_hardened",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "no_fabricated_brief_source",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "provenance_preserved",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    },
+    {
+      "id": "generic_validators_clean",
+      "as_run": "PASSx5",
+      "corrected": "PASSx5",
+      "class": {}
+    }
+  ],
+  "per_run": [
+    {
+      "run": 1,
+      "elapsed_s": 51.34,
+      "role_family": [
+        "FP&A and Business Finance Manager"
+      ],
+      "seniority": [
+        "Senior",
+        []
+      ],
+      "power_bi_as_or_group": [
+        [
+          "Power BI",
+          "Similar business intelligence/reporting platform"
+        ]
+      ],
+      "power_bi_depth_kept_as_text": [
+        "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+      ],
+      "domain": [
+        [
+          "FP&A, Business Finance, Commercial Finance, or closely relat",
+          "required"
+        ],
+        [
+          "Large multinational or complex enterprise environments",
+          "preferred"
+        ],
+        [
+          "Large consumer or industrial organizations",
+          "preferred"
+        ],
+        [
+          "Large, complex organization",
+          "context"
+        ]
+      ],
+      "signals_by_strength": {
+        "required": 6,
+        "preferred": 2,
+        "context": 11
+      },
+      "skills": 9,
+      "skill_any_of": [
+        [
+          "Power BI",
+          "Similar business intelligence/reporting platform"
+        ],
+        [
+          "SAP",
+          "Oracle",
+          "Comparable ERP platforms"
+        ]
+      ],
+      "companies": [
+        [
+          "Unilever",
+          "preferred",
+          "any"
+        ],
+        [
+          "Procter & Gamble",
+          "preferred",
+          "any"
+        ],
+        [
+          "PepsiCo",
+          "preferred",
+          "any"
+        ],
+        [
+          "Nestlé",
+          "preferred",
+          "any"
+        ],
+        [
+          "Coca-Cola",
+          "preferred",
+          "any"
+        ],
+        [
+          "Mondelez International",
+          "preferred",
+          "any"
+        ]
+      ],
+      "semantic_exclusions": [
+        [
+          "Experience exclusively in statutory audit, tax, bookkeeping, or transaction processing wit",
+          4
+        ]
+      ],
+      "status_counts": {
+        "verified": 45
+      },
+      "validator_errors": {},
+      "diagnostic_codes": {}
+    },
+    {
+      "run": 2,
+      "elapsed_s": 55.39,
+      "role_family": [
+        "FP&A and Business Finance Manager"
+      ],
+      "seniority": [
+        "Senior Manager",
+        [
+          "technical"
+        ]
+      ],
+      "power_bi_as_or_group": [
+        [
+          "Power BI",
+          "Similar business intelligence/reporting platform"
+        ]
+      ],
+      "power_bi_depth_kept_as_text": [
+        "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+      ],
+      "domain": [
+        [
+          "FP&A, Business Finance, Commercial Finance, or closely relat",
+          "required"
+        ],
+        [
+          "Large, complex organization",
+          "context"
+        ],
+        [
+          "Large multinational or complex enterprise environments",
+          "preferred"
+        ],
+        [
+          "Large consumer or industrial organizations",
+          "preferred"
+        ]
+      ],
+      "signals_by_strength": {
+        "required": 6,
+        "preferred": 2,
+        "context": 11
+      },
+      "skills": 9,
+      "skill_any_of": [
+        [
+          "Power BI",
+          "Similar business intelligence/reporting platform"
+        ],
+        [
+          "SAP",
+          "Oracle",
+          "Comparable ERP platforms"
+        ]
+      ],
+      "companies": [
+        [
+          "Unilever",
+          "preferred",
+          "any"
+        ],
+        [
+          "Procter & Gamble",
+          "preferred",
+          "any"
+        ],
+        [
+          "PepsiCo",
+          "preferred",
+          "any"
+        ],
+        [
+          "Nestlé",
+          "preferred",
+          "any"
+        ],
+        [
+          "Coca-Cola",
+          "preferred",
+          "any"
+        ],
+        [
+          "Mondelez International",
+          "preferred",
+          "any"
+        ]
+      ],
+      "semantic_exclusions": [
+        [
+          "Experience exclusively in statutory audit, tax, bookkeeping, or transaction processing wit",
+          4
+        ]
+      ],
+      "status_counts": {
+        "verified": 45
+      },
+      "validator_errors": {},
+      "diagnostic_codes": {}
+    },
+    {
+      "run": 3,
+      "elapsed_s": 55.29,
+      "role_family": [
+        "FP&A and Business Finance Manager"
+      ],
+      "seniority": [
+        "Senior Manager",
+        [
+          "technical"
+        ]
+      ],
+      "power_bi_as_or_group": [
+        [
+          "Power BI",
+          "A similar business intelligence/reporting platform"
+        ]
+      ],
+      "power_bi_depth_kept_as_text": [
+        "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+      ],
+      "domain": [
+        [
+          "FP&A, Business Finance, Commercial Finance, or closely relat",
+          "required"
+        ],
+        [
+          "Large multinational or complex enterprise environments",
+          "preferred"
+        ],
+        [
+          "Large consumer or industrial organizations",
+          "preferred"
+        ],
+        [
+          "Large, complex organization",
+          "context"
+        ]
+      ],
+      "signals_by_strength": {
+        "required": 6,
+        "preferred": 2,
+        "context": 11
+      },
+      "skills": 10,
+      "skill_any_of": [
+        [
+          "Power BI",
+          "A similar business intelligence/reporting platform"
+        ],
+        [
+          "SAP",
+          "Oracle",
+          "Comparable ERP platforms"
+        ]
+      ],
+      "companies": [
+        [
+          "Unilever",
+          "preferred",
+          "any"
+        ],
+        [
+          "Procter & Gamble",
+          "preferred",
+          "any"
+        ],
+        [
+          "PepsiCo",
+          "preferred",
+          "any"
+        ],
+        [
+          "Nestlé",
+          "preferred",
+          "any"
+        ],
+        [
+          "Coca-Cola",
+          "preferred",
+          "any"
+        ],
+        [
+          "Mondelez International",
+          "preferred",
+          "any"
+        ]
+      ],
+      "semantic_exclusions": [
+        [
+          "Experience exclusively in statutory audit, tax, bookkeeping, or transaction processing, wi",
+          4
+        ]
+      ],
+      "status_counts": {
+        "verified": 46
+      },
+      "validator_errors": {},
+      "diagnostic_codes": {}
+    },
+    {
+      "run": 4,
+      "elapsed_s": 51.26,
+      "role_family": [
+        "FP&A and Business Finance Manager"
+      ],
+      "seniority": [
+        "Senior Manager",
+        []
+      ],
+      "power_bi_as_or_group": [
+        [
+          "Power BI",
+          "Similar business intelligence/reporting platform"
+        ]
+      ],
+      "power_bi_depth_kept_as_text": [
+        "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+      ],
+      "domain": [
+        [
+          "Relevant experience in FP&A, Business Finance, Commercial Fi",
+          "required"
+        ],
+        [
+          "Large, complex organization",
+          "context"
+        ],
+        [
+          "Large multinational or complex enterprise environments",
+          "preferred"
+        ],
+        [
+          "Large consumer or industrial organizations",
+          "preferred"
+        ]
+      ],
+      "signals_by_strength": {
+        "required": 6,
+        "preferred": 2,
+        "context": 10
+      },
+      "skills": 9,
+      "skill_any_of": [
+        [
+          "Power BI",
+          "Similar business intelligence/reporting platform"
+        ],
+        [
+          "SAP",
+          "Oracle",
+          "Comparable ERP platform"
+        ]
+      ],
+      "companies": [
+        [
+          "Unilever",
+          "preferred",
+          "any"
+        ],
+        [
+          "Procter & Gamble",
+          "preferred",
+          "any"
+        ],
+        [
+          "PepsiCo",
+          "preferred",
+          "any"
+        ],
+        [
+          "Nestlé",
+          "preferred",
+          "any"
+        ],
+        [
+          "Coca-Cola",
+          "preferred",
+          "any"
+        ],
+        [
+          "Mondelez International",
+          "preferred",
+          "any"
+        ]
+      ],
+      "semantic_exclusions": [
+        [
+          "Experience exclusively in statutory audit, tax, bookkeeping, or transaction processing wit",
+          4
+        ]
+      ],
+      "status_counts": {
+        "verified": 44
+      },
+      "validator_errors": {},
+      "diagnostic_codes": {}
+    },
+    {
+      "run": 5,
+      "elapsed_s": 54.96,
+      "role_family": [
+        "FP&A and Business Finance"
+      ],
+      "seniority": [
+        "Senior Manager",
+        []
+      ],
+      "power_bi_as_or_group": [
+        [
+          "Power BI",
+          "Similar business intelligence/reporting platform"
+        ]
+      ],
+      "power_bi_depth_kept_as_text": [
+        "Working knowledge of Power BI or a similar business intelligence/reporting platform"
+      ],
+      "domain": [
+        [
+          "FP&A, Business Finance, Commercial Finance, or closely relat",
+          "required"
+        ],
+        [
+          "Large multinational or complex enterprise environments",
+          "preferred"
+        ],
+        [
+          "Large consumer or industrial organizations",
+          "preferred"
+        ],
+        [
+          "Large, complex organization",
+          "context"
+        ]
+      ],
+      "signals_by_strength": {
+        "required": 6,
+        "preferred": 2,
+        "context": 11
+      },
+      "skills": 10,
+      "skill_any_of": [
+        [
+          "Power BI",
+          "Similar business intelligence/reporting platform"
+        ],
+        [
+          "SAP",
+          "Oracle",
+          "Comparable ERP platforms"
+        ]
+      ],
+      "companies": [
+        [
+          "Unilever",
+          "preferred",
+          "any"
+        ],
+        [
+          "Procter & Gamble",
+          "preferred",
+          "any"
+        ],
+        [
+          "PepsiCo",
+          "preferred",
+          "any"
+        ],
+        [
+          "Nestlé",
+          "preferred",
+          "any"
+        ],
+        [
+          "Coca-Cola",
+          "preferred",
+          "any"
+        ],
+        [
+          "Mondelez International",
+          "preferred",
+          "any"
+        ]
+      ],
+      "semantic_exclusions": [
+        [
+          "Experience exclusively in statutory audit, tax, bookkeeping, or transaction processing wit",
+          4
+        ]
+      ],
+      "status_counts": {
+        "verified": 46
+      },
+      "validator_errors": {},
+      "diagnostic_codes": {}
+    }
+  ],
+  "downstream": [
+    {
+      "run": 1,
+      "hard_filter_leaves": 12,
+      "title_filter": [
+        "FP&A and Business Finance Manager"
+      ],
+      "retrieval_title_family": [
+        "FP&A and Business Finance Manager"
+      ],
+      "experience_leaf": [
+        [
+          "=>",
+          8
+        ],
+        [
+          "=<",
+          12
+        ]
+      ],
+      "location_leaves": [
+        [
+          "country",
+          [
+            "India"
+          ]
+        ],
+        [
+          "state",
+          [
+            "Telangana"
+          ]
+        ],
+        [
+          "city",
+          [
+            "Hyderabad"
+          ]
+        ]
+      ],
+      "education_leaves": [
+        [
+          "degree",
+          "Bachelor’s degree"
+        ],
+        [
+          "field_of_study",
+          "Finance"
+        ],
+        [
+          "field_of_study",
+          "Accounting"
+        ],
+        [
+          "field_of_study",
+          "Economics"
+        ],
+        [
+          "field_of_study",
+          "Business"
+        ],
+        [
+          "field_of_study",
+          "Related discipline"
+        ]
+      ],
+      "company_routes": [
+        [
+          "company:Unilever",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:Procter & Gamble",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:PepsiCo",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:Nestlé",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:Coca-Cola",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:Mondelez International",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ]
+      ],
+      "seniority_audit": [
+        [
+          "seniority",
+          "admission_level_fit",
+          "value=Senior; enforced by Phase-1a admission gate"
+        ]
+      ],
+      "skill_routes": {
+        "downstream_evidence": 11
+      },
+      "warnings": [
+        "education stream: filterable but response-gated (not displayable); verify via Harvest if needed"
+      ]
+    },
+    {
+      "run": 2,
+      "hard_filter_leaves": 12,
+      "title_filter": [
+        "FP&A and Business Finance Manager"
+      ],
+      "retrieval_title_family": [
+        "FP&A and Business Finance Manager"
+      ],
+      "experience_leaf": [
+        [
+          "=>",
+          8
+        ],
+        [
+          "=<",
+          12
+        ]
+      ],
+      "location_leaves": [
+        [
+          "country",
+          [
+            "India"
+          ]
+        ],
+        [
+          "state",
+          [
+            "Telangana"
+          ]
+        ],
+        [
+          "city",
+          [
+            "Hyderabad"
+          ]
+        ]
+      ],
+      "education_leaves": [
+        [
+          "degree",
+          "Bachelor’s degree"
+        ],
+        [
+          "field_of_study",
+          "Finance"
+        ],
+        [
+          "field_of_study",
+          "Accounting"
+        ],
+        [
+          "field_of_study",
+          "Economics"
+        ],
+        [
+          "field_of_study",
+          "Business"
+        ],
+        [
+          "field_of_study",
+          "Related discipline"
+        ]
+      ],
+      "company_routes": [
+        [
+          "company:Unilever",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:Procter & Gamble",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:PepsiCo",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:Nestlé",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:Coca-Cola",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:Mondelez International",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ]
+      ],
+      "seniority_audit": [
+        [
+          "seniority",
+          "admission_level_fit",
+          "value=Senior Manager; enforced by Phase-1a admission gate"
+        ]
+      ],
+      "skill_routes": {
+        "downstream_evidence": 11
+      },
+      "warnings": [
+        "education stream: filterable but response-gated (not displayable); verify via Harvest if needed"
+      ]
+    },
+    {
+      "run": 3,
+      "hard_filter_leaves": 12,
+      "title_filter": [
+        "FP&A and Business Finance Manager"
+      ],
+      "retrieval_title_family": [
+        "FP&A and Business Finance Manager"
+      ],
+      "experience_leaf": [
+        [
+          "=>",
+          8
+        ],
+        [
+          "=<",
+          12
+        ]
+      ],
+      "location_leaves": [
+        [
+          "country",
+          [
+            "India"
+          ]
+        ],
+        [
+          "state",
+          [
+            "Telangana"
+          ]
+        ],
+        [
+          "city",
+          [
+            "Hyderabad"
+          ]
+        ]
+      ],
+      "education_leaves": [
+        [
+          "degree",
+          "Bachelor’s degree"
+        ],
+        [
+          "field_of_study",
+          "Finance"
+        ],
+        [
+          "field_of_study",
+          "Accounting"
+        ],
+        [
+          "field_of_study",
+          "Economics"
+        ],
+        [
+          "field_of_study",
+          "Business"
+        ],
+        [
+          "field_of_study",
+          "A related discipline"
+        ]
+      ],
+      "company_routes": [
+        [
+          "company:Unilever",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:Procter & Gamble",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:PepsiCo",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:Nestlé",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:Coca-Cola",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:Mondelez International",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ]
+      ],
+      "seniority_audit": [
+        [
+          "seniority",
+          "admission_level_fit",
+          "value=Senior Manager; enforced by Phase-1a admission gate"
+        ]
+      ],
+      "skill_routes": {
+        "downstream_evidence": 12
+      },
+      "warnings": [
+        "education stream: filterable but response-gated (not displayable); verify via Harvest if needed"
+      ]
+    },
+    {
+      "run": 4,
+      "hard_filter_leaves": 12,
+      "title_filter": [
+        "FP&A and Business Finance Manager"
+      ],
+      "retrieval_title_family": [
+        "FP&A and Business Finance Manager"
+      ],
+      "experience_leaf": [
+        [
+          "=>",
+          8
+        ],
+        [
+          "=<",
+          12
+        ]
+      ],
+      "location_leaves": [
+        [
+          "country",
+          [
+            "India"
+          ]
+        ],
+        [
+          "state",
+          [
+            "Telangana"
+          ]
+        ],
+        [
+          "city",
+          [
+            "Hyderabad"
+          ]
+        ]
+      ],
+      "education_leaves": [
+        [
+          "degree",
+          "Bachelor’s degree"
+        ],
+        [
+          "field_of_study",
+          "Finance"
+        ],
+        [
+          "field_of_study",
+          "Accounting"
+        ],
+        [
+          "field_of_study",
+          "Economics"
+        ],
+        [
+          "field_of_study",
+          "Business"
+        ],
+        [
+          "field_of_study",
+          "Related discipline"
+        ]
+      ],
+      "company_routes": [
+        [
+          "company:Unilever",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:Procter & Gamble",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:PepsiCo",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:Nestlé",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:Coca-Cola",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:Mondelez International",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ]
+      ],
+      "seniority_audit": [
+        [
+          "seniority",
+          "admission_level_fit",
+          "value=Senior Manager; enforced by Phase-1a admission gate"
+        ]
+      ],
+      "skill_routes": {
+        "downstream_evidence": 11
+      },
+      "warnings": [
+        "education stream: filterable but response-gated (not displayable); verify via Harvest if needed"
+      ]
+    },
+    {
+      "run": 5,
+      "hard_filter_leaves": 12,
+      "title_filter": [
+        "FP&A and Business Finance"
+      ],
+      "retrieval_title_family": [
+        "FP&A and Business Finance"
+      ],
+      "experience_leaf": [
+        [
+          "=>",
+          8
+        ],
+        [
+          "=<",
+          12
+        ]
+      ],
+      "location_leaves": [
+        [
+          "country",
+          [
+            "India"
+          ]
+        ],
+        [
+          "state",
+          [
+            "Telangana"
+          ]
+        ],
+        [
+          "city",
+          [
+            "Hyderabad"
+          ]
+        ]
+      ],
+      "education_leaves": [
+        [
+          "degree",
+          "Bachelor’s degree"
+        ],
+        [
+          "field_of_study",
+          "Finance"
+        ],
+        [
+          "field_of_study",
+          "Accounting"
+        ],
+        [
+          "field_of_study",
+          "Economics"
+        ],
+        [
+          "field_of_study",
+          "Business"
+        ],
+        [
+          "field_of_study",
+          "Related discipline"
+        ]
+      ],
+      "company_routes": [
+        [
+          "company:Unilever",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:Procter & Gamble",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:PepsiCo",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:Nestlé",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:Coca-Cola",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ],
+        [
+          "company:Mondelez International",
+          "context_or_evidence",
+          "preferred",
+          "any"
+        ]
+      ],
+      "seniority_audit": [
+        [
+          "seniority",
+          "admission_level_fit",
+          "value=Senior Manager; enforced by Phase-1a admission gate"
+        ]
+      ],
+      "skill_routes": {
+        "downstream_evidence": 12
+      },
+      "warnings": [
+        "education stream: filterable but response-gated (not displayable); verify via Harvest if needed"
+      ]
+    }
+  ],
+  "usage": {
+    "role1_v3": {
+      "runs": 5,
+      "sourcing_paths": "5/5",
+      "reconciliations": "5/5",
+      "semantic_exclusions": "5/5",
+      "exclusions": "0/5",
+      "domain": "5/5",
+      "seniority.alternatives": "5/5",
+      "seniority.leadership": "5/5",
+      "location.countries": "5/5",
+      "location.remote": "5/5",
+      "location.work_mode": "0/5",
+      "companies": "0/5",
+      "skill_any_of": "0/5",
+      "proficiency_levels": {
+        "hands_on": 5,
+        "working_knowledge": 5
+      },
+      "proficiency_atoms": [
+        5,
+        6,
+        5,
+        4,
+        6
+      ],
+      "relationship_current": [
+        3,
+        0,
+        0,
+        0,
+        0
+      ],
+      "relationship_any": [
+        7,
+        10,
+        9,
+        11,
+        8
+      ],
+      "relationship_past": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "role2": {
+      "runs": 5,
+      "sourcing_paths": "0/5",
+      "reconciliations": "0/5",
+      "semantic_exclusions": "0/5",
+      "exclusions": "0/5",
+      "domain": "5/5",
+      "seniority.alternatives": "0/5",
+      "seniority.leadership": "0/5",
+      "location.countries": "0/5",
+      "location.remote": "0/5",
+      "location.work_mode": "0/5",
+      "companies": "0/5",
+      "skill_any_of": "5/5",
+      "proficiency_levels": {
+        "hands_on": 5,
+        "working_knowledge": 5
+      },
+      "proficiency_atoms": [
+        25,
+        23,
+        19,
+        20,
+        22
+      ],
+      "relationship_current": [
+        10,
+        10,
+        5,
+        1,
+        6
+      ],
+      "relationship_any": [
+        35,
+        34,
+        33,
+        43,
+        37
+      ],
+      "relationship_past": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "role3": {
+      "runs": 5,
+      "sourcing_paths": "0/5",
+      "reconciliations": "0/5",
+      "semantic_exclusions": "5/5",
+      "exclusions": "0/5",
+      "domain": "5/5",
+      "seniority.alternatives": "0/5",
+      "seniority.leadership": "2/5",
+      "location.countries": "0/5",
+      "location.remote": "0/5",
+      "location.work_mode": "5/5",
+      "companies": "5/5",
+      "skill_any_of": "5/5",
+      "proficiency_levels": {
+        "advanced": 5
+      },
+      "proficiency_atoms": [
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "relationship_current": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "relationship_any": [
+        11,
+        11,
+        12,
+        11,
+        12
+      ],
+      "relationship_past": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "stability": {
+    "runs": 5,
+    "parsed": 5,
+    "errors": [],
+    "transient_retries": {},
+    "components": {
+      "paths": {
+        "modal_value": "0",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "0": 5
+        }
+      },
+      "reconciliations": {
+        "modal_value": "0",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "0": 5
+        }
+      },
+      "exclusions": {
+        "modal_value": "0",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "0": 5
+        }
+      },
+      "semantic_exclusions": {
+        "modal_value": "1",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "1": 5
+        }
+      },
+      "role_family": {
+        "modal_value": "('fp&a and business finance manager',)",
+        "agreement": "4/5",
+        "distinct": 2,
+        "values": {
+          "('fp&a and business finance manager',)": 4,
+          "('fp&a and business finance',)": 1
+        }
+      },
+      "seniority": {
+        "modal_value": "('senior manager', 'required', ('technical',), ())",
+        "agreement": "2/5",
+        "distinct": 3,
+        "values": {
+          "('senior', 'required', (), ())": 1,
+          "('senior manager', 'required', ('technical',), ())": 2,
+          "('senior manager', 'required', (), ())": 2
+        }
+      },
+      "experience": {
+        "modal_value": "(8, 12, 'required')",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "(8, 12, 'required')": 5
+        }
+      },
+      "education": {
+        "modal_value": "(('bachelor’s degree',), 'required')",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "(('bachelor’s degree',), 'required')": 5
+        }
+      },
+      "location": {
+        "modal_value": "(('hyderabad',), (), None, 'hybrid', False)",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "(('hyderabad',), (), None, 'hybrid', False)": 5
+        }
+      },
+      "proficiency_excel_powerbi": {
+        "modal_value": "'{\"excel\": [\"advanced\"], \"power_bi\": []}'",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "'{\"excel\": [\"advanced\"], \"power_bi\": []}'": 5
+        }
+      },
+      "proficiency_elsewhere": {
+        "modal_value": "()",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "()": 5
+        }
+      },
+      "companies": {
+        "modal_value": "(('coca-cola', 'preferred', 'any'), ('mondelez international', 'preferred', 'any'), ('nestlé', 'preferred', 'any'), ('pepsico', 'preferred', 'any'), ('procter & gamble', 'preferred', 'any'), ('unilever', 'preferred', 'any'))",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "(('coca-cola', 'preferred', 'any'), ('mondelez international', 'preferred', 'any'), ('nestlé', 'preferred', 'any'), ('pepsico', 'preferred', 'any'), ('procter & gamble', 'preferred', 'any'), ('unilever', 'preferred', 'any'))": 5
+        }
+      },
+      "company_scale": {
+        "modal_value": "False",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "False": 5
+        }
+      },
+      "relationships": {
+        "modal_value": "'{\"any\": 11}'",
+        "agreement": "3/5",
+        "distinct": 2,
+        "values": {
+          "'{\"any\": 11}'": 3,
+          "'{\"any\": 12}'": 2
+        }
+      },
+      "domain": {
+        "modal_value": "('context', 'preferred', 'preferred', 'required')",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "('context', 'preferred', 'preferred', 'required')": 5
+        }
+      },
+      "evidence_signal_strengths": {
+        "modal_value": "'{\"context\": 11, \"preferred\": 2, \"required\": 6}'",
+        "agreement": "4/5",
+        "distinct": 2,
+        "values": {
+          "'{\"context\": 11, \"preferred\": 2, \"required\": 6}'": 4,
+          "'{\"context\": 10, \"preferred\": 2, \"required\": 6}'": 1
+        }
+      },
+      "skills": {
+        "modal_value": "9",
+        "agreement": "3/5",
+        "distinct": 2,
+        "values": {
+          "9": 3,
+          "10": 2
+        }
+      },
+      "evidence_signals": {
+        "modal_value": "19",
+        "agreement": "4/5",
+        "distinct": 2,
+        "values": {
+          "19": 4,
+          "18": 1
+        }
+      },
+      "validator_errors": {
+        "modal_value": "()",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "()": 5
+        }
+      },
+      "non_pass": {
+        "modal_value": "('power_bi_working_knowledge',)",
+        "agreement": "3/5",
+        "distinct": 2,
+        "values": {
+          "('power_bi_working_knowledge',)": 3,
+          "('no_role_shape_structure', 'power_bi_working_knowledge', 'seniority_senior_manager')": 2
+        }
+      }
+    },
+    "assertion_statuses": {
+      "role_family_discipline": {
+        "PASS": 5
+      },
+      "seniority_senior_manager": {
+        "PASS": 3,
+        "FAIL": 2
+      },
+      "experience_8_to_12": {
+        "PASS": 5
+      },
+      "education_bachelor_required": {
+        "PASS": 5
+      },
+      "geography_hyderabad_single": {
+        "PASS": 5
+      },
+      "work_mode_hybrid_typed": {
+        "PASS": 5
+      },
+      "core_requirements_present": {
+        "PASS": 5
+      },
+      "core_requirements_required": {
+        "PASS": 5
+      },
+      "excel_advanced": {
+        "PASS": 5
+      },
+      "power_bi_working_knowledge": {
+        "PARTIAL": 5
+      },
+      "no_invented_proficiency": {
+        "PASS": 5
+      },
+      "erp_examples_not_and": {
+        "PASS": 5
+      },
+      "professional_qualification_preferred": {
+        "PASS": 5
+      },
+      "company_preference_kept_as_preference": {
+        "PASS": 5
+      },
+      "background_preferences_preferred": {
+        "PASS": 5
+      },
+      "semantic_exclusion_faithful": {
+        "PASS": 5
+      },
+      "no_sourcing_path_or_reconciliation": {
+        "PASS": 5
+      },
+      "no_invented_exclusion": {
+        "PASS": 5
+      },
+      "no_role_shape_structure": {
+        "PASS": 3,
+        "FAIL": 2
+      },
+      "no_unsupported_temporal_relationship": {
+        "PASS": 5
+      },
+      "no_responsibility_hardening": {
+        "PASS": 5
+      },
+      "no_preference_hardened": {
+        "PASS": 5
+      },
+      "no_fabricated_brief_source": {
+        "PASS": 5
+      },
+      "provenance_preserved": {
+        "PASS": 5
+      },
+      "generic_validators_clean": {
+        "PASS": 5
+      }
+    },
+    "diagnostic_codes_across_runs": {}
+  },
+  "parsed": "5/5",
+  "tokens": {
+    "input": 25680,
+    "output": 17926,
+    "elapsed_s": [
+      51.34,
+      55.39,
+      55.29,
+      51.26,
+      54.96
+    ]
+  },
+  "transient_retries": {}
+}

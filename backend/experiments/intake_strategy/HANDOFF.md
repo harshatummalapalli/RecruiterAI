@@ -126,3 +126,9 @@ unchanged `remote`; five generic validators live in `validators_cross_role.py` (
 file (v3 stays the default for the frozen runners). `domain` unchanged. "Staff" is a TAXONOMY follow-up. AKS/EKS is recorded as an extraction/grouping issue, no change.
 Role 1 and Role 2 are frozen and hash-pinned. NOT done: any model run on v4. Next: Role 3 (single path, non-engineering, named company preferences, an exclusion),
 ground truth written and committed before the run, `prompt_v4` selected explicitly, prompt not changed after seeing outputs. The promotion gate is in the brief.
+
+## Role 3 (JD-only) — done; hard stop, waiting for architecture review
+Role 3 ran 5x on frozen prompt_v4 (after one billing-failed attempt with no output). Read `RESULTS_ROLE3.md`. Verdict: THREE-ROLE VALIDATION FOUND
+EXTRACTION/VALIDATION ISSUES ONLY (restraint held 5/5; invented `seniority.leadership` in 2 runs; Power BI "working knowledge … or similar" lost its typed depth
+5/5, classed EXTRACTION because a one-atom lossless form exists, the borderline owner decision). Compiler follow-ups are recorded, not fixed. NOT done, by instruction:
+compiler change, retrieval/CrustData, schema promotion, prompt_v4 tuning, another role.

@@ -1,0 +1,269 @@
+{
+  "arm": "role3",
+  "brief": null,
+  "config": {
+    "model": "gpt-6.1-sol",
+    "reasoning_effort": "medium",
+    "prompt": "prompt_v4.txt",
+    "prompt_sha256": "27f79f50c94fb0b7584b84ebbf01b3e92f096d2230c3af9b78950dbbabc71c5d"
+  },
+  "tokens": {
+    "input": 25680,
+    "output": 17926
+  },
+  "stability": {
+    "runs": 5,
+    "parsed": 5,
+    "errors": [],
+    "transient_retries": {},
+    "components": {
+      "paths": {
+        "modal_value": "0",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "0": 5
+        }
+      },
+      "reconciliations": {
+        "modal_value": "0",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "0": 5
+        }
+      },
+      "exclusions": {
+        "modal_value": "0",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "0": 5
+        }
+      },
+      "semantic_exclusions": {
+        "modal_value": "1",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "1": 5
+        }
+      },
+      "role_family": {
+        "modal_value": "('fp&a and business finance manager',)",
+        "agreement": "4/5",
+        "distinct": 2,
+        "values": {
+          "('fp&a and business finance manager',)": 4,
+          "('fp&a and business finance',)": 1
+        }
+      },
+      "seniority": {
+        "modal_value": "('senior manager', 'required', ('technical',), ())",
+        "agreement": "2/5",
+        "distinct": 3,
+        "values": {
+          "('senior', 'required', (), ())": 1,
+          "('senior manager', 'required', ('technical',), ())": 2,
+          "('senior manager', 'required', (), ())": 2
+        }
+      },
+      "experience": {
+        "modal_value": "(8, 12, 'required')",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "(8, 12, 'required')": 5
+        }
+      },
+      "education": {
+        "modal_value": "(('bachelor’s degree',), 'required')",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "(('bachelor’s degree',), 'required')": 5
+        }
+      },
+      "location": {
+        "modal_value": "(('hyderabad',), (), None, 'hybrid', False)",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "(('hyderabad',), (), None, 'hybrid', False)": 5
+        }
+      },
+      "proficiency_excel_powerbi": {
+        "modal_value": "'{\"excel\": [\"advanced\"], \"power_bi\": []}'",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "'{\"excel\": [\"advanced\"], \"power_bi\": []}'": 5
+        }
+      },
+      "proficiency_elsewhere": {
+        "modal_value": "()",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "()": 5
+        }
+      },
+      "companies": {
+        "modal_value": "(('coca-cola', 'preferred', 'any'), ('mondelez international', 'preferred', 'any'), ('nestlé', 'preferred', 'any'), ('pepsico', 'preferred', 'any'), ('procter & gamble', 'preferred', 'any'), ('unilever', 'preferred', 'any'))",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "(('coca-cola', 'preferred', 'any'), ('mondelez international', 'preferred', 'any'), ('nestlé', 'preferred', 'any'), ('pepsico', 'preferred', 'any'), ('procter & gamble', 'preferred', 'any'), ('unilever', 'preferred', 'any'))": 5
+        }
+      },
+      "company_scale": {
+        "modal_value": "False",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "False": 5
+        }
+      },
+      "relationships": {
+        "modal_value": "'{\"any\": 11}'",
+        "agreement": "3/5",
+        "distinct": 2,
+        "values": {
+          "'{\"any\": 11}'": 3,
+          "'{\"any\": 12}'": 2
+        }
+      },
+      "domain": {
+        "modal_value": "('context', 'preferred', 'preferred', 'required')",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "('context', 'preferred', 'preferred', 'required')": 5
+        }
+      },
+      "evidence_signal_strengths": {
+        "modal_value": "'{\"context\": 11, \"preferred\": 2, \"required\": 6}'",
+        "agreement": "4/5",
+        "distinct": 2,
+        "values": {
+          "'{\"context\": 11, \"preferred\": 2, \"required\": 6}'": 4,
+          "'{\"context\": 10, \"preferred\": 2, \"required\": 6}'": 1
+        }
+      },
+      "skills": {
+        "modal_value": "9",
+        "agreement": "3/5",
+        "distinct": 2,
+        "values": {
+          "9": 3,
+          "10": 2
+        }
+      },
+      "evidence_signals": {
+        "modal_value": "19",
+        "agreement": "4/5",
+        "distinct": 2,
+        "values": {
+          "19": 4,
+          "18": 1
+        }
+      },
+      "validator_errors": {
+        "modal_value": "()",
+        "agreement": "5/5",
+        "distinct": 1,
+        "values": {
+          "()": 5
+        }
+      },
+      "non_pass": {
+        "modal_value": "('no_role_shape_structure', 'power_bi_working_knowledge')",
+        "agreement": "3/5",
+        "distinct": 2,
+        "values": {
+          "('no_role_shape_structure', 'power_bi_working_knowledge')": 3,
+          "('no_role_shape_structure', 'power_bi_working_knowledge', 'seniority_senior_manager')": 2
+        }
+      }
+    },
+    "assertion_statuses": {
+      "role_family_discipline": {
+        "PASS": 5
+      },
+      "seniority_senior_manager": {
+        "PASS": 3,
+        "FAIL": 2
+      },
+      "experience_8_to_12": {
+        "PASS": 5
+      },
+      "education_bachelor_required": {
+        "PASS": 5
+      },
+      "geography_hyderabad_single": {
+        "PASS": 5
+      },
+      "work_mode_hybrid_typed": {
+        "PASS": 5
+      },
+      "core_requirements_present": {
+        "PASS": 5
+      },
+      "core_requirements_required": {
+        "PASS": 5
+      },
+      "excel_advanced": {
+        "PASS": 5
+      },
+      "power_bi_working_knowledge": {
+        "PARTIAL": 5
+      },
+      "no_invented_proficiency": {
+        "PASS": 5
+      },
+      "erp_examples_not_and": {
+        "PASS": 5
+      },
+      "professional_qualification_preferred": {
+        "PASS": 5
+      },
+      "company_preference_kept_as_preference": {
+        "PASS": 5
+      },
+      "background_preferences_preferred": {
+        "PASS": 5
+      },
+      "semantic_exclusion_faithful": {
+        "PASS": 5
+      },
+      "no_sourcing_path_or_reconciliation": {
+        "PASS": 5
+      },
+      "no_invented_exclusion": {
+        "PASS": 5
+      },
+      "no_role_shape_structure": {
+        "FAIL": 5
+      },
+      "no_unsupported_temporal_relationship": {
+        "PASS": 5
+      },
+      "no_responsibility_hardening": {
+        "PASS": 5
+      },
+      "no_preference_hardened": {
+        "PASS": 5
+      },
+      "no_fabricated_brief_source": {
+        "PASS": 5
+      },
+      "provenance_preserved": {
+        "PASS": 5
+      },
+      "generic_validators_clean": {
+        "PASS": 5
+      }
+    },
+    "diagnostic_codes_across_runs": {}
+  }
+}

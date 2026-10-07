@@ -229,10 +229,11 @@ def evaluate_critical(intent: ExperimentalHiringIntent, jd: str) -> List[Asserti
         structure.append(f"countries={loc.countries}")
     if loc and loc.remote == "allowed":
         structure.append("remote=allowed")
-    dom_hard = [(d.name[:40], d.strength) for d in intent.domain if d.strength == "required"]
-    if dom_hard:
-        structure.append(f"domain required {dom_hard}")
-    add("no_role_shape_structure", "No Role 1 / Role 2 structure the JD does not call for (leadership, alternatives, countries, remote, a required domain)",
+    # POST-RUN CORRECTION. The first version also counted a REQUIRED `domain` as over-application. The committed ground truth never lists that:
+    # `domain` is optional, and in the five runs the required atom restated the JD's own required experience field ("FP&A, Business Finance,
+    # Commercial Finance ..."), which is faithful, not invented. The stricter rule exceeded the ground truth, so it was removed. The as-run
+    # verdict (FAIL x5) is kept in RESULTS_ROLE3.md; a required domain is now reported as an observation only (`observations`).
+    add("no_role_shape_structure", "No Role 1 / Role 2 structure the JD does not call for (leadership, alternatives, countries, remote)",
         PASS if not structure else FAIL, EXTRACTION, "; ".join(structure) or "none")
     unsup = [(c.name, c.relationship) for c in intent.companies if c.relationship == "current"]
     rel = [(s.name[:40], s.relationship) for s in intent.skills if s.relationship != "any"] + [(" or ".join(g.any_of)[:40], g.relationship) for g in intent.skill_any_of if g.relationship != "any"]
@@ -255,5 +256,11 @@ def evaluate_critical(intent: ExperimentalHiringIntent, jd: str) -> List[Asserti
     return out
 
 
+def observations(intent: ExperimentalHiringIntent) -> Dict[str, Any]:
+    """Descriptive, never graded."""
+    return {"required_domain": [(d.name[:80], d.strength) for d in intent.domain if d.strength == "required"],
+            "domain": [(d.name[:60], d.strength) for d in intent.domain]}
+
+
 def evaluate(intent: ExperimentalHiringIntent, jd: str) -> Dict[str, Any]:
-    return {"critical": [r.to_dict() for r in evaluate_critical(intent, jd)], "validation": validate_cross_role(intent, jd, NO_BRIEF)}
+    return {"critical": [r.to_dict() for r in evaluate_critical(intent, jd)], "validation": validate_cross_role(intent, jd, NO_BRIEF), "observations": observations(intent)}

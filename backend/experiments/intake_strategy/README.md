@@ -55,3 +55,10 @@ Role 1 files are pinned by hash in `tests/test_experiment_role2.py`.
 in `validators_cross_role.py` (title analogy, responsibility-only required, unsupported `current`, unsupported proficiency, unsupported work mode), and
 `prompt_v4.txt` (new file; `prompt_v3.txt` and the frozen runners are unchanged). `replay_cross_role_validators.py` replays them read-only over the stored runs.
 Role 1 and Role 2 inputs, results, evaluators and prompts are pinned by hash in `tests/test_experiment_cross_role_changes.py`. No model has run on the new design.
+
+## Cross-role validation (Role 3, JD-only)
+
+`inputs/role3_jd.txt` (verbatim; there is no brief and none was created), `ROLE3_GROUND_TRUTH.md` (committed before any model run), `gold_role3.py`,
+`run_role3.py`, `compare_role3.py`, `RESULTS_ROLE3.md` (verdict: THREE-ROLE VALIDATION FOUND EXTRACTION/VALIDATION ISSUES ONLY, with the Power BI
+depth-on-OR-group caveat stated there), `results/role3/`, `results/role3_analysis.json`. Run on frozen `prompt_v4.txt`, the experimental schema and
+`validators_cross_role.py`, unchanged. The schema is not promoted; the owner decides.
