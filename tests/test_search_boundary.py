@@ -127,3 +127,28 @@ def test_editing_the_boundary_over_the_api_is_validated_and_makes_no_model_call(
     assert len(queue._remaining) == remaining  # no model call was made
 
     assert client.patch("/intake/nope/boundary", json=toronto).status_code == 404
+
+
+def test_multi_city_onsite_boundary_is_valid_without_single_city_or_radius():
+    # Phase 2 §2.6: several named cities, no single-anchor radius.
+    boundary = _boundary(work_mode="onsite", city=None, state=None, radius_miles=None,
+                         cities=["Bengaluru", "Hyderabad", "Chennai", "Pune"])
+    validated = validate_search_boundary(boundary)
+    assert validated.cities == ["Bengaluru", "Hyderabad", "Chennai", "Pune"]
+    assert validated.city is None
+    assert validated.radius_miles is None
+
+
+def test_single_city_onsite_still_requires_radius_when_no_cities_list():
+    with pytest.raises(BoundaryValidationError):
+        validate_search_boundary(_boundary(work_mode="onsite", city="Toronto", radius_miles=None, cities=[]))
+
+
+def test_multi_city_onsite_translates_to_per_city_locations():
+    from backend.services.search_translator import _structured_locations_from_boundary
+    boundary = validate_search_boundary(
+        _boundary(work_mode="onsite", city=None, state=None, radius_miles=None,
+                  cities=["Bengaluru", "Hyderabad", "Pune"])
+    )
+    locations = _structured_locations_from_boundary(boundary)
+    assert sorted(loc.city for loc in locations) == ["Bengaluru", "Hyderabad", "Pune"]

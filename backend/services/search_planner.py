@@ -111,6 +111,11 @@ class SearchPlanner:
             preferred_companies=intent.previous_background.preferred_companies,
             exclude_current_companies=intent.company_preferences.exclude_current_companies,
             preferred_company_types=intent.company_preferences.preferred_company_types,
+            # Any-time ("ever worked there") company scope (Phase 2 §2.5).
+            preferred_companies_ever=intent.company_preferences.preferred_companies_ever,
+            exclude_companies_ever=intent.company_preferences.exclude_companies_ever,
+            # Hard capability keywords (Phase 2 §2.4).
+            must_have_keywords=intent.must_have_keywords,
         )
 
         queries: List[SearchQuery] = [

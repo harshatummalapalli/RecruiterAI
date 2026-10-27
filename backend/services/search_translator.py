@@ -157,6 +157,9 @@ def _structured_locations_from_boundary(boundary: SearchBoundary) -> List[Struct
     — _flatten_locations (unchanged) handles all of these identically
     regardless of source."""
     if boundary.work_mode in ("onsite", "hybrid"):
+        # Multi-city (§2.6): several named cities map to a city-list match.
+        if getattr(boundary, "cities", None):
+            return [StructuredLocation(city=city, state=boundary.state, country=boundary.country) for city in boundary.cities]
         return [StructuredLocation(city=boundary.city, state=boundary.state, country=boundary.country)]
     # Remote.
     if boundary.remote_scope == "cities" and boundary.remote_cities:

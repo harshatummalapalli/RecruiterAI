@@ -271,6 +271,43 @@ class CrustDataProvider(BaseProvider):
             self._clean_string_values(search.preferred_company_types),
         )
 
+        # Any-time ("ever worked there") company scope — the unscoped
+        # experience.employment_details.company_name field, verified live to be
+        # a true superset of current (surfaces people now elsewhere who worked
+        # at the target company). `not_in` here is a negative operator, so it
+        # must ride a strong, location-named natural-language query (see
+        # SearchPlanner._augment_query) or CrustData stops enforcing the hard
+        # filters — the same weak-query interaction documented for the geo leak.
+        self._append_condition(
+            conditions,
+            "experience.employment_details.company_name",
+            "in",
+            self._clean_string_values(getattr(search, "preferred_companies_ever", []) or []),
+        )
+        self._append_condition(
+            conditions,
+            "experience.employment_details.company_name",
+            "not_in",
+            self._clean_string_values(getattr(search, "exclude_companies_ever", []) or []),
+        )
+
+        # Hard capability keywords (Phase 2 §2.4): each must-have term is a
+        # whole-word (.) match OR'd across the candidate's free-text fields
+        # (description/headline/summary) — verified to discriminate (Java vs
+        # JavaScript) and to work server-side even though the text isn't
+        # returned. Multiple terms are AND-ed (each its own OR-group), so
+        # "Java" AND "Spark" both required. These are positive leaves, so they
+        # never trigger the weak-query location leak.
+        keyword_fields = [
+            "experience.employment_details.description",
+            "basic_profile.headline",
+            "basic_profile.summary",
+        ]
+        for term in self._clean_string_values(getattr(search, "must_have_keywords", []) or []):
+            conditions.append({"op": "or", "conditions": [
+                {"field": field, "type": "(.)", "value": term} for field in keyword_fields
+            ]})
+
         return conditions
 
     def _fuzzy_or_conditions(self, field: str, values: List[str]) -> Optional[Dict[str, Any]]:

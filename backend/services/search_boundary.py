@@ -72,22 +72,30 @@ def validate_search_boundary(boundary: Optional[SearchBoundary]) -> SearchBounda
     state: Optional[str] = None
     city: Optional[str] = None
     radius: Optional[float] = None
+    cities: List[str] = []
     remote_scope: Optional[str] = None
     remote_states: List[str] = []
     remote_cities: List[str] = []
 
     if work_mode in ("onsite", "hybrid"):
-        state = normalize_state((boundary.state or "").strip()) or None
-        city = (boundary.city or "").strip() or None
-        radius = boundary.radius_miles
-        if not state:
-            errors.append(f"Select a state or region for a {work_mode} role.")
-        if not city:
-            errors.append(f"Select a city for a {work_mode} role.")
-        if radius is None or radius <= 0:
-            errors.append("Enter a search radius greater than zero.")
-        elif radius > MAX_RADIUS_MILES:
-            errors.append(f"The search radius cannot exceed {int(MAX_RADIUS_MILES)} miles.")
+        cities = _clean_list(boundary.cities)
+        if cities:
+            # Multi-city mode (§2.6): several named cities, no single-anchor
+            # radius. State optional (cities may span states). city/radius stay
+            # unset so the translator emits a city-list match.
+            pass
+        else:
+            state = normalize_state((boundary.state or "").strip()) or None
+            city = (boundary.city or "").strip() or None
+            radius = boundary.radius_miles
+            if not state:
+                errors.append(f"Select a state or region (or add cities) for a {work_mode} role.")
+            if not city:
+                errors.append(f"Select a city (or add cities) for a {work_mode} role.")
+            if radius is None or radius <= 0:
+                errors.append("Enter a search radius greater than zero.")
+            elif radius > MAX_RADIUS_MILES:
+                errors.append(f"The search radius cannot exceed {int(MAX_RADIUS_MILES)} miles.")
     elif work_mode == "remote":
         remote_scope = (boundary.remote_scope or "").strip().lower() or None
         if remote_scope not in REMOTE_SCOPES:
@@ -113,6 +121,7 @@ def validate_search_boundary(boundary: Optional[SearchBoundary]) -> SearchBounda
         state=state,
         city=city,
         radius_miles=radius,
+        cities=cities,
         remote_scope=remote_scope,
         remote_states=remote_states,
         remote_cities=remote_cities,

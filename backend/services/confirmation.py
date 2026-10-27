@@ -60,6 +60,13 @@ class ConfirmationEdits(BaseModel):
     differentiator_signals: Optional[List[str]] = None
     exclude_current_companies: Optional[List[str]] = None
     preferred_companies: Optional[List[str]] = None
+    # Any-time ("ever worked there") company scope (Phase 2 §2.5). Opt-in per
+    # company; the plain lists above stay scoped to the current employer.
+    exclude_companies_ever: Optional[List[str]] = None
+    preferred_companies_ever: Optional[List[str]] = None
+    # Hard capability keywords (Phase 2 §2.4): must-have capabilities the
+    # recruiter wants ENFORCED as a filter (precision over recall).
+    must_have_keywords: Optional[List[str]] = None
 
 
 def _clean_text(value: Optional[str]) -> str:
@@ -129,6 +136,15 @@ def apply_edits(intent: SearchIntent, edits: ConfirmationEdits) -> Dict[str, Any
     if "preferred_companies" in provided:
         intent.previous_background.preferred_companies = _clean_list(edits.preferred_companies)
         applied["preferred_companies"] = intent.previous_background.preferred_companies
+    if "exclude_companies_ever" in provided:
+        intent.company_preferences.exclude_companies_ever = _clean_list(edits.exclude_companies_ever)
+        applied["exclude_companies_ever"] = intent.company_preferences.exclude_companies_ever
+    if "preferred_companies_ever" in provided:
+        intent.company_preferences.preferred_companies_ever = _clean_list(edits.preferred_companies_ever)
+        applied["preferred_companies_ever"] = intent.company_preferences.preferred_companies_ever
+    if "must_have_keywords" in provided:
+        intent.must_have_keywords = _clean_list(edits.must_have_keywords)
+        applied["must_have_keywords"] = intent.must_have_keywords
 
     if requirements_changed:
         # The model-written search sentence describes the requirements it was written from. Once the recruiter has

@@ -76,6 +76,14 @@ class AIFocus:
 class CompanyPreferences:
     exclude_current_companies: List[str] = field(default_factory=list)
     preferred_company_types: List[str] = field(default_factory=list)
+    # Any-time ("ever worked there") company scope (Phase 2 §2.5). These map to
+    # the verified CrustData any-time field, a superset of current employer.
+    # exclude_companies_ever: drop anyone who EVER worked at these; aggressive,
+    # so it is opt-in per company (the default hiring-company exclude stays
+    # current-only). preferred_companies_ever: include anyone who ever worked
+    # at these.
+    exclude_companies_ever: List[str] = field(default_factory=list)
+    preferred_companies_ever: List[str] = field(default_factory=list)
     confidence_score: Optional[float] = None
 
 
@@ -118,6 +126,14 @@ class SearchIntent:
     core_signals: List[str] = field(default_factory=list)
     supporting_signals: List[str] = field(default_factory=list)
     differentiator_signals: List[str] = field(default_factory=list)
+    # Hard capability keywords (Phase 2 §2.4): capabilities the recruiter marked
+    # as MUST-HAVE *and precise* (e.g. "Java" not "JavaScript", ".NET", "RAG").
+    # Unlike the soft signals above, these DO become a provider filter — a
+    # whole-word (.) keyword OR'd across the candidate's description/headline/
+    # summary (verified to discriminate and not bleed into look-alikes). They
+    # trade recall for precision, so they are opt-in per capability; empty keeps
+    # today's fully-soft behavior.
+    must_have_keywords: List[str] = field(default_factory=list)
     # Retrieval-concepts representation (Phase 1, storage only — see backend/models/retrieval_concepts.py). Never
     # read by SearchPlanner, QueryExpansionService, CapabilityMapper, any provider, ranking, or admission; not a
     # requirement and not recruiter-editable (ConfirmationEdits has no path to it). None when nothing was built.

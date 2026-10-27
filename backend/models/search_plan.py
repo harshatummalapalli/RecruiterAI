@@ -27,6 +27,20 @@ class SearchQuery(BaseModel):
     preferred_companies: List[str] = Field(default_factory=list)
     exclude_current_companies: List[str] = Field(default_factory=list)
     preferred_company_types: List[str] = Field(default_factory=list)
+    # Any-time ("ever worked there") company scope — maps to the verified
+    # CrustData field experience.employment_details.company_name (a superset of
+    # current). preferred_companies_ever: include anyone who has EVER worked at
+    # these companies; exclude_companies_ever: drop anyone who EVER worked at
+    # these. The plain preferred_companies/exclude_current_companies above stay
+    # scoped to the CURRENT employer (experience.employment_details.current.
+    # company_name). See PHASE_0_1_IMPLEMENTATION_SPEC.md §2.5.
+    preferred_companies_ever: List[str] = Field(default_factory=list)
+    exclude_companies_ever: List[str] = Field(default_factory=list)
+    # Hard capability keywords (Phase 2 §2.4) — whole-word (.) OR'd across the
+    # candidate's description/headline/summary text. A must-have capability the
+    # recruiter wants ENFORCED (precision over recall), e.g. "Java" / ".NET" /
+    # "RAG". Empty keeps capabilities fully soft (NL query only).
+    must_have_keywords: List[str] = Field(default_factory=list)
     # Set only on the primary discovery query — when present, this is sent
     # to CrustData's `search: {query, mode: "hybrid"}` verbatim instead of
     # the title+skills keyword concatenation. See providers/crustdata.py.
@@ -44,6 +58,9 @@ class SearchQuery(BaseModel):
         "preferred_companies",
         "exclude_current_companies",
         "preferred_company_types",
+        "preferred_companies_ever",
+        "exclude_companies_ever",
+        "must_have_keywords",
         mode="before",
     )
     @classmethod

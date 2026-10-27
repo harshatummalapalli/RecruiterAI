@@ -283,3 +283,17 @@ def test_executive_exclusions_applied_for_an_ic_role():
     for query in plan.searches:
         for excluded in EXECUTIVE_TITLE_EXCLUSIONS:
             assert excluded in query.exclude_titles
+
+
+def test_any_time_company_scope_reaches_the_search_query():
+    # Phase 2 §2.5: CompanyPreferences any-time ("ever") lists flow through the
+    # planner to every SearchQuery (the provider maps them to the any-time field).
+    from backend.models.search_intent import CompanyPreferences as _CP
+    intent = SearchIntent(
+        role=Role(title="Backend Engineer", seniority="senior"),
+        company_preferences=_CP(preferred_companies_ever=["Infosys"], exclude_companies_ever=["Acme"]),
+    )
+    plan = SearchPlanner().build(intent)
+    for q in plan.searches:
+        assert q.preferred_companies_ever == ["Infosys"]
+        assert q.exclude_companies_ever == ["Acme"]

@@ -202,6 +202,12 @@ class SearchBoundary:
     state: Optional[str] = None
     city: Optional[str] = None
     radius_miles: Optional[float] = None
+    # Onsite/hybrid multi-city (Phase 2 §2.6): a recruiter hiring across several
+    # named cities (e.g. Bengaluru, Hyderabad, Chennai, Pune). When non-empty it
+    # REPLACES the single city + radius with a city-list match (city in […]) —
+    # radius anchors on one city and has no meaning across several. Empty keeps
+    # the classic single-city + radius behavior unchanged.
+    cities: List[str] = field(default_factory=list)
     # Only meaningful when work_mode == "remote": "anywhere" | "states" | "cities".
     remote_scope: Optional[str] = None
     remote_states: List[str] = field(default_factory=list)

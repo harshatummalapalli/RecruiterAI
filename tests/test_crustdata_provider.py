@@ -462,3 +462,51 @@ def test_a_stored_cursor_resumes_retrieval_one_page_at_a_time_and_surfaces_the_n
     assert cursor is None  # the last page carries no cursor: the retrieval is exhausted
     assert seen == [None, "c1", "c2"]
     assert len(set(first + second + third)) == 5  # no overlap between pages
+
+
+def test_build_payload_any_time_company_scope_maps_to_unscoped_company_field() -> None:
+    # Phase 2 §2.5: "ever worked there" include/exclude map to the verified
+    # unscoped any-time field experience.employment_details.company_name, while
+    # the plain preferred_companies stays scoped to the current employer.
+    provider = CrustDataProvider()
+    payload = provider._build_payload(
+        SearchQuery(
+            preferred_companies=["Acme"],
+            preferred_companies_ever=["Infosys", "TCS"],
+            exclude_companies_ever=["BadCo"],
+        )
+    )
+    conditions = payload["filters"]["conditions"]
+    assert {
+        "field": "experience.employment_details.current.company_name",
+        "type": "in",
+        "value": ["Acme"],
+    } in conditions
+    assert {
+        "field": "experience.employment_details.company_name",
+        "type": "in",
+        "value": ["Infosys", "TCS"],
+    } in conditions
+    assert {
+        "field": "experience.employment_details.company_name",
+        "type": "not_in",
+        "value": ["BadCo"],
+    } in conditions
+
+
+def test_build_payload_hard_capability_keywords_or_across_freetext_fields() -> None:
+    # Phase 2 §2.4: each must-have keyword is a whole-word (.) match OR'd across
+    # description/headline/summary; multiple terms are AND-ed (own OR-group each).
+    provider = CrustDataProvider()
+    payload = provider._build_payload(SearchQuery(must_have_keywords=["Java", "Spark"]))
+    conditions = payload["filters"]["conditions"]
+    or_groups = [c for c in conditions if c.get("op") == "or"]
+    assert len(or_groups) == 2
+    java_group = next(g for g in or_groups if any(leaf["value"] == "Java" for leaf in g["conditions"]))
+    fields = {leaf["field"] for leaf in java_group["conditions"]}
+    assert fields == {
+        "experience.employment_details.description",
+        "basic_profile.headline",
+        "basic_profile.summary",
+    }
+    assert all(leaf["type"] == "(.)" for leaf in java_group["conditions"])
