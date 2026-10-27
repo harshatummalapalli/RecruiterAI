@@ -9,7 +9,11 @@ from backend.models.search_intent import (
     Skills,
     Titles,
 )
-from backend.services.search_planner import EXECUTIVE_TITLE_EXCLUSIONS, SearchPlanner
+from backend.services.search_planner import (
+    EXECUTIVE_TITLE_EXCLUSIONS,
+    SearchPlanner,
+    _is_leadership_role,
+)
 
 
 def test_build_creates_primary_natural_language_and_title_expansion_queries():
@@ -33,8 +37,14 @@ def test_build_creates_primary_natural_language_and_title_expansion_queries():
 
     primary, expansion = plan.searches
 
-    # Primary: natural-language driven, NEVER a title hard filter.
-    assert primary.natural_language_query == "Senior ML engineer with strong Python and PyTorch experience."
+    # Primary: natural-language driven, NEVER a title hard filter. The LLM
+    # sentence is preserved and then augmented with the confirmed location (a
+    # weak/location-less hybrid query makes CrustData stop enforcing the hard
+    # filters — see _augment_query).
+    assert primary.natural_language_query.startswith(
+        "Senior ML engineer with strong Python and PyTorch experience."
+    )
+    assert "New York" in primary.natural_language_query
     assert primary.include_titles == []
     assert primary.required_skills == ["Python", "PyTorch"]
     assert primary.preferred_skills == ["LLM"]
@@ -172,3 +182,104 @@ def test_required_and_preferred_skills_still_reach_the_fallback_for_the_legacy_n
     assert "Python" in query_text
     assert "Distributed Systems" in query_text
     assert "PySpark" not in query_text
+
+
+def test_llm_query_is_augmented_with_location_and_missing_capabilities():
+    # The exact NCS shape: the LLM sentence omitted the defining capability
+    # (RAG, carried as a supporting signal) and never named the location.
+    # _augment_query must inject both so the hybrid query is specific and
+    # location-anchored (which is what makes CrustData's hard filters bind).
+    intent = SearchIntent(
+        role=Role(title="AI Data Engineer", seniority="mid"),
+        location=Location(countries=["India"], states=["Maharashtra"], cities=["Pune"], radius_miles=10.0, radius_place="Pune, Maharashtra"),
+        experience=Experience(minimum_years=5, maximum_years=8),
+        core_signals=["Data Pipeline Development", "Python", "SQL", "Apache Spark (PySpark)"],
+        supporting_signals=["Knowledge Base and RAG Solutions"],
+        natural_language_search_query=(
+            "Looking for a mid-level AI Data Engineer with 5-8 years of experience, "
+            "proficient in Python, SQL, and Apache Spark, capable of designing data pipelines."
+        ),
+    )
+
+    query = SearchPlanner().build(intent).searches[0].natural_language_query
+
+    # Location is now named in the query text.
+    assert "Pune" in query
+    # The defining capability the LLM omitted is injected.
+    assert "Knowledge Base and RAG Solutions" in query
+    # The original LLM sentence is preserved, not discarded.
+    assert query.startswith("Looking for a mid-level AI Data Engineer")
+
+
+def test_augment_query_is_idempotent_for_already_present_terms():
+    # Capabilities and location already in the sentence must not be duplicated.
+    intent = SearchIntent(
+        role=Role(title="AI Engineer", seniority="mid"),
+        location=Location(cities=["Pune"], states=["Maharashtra"]),
+        core_signals=["Python"],
+        supporting_signals=["RAG"],
+        natural_language_search_query="AI engineers in Pune, Maharashtra skilled in Python and RAG.",
+    )
+
+    query = SearchPlanner().build(intent).searches[0].natural_language_query
+
+    assert query.lower().count("python") == 1
+    assert query.lower().count("rag") == 1
+    assert query.lower().count("pune") == 1
+    # Nothing was appended, so no injected clauses.
+    assert "strong experience in" not in query
+    assert "based in" not in query
+
+
+def test_years_signals_are_not_injected_as_search_terms():
+    intent = SearchIntent(
+        role=Role(title="AI Engineer", seniority="mid"),
+        location=Location(cities=["Pune"]),
+        core_signals=["5+ years of professional experience", "Python"],
+        natural_language_search_query="AI engineer skilled in machine learning.",
+    )
+
+    query = SearchPlanner().build(intent).searches[0].natural_language_query
+
+    assert "Python" in query           # a real capability is injected
+    assert "years" not in query.lower()  # a pure experience statement is not
+
+
+def test_is_leadership_role_detection():
+    assert _is_leadership_role(SearchIntent(role=Role(title="Engineering Manager")))
+    assert _is_leadership_role(SearchIntent(role=Role(title="Director of Data")))
+    assert _is_leadership_role(SearchIntent(role=Role(title="Chief Technology Officer")))
+    assert _is_leadership_role(SearchIntent(role=Role(title="VP, Finance")))
+    assert _is_leadership_role(SearchIntent(role=Role(title="Head of AI")))
+    assert _is_leadership_role(SearchIntent(role=Role(title="Software Engineer", seniority="Director")))
+    # Individual-contributor roles are not leadership.
+    assert not _is_leadership_role(SearchIntent(role=Role(title="AI Data Engineer", seniority="mid")))
+    assert not _is_leadership_role(SearchIntent(role=Role(title="Senior Data Scientist", seniority="senior")))
+
+
+def test_executive_exclusions_suppressed_for_a_leadership_role():
+    # Hiring a Director: the blanket exec exclusions must NOT strip Director/VP/
+    # C-level, or we drop the very candidates sought. Recruiter-stated
+    # exclusions are still honored.
+    intent = SearchIntent(
+        role=Role(title="Director of Data Engineering", seniority="director"),
+        titles=Titles(exclude_titles=["Intern"]),
+    )
+
+    plan = SearchPlanner().build(intent)
+
+    for query in plan.searches:
+        assert "Director" not in query.exclude_titles
+        assert "VP" not in query.exclude_titles
+        assert "Chief Data Officer" not in query.exclude_titles
+        assert "Intern" in query.exclude_titles  # recruiter's own exclusion kept
+
+
+def test_executive_exclusions_applied_for_an_ic_role():
+    intent = SearchIntent(role=Role(title="AI Data Engineer", seniority="mid"))
+
+    plan = SearchPlanner().build(intent)
+
+    for query in plan.searches:
+        for excluded in EXECUTIVE_TITLE_EXCLUSIONS:
+            assert excluded in query.exclude_titles
