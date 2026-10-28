@@ -54,7 +54,15 @@ export type SearchBrief = {
   companies: {
     include: string[]
     exclude: string[]
+    /** "Ever worked there" scope (any-time) — optional so an older restored
+     * brief still type-checks. include/exclude above stay current-employer. */
+    includeEver?: string[]
+    excludeEver?: string[]
   }
+  /** Hard capability keywords the recruiter wants ENFORCED (precise whole-word
+   * filter), e.g. "Java" / ".NET" / "RAG" — distinct from the soft required
+   * skills. Optional for backward compatibility with restored briefs. */
+  mustHaveKeywords?: string[]
   industries: string[]
   education: string[]
   employmentTypes: EmploymentType[]
@@ -95,7 +103,8 @@ export function createEmptySearchBrief(): SearchBrief {
       excluded: [],
       primaryTechnology: { candidates: [], mode: null, selected: null },
     },
-    companies: { include: [], exclude: [] },
+    companies: { include: [], exclude: [], includeEver: [], excludeEver: [] },
+    mustHaveKeywords: [],
     industries: [],
     education: [],
     employmentTypes: [],
@@ -215,6 +224,9 @@ export function applyAiParse(brief: SearchBrief, intent: SearchIntent, locked: R
     companies: {
       include: pickList('companies.include', intent.previous_background.preferred_companies, brief.companies.include),
       exclude: pickList('companies.exclude', intent.company_preferences.exclude_current_companies, brief.companies.exclude),
+      // "Ever worked there" scope is recruiter-set, never AI-derived — carried through untouched.
+      includeEver: brief.companies.includeEver ?? [],
+      excludeEver: brief.companies.excludeEver ?? [],
     },
     employmentTypes: pickList(
       'employmentTypes',
@@ -411,11 +423,14 @@ export function briefToSearchIntent(brief: SearchBrief): SearchIntent {
     company_preferences: {
       exclude_current_companies: brief.companies.exclude,
       preferred_company_types: [],
+      exclude_companies_ever: brief.companies.excludeEver ?? [],
+      preferred_companies_ever: brief.companies.includeEver ?? [],
     },
     ranking: { must_have: brief.skills.required, nice_to_have: brief.skills.preferred, bonus: [] },
     core_signals: brief.requirements?.core ?? [],
     supporting_signals: brief.requirements?.supporting ?? [],
     differentiator_signals: brief.requirements?.differentiators ?? [],
+    must_have_keywords: brief.mustHaveKeywords ?? [],
   }
 }
 
@@ -567,7 +582,10 @@ export function searchIntentToBrief(intent: SearchIntent): SearchBrief {
     companies: {
       include: intent.previous_background.preferred_companies ?? [],
       exclude: intent.company_preferences.exclude_current_companies ?? [],
+      includeEver: intent.company_preferences.preferred_companies_ever ?? [],
+      excludeEver: intent.company_preferences.exclude_companies_ever ?? [],
     },
+    mustHaveKeywords: intent.must_have_keywords ?? [],
     industries: [],
     education: [],
     employmentTypes: intent.role.employment_type ? [intent.role.employment_type as EmploymentType] : [],

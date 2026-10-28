@@ -190,3 +190,30 @@ describe('confirmation summary and boundary wording', () => {
     expect(formatBoundaryLocation({ ...REMOTE_CANADA, remote_scope: 'cities', remote_cities: ['Toronto'] })).toBe('Toronto, Canada')
   })
 })
+
+import { isSearchBoundaryComplete } from './searchBoundary'
+
+describe('phase 2: scoped company + hard keywords diff mapping', () => {
+  it('maps ever-scope companies and must-have keywords to backend edit fields', () => {
+    const baseline = makeBrief()
+    const current = makeBrief()
+    current.companies.includeEver = ['Infosys']
+    current.companies.excludeEver = ['Acme']
+    current.mustHaveKeywords = ['Java', 'RAG']
+    const edits = diffBriefEdits(baseline, current)
+    expect(edits.preferred_companies_ever).toEqual(['Infosys'])
+    expect(edits.exclude_companies_ever).toEqual(['Acme'])
+    expect(edits.must_have_keywords).toEqual(['Java', 'RAG'])
+  })
+})
+
+describe('phase 2: onsite/hybrid multi-city boundary completeness', () => {
+  it('is complete with a cities list and no single city/radius', () => {
+    const boundary = { ...createEmptySearchBoundary(), hiring_company: 'Acme', country: 'India', work_mode: 'onsite' as const, cities: ['Bengaluru', 'Pune'] }
+    expect(isSearchBoundaryComplete(boundary)).toBe(true)
+  })
+  it('still requires single city + radius when no cities list', () => {
+    const boundary = { ...createEmptySearchBoundary(), hiring_company: 'Acme', country: 'India', work_mode: 'onsite' as const, state: 'Maharashtra', city: 'Pune' }
+    expect(isSearchBoundaryComplete(boundary)).toBe(false)
+  })
+})

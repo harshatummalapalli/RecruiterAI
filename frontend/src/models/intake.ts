@@ -153,6 +153,11 @@ export type ConfirmationEdits = {
   differentiator_signals?: string[]
   exclude_current_companies?: string[]
   preferred_companies?: string[]
+  // Any-time ("ever worked there") company scope (Phase 2 §2.5).
+  exclude_companies_ever?: string[]
+  preferred_companies_ever?: string[]
+  // Hard capability keywords — enforced whole-word description/headline filter (Phase 2 §2.4).
+  must_have_keywords?: string[]
 }
 
 export type ConfirmationResponse = {

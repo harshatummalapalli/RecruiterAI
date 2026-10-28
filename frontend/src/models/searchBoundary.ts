@@ -15,6 +15,10 @@ export type SearchBoundary = {
   state?: string | null
   city?: string | null
   radius_miles?: number | null
+  // Onsite/hybrid multi-city: several named cities (city in [...]), used
+  // INSTEAD of the single city + radius when non-empty. Optional so a boundary
+  // restored from an older session still type-checks.
+  cities?: string[]
   remote_scope?: RemoteScope | null
   remote_states: string[]
   remote_cities: string[]
@@ -28,6 +32,7 @@ export function createEmptySearchBoundary(): SearchBoundary {
     state: '',
     city: '',
     radius_miles: null,
+    cities: [],
     remote_scope: null,
     remote_states: [],
     remote_cities: [],
@@ -45,6 +50,9 @@ export function isSearchBoundaryComplete(boundary: SearchBoundary): boolean {
     return false
   }
   if (boundary.work_mode === 'onsite' || boundary.work_mode === 'hybrid') {
+    // Multi-city mode (several named cities) is complete on its own; otherwise
+    // the classic single city + radius is required.
+    if ((boundary.cities?.length ?? 0) > 0) return true
     return Boolean(boundary.state?.trim() && boundary.city?.trim() && boundary.radius_miles && boundary.radius_miles > 0)
   }
   // Remote.

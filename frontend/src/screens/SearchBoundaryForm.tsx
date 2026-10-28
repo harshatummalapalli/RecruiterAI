@@ -88,6 +88,7 @@ export function SearchBoundaryForm({ boundary, onChange, disabled }: SearchBound
                   state: '',
                   city: '',
                   radius_miles: null,
+                  cities: [],
                   remote_scope: null,
                   remote_states: [],
                   remote_cities: [],
@@ -101,6 +102,7 @@ export function SearchBoundaryForm({ boundary, onChange, disabled }: SearchBound
       </div>
 
       {isOnsiteOrHybrid ? (
+        <>
         <div className="brief-field-grid brief-field-grid--three">
           <LocationTypeahead
             label="State"
@@ -139,6 +141,17 @@ export function SearchBoundaryForm({ boundary, onChange, disabled }: SearchBound
             />
           </div>
         </div>
+        <div className="brief-field">
+          <LocationMultiTypeahead
+            label="Or search several cities"
+            values={boundary.cities ?? []}
+            placeholder={boundary.country ? 'Add a city…' : 'Select a country first'}
+            search={(query) => searchCitiesForCountry(boundary.country, query)}
+            onChange={(cities) => onChange((current) => ({ ...current, cities }))}
+          />
+          <span className="boundary-form__caption">Add two or more cities to search across all of them — this replaces the single city + radius above.</span>
+        </div>
+        </>
       ) : null}
 
       {isRemote ? (

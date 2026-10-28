@@ -52,6 +52,9 @@ export interface SearchIntent {
   company_preferences: {
     exclude_current_companies: string[]
     preferred_company_types: string[]
+    // Any-time ("ever worked there") company scope — superset of current.
+    exclude_companies_ever?: string[]
+    preferred_companies_ever?: string[]
     confidence_score?: number | null
   }
   ranking: {
@@ -70,6 +73,10 @@ export interface SearchIntent {
   core_signals?: string[]
   supporting_signals?: string[]
   differentiator_signals?: string[]
+  // Hard capability keywords — must-have capabilities ENFORCED as a precise
+  // whole-word description/headline/summary filter (e.g. "Java" not
+  // "JavaScript", ".NET", "RAG"). Round-trips unchanged.
+  must_have_keywords?: string[]
 }
 
 export interface Candidate {

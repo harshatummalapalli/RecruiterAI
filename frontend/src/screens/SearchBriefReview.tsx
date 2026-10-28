@@ -156,6 +156,11 @@ export function SearchBriefReview({ brief, onChange }: SearchBriefReviewProps) {
             <TagField label="Preferred Skills" placeholder="Add a skill…" {...tagList('skills.preferred', brief.skills.preferred, (b, v) => ({ ...b, skills: { ...b.skills, preferred: v } }))} />
           </div>
           <TagField label="Excluded Skills" placeholder="Add a skill to avoid…" {...tagList('skills.excluded', brief.skills.excluded, (b, v) => ({ ...b, skills: { ...b.skills, excluded: v } }))} />
+          <TagField
+            label="Must-have (enforced)"
+            placeholder="e.g. Java, .NET, RAG — matched precisely, not just ranked"
+            {...tagList('mustHaveKeywords', brief.mustHaveKeywords ?? [], (b, v) => ({ ...b, mustHaveKeywords: v }))}
+          />
         </div>
 
         <div className="brief-section">
@@ -163,6 +168,11 @@ export function SearchBriefReview({ brief, onChange }: SearchBriefReviewProps) {
           <div className="brief-field-grid brief-field-grid--two">
             <TagField label="Target Companies" placeholder="Add a company…" {...tagList('companies.include', brief.companies.include, (b, v) => ({ ...b, companies: { ...b.companies, include: v } }))} />
             <TagField label="Exclude Companies" placeholder="Add a company…" {...tagList('companies.exclude', brief.companies.exclude, (b, v) => ({ ...b, companies: { ...b.companies, exclude: v } }))} />
+          </div>
+          <p className="brief-field__hint">The two above match a candidate's <strong>current</strong> employer. Use the pair below to match anyone who has <strong>ever</strong> worked there.</p>
+          <div className="brief-field-grid brief-field-grid--two">
+            <TagField label="Target — ever worked there" placeholder="Add a company…" {...tagList('companies.includeEver', brief.companies.includeEver ?? [], (b, v) => ({ ...b, companies: { ...b.companies, includeEver: v } }))} />
+            <TagField label="Exclude — ever worked there" placeholder="Add a company…" {...tagList('companies.excludeEver', brief.companies.excludeEver ?? [], (b, v) => ({ ...b, companies: { ...b.companies, excludeEver: v } }))} />
           </div>
         </div>
 
