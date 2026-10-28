@@ -41,6 +41,17 @@ class SearchQuery(BaseModel):
     # recruiter wants ENFORCED (precision over recall), e.g. "Java" / ".NET" /
     # "RAG". Empty keeps capabilities fully soft (NL query only).
     must_have_keywords: List[str] = Field(default_factory=list)
+    # Hard capability keyword GROUPS — the synonym-aware form of
+    # must_have_keywords. Each inner list is one capability expressed as a set
+    # of interchangeable surface terms that are OR'd together (e.g. the
+    # role-defining "AI" capability → ["AI", "ML", "machine learning", "LLM",
+    # "generative", "agentic"]); the groups are AND'd with each other and with
+    # the flat must_have_keywords above. This exists because must_have_keywords
+    # alone AND's every term, so it cannot express "require evidence of this ONE
+    # capability, in ANY of its common spellings" without over-filtering. Each
+    # term is still a whole-word (.) match OR'd across description/headline/
+    # summary. Empty keeps today's behavior. See CAPABILITY_AWARE_AGENT_ARCHITECTURE.md §1(C).
+    must_have_keyword_groups: List[List[str]] = Field(default_factory=list)
     # Set only on the primary discovery query — when present, this is sent
     # to CrustData's `search: {query, mode: "hybrid"}` verbatim instead of
     # the title+skills keyword concatenation. See providers/crustdata.py.
@@ -80,6 +91,35 @@ class SearchQuery(BaseModel):
                 normalized.append(item)
             return normalized
         return [value]
+
+    @field_validator("must_have_keyword_groups", mode="before")
+    @classmethod
+    def _normalize_keyword_groups(cls, value: Any) -> List[List[str]]:
+        """Clean a list of synonym groups: strip terms, drop blanks and
+        duplicate terms within a group (order-preserving), and drop any group
+        that ends up empty. A bare list of strings is treated as a single
+        group, so callers can pass either shape."""
+        if value is None:
+            return []
+        if isinstance(value, (list, tuple)) and value and all(isinstance(item, str) for item in value):
+            value = [value]
+        groups: List[List[str]] = []
+        for group in value or []:
+            if isinstance(group, str):
+                group = [group]
+            seen = set()
+            cleaned: List[str] = []
+            for item in group or []:
+                if not isinstance(item, str):
+                    continue
+                stripped = item.strip()
+                key = stripped.lower()
+                if stripped and key not in seen:
+                    seen.add(key)
+                    cleaned.append(stripped)
+            if cleaned:
+                groups.append(cleaned)
+        return groups
 
     @field_validator("query_name", "work_mode", "employment_type", "radius_place", "natural_language_query", mode="before")
     @classmethod

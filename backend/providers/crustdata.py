@@ -330,6 +330,23 @@ class CrustDataProvider(BaseProvider):
                 {"field": field, "type": "(.)", "value": term} for field in keyword_fields
             ]})
 
+        # Hard capability keyword GROUPS (§1(C)): one capability expressed as a
+        # synonym set. Within a group the terms are OR'd (any spelling counts),
+        # across the group's free-text fields; groups are AND-ed with each
+        # other and with the flat must_have_keywords above. This lets the agent
+        # enforce a single role-defining capability ("AI" in ANY of AI / ML /
+        # machine learning / LLM / generative / agentic) without the flat list's
+        # all-terms-required semantics over-filtering genuine matches.
+        for group in getattr(search, "must_have_keyword_groups", []) or []:
+            terms = self._clean_string_values(group or [])
+            if not terms:
+                continue
+            conditions.append({"op": "or", "conditions": [
+                {"field": field, "type": "(.)", "value": term}
+                for term in terms
+                for field in keyword_fields
+            ]})
+
         return conditions
 
     def _fuzzy_or_conditions(self, field: str, values: List[str]) -> Optional[Dict[str, Any]]:

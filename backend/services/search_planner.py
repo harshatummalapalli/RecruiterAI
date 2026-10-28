@@ -116,6 +116,8 @@ class SearchPlanner:
             exclude_companies_ever=intent.company_preferences.exclude_companies_ever,
             # Hard capability keywords (Phase 2 §2.4).
             must_have_keywords=intent.must_have_keywords,
+            # Synonym-aware hard capability groups (§1(C)).
+            must_have_keyword_groups=intent.must_have_keyword_groups,
         )
 
         queries: List[SearchQuery] = [

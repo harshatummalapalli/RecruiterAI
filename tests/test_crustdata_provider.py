@@ -510,3 +510,44 @@ def test_build_payload_hard_capability_keywords_or_across_freetext_fields() -> N
         "basic_profile.summary",
     }
     assert all(leaf["type"] == "(.)" for leaf in java_group["conditions"])
+
+
+def test_build_payload_keyword_group_ors_synonyms_within_one_condition() -> None:
+    # §1(C): a single capability expressed as a synonym set becomes ONE OR-group
+    # whose leaves are every (term x field) pair — any spelling satisfies it,
+    # unlike the flat list which would AND each term.
+    provider = CrustDataProvider()
+    payload = provider._build_payload(
+        SearchQuery(must_have_keyword_groups=[["AI", "machine learning", "LLM"]])
+    )
+    conditions = payload["filters"]["conditions"]
+    or_groups = [c for c in conditions if c.get("op") == "or"]
+    assert len(or_groups) == 1  # one capability -> one AND'd condition
+    group = or_groups[0]
+    values = {leaf["value"] for leaf in group["conditions"]}
+    assert values == {"AI", "machine learning", "LLM"}
+    # 3 terms x 3 free-text fields = 9 OR'd leaves, all whole-word.
+    assert len(group["conditions"]) == 9
+    assert all(leaf["type"] == "(.)" for leaf in group["conditions"])
+
+
+def test_build_payload_multiple_keyword_groups_are_anded() -> None:
+    # Two capabilities (each a synonym set) -> two separate OR-groups, AND'd.
+    provider = CrustDataProvider()
+    payload = provider._build_payload(
+        SearchQuery(must_have_keyword_groups=[["AI", "ML"], ["Python", "PySpark"]])
+    )
+    or_groups = [c for c in payload["filters"]["conditions"] if c.get("op") == "or"]
+    assert len(or_groups) == 2
+    group_values = [{leaf["value"] for leaf in g["conditions"]} for g in or_groups]
+    assert {"AI", "ML"} in group_values
+    assert {"Python", "PySpark"} in group_values
+
+
+def test_keyword_groups_validator_cleans_and_drops_empty() -> None:
+    # Blank terms and duplicates (case-insensitive) are stripped; a group that
+    # empties out is dropped; a bare string list is treated as one group.
+    q = SearchQuery(must_have_keyword_groups=[["AI", " ai ", "", "LLM"], ["  "], []])
+    assert q.must_have_keyword_groups == [["AI", "LLM"]]
+    q2 = SearchQuery(must_have_keyword_groups=["AI", "ML"])
+    assert q2.must_have_keyword_groups == [["AI", "ML"]]

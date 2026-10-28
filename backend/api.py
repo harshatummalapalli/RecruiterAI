@@ -152,6 +152,7 @@ CRUSTDATA_SUPPORTED_FILTERS = [
     "preferred_companies_ever",
     "exclude_companies_ever",
     "must_have_keywords",
+    "must_have_keyword_groups",
 ]
 
 FRIENDLY_UNSUPPORTED_FILTER_LABELS = {

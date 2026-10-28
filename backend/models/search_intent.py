@@ -134,6 +134,14 @@ class SearchIntent:
     # trade recall for precision, so they are opt-in per capability; empty keeps
     # today's fully-soft behavior.
     must_have_keywords: List[str] = field(default_factory=list)
+    # Synonym-aware hard capability groups (CAPABILITY_AWARE_AGENT_ARCHITECTURE.md
+    # §1(C)): each inner list is ONE capability expressed as interchangeable
+    # surface terms OR'd together (e.g. the role-defining "AI" capability →
+    # ["AI","ML","machine learning","LLM","generative","agentic"]); groups are
+    # AND'd with each other and with must_have_keywords. Unlike the flat list,
+    # a group does not require every spelling — any one satisfies it — so the
+    # agent can enforce a role-defining capability without over-filtering.
+    must_have_keyword_groups: List[List[str]] = field(default_factory=list)
     # Retrieval-concepts representation (Phase 1, storage only — see backend/models/retrieval_concepts.py). Never
     # read by SearchPlanner, QueryExpansionService, CapabilityMapper, any provider, ranking, or admission; not a
     # requirement and not recruiter-editable (ConfirmationEdits has no path to it). None when nothing was built.
