@@ -336,6 +336,10 @@ class SearchBoundaryRequest(BaseModel):
     state: Optional[str] = None
     city: Optional[str] = None
     radius_miles: Optional[float] = None
+    # Onsite/hybrid multi-city (Phase 2 §2.6): several named cities that REPLACE
+    # the single city + radius. Must be mirrored here or the browser's cities are
+    # silently dropped and a multi-city hybrid role fails state/city/radius checks.
+    cities: List[str] = Field(default_factory=list)
     remote_scope: Optional[str] = None
     remote_states: List[str] = Field(default_factory=list)
     remote_cities: List[str] = Field(default_factory=list)
@@ -659,6 +663,7 @@ def create_app(
                     state=body.state,
                     city=body.city,
                     radius_miles=body.radius_miles,
+                    cities=list(body.cities),
                     remote_scope=body.remote_scope,
                     remote_states=list(body.remote_states),
                     remote_cities=list(body.remote_cities),

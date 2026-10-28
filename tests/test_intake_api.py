@@ -71,6 +71,26 @@ def test_intake_start_returns_zero_questions_for_clear_role(tmp_path: Path) -> N
     assert body["result"]["decision"]["issues"] == []
 
 
+def test_intake_start_accepts_multi_city_hybrid_without_state_city_radius(tmp_path: Path) -> None:
+    # Regression: the SearchBoundaryRequest mirror dropped `cities`, so a
+    # multi-city hybrid role (several named cities, no single city + radius) was
+    # silently rejected with "select a state/city/radius" even though the UI
+    # treated it as complete. The cities must reach validation AND persist.
+    app = _app_with_intake(tmp_path, [(CLEAR_ROLE_TASK_A, CLEAR_ROLE_TASK_B)])
+    client = TestClient(app)
+    _login(client)
+
+    boundary = {
+        "hiring_company": "PwC",
+        "country": "India",
+        "work_mode": "hybrid",
+        "cities": ["Hyderabad", "Bengaluru", "Gurgaon"],
+    }
+    response = client.post("/intake/start", json={"raw_input": "GenAI Full Stack Senior Associate.", "boundary": boundary})
+    assert response.status_code == 200, response.json()
+    assert response.json()["boundary"]["cities"] == ["Hyderabad", "Bengaluru", "Gurgaon"]
+
+
 def test_intake_confirm_maps_to_search_intent_when_ready(tmp_path: Path) -> None:
     app = _app_with_intake(tmp_path, [(CLEAR_ROLE_TASK_A, CLEAR_ROLE_TASK_B)])
     client = TestClient(app)
