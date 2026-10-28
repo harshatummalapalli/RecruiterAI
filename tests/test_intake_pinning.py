@@ -131,9 +131,12 @@ def test_answering_one_question_changes_only_the_fields_it_names(tmp_path: Path)
     b_role["explicit_constraints"].update(experience_minimum_years=8, experience_maximum_years=10)
     assert a_role == b_role
 
-    # Requirements: only the superseded generic years sentence left. Everything else is untouched.
+    # Requirements: the superseded generic years sentence is gone. The deterministic
+    # role-defining-capability floor also adds "AI / ML capability" — the title is
+    # "AI Engineer" but the LLM named no AI capability — present identically before
+    # and after the answer, so the pinning guarantee (only named fields change) holds.
     b_final, a_final = before["decision"]["final_search_intent"], after["decision"]["final_search_intent"]
-    assert a_final["hard_requirements"] == ["Python backend services", "Kafka"]
+    assert a_final["hard_requirements"] == ["Python backend services", "Kafka", "AI / ML capability"]
     assert a_final["strong_signals"] == b_final["strong_signals"] and a_final["preferred_differentiators"] == b_final["preferred_differentiators"]
 
     # The other pending question and the TELL are exactly as they were, with the same ids.

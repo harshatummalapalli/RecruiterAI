@@ -9,6 +9,7 @@ from openai import OpenAI
 from backend.config import get_openai_api_key
 from backend.errors import ConfigurationError, ParsingError
 from backend.services.requirement_provenance import apply_field_provenance, attach_requirement_evidence
+from backend.services.role_defining_capability import derive_capability_group
 from backend.models.intake import (
     CapabilityItem,
     ContradictionFinding,
@@ -299,6 +300,98 @@ def _default_question_for(category: str) -> str:
     if category == "missing_location":
         return "No location was mentioned for this role. Should the search target a specific location, or is it open to any location?"
     return "This role states both a remote/anywhere work-mode signal and a specific onsite requirement. Which is correct?"
+
+
+def _whole_word(haystack_lower: str, needle_lower: str) -> bool:
+    if not needle_lower:
+        return False
+    return re.search(r"(?<![a-z0-9])" + re.escape(needle_lower) + r"(?![a-z0-9])", haystack_lower) is not None
+
+
+def _mentions_capability(text: str, terms: List[str]) -> bool:
+    low = (text or "").lower()
+    return any(_whole_word(low, term.lower()) for term in terms)
+
+
+def reconcile_role_defining_capability(role_understanding: RoleUnderstanding, decision: IntakeDecision) -> None:
+    """Deterministic backstop (runs AFTER Task A/B), same guaranteed-floor idea
+    as the contradiction backstop. When the role title carries a recognized
+    specialization qualifier (AI/ML/GenAI...), the LLM sometimes strips it from
+    the identity and demotes the capability to a mere differentiator — observed
+    live on "GenAI Full Stack Developer" (identity became "Full Stack Developer",
+    AI only a differentiator). This re-asserts the floor without any per-JD
+    prompt tuning: the identity keeps the qualifier, and the role-defining
+    capability is core/hard — so the brief the recruiter reads and the search it
+    runs both say the capability is required. Idempotent; a no-op for roles with
+    no such qualifier (plain "Full Stack Developer" is untouched)."""
+    ru = role_understanding
+    identity = (ru.primary_candidate_identity.value or "").strip()
+    posted = (ru.posted_title or "").strip()
+    texts = [c.value for c in (ru.core_capabilities + ru.supporting_capabilities + ru.differentiators)]
+    prop = derive_capability_group(identity, posted, capability_texts=texts)
+    if prop is None:
+        return
+
+    # 1. Restore the qualifier to the identity when the posted title has it but
+    #    the identity dropped it (e.g. "Full Stack Developer" -> "GenAI Full
+    #    Stack Developer"), using the title's own casing of the qualifier.
+    if identity and not _whole_word(identity.lower(), prop.source_qualifier):
+        match = re.search(
+            r"(?<![A-Za-z0-9])" + re.escape(prop.source_qualifier) + r"(?![A-Za-z0-9])",
+            posted,
+            re.IGNORECASE,
+        )
+        if match:
+            original_qualifier = posted[match.start():match.end()]
+            ru.primary_candidate_identity = FieldValue(
+                value=f"{original_qualifier} {identity}",
+                evidence=ru.primary_candidate_identity.evidence,
+                source=ru.primary_candidate_identity.source,
+            )
+
+    # 2. Ensure the role-defining capability is core + hard. If a core capability
+    #    already names it, nothing to do (search_translator maps core
+    #    capabilities and hard_requirements together).
+    if any(_mentions_capability(item.value, prop.terms) for item in ru.core_capabilities):
+        return
+
+    fsi = decision.final_search_intent
+    # Prefer MOVING the LLM's own AI item up from a lower tier (keeps its exact
+    # wording + evidence); only synthesize one if the brief names none.
+    moved: Optional[str] = None
+    for tier in (ru.differentiators, ru.supporting_capabilities):
+        for item in list(tier):
+            if _mentions_capability(item.value, prop.terms):
+                tier.remove(item)
+                ru.core_capabilities.append(
+                    CapabilityItem(value=item.value, tier_signal="required", evidence=item.evidence)
+                )
+                moved = item.value
+                break
+        if moved:
+            break
+
+    if moved:
+        if fsi is not None:
+            if moved in fsi.preferred_differentiators:
+                fsi.preferred_differentiators.remove(moved)
+            if moved in fsi.strong_signals:
+                fsi.strong_signals.remove(moved)
+            if moved not in fsi.hard_requirements:
+                fsi.hard_requirements.append(moved)
+        return
+
+    # Nothing in the brief names the capability — inject it as a core/hard item.
+    label = f"{prop.label} capability"
+    ru.core_capabilities.append(
+        CapabilityItem(
+            value=label,
+            tier_signal="required",
+            evidence="Reconciled from the role title's specialization qualifier.",
+        )
+    )
+    if fsi is not None and label not in fsi.hard_requirements:
+        fsi.hard_requirements.append(label)
 
 
 def apply_contradiction_backstop(raw_input: str, decision: IntakeDecision) -> tuple[IntakeDecision, List[ContradictionFinding]]:
@@ -676,6 +769,10 @@ class IntakeReasoner:
         )
         decision = parse_intake_decision(task_b_raw)
         attach_requirement_evidence(decision, raw_input)
+
+        # Deterministic floor: a role-defining specialization in the title stays
+        # the identity and a hard requirement, even if the LLM demoted it.
+        reconcile_role_defining_capability(role_understanding, decision)
 
         decision, contradictions = apply_intake_backstops(
             raw_input, bool(role_understanding.explicit_constraints.locations), decision
