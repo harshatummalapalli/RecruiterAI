@@ -111,11 +111,6 @@ export function SearchBriefReview({ brief, onChange }: SearchBriefReviewProps) {
             {...tagList('role.equivalentTitles', brief.role.equivalentTitles, (b, v) => ({ ...b, role: { ...b.role, equivalentTitles: v } }))}
           />
           <TagField
-            label="Past Titles"
-            placeholder="Add a past title…"
-            {...tagList('role.pastTitles', brief.role.pastTitles, (b, v) => ({ ...b, role: { ...b.role, pastTitles: v } }))}
-          />
-          <TagField
             label="Excluded Titles"
             placeholder="Add a title to exclude…"
             {...tagList('role.excludedTitles', brief.role.excludedTitles, (b, v) => ({ ...b, role: { ...b.role, excludedTitles: v } }))}
@@ -149,7 +144,12 @@ export function SearchBriefReview({ brief, onChange }: SearchBriefReviewProps) {
         </div>
 
         <div className="brief-section">
-          <h2 className="brief-section__title">Skills</h2>
+          <h2 className="brief-section__title">Must-have capabilities</h2>
+          <p className="brief-field__hint">
+            These are the only capability terms matched as a <strong>hard filter</strong>. Everything
+            else from the brief (the requirement sentences, seniority, preferred skills) guides ranking,
+            not a yes/no filter — so keep this list short and precise, or it narrows the pool fast.
+          </p>
 
           {(brief.mustHaveKeywordGroups?.[0]?.length ?? 0) > 0 && (
             <div className="brief-recommendation">
@@ -171,13 +171,8 @@ export function SearchBriefReview({ brief, onChange }: SearchBriefReviewProps) {
             </div>
           )}
 
-          <div className="brief-field-grid brief-field-grid--two">
-            <TagField label="Required Skills" placeholder="Add a skill…" {...tagList('skills.required', brief.skills.required, (b, v) => ({ ...b, skills: { ...b.skills, required: v } }))} />
-            <TagField label="Preferred Skills" placeholder="Add a skill…" {...tagList('skills.preferred', brief.skills.preferred, (b, v) => ({ ...b, skills: { ...b.skills, preferred: v } }))} />
-          </div>
-          <TagField label="Excluded Skills" placeholder="Add a skill to avoid…" {...tagList('skills.excluded', brief.skills.excluded, (b, v) => ({ ...b, skills: { ...b.skills, excluded: v } }))} />
           <TagField
-            label="Must-have (enforced)"
+            label="Must-have keywords (enforced)"
             placeholder="e.g. Java, .NET, RAG — matched precisely, not just ranked"
             {...tagList('mustHaveKeywords', brief.mustHaveKeywords ?? [], (b, v) => ({ ...b, mustHaveKeywords: v }))}
           />
@@ -194,16 +189,6 @@ export function SearchBriefReview({ brief, onChange }: SearchBriefReviewProps) {
             <TagField label="Target — ever worked there" placeholder="Add a company…" {...tagList('companies.includeEver', brief.companies.includeEver ?? [], (b, v) => ({ ...b, companies: { ...b.companies, includeEver: v } }))} />
             <TagField label="Exclude — ever worked there" placeholder="Add a company…" {...tagList('companies.excludeEver', brief.companies.excludeEver ?? [], (b, v) => ({ ...b, companies: { ...b.companies, excludeEver: v } }))} />
           </div>
-        </div>
-
-        <div className="brief-section">
-          <h2 className="brief-section__title">Industries</h2>
-          <TagField label="Industries" placeholder="Add an industry…" {...tagList('industries', brief.industries, (b, v) => ({ ...b, industries: v }))} />
-        </div>
-
-        <div className="brief-section">
-          <h2 className="brief-section__title">Education</h2>
-          <TagField label="Education" placeholder="e.g. Bachelor's in Computer Science" {...tagList('education', brief.education, (b, v) => ({ ...b, education: v }))} />
         </div>
 
         <div className="brief-section">
