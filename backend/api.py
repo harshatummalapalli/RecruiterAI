@@ -18,9 +18,12 @@ from backend.auth import (
     SESSION_COOKIE_NAME,
     check_domain_allowed,
     create_session_cookie_value,
+    is_super_admin,
+    require_admin,
     require_session,
     verify_google_id_token,
 )
+from backend.providers.crustdata import fetch_credit_balance as get_crustdata_credit_balance
 from backend.bootstrap import bootstrap
 from backend.config import (
     get_discovery_max_pages,
@@ -607,7 +610,7 @@ def create_app(
         check_domain_allowed(claims)
         response.set_cookie(
             SESSION_COOKIE_NAME,
-            create_session_cookie_value(),
+            create_session_cookie_value(claims.get("email")),
             httponly=True,
             samesite="lax",
             secure=get_session_cookie_secure(),
@@ -617,8 +620,18 @@ def create_app(
         return {"authenticated": True, "email": claims.get("email")}
 
     @app.get("/auth/me", dependencies=[Depends(require_session)])
-    def auth_me() -> Dict[str, bool]:
-        return {"authenticated": True}
+    def auth_me(request: Request) -> Dict[str, bool]:
+        # is_admin drives admin-only UI (the live credit meter). Ordinary
+        # recruiters simply never receive it, so they never see a gated surface.
+        return {"authenticated": True, "is_admin": is_super_admin(request)}
+
+    @app.get("/credits", dependencies=[Depends(require_admin)])
+    def credits() -> Dict[str, Any]:
+        # Live CrustData balance for the super admin's meter. CrustData's
+        # /user/credits is itself free (no credits consumed). person_search costs
+        # 0.03 credits/result, so a search's spend ≈ results * 0.03.
+        balance = get_crustdata_credit_balance()
+        return {"credits": balance, "cost_per_result": 0.03}
 
     @app.post("/auth/logout")
     def auth_logout(response: Response) -> Dict[str, bool]:

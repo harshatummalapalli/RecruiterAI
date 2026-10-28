@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from fastapi import HTTPException, Request
 from google.auth.transport import requests as google_requests
@@ -11,6 +11,7 @@ from backend.config import (
     get_google_client_id,
     get_session_max_age_seconds,
     get_session_secret_key,
+    get_super_admin_email,
 )
 
 logger = logging.getLogger(__name__)
@@ -58,18 +59,48 @@ def _serializer() -> URLSafeTimedSerializer:
     return URLSafeTimedSerializer(secret_key, salt=_SESSION_SALT)
 
 
-def create_session_cookie_value() -> str:
-    """Create a signed, opaque session token. Carries no PII — access is shared after login."""
-    return _serializer().dumps({"authenticated": True})
+def create_session_cookie_value(email: Optional[str] = None) -> str:
+    """Create a signed session token. Carries only the login email (the identity
+    the allowed-domain check already saw) so admin-only surfaces can be gated to a
+    single account; all access is otherwise shared, as before."""
+    payload: Dict[str, Any] = {"authenticated": True}
+    if email:
+        payload["email"] = email
+    return _serializer().dumps(payload)
+
+
+def _load_session(value: str) -> Optional[Dict[str, Any]]:
+    """Return the decoded session payload, or None if the cookie is invalid/expired."""
+    try:
+        data = _serializer().loads(value, max_age=get_session_max_age_seconds())
+    except (BadSignature, SignatureExpired):
+        return None
+    return data if isinstance(data, dict) else None
 
 
 def verify_session_cookie(value: str) -> bool:
     """Return True if the given cookie value is a valid, unexpired session token."""
-    try:
-        _serializer().loads(value, max_age=get_session_max_age_seconds())
-        return True
-    except (BadSignature, SignatureExpired):
-        return False
+    return _load_session(value) is not None
+
+
+def get_session_email(request: Request) -> Optional[str]:
+    """The email stored in the current session, or None (e.g. an older opaque
+    cookie from before identities were stored — such a user is simply not admin
+    until they sign in again)."""
+    cookie_value = request.cookies.get(SESSION_COOKIE_NAME)
+    if not cookie_value:
+        return None
+    data = _load_session(cookie_value)
+    email = (data or {}).get("email")
+    return email if isinstance(email, str) and email else None
+
+
+def is_super_admin(request: Request) -> bool:
+    """True only for the single configured SUPER_ADMIN_EMAIL. Ordinary recruiters
+    get no admin surfaces and are never shown they are being gated."""
+    admin_email = get_super_admin_email()
+    session_email = get_session_email(request)
+    return bool(admin_email and session_email and session_email.lower() == admin_email.lower())
 
 
 def require_session(request: Request) -> None:
@@ -77,3 +108,10 @@ def require_session(request: Request) -> None:
     cookie_value = request.cookies.get(SESSION_COOKIE_NAME)
     if not cookie_value or not verify_session_cookie(cookie_value):
         raise HTTPException(status_code=401, detail="Please sign in to continue.")
+
+
+def require_admin(request: Request) -> None:
+    """FastAPI dependency gating an endpoint to the super admin only. Returns a 404
+    (not 403) to non-admins so the surface is invisible rather than forbidden."""
+    if not is_super_admin(request):
+        raise HTTPException(status_code=404, detail="Not found.")

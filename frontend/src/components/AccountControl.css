@@ -82,3 +82,22 @@
 .account-control__signout:hover {
   color: var(--color-primary-text);
 }
+
+/* Admin-only live credit meter (inside the account menu). */
+.credit-meter {
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  background: var(--surface-subtle, rgba(127, 127, 127, 0.08));
+  font-size: 12px;
+}
+.credit-meter__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.credit-meter__label { color: var(--text-muted, #6b7280); }
+.credit-meter__balance { font-weight: 600; font-variant-numeric: tabular-nums; }
+.credit-meter__row--muted { color: var(--text-muted, #6b7280); margin-top: 2px; }
+.credit-meter__hint { margin-top: 4px; color: var(--text-muted, #9ca3af); font-size: 10.5px; }

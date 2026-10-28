@@ -26,6 +26,7 @@ class Settings(BaseModel):
     discovery_max_pages: int = Field(default=1, description="Max CrustData pages fetched per query")
     google_client_id: Optional[str] = Field(default=None, description="Google OAuth Client ID")
     allowed_email_domain: Optional[str] = Field(default=None, description="Email domain allowed to log in")
+    super_admin_email: Optional[str] = Field(default=None, description="The single email granted admin-only views (e.g. the live credit meter). Everyone else is an ordinary recruiter.")
     session_secret_key: Optional[str] = Field(default=None, description="Secret key used to sign session cookies")
     session_max_age_seconds: int = Field(default=43200, description="Session cookie lifetime in seconds")
     session_cookie_secure: bool = Field(default=False, description="Whether the session cookie requires HTTPS")
@@ -39,6 +40,7 @@ class Settings(BaseModel):
             "harvest_api_key": source.get("HARVEST_API_KEY"),
             "google_client_id": source.get("GOOGLE_CLIENT_ID"),
             "allowed_email_domain": source.get("ALLOWED_EMAIL_DOMAIN"),
+            "super_admin_email": source.get("SUPER_ADMIN_EMAIL"),
             "session_secret_key": source.get("SESSION_SECRET_KEY"),
             "session_cookie_secure": source.get("SESSION_COOKIE_SECURE"),
         }
@@ -65,6 +67,7 @@ class Settings(BaseModel):
         "harvest_api_key",
         "google_client_id",
         "allowed_email_domain",
+        "super_admin_email",
         "session_secret_key",
         mode="before",
     )
@@ -102,6 +105,7 @@ def get_settings() -> Settings:
         os.environ.get("DISCOVERY_MAX_PAGES"),
         os.environ.get("GOOGLE_CLIENT_ID"),
         os.environ.get("ALLOWED_EMAIL_DOMAIN"),
+        os.environ.get("SUPER_ADMIN_EMAIL"),
         os.environ.get("SESSION_SECRET_KEY"),
         os.environ.get("SESSION_MAX_AGE_SECONDS"),
         os.environ.get("SESSION_COOKIE_SECURE"),
@@ -153,6 +157,13 @@ def get_discovery_max_pages() -> int:
 def get_google_client_id() -> Optional[str]:
     """Return the configured Google OAuth Client ID from the environment or .env file."""
     return get_settings().google_client_id
+
+
+def get_super_admin_email() -> Optional[str]:
+    """The single email granted admin-only views (the live credit meter). Everyone
+    else is an ordinary recruiter and never sees admin surfaces. Configurable via
+    SUPER_ADMIN_EMAIL."""
+    return get_settings().super_admin_email
 
 
 def get_allowed_email_domain() -> Optional[str]:

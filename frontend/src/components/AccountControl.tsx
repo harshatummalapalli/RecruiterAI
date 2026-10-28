@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { initialsOf } from '../models/discovery'
 import { AppearanceControl } from './AppearanceControl'
+import { CreditMeter } from './CreditMeter'
 import './AccountControl.css'
 
 /** The account identity, shared by the global shell (every screen) — a
@@ -35,6 +36,7 @@ export function AccountControl({ recruiterName, onSignOut }: { recruiterName: st
       </button>
       {open ? (
         <div className="account-control__menu" role="menu">
+          <CreditMeter />
           <div className="account-control__appearance">
             <AppearanceControl />
           </div>

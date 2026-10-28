@@ -56,6 +56,28 @@ SUPPORTED_EMPLOYMENT_TYPES = {
 }
 
 
+def fetch_credit_balance() -> Optional[float]:
+    """The account's remaining CrustData credit balance, or None if unavailable.
+    Uses CrustData's /user/credits endpoint, which is itself FREE (consumes no
+    credits). person_search costs 0.03 credits/result, so a search spends roughly
+    results * 0.03. Never raises — a meter should degrade quietly, not break a page."""
+    api_key = get_crustdata_api_key()
+    if not api_key:
+        return None
+    try:
+        with httpx.Client(timeout=8.0) as client:
+            response = client.get(
+                "https://api.crustdata.com/user/credits",
+                headers={"Authorization": f"Bearer {api_key}"},
+            )
+            response.raise_for_status()
+            value = response.json().get("credits")
+            return float(value) if isinstance(value, (int, float)) else None
+    except (httpx.HTTPError, ValueError, KeyError, TypeError):
+        logger.warning("Could not fetch CrustData credit balance", exc_info=True)
+        return None
+
+
 class CrustDataProvider(BaseProvider):
     """Adapter for translating a provider-agnostic SearchPlan into CrustData-compatible requests."""
 

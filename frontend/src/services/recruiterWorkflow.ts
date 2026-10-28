@@ -61,6 +61,21 @@ export const checkSession = async (): Promise<boolean> => {
   }
 }
 
+/** Live CrustData credit balance, admin-only. Returns null for ordinary
+ * recruiters (the endpoint 404s for them) or on any error — the caller renders
+ * nothing in that case, so non-admins never see a gated surface. */
+export const getCredits = async (): Promise<{ credits: number; cost_per_result: number } | null> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/credits`, { credentials: 'include' })
+    if (!response.ok) return null
+    const body = (await response.json()) as { credits: number | null; cost_per_result?: number }
+    if (typeof body.credits !== 'number') return null
+    return { credits: body.credits, cost_per_result: body.cost_per_result ?? 0.03 }
+  } catch {
+    return null
+  }
+}
+
 export const logout = async (): Promise<void> => {
   await fetch(`${API_BASE_URL}/auth/logout`, { method: 'POST', credentials: 'include' })
 }
