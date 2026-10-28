@@ -67,6 +67,8 @@ Return ONLY valid JSON:
   }
 }
 
+TIERING `final_search_intent`: `hard_requirements` are the must-haves the search treats as core (from Task A's `core_capabilities`); `strong_signals` from `supporting_capabilities`; `preferred_differentiators` from `differentiators`. The ROLE-DEFINING capability — the specialization named by the title's distinguishing qualifier, which Task A placed in `core_capabilities` (e.g. the RAG/agentic-AI capability for an "AI Data Engineer") — MUST be a `hard_requirement` and MUST lead the `natural_language_search_query`. Never place the role's defining specialization in `preferred_differentiators`, and never leave it out of the query, even if the JD spends fewer words on it than on the base-role skills. The query should read like the role's specialization first, then its base-role skills — "AI/data engineer who has built RAG and agentic-AI pipelines, with strong data-pipeline, Python, SQL and Spark experience", not "data engineer with Python/SQL/Spark … (RAG never mentioned)".
+
 Location and experience range are NOT part of final_search_intent — they already live on Task A's `explicit_constraints` (structured `locations` and `experience_minimum_years`/`experience_maximum_years`), which remains authoritative since this step's re-run on the (possibly recruiter-clarified) input already reflects the resolved values there. Do not duplicate them here.
 
 Return at most 4 "ask" entries, ordered by impact, highest first. Zero is the expected, good outcome for a role the text already resolves — do not manufacture ambiguity to seem thorough.
