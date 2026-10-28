@@ -35,7 +35,7 @@ Refresh with the `backend/experiments/structured_playground` probes when CrustDa
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 # No VERIFIED provider-side soft-preference mechanism exists on our plan.
 # Natural-language company injection was measured to be inert (arm C == arm D,
@@ -88,6 +88,10 @@ _MAP: Dict[str, FieldCapability] = {c.field: c for c in [
     _c("basic_profile.headline", FILTER_VERIFIED, RESP_RETURNED, CONF_HIGH, True,
        "populated; main skill-bearing field available at retrieval time"),
     _c("basic_profile.summary", FILTER_VERIFIED, RESP_GATED, CONF_UNKNOWN, True),
+    # --- employment type ---
+    _c("experience.employment_details.current.employment_type", FILTER_VERIFIED, RESP_RETURNED, CONF_UNKNOWN, False,
+       "verified filter, but only a fixed vocabulary works (see SUPPORTED_EMPLOYMENT_TYPES); an unvalidated value "
+       "silently returns zero rows, so the provider forwards it only when it matches that vocabulary"),
     # --- numeric / geo / experience ---
     _c("years_of_experience_raw", FILTER_VERIFIED, RESP_RETURNED, CONF_HIGH, True),
     _c("basic_profile.location.country", FILTER_VERIFIED, RESP_RETURNED, CONF_HIGH, True),
@@ -129,6 +133,50 @@ def can_hard_filter(field: str):
 
 def is_displayable(field: str) -> bool:
     return get(field).response_status == RESP_RETURNED
+
+
+# ---------------------------------------------------------------------------
+# The bridge from the recruiter-intent vocabulary (SearchQuery filter names)
+# to the CrustData capability fields above. This is what makes the capability
+# model the LIVE single source of truth: api.py derives its supported-filter
+# whitelist from here (see supported_search_query_filters) instead of hardcoding
+# it, so a field can only ever become a hard filter when the model says it is
+# actually hard-filterable. A SearchQuery filter maps to the ONE capability
+# field it compiles to in providers/crustdata.py; a filter whose field is not
+# VERIFIED (e.g. skills list, work_mode, zip_codes, company_type) is therefore
+# never silently enforced.
+FILTER_FIELD_MAP: Dict[str, str] = {
+    "include_titles": "experience.employment_details.current.title",
+    "exclude_titles": "experience.employment_details.current.title",
+    "countries": "basic_profile.location.country",
+    "states": "basic_profile.location.state",
+    "cities": "basic_profile.location.city",
+    "radius_place": "basic_profile.location",
+    "radius_miles": "basic_profile.location",
+    "employment_type": "experience.employment_details.current.employment_type",
+    "minimum_years": "years_of_experience_raw",
+    "maximum_years": "years_of_experience_raw",
+    "preferred_companies": "experience.employment_details.current.company_name",
+    "exclude_current_companies": "experience.employment_details.current.company_name",
+    # company_type is NOT in the capability map (never live-probed) -> resolves
+    # to the UNVERIFIED default, so preferred_company_types is not a hard filter.
+    "preferred_company_types": "experience.employment_details.current.company_type",
+    "preferred_companies_ever": "experience.employment_details.company_name",
+    "exclude_companies_ever": "experience.employment_details.company_name",
+    # Keyword filters OR across description/headline/summary; headline is the
+    # verified, populated, returned representative of that group.
+    "must_have_keywords": "basic_profile.headline",
+    "must_have_keyword_groups": "basic_profile.headline",
+}
+
+
+def supported_search_query_filters() -> List[str]:
+    """The SearchQuery filter names that the capability model says are genuinely
+    hard-filterable on CrustData, in FILTER_FIELD_MAP order. api.py uses this as
+    CRUSTDATA_SUPPORTED_FILTERS so the whitelist is model-driven, not hardcoded;
+    anything the model cannot vouch for is left out and handled by the mapper's
+    drop-and-disclose path rather than quietly enforced."""
+    return [name for name, field in FILTER_FIELD_MAP.items() if can_hard_filter(field)[0]]
 
 
 def recommend_routing(field: str, strength: str) -> str:

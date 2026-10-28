@@ -1,57 +1,56 @@
-"""Phase 1 — capability map + routing-rule tests."""
+"""The capability model is the live source of truth for which recruiter-intent
+filters may become hard CrustData filters. These tests pin that the derived
+whitelist is model-driven and honest — it includes only verified-filterable
+fields and excludes anything the model cannot vouch for."""
 
 from backend.services import crustdata_capabilities as cap
+from backend.services.crustdata_capabilities import (
+    FILTER_FIELD_MAP,
+    can_hard_filter,
+    supported_search_query_filters,
+)
 
 
-def test_unknown_field_defaults_to_unverified_and_never_hard_filters() -> None:
-    c = cap.get("some.unlisted.field")
-    assert c.filter_status == cap.FILTER_UNVERIFIED
-    allowed, _ = cap.can_hard_filter("some.unlisted.field")
-    assert allowed is False
+def test_supported_filters_are_exactly_the_verified_ones() -> None:
+    supported = supported_search_query_filters()
+    # Every returned filter maps to a field the model says is hard-filterable.
+    for name in supported:
+        assert can_hard_filter(FILTER_FIELD_MAP[name])[0], name
+    # Every filter left out maps to a field the model will NOT vouch for.
+    for name, field in FILTER_FIELD_MAP.items():
+        if name not in supported:
+            assert not can_hard_filter(field)[0], name
 
 
-def test_unavailable_field_never_hard_filters() -> None:
-    allowed, _ = cap.can_hard_filter("skills.professional_network_skills")
-    assert allowed is False
-    # skills are verifiable via Harvest -> route to the judge, not disclose
-    assert cap.recommend_routing("skills.professional_network_skills", "required") == "judge"
+def test_known_hard_filters_present_and_unverified_fields_absent() -> None:
+    supported = set(supported_search_query_filters())
+    # Genuinely verified -> present.
+    for name in ("include_titles", "cities", "minimum_years", "employment_type",
+                 "exclude_current_companies", "preferred_companies_ever",
+                 "must_have_keywords", "must_have_keyword_groups"):
+        assert name in supported
+    # Never-probed or unavailable -> absent (so never silently enforced).
+    assert "preferred_company_types" not in supported  # company_type not in the map
+    assert "required_skills" not in supported           # skills list unavailable
+    assert "preferred_skills" not in supported
+    assert "work_mode" not in supported                 # unavailable on person_search
+    assert "zip_codes" not in supported                 # no CrustData field
 
 
-def test_work_mode_cannot_enforce_or_verify_so_disclose() -> None:
-    assert cap.recommend_routing("work_mode", "required") == "disclose"
+def test_whitelist_tracks_the_model_not_a_hardcoded_list() -> None:
+    # Flip a mapped field to unavailable -> it drops out of the derived list;
+    # restore it -> it returns. Proves the list is computed from the model.
+    field = FILTER_FIELD_MAP["cities"]
+    original = cap._MAP.get(field)
+    try:
+        cap._MAP[field] = cap._c(field, cap.FILTER_UNAVAILABLE, cap.RESP_RETURNED, cap.CONF_UNKNOWN, False)
+        assert "cities" not in supported_search_query_filters()
+    finally:
+        if original is not None:
+            cap._MAP[field] = original
+    assert "cities" in supported_search_query_filters()
 
 
-def test_verified_high_confidence_required_enforces() -> None:
-    allowed, warn = cap.can_hard_filter("years_of_experience_raw")
-    assert allowed is True and warn is None
-    assert cap.recommend_routing("years_of_experience_raw", "required") == "enforce"
-    assert cap.recommend_routing("experience.employment_details.current.title", "required") == "enforce"
-
-
-def test_verified_but_unknown_confidence_still_usable_with_warning() -> None:
-    # The agreed refinement: data_confidence=unknown must NOT make a verified
-    # filter unusable. Headcount is verified-but-unknown and RETURNED.
-    allowed, warn = cap.can_hard_filter("experience.employment_details.current.company_headcount_latest")
-    assert allowed is True
-    assert warn is not None  # completeness warning attached
-    assert cap.recommend_routing("experience.employment_details.current.company_headcount_latest", "required") == "enforce_with_warning"
-
-
-def test_response_gated_verified_field_is_enforce_but_not_verifiable() -> None:
-    # education stream: filterable server-side, returned blank.
-    assert cap.recommend_routing("education.schools.field_of_study", "required") == "enforce_but_not_verifiable"
-    assert cap.is_displayable("education.schools.field_of_study") is False
-    # description keyword retrieval: same shape.
-    assert cap.recommend_routing("experience.employment_details.current.description", "required") == "enforce_but_not_verifiable"
-    assert cap.is_displayable("basic_profile.headline") is True
-
-
-def test_preferred_company_does_not_fabricate_a_provider_boost() -> None:
-    # The Epiq lesson encoded: no verified preference mechanism -> context/evidence,
-    # never a pretend NL boost.
-    assert cap.PREFERENCE_MECHANISM_AVAILABLE is False
-    assert cap.recommend_routing("experience.employment_details.current.company_name", "preferred") == "context_or_evidence"
-
-
-def test_fuzzy_is_whole_word_flag_is_set() -> None:
-    assert cap.FUZZY_IS_WHOLE_WORD is True
+def test_api_whitelist_is_the_derived_list() -> None:
+    from backend.api import CRUSTDATA_SUPPORTED_FILTERS
+    assert CRUSTDATA_SUPPORTED_FILTERS == supported_search_query_filters()

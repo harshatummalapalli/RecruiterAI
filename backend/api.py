@@ -47,6 +47,7 @@ from backend.services.capability_mapper import CapabilityMapper
 from backend.providers.harvest import HarvestEnrichmentService
 from backend.services import candidate_presentation as presentation_rules
 from backend.services import role_lifecycle
+from backend.services.crustdata_capabilities import supported_search_query_filters
 from backend.services.intake_session import IntakeSessionManager, list_draft_summaries
 from backend.services.intent_change import meaningful_changes
 from backend.services.role_feedback import Guidance, build_guidance
@@ -133,27 +134,14 @@ logger.setLevel(logging.INFO)
 # (see crustdata.py's DEFAULT_FIELDS comment) — so declaring them
 # "supported" here was a silent lie: nothing warned if either field were
 # ever populated, it would just vanish before reaching the provider.
-# Skill/technology requirements reach CrustData only through the
-# natural-language query (see search_translator.py / search_planner.py).
-CRUSTDATA_SUPPORTED_FILTERS = [
-    "include_titles",
-    "exclude_titles",
-    "countries",
-    "states",
-    "cities",
-    "radius_place",
-    "radius_miles",
-    "employment_type",
-    "minimum_years",
-    "maximum_years",
-    "preferred_companies",
-    "exclude_current_companies",
-    "preferred_company_types",
-    "preferred_companies_ever",
-    "exclude_companies_ever",
-    "must_have_keywords",
-    "must_have_keyword_groups",
-]
+# Which recruiter-intent filters are genuinely hard-filterable on CrustData is
+# now DERIVED from the tested capability model (the single source of truth),
+# not hardcoded here — a field becomes a hard filter only when the model vouches
+# for it. Skill/technology requirements are deliberately absent: they reach
+# CrustData only through the natural-language query (see search_translator.py /
+# search_planner.py), and the mapper warns if required_skills/preferred_skills
+# are ever populated rather than dropping them in silence.
+CRUSTDATA_SUPPORTED_FILTERS = supported_search_query_filters()
 
 FRIENDLY_UNSUPPORTED_FILTER_LABELS = {
     "zip_codes": "postal/zip code",
