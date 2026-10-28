@@ -477,6 +477,19 @@
   border-top: 1px solid var(--color-border);
 }
 
+/* The agent's role-defining-capability recommendation — visually distinct from
+   the recruiter's own fields so it reads as professional assistance, not a
+   buried form input. Defaulted on; the recruiter can clear it to widen. */
+.brief-recommendation {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-accent);
+  border-radius: 10px;
+  background: var(--color-focus-ring);
+}
+
 .brief-section__title {
   margin: 0;
   font-size: 16px;

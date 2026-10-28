@@ -67,6 +67,11 @@ class ConfirmationEdits(BaseModel):
     # Hard capability keywords (Phase 2 §2.4): must-have capabilities the
     # recruiter wants ENFORCED as a filter (precision over recall).
     must_have_keywords: Optional[List[str]] = None
+    # Synonym-aware hard capability groups (§1(C)) — the role-defining-capability
+    # toggle(s) the agent proposed and defaulted ON. The recruiter can drop a
+    # group (send [] to stop enforcing) or edit its terms. Each inner list is one
+    # capability's OR'd spellings. Absent = leave the agent's default as-is.
+    must_have_keyword_groups: Optional[List[List[str]]] = None
 
 
 def _clean_text(value: Optional[str]) -> str:
@@ -145,6 +150,23 @@ def apply_edits(intent: SearchIntent, edits: ConfirmationEdits) -> Dict[str, Any
     if "must_have_keywords" in provided:
         intent.must_have_keywords = _clean_list(edits.must_have_keywords)
         applied["must_have_keywords"] = intent.must_have_keywords
+    if "must_have_keyword_groups" in provided:
+        # Clean each group independently (strip, drop blanks, dedupe
+        # case-insensitively so the stored group equals what is enforced), drop
+        # groups that empty out. An explicit [] means "recruiter turned it off".
+        cleaned_groups: List[List[str]] = []
+        for group in (edits.must_have_keyword_groups or []):
+            seen: set = set()
+            terms: List[str] = []
+            for term in _clean_list(group):
+                key = term.lower()
+                if key not in seen:
+                    seen.add(key)
+                    terms.append(term)
+            if terms:
+                cleaned_groups.append(terms)
+        intent.must_have_keyword_groups = cleaned_groups
+        applied["must_have_keyword_groups"] = intent.must_have_keyword_groups
 
     if requirements_changed:
         # The model-written search sentence describes the requirements it was written from. Once the recruiter has

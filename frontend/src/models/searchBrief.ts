@@ -63,6 +63,12 @@ export type SearchBrief = {
    * filter), e.g. "Java" / ".NET" / "RAG" — distinct from the soft required
    * skills. Optional for backward compatibility with restored briefs. */
   mustHaveKeywords?: string[]
+  /** Agent-proposed role-defining capability groups (the "AI"/"ML"/"LLM"… set
+   * for an AI role). Each inner array is ONE capability's interchangeable
+   * spellings, OR'd together and enforced as a hard filter. Defaulted ON by the
+   * backend; the recruiter can drop a group to widen the search. Optional for
+   * backward compatibility with restored briefs. */
+  mustHaveKeywordGroups?: string[][]
   industries: string[]
   education: string[]
   employmentTypes: EmploymentType[]
@@ -105,6 +111,7 @@ export function createEmptySearchBrief(): SearchBrief {
     },
     companies: { include: [], exclude: [], includeEver: [], excludeEver: [] },
     mustHaveKeywords: [],
+    mustHaveKeywordGroups: [],
     industries: [],
     education: [],
     employmentTypes: [],
@@ -431,6 +438,7 @@ export function briefToSearchIntent(brief: SearchBrief): SearchIntent {
     supporting_signals: brief.requirements?.supporting ?? [],
     differentiator_signals: brief.requirements?.differentiators ?? [],
     must_have_keywords: brief.mustHaveKeywords ?? [],
+    must_have_keyword_groups: brief.mustHaveKeywordGroups ?? [],
   }
 }
 
@@ -586,6 +594,7 @@ export function searchIntentToBrief(intent: SearchIntent): SearchBrief {
       excludeEver: intent.company_preferences.exclude_companies_ever ?? [],
     },
     mustHaveKeywords: intent.must_have_keywords ?? [],
+    mustHaveKeywordGroups: intent.must_have_keyword_groups ?? [],
     industries: [],
     education: [],
     employmentTypes: intent.role.employment_type ? [intent.role.employment_type as EmploymentType] : [],

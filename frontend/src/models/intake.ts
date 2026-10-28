@@ -158,6 +158,9 @@ export type ConfirmationEdits = {
   preferred_companies_ever?: string[]
   // Hard capability keywords — enforced whole-word description/headline filter (Phase 2 §2.4).
   must_have_keywords?: string[]
+  // Role-defining capability groups (§1(C)) — agent-proposed, default-on. Send
+  // [] to turn the recommendation off (widen the search) or an edited set.
+  must_have_keyword_groups?: string[][]
 }
 
 export type ConfirmationResponse = {

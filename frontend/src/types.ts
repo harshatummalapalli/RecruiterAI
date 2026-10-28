@@ -77,6 +77,10 @@ export interface SearchIntent {
   // whole-word description/headline/summary filter (e.g. "Java" not
   // "JavaScript", ".NET", "RAG"). Round-trips unchanged.
   must_have_keywords?: string[]
+  // Synonym-aware hard capability groups (the agent's role-defining-capability
+  // proposal, e.g. AI/ML/LLM for an AI role). Each inner array is ONE
+  // capability OR'd across its spellings; groups are AND'd. Round-trips unchanged.
+  must_have_keyword_groups?: string[][]
 }
 
 export interface Candidate {

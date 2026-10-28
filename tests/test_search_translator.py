@@ -68,6 +68,43 @@ def _result(
 # ---------------------------------------------------------------------------
 
 
+def test_ai_role_gets_role_defining_capability_group_default_on() -> None:
+    # Phase A step C: an "AI X" identity -> the role-defining capability is
+    # proposed as a hard synonym group and defaulted ON (the Search Brief then
+    # renders it as a removable toggle). The group OR's the AI spellings.
+    result = _result("AI Data Engineer", core=["build RAG and agentic pipelines"])
+    intent = translate(result)
+    assert len(intent.must_have_keyword_groups) == 1
+    group = intent.must_have_keyword_groups[0]
+    assert "AI" in group and "machine learning" in group and "LLM" in group
+    # A specific evidence term present in the capabilities is folded in.
+    assert "RAG" in group
+
+
+def test_plain_role_gets_no_capability_group() -> None:
+    # Guardrail: no role-defining specialization -> nothing enforced (stay broad).
+    assert translate(_result("Data Engineer")).must_have_keyword_groups == []
+    assert translate(_result("Full Stack Developer")).must_have_keyword_groups == []
+
+
+def test_recruiter_can_turn_off_the_capability_group_via_edits() -> None:
+    # The proposal is default-on but visible+removable: sending [] through the
+    # confirmation edits whitelist clears it (widen the search), never silently.
+    from backend.services.confirmation import ConfirmationEdits, apply_edits
+
+    intent = translate(_result("AI Data Engineer", core=["build RAG pipelines"]))
+    assert intent.must_have_keyword_groups  # default-on
+
+    applied = apply_edits(intent, ConfirmationEdits(must_have_keyword_groups=[]))
+    assert intent.must_have_keyword_groups == []
+    assert applied["must_have_keyword_groups"] == []
+
+    # An edited term set round-trips cleaned (blanks/dupes dropped, empty groups gone).
+    intent2 = translate(_result("AI Software Engineer"))
+    apply_edits(intent2, ConfirmationEdits(must_have_keyword_groups=[["AI", " ai ", "LLM"], [""]]))
+    assert intent2.must_have_keyword_groups == [["AI", "LLM"]]
+
+
 def test_structured_location_reaches_search_intent_cleanly() -> None:
     result = _result(
         "Backend Engineer",

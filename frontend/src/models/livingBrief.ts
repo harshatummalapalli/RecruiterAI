@@ -185,6 +185,12 @@ export function diffBriefEdits(baseline: SearchBrief, current: SearchBrief): Con
   if (!sameList(current.companies.excludeEver ?? [], baseline.companies.excludeEver ?? [])) edits.exclude_companies_ever = current.companies.excludeEver ?? []
   if (!sameList(current.companies.includeEver ?? [], baseline.companies.includeEver ?? [])) edits.preferred_companies_ever = current.companies.includeEver ?? []
   if (!sameList(current.mustHaveKeywords ?? [], baseline.mustHaveKeywords ?? [])) edits.must_have_keywords = current.mustHaveKeywords ?? []
+  // Group-aware diff for the role-defining capability toggle (string[][]): a
+  // per-group list compare so dropping a group (recruiter turned it off) sends [].
+  const groupsChanged = (a: string[][], b: string[][]) =>
+    a.length !== b.length || a.some((g, i) => !sameList(g, b[i] ?? []))
+  if (groupsChanged(current.mustHaveKeywordGroups ?? [], baseline.mustHaveKeywordGroups ?? []))
+    edits.must_have_keyword_groups = current.mustHaveKeywordGroups ?? []
   if (current.employmentTypes[0] !== baseline.employmentTypes[0]) edits.employment_type = current.employmentTypes[0] ?? null
   return edits
 }

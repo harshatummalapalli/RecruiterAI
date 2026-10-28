@@ -20,6 +20,7 @@ from backend.models.retrieval_concepts import RetrievalConcept, RetrievalConcept
 from backend.models.search_intent import CompanyPreferences, Experience, Location, Role, SearchIntent, Titles
 from backend.providers.crustdata import SUPPORTED_EMPLOYMENT_TYPES
 from backend.services.query_expansion import QueryExpansionService
+from backend.services.role_defining_capability import derive_capability_group
 
 # A candidate_identity this short and free of verb/descriptive-clause
 # language is treated as title-shaped; anything longer or phrased as a
@@ -367,6 +368,20 @@ def to_search_intent(intent: ConfirmedHiringIntent, query_expander: Optional[Que
             location.radius_place = intent.radius_place
     location.work_mode = intent.work_mode
 
+    # Role-defining capability enforcement (Phase A, step C): when the role
+    # identity carries a genuine specialization qualifier (the "AI" in "AI Data
+    # Engineer"), propose that capability as a hard synonym-group filter and
+    # default it ON. It is NOT silent — the Search Brief renders it as a labeled,
+    # removable toggle (recruiter decision: recommended, default-on, visible),
+    # and apply_edits lets the recruiter drop it per search. Most roles have no
+    # such qualifier and get nothing (stay broad).
+    capability_proposal = derive_capability_group(
+        intent.candidate_identity,
+        intent.posted_title,
+        capability_texts=list(intent.core_search_signals) + list(intent.supporting_search_signals),
+    )
+    must_have_keyword_groups = [list(capability_proposal.terms)] if capability_proposal else []
+
     return SearchIntent(
         role=Role(
             title=normalized_identity,
@@ -399,6 +414,7 @@ def to_search_intent(intent: ConfirmedHiringIntent, query_expander: Optional[Que
         core_signals=list(intent.core_search_signals),
         supporting_signals=list(intent.supporting_search_signals),
         differentiator_signals=list(intent.differentiator_search_signals),
+        must_have_keyword_groups=must_have_keyword_groups,
         # Built once, at confirmation, by build_confirmed_hiring_intent — copied through unchanged, never
         # recomputed or read here.
         retrieval_concepts=intent.retrieval_concepts,

@@ -151,6 +151,26 @@ export function SearchBriefReview({ brief, onChange }: SearchBriefReviewProps) {
         <div className="brief-section">
           <h2 className="brief-section__title">Skills</h2>
 
+          {(brief.mustHaveKeywordGroups?.[0]?.length ?? 0) > 0 && (
+            <div className="brief-recommendation">
+              <TagField
+                label="Role-defining capability — recommended, required"
+                placeholder="Add or remove a spelling…"
+                {...tagList(
+                  'mustHaveKeywordGroups.0',
+                  brief.mustHaveKeywordGroups?.[0] ?? [],
+                  (b, v) => ({ ...b, mustHaveKeywordGroups: v.length ? [v] : [] }),
+                )}
+              />
+              <p className="brief-field__hint">
+                This role is defined by this capability, so I&rsquo;ll require candidates to show
+                evidence of <strong>any one</strong> of these terms — that keeps the shortlist on
+                genuine matches instead of look-alikes who only share the base title. Clear all the
+                tags to turn this off and widen the search.
+              </p>
+            </div>
+          )}
+
           <div className="brief-field-grid brief-field-grid--two">
             <TagField label="Required Skills" placeholder="Add a skill…" {...tagList('skills.required', brief.skills.required, (b, v) => ({ ...b, skills: { ...b.skills, required: v } }))} />
             <TagField label="Preferred Skills" placeholder="Add a skill…" {...tagList('skills.preferred', brief.skills.preferred, (b, v) => ({ ...b, skills: { ...b.skills, preferred: v } }))} />
