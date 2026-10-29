@@ -740,8 +740,9 @@ class IntakeReasoner:
     or any existing search-pipeline component. `client` is injectable for
     tests, mirroring OpenAIProvider's constructor pattern."""
 
-    def __init__(self, client: Optional[OpenAI] = None) -> None:
+    def __init__(self, client: Optional[OpenAI] = None, model: str = "gpt-4o-mini") -> None:
         self._client = client
+        self._model = model
 
     def run(self, raw_input: str, posted_title: Optional[str] = None) -> IntakeResult:
         api_key = get_openai_api_key()
@@ -809,18 +810,23 @@ class IntakeReasoner:
         return (PROMPTS_DIR / filename).read_text(encoding="utf-8")
 
     def _call_json(self, client: OpenAI, system_prompt: str, user_prompt: str) -> Dict[str, Any]:
-        response = client.responses.create(
-            model="gpt-4o-mini",
+        kwargs = dict(
+            model=self._model,
             input=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
             ],
             text={"format": {"type": "json_object"}},
-            # The same job description must produce the same requirement model.
-            # Left at the default sampling temperature, five runs on one JD
-            # produced 4-6 core, 0-4 supporting and 2-4 differentiator items.
-            temperature=0,
         )
+        # temperature=0 for reproducibility where the model allows it; some newer
+        # models (e.g. gpt-6-luna) reject the param, so fall back without it.
+        try:
+            response = client.responses.create(temperature=0, **kwargs)
+        except Exception as exc:  # noqa: BLE001
+            if "temperature" in str(exc).lower():
+                response = client.responses.create(**kwargs)
+            else:
+                raise
         content = getattr(response, "output_text", None)
         if not content:
             raise ParsingError("The intake reasoning response could not be read.")

@@ -16,10 +16,7 @@ from recruiter.agents.intake.model import ReadRequirement, Understanding
 from recruiter.agents.intake.temporal import infer_when
 
 
-def keeper_reader(notes: str, posted_title: Optional[str] = None) -> Understanding:
-    from backend.services.intake_reasoning import IntakeReasoner  # keeper (to be migrated in)
-
-    result = IntakeReasoner().run(notes, posted_title=posted_title)
+def _to_understanding(notes: str, posted_title: Optional[str], result) -> Understanding:
     ru = result.role_understanding
     fsi = result.decision.final_search_intent
     evidence = fsi.evidence or {}
@@ -43,3 +40,15 @@ def keeper_reader(notes: str, posted_title: Optional[str] = None) -> Understandi
         employment_type=constraints.employment_type,
         work_mode_in_notes=constraints.work_mode,
     )
+
+
+def make_keeper_reader(model: str = "gpt-4o-mini"):
+    """A reader bound to a specific intake model (for migration/comparison)."""
+    def reader(notes: str, posted_title: Optional[str] = None) -> Understanding:
+        from backend.services.intake_reasoning import IntakeReasoner
+        result = IntakeReasoner(model=model).run(notes, posted_title=posted_title)
+        return _to_understanding(notes, posted_title, result)
+    return reader
+
+
+keeper_reader = make_keeper_reader()  # default model

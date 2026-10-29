@@ -97,13 +97,19 @@ def make_openai_proposer(client=None, model: str = "gpt-4o"):
                 if not key:
                     return None
                 state["client"] = OpenAI(api_key=key)
-            response = state["client"].responses.create(
+            kwargs = dict(
                 model=model,
                 input=[{"role": "system", "content": _SYSTEM},
                        {"role": "user", "content": _user_prompt(identity, posted_title, requirement_texts)}],
                 text={"format": {"type": "json_object"}},
-                temperature=0,
             )
+            try:
+                response = state["client"].responses.create(temperature=0, **kwargs)
+            except Exception as exc:  # some models reject temperature
+                if "temperature" in str(exc).lower():
+                    response = state["client"].responses.create(**kwargs)
+                else:
+                    raise
             return _parse_proposal(json.loads(response.output_text), identity)
         except Exception:
             return None
