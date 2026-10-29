@@ -32,7 +32,10 @@ def _anthropic():
 
 
 def _loads(text: str) -> Dict[str, Any]:
-    """Tolerant JSON parse — strips code fences and surrounding prose."""
+    """Tolerant JSON parse. Strips code fences / prose, then repairs malformed
+    JSON (unescaped quotes/newlines in values, trailing commas, truncation) —
+    OpenAI's json_object format guarantees valid JSON, but Claude's raw output
+    does not, especially on quote-heavy payloads like the Judge's."""
     t = (text or "").strip()
     if t.startswith("```"):
         t = t.strip("`")
@@ -40,7 +43,11 @@ def _loads(text: str) -> Dict[str, Any]:
     i, j = t.find("{"), t.rfind("}")
     if i != -1 and j != -1:
         t = t[i:j + 1]
-    return json.loads(t)
+    try:
+        return json.loads(t)
+    except Exception:
+        from json_repair import repair_json
+        return json.loads(repair_json(t))
 
 
 def complete_json(system: str, user: str, model: str, *, max_tokens: int = 1024) -> Dict[str, Any]:

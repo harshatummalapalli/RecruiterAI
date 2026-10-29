@@ -301,27 +301,18 @@ class RequirementJudge:
 
         def review_one(index: int, judgment: Dict[str, Any]) -> tuple:
             try:
-                response = client.responses.create(
-                    model=self._model,
-                    input=[
-                        {"role": "system", "content": _REVIEW_PROMPT},
-                        {
-                            "role": "user",
-                            "content": json.dumps(
-                                {"claims": [{"i": index, "requirement": judgment["signal_text"], "quote": judgment["quote"]}]},
-                                ensure_ascii=False,
-                            ),
-                        },
-                    ],
-                    text={"format": {"type": "json_object"}},
-                    temperature=0,
+                from recruiter.llm import complete_json  # provider-agnostic (OpenAI or Claude by model name)
+                data = complete_json(
+                    _REVIEW_PROMPT,
+                    json.dumps({"claims": [{"i": index, "requirement": judgment["signal_text"], "quote": judgment["quote"]}]}, ensure_ascii=False),
+                    self._model,
+                    max_tokens=512,
                 )
-                usage = getattr(response, "usage", None)
-                reviewed = json.loads(getattr(response, "output_text", "") or "{}").get("results", [])
+                reviewed = data.get("results", [])
                 supported = any(
                     isinstance(r, dict) and r.get("i") == index and bool(r.get("supports")) for r in reviewed
                 )
-                return index, supported, None, usage
+                return index, supported, None, None
             except Exception as exc:  # noqa: BLE001 - review failure keeps this claim's first-pass verdict
                 return index, None, exc, None
 
@@ -350,26 +341,15 @@ class RequirementJudge:
             ],
             "requirements": [{"r": index, "text": text} for index, text in numbered],
         }
-        response = client.responses.create(
-            model=self._model,
-            input=[
-                {"role": "system", "content": _SYSTEM_PROMPT},
-                {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
-            ],
-            text={"format": {"type": "json_object"}},
-            temperature=0,
-        )
+        from recruiter.llm import complete_json  # provider-agnostic (OpenAI or Claude by model name)
         outcome.calls += 1
-        usage = getattr(response, "usage", None)
-        outcome.input_tokens += int(getattr(usage, "input_tokens", 0) or 0)
-        outcome.output_tokens += int(getattr(usage, "output_tokens", 0) or 0)
-        content = getattr(response, "output_text", None)
-        if not content:
+        data = complete_json(_SYSTEM_PROMPT, json.dumps(payload, ensure_ascii=False), self._model, max_tokens=2048)
+        if not data:
             return None
         wanted = {index for index, _ in numbered}
         return {
             int(r["r"]): r
-            for r in json.loads(content).get("results", [])
+            for r in data.get("results", [])
             if isinstance(r, dict) and "r" in r and int(r["r"]) in wanted
         }
 
