@@ -42,6 +42,7 @@ class Question:
     routing: str = ""              # how the answer is used: filter | query | judge | ranking | confirm (+combos)
     required: bool = False         # blocks the search until answered (only years today)
     options: Tuple[str, ...] = ()
+    payload: Optional[str] = None  # structured data for apply (e.g. the domain name)
 
 
 @dataclass(frozen=True)

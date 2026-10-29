@@ -81,7 +81,7 @@ def plan_refinements(
         questions.append(Question(
             id="domain", kind="choice", routing=FILTER,
             prompt=f"Is {domain} domain experience required, preferred, or irrelevant?",
-            options=("required", "preferred", "irrelevant"),
+            options=("required", "preferred", "irrelevant"), payload=domain,
         ))
 
     # (2) disqualifiers — offered for look-alike-prone roles (specialised or senior).

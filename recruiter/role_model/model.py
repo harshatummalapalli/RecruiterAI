@@ -96,6 +96,11 @@ class RoleModel:
     capability_groups: Tuple[CapabilityGroup, ...] = ()
     companies: CompanyRules = field(default_factory=CompanyRules)
     exclude_titles: Tuple[str, ...] = ()
+    # Industries the role requires (a verified CrustData hard filter). Set by
+    # Calibration when the recruiter marks a domain "required".
+    industries: Tuple[str, ...] = ()
+    # Free-text rule-outs the Judge checks as negative evidence (never a filter).
+    disqualifiers: Tuple[str, ...] = ()
     posted_title: Optional[str] = None
     posted_title_source: Optional[str] = None
     employment_type: Optional[str] = None
