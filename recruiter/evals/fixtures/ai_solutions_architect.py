@@ -32,7 +32,9 @@ ROLE = GoldenRole(
     },
     expect={
         "cities": ["Hyderabad", "Bengaluru", "Pune"],
-        "min_seniority": "staff/lead",   # 15+ years must not read as plain "senior"
+        "min_years": 15,                      # years are the gate, not a label
+        "role_level": "architect",           # drives exclusion suppression + the flag
+        "no_default_exec_exclusions": True,  # an Architect role keeps VPs/Heads eligible
         "capability": "AI",
         "work_mode_disclosed": True,
         "has_core": True,

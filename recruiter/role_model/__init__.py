@@ -15,16 +15,28 @@ from recruiter.role_model.provenance import (
     RECRUITER,
     Provenance,
 )
-from recruiter.role_model.seniority import (
-    LADDER,
-    Seniority,
-    floor_from_years,
-    normalise_label,
-    rank_of,
+from recruiter.role_model.seniority import Seniority, needs_years_clarification
+from recruiter.role_model.levels import (
+    ARCHITECT,
+    DIRECTOR_PLUS,
+    IC,
+    MANAGER,
+    candidate_role_level,
+    classify_role_level,
+    default_title_exclusions,
+    level_note,
+    role_suppresses_default_exclusions,
 )
 
 __all__ = [
+    # spine
     "RoleModel", "Requirement", "CapabilityGroup", "Location", "CompanyRules", "TIERS",
-    "Seniority", "floor_from_years", "normalise_label", "rank_of", "LADDER",
+    # seniority (years)
+    "Seniority", "needs_years_clarification",
+    # levels (flag + exclusions, non-gating)
+    "classify_role_level", "candidate_role_level", "level_note",
+    "default_title_exclusions", "role_suppresses_default_exclusions",
+    "IC", "ARCHITECT", "MANAGER", "DIRECTOR_PLUS",
+    # provenance
     "Provenance", "RECRUITER", "JD", "INFERRED", "BACKSTOP",
 ]

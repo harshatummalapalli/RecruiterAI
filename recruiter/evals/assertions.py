@@ -1,16 +1,17 @@
 """Pure checks over a RoleModel. Each returns a failure message, or None when
 it passes. No I/O — these run on every change, instantly, for free.
 
-These encode the bugs the live experiment found, so they can never silently
-come back: multi-city collapse, seniority under-scoping, a lost role-defining
-capability, and a silently-dropped (vs disclosed) work-mode.
+They encode the bugs the live run found, so they can never silently return:
+multi-city collapse, missing years, mis-classified role level, default
+exec-title exclusions firing on an architect/leadership role, a lost
+role-defining capability, and a silently-dropped (vs disclosed) work mode.
 """
 
 from __future__ import annotations
 
 from typing import List, Optional
 
-from recruiter.role_model import RoleModel, rank_of
+from recruiter.role_model import RoleModel, default_title_exclusions
 
 
 def multi_city_preserved(model: RoleModel, expected_cities) -> Optional[str]:
@@ -21,20 +22,25 @@ def multi_city_preserved(model: RoleModel, expected_cities) -> Optional[str]:
     return None
 
 
-def seniority_floor_for_experience(model: RoleModel, min_level: str) -> Optional[str]:
-    """A high-experience role must not be under-scoped. The effective seniority
-    rank must be at least `min_level` on the ladder."""
-    effective = model.seniority.effective
-    want = rank_of(min_level)
-    got = rank_of(effective)
-    if want is None:
-        return f"test error: unknown min_level {min_level!r}"
-    if got is None or got < want:
-        return (
-            f"seniority under-scoped: effective={effective!r} "
-            f"(< {min_level!r}); stated={model.seniority.stated_label!r} "
-            f"min_years={model.seniority.min_years}"
-        )
+def min_years_is(model: RoleModel, expected: int) -> Optional[str]:
+    if model.seniority.min_years != expected:
+        return f"min_years {model.seniority.min_years!r} != expected {expected!r}"
+    return None
+
+
+def role_level_is(model: RoleModel, expected: str) -> Optional[str]:
+    if model.role_level != expected:
+        return f"role_level {model.role_level!r} != expected {expected!r}"
+    return None
+
+
+def default_exec_exclusions_suppressed(model: RoleModel) -> Optional[str]:
+    """An architect/manager/director+ role must NOT default-exclude exec titles —
+    they are who it's hiring."""
+    exec_set = {t.lower() for t in default_title_exclusions("ic")}
+    present = [t for t in model.exclude_titles if t.lower() in exec_set]
+    if present:
+        return f"role should not default-exclude exec/leadership titles, but excludes: {present}"
     return None
 
 
@@ -47,8 +53,6 @@ def role_defining_capability(model: RoleModel, label_contains: str) -> Optional[
 
 
 def work_mode_disclosed(model: RoleModel) -> Optional[str]:
-    """If a work mode was recorded, it must be disclosed as a limitation (the
-    provider cannot filter on it) — never silently present and unenforced."""
     if not model.location.work_mode:
         return None
     mode = model.location.work_mode.lower()
@@ -74,8 +78,12 @@ def check_role_model(model: RoleModel, expect: dict) -> List[str]:
 
     if "cities" in expect:
         record(multi_city_preserved(model, expect["cities"]))
-    if "min_seniority" in expect:
-        record(seniority_floor_for_experience(model, expect["min_seniority"]))
+    if "min_years" in expect:
+        record(min_years_is(model, expect["min_years"]))
+    if "role_level" in expect:
+        record(role_level_is(model, expect["role_level"]))
+    if expect.get("no_default_exec_exclusions"):
+        record(default_exec_exclusions_suppressed(model))
     if "capability" in expect:
         record(role_defining_capability(model, expect["capability"]))
     if expect.get("work_mode_disclosed"):

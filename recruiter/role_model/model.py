@@ -73,7 +73,12 @@ class CompanyRules:
 @dataclass(frozen=True)
 class RoleModel:
     identity: str                      # title-shaped candidate identity
-    seniority: Seniority
+    seniority: Seniority               # years only — the gate
+    # The role's target level (ic | architect | manager | director+). Derived
+    # once by Intake (see levels.classify_role_level); read by ranking (to flag
+    # above/below fit) and by Intake (to pick default title exclusions). Never
+    # gates a candidate.
+    role_level: Optional[str]
     location: Location
     requirements: Tuple[Requirement, ...] = ()
     capability_groups: Tuple[CapabilityGroup, ...] = ()

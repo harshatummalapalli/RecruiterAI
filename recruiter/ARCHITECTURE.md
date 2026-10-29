@@ -42,6 +42,24 @@ raw hiring notes + boundary
 7. Interview   (later)
 ```
 
+## Seniority & level (design decision)
+
+**Years of experience is the one seniority gate.** It is objective, portable
+across companies, and the only seniority signal CrustData can hard-filter on. A
+title *label* ("Senior" vs "Lead") is company-relative noise and never excludes a
+candidate. If the hiring notes state no minimum, **Intake asks** the recruiter.
+
+The role's *level* (`ic | architect | manager | director+`) is derived once and
+kept only for two non-gating jobs:
+- **Default title exclusions.** Founder / CxO / Manager / VP / AVP / Head of (and
+  the exec family) are excluded by default — *suppressed* when the role itself is
+  architect / manager / director+ (you'd be excluding who you're hiring).
+- **A ranking flag.** Ranking surfaces "reads above/below the role's level" as a
+  note for the recruiter — never an exclusion.
+
+See `role_model/seniority.py` (years) and `role_model/levels.py` (level, flag,
+exclusions).
+
 ## Conventions (non-negotiable)
 
 - **Small files.** Target **< 250 lines** per module, **hard ceiling ~400**.
