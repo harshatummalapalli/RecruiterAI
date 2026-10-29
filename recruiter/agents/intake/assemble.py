@@ -8,13 +8,13 @@ group is derived, and un-filterable facts (work mode) are disclosed.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from recruiter.agents.intake.model import IntakeOutcome, Question, Understanding
 from recruiter.role_model import (
-    BACKSTOP,
     JD,
     RECRUITER,
+    CapabilityGroup,
     CompanyRules,
     Location,
     Provenance,
@@ -23,7 +23,6 @@ from recruiter.role_model import (
     Seniority,
     classify_role_level,
     default_title_exclusions,
-    derive_capability_groups,
     needs_years_clarification,
 )
 
@@ -49,7 +48,10 @@ def assemble_role_model(
     understanding: Understanding,
     boundary: Dict[str, Any],
     answers: Optional[Dict[str, Any]] = None,
+    capability_groups: Tuple[CapabilityGroup, ...] = (),
 ) -> IntakeOutcome:
+    """Pure. `capability_groups` are supplied by the agent (memory/LLM proposer);
+    this function never proposes them itself, so it stays I/O-free."""
     answers = answers or {}
 
     # Years are the gate. Prefer a recruiter answer, then the notes. Ask if neither.
@@ -73,9 +75,6 @@ def assemble_role_model(
     requirements = tuple(
         Requirement(text=r.text, tier=r.tier, provenance=Provenance(JD, r.evidence))
         for r in understanding.requirements
-    )
-    capability_groups = derive_capability_groups(
-        identity, understanding.posted_title, [r.text for r in understanding.requirements]
     )
 
     limitations = ()

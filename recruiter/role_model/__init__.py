@@ -15,7 +15,6 @@ from recruiter.role_model.provenance import (
     RECRUITER,
     Provenance,
 )
-from recruiter.role_model.capabilities import derive_capability_groups
 from recruiter.role_model.seniority import Seniority, needs_years_clarification
 from recruiter.role_model.levels import (
     ARCHITECT,
@@ -34,8 +33,6 @@ __all__ = [
     "RoleModel", "Requirement", "CapabilityGroup", "Location", "CompanyRules", "TIERS",
     # seniority (years)
     "Seniority", "needs_years_clarification",
-    # capabilities
-    "derive_capability_groups",
     # levels (flag + exclusions, non-gating)
     "classify_role_level", "candidate_role_level", "level_note",
     "default_title_exclusions", "role_suppresses_default_exclusions",

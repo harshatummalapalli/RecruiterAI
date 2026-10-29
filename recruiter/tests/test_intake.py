@@ -1,19 +1,30 @@
-"""Agent 1 (Intake) — end to end with an injected reader (no LLM, no credits).
-
-Proves the golden AI-Architect role assembles into a RoleModel that passes the
-net, and that the years-ask, role-level exclusions, and capability derivation
-all behave per the agreed seniority model.
+"""Agent 1 (Intake) — end to end with injected reader + capability proposer
+(no LLM, no credits). Proves the golden role assembles and passes the net, the
+years-ask works, role-level exclusions behave, and capability comes from the
+(injected) learned proposer rather than a hand-seeded table.
 """
 
 from recruiter.agents.intake import IntakeAgent, Understanding
+from recruiter.agents.intake.capability_memory import InMemoryCapabilityMemory, LearnedCapability
+from recruiter.agents.intake.capability_proposal import CapabilityProposer
 from recruiter.agents.intake.model import ReadRequirement
 from recruiter.evals import assertions
 from recruiter.evals.fixtures import ai_solutions_architect as fx
 
 
+def _ai_llm(identity, posted_title, reqs):
+    """Stub LLM proposer: an AI capability for AI roles, broad otherwise."""
+    if "ai" in (identity or "").lower().split():
+        return LearnedCapability("", "AI / ML", ("AI", "ML", "machine learning", "LLM", "RAG"), "AI")
+    return None
+
+
+def _agent(understanding: Understanding) -> IntakeAgent:
+    proposer = CapabilityProposer(InMemoryCapabilityMemory(), llm_proposer=_ai_llm)
+    return IntakeAgent(reader=lambda n, p=None: understanding, capability_proposer=proposer, org="acme")
+
+
 def _architect_understanding() -> Understanding:
-    """What the reader should return for the AI-Architect notes (canned so the
-    test needs no OpenAI). Mirrors the live Stage-1 intake output."""
     return Understanding(
         identity="AI Solutions Architect",
         posted_title="AI Solutions Architect",
@@ -31,8 +42,7 @@ def _architect_understanding() -> Understanding:
 
 
 def test_golden_role_assembles_and_passes_the_net():
-    agent = IntakeAgent(reader=lambda notes, posted_title=None: _architect_understanding())
-    outcome = agent.run(fx.ROLE.notes, fx.ROLE.boundary)
+    outcome = _agent(_architect_understanding()).run(fx.ROLE.notes, fx.ROLE.boundary)
     assert outcome.ready, outcome.clarifications
     failures = assertions.check_role_model(outcome.model, fx.ROLE.expect)
     assert failures == [], failures
@@ -41,8 +51,7 @@ def test_golden_role_assembles_and_passes_the_net():
 def test_missing_years_triggers_the_ask_then_resolves():
     u = Understanding(identity="AI Solutions Architect", min_years=None,
                       requirements=(ReadRequirement("AI", "core"),), work_mode_in_notes="hybrid")
-    agent = IntakeAgent(reader=lambda n, p=None: u)
-
+    agent = _agent(u)
     blocked = agent.run(fx.ROLE.notes, fx.ROLE.boundary)
     assert not blocked.ready
     assert [q.kind for q in blocked.clarifications] == ["min_years"]
@@ -54,29 +63,23 @@ def test_missing_years_triggers_the_ask_then_resolves():
 
 
 def test_architect_role_suppresses_exec_exclusions_and_enforces_capability():
-    agent = IntakeAgent(reader=lambda n, p=None: _architect_understanding())
-    model = agent.run(fx.ROLE.notes, fx.ROLE.boundary).model
+    model = _agent(_architect_understanding()).run(fx.ROLE.notes, fx.ROLE.boundary).model
     assert model.role_level == "architect"
-    assert model.exclude_titles == ()                      # VPs/Heads stay eligible
+    assert model.exclude_titles == ()
     assert any("AI" in g.label for g in model.capability_groups)
 
 
 def test_ic_role_excludes_execs_and_has_no_capability_group():
-    u = Understanding(
-        identity="Senior Backend Engineer",
-        min_years=6,
-        requirements=(ReadRequirement("Python backend services", "core"),),
-    )
-    agent = IntakeAgent(reader=lambda n, p=None: u)
-    model = agent.run("Senior Backend Engineer, 6+ years, Python.", {"country": "India", "work_mode": "onsite", "city": "Pune"}).model
+    u = Understanding(identity="Senior Backend Engineer", min_years=6,
+                      requirements=(ReadRequirement("Python backend services", "core"),))
+    model = _agent(u).run("Senior Backend Engineer, 6+ years, Python.",
+                          {"country": "India", "work_mode": "onsite", "city": "Pune"}).model
     assert model.role_level == "ic"
     assert "VP" in model.exclude_titles and "Head of" in model.exclude_titles
-    assert model.capability_groups == ()                   # not a specialization-defined role
+    assert model.capability_groups == ()
 
 
 def test_multi_city_and_hiring_company_exclusion():
-    agent = IntakeAgent(reader=lambda n, p=None: _architect_understanding())
-    boundary = {**fx.ROLE.boundary, "hiring_company": "Acme"}
-    model = agent.run(fx.ROLE.notes, boundary).model
+    model = _agent(_architect_understanding()).run(fx.ROLE.notes, {**fx.ROLE.boundary, "hiring_company": "Acme"}).model
     assert model.location.cities == ("Hyderabad", "Bengaluru", "Pune")
     assert model.companies.exclude_current == ("Acme",)

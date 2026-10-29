@@ -1,24 +1,38 @@
 """Agent 1 — Intake. Hiring notes + recruiter boundary -> RoleModel.
 
-Orchestrates only: read the notes (LLM, injectable), then assemble the spine
-(pure). The read and the assemble are separate so the clarification loop can
-answer without re-reading the notes.
+Orchestrates (impure) the read, the capability proposal (per-org memory + LLM),
+and the pure assembly. Read and assemble are separate so the clarification loop
+answers without re-reading the notes.
 """
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
 from recruiter.agents.intake.assemble import assemble_role_model
+from recruiter.agents.intake.capability_memory import FileCapabilityMemory
+from recruiter.agents.intake.capability_proposal import CapabilityProposer
 from recruiter.agents.intake.model import IntakeOutcome, Understanding
 from recruiter.agents.intake.reader import keeper_reader
 
 Reader = Callable[[str, Optional[str]], Understanding]
 
+_DEFAULT_MEMORY_ROOT = Path("output/capability_memory")
+
 
 class IntakeAgent:
-    def __init__(self, reader: Reader = keeper_reader) -> None:
+    def __init__(
+        self,
+        reader: Reader = keeper_reader,
+        capability_proposer: Optional[CapabilityProposer] = None,
+        org: str = "default",
+    ) -> None:
         self._reader = reader
+        self._org = org
+        # Default proposer: per-org file memory, no LLM yet -> stays broad until
+        # a proposer learns a capability (honest; no hand-seeded families).
+        self._capabilities = capability_proposer or CapabilityProposer(FileCapabilityMemory(_DEFAULT_MEMORY_ROOT))
 
     def read(self, notes: str, posted_title: Optional[str] = None) -> Understanding:
         return self._reader(notes, posted_title)
@@ -29,7 +43,13 @@ class IntakeAgent:
         boundary: Dict[str, Any],
         answers: Optional[Dict[str, Any]] = None,
     ) -> IntakeOutcome:
-        return assemble_role_model(understanding, boundary, answers)
+        groups = self._capabilities.propose(
+            self._org,
+            understanding.identity,
+            understanding.posted_title,
+            [r.text for r in understanding.requirements],
+        )
+        return assemble_role_model(understanding, boundary, answers, capability_groups=groups)
 
     def run(
         self,
