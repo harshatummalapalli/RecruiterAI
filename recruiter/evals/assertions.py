@@ -67,6 +67,48 @@ def has_core_requirements(model: RoleModel) -> Optional[str]:
     return None
 
 
+# --- Briefing-plan checks (retrieval quality) --------------------------------
+
+def nl_names_all_cities(plan, cities) -> Optional[str]:
+    nl = plan.query.natural_language.lower()
+    missing = [c for c in cities if c.lower() not in nl]
+    if missing:
+        return f"NL query omits cities {missing}: {plan.query.natural_language!r}"
+    return None
+
+
+def cities_are_filtered(plan, cities) -> Optional[str]:
+    got = {c.lower() for c in plan.query.cities}
+    missing = [c for c in cities if c.lower() not in got]
+    return f"cities not hard-filtered: {missing}" if missing else None
+
+
+def capability_enforced_as_keyword_group(plan) -> Optional[str]:
+    if not plan.query.must_have_keyword_groups:
+        return "role-defining capability not enforced as a keyword group"
+    return None
+
+
+def work_mode_disclosed_not_filtered(plan) -> Optional[str]:
+    if any("work mode" in d.lower() for d in plan.disclosures):
+        return None
+    return "work mode not disclosed as a non-filter"
+
+
+def years_filtered_not_searched(plan, min_years) -> Optional[str]:
+    if plan.query.min_years != min_years:
+        return f"min_years not a filter: {plan.query.min_years!r} != {min_years!r}"
+    if f"{min_years} year" in plan.query.natural_language.lower():
+        return "years leaked into the NL query as a search term"
+    return None
+
+
+def no_garbled_requirement_echo(plan) -> Optional[str]:
+    if "experience with experience" in plan.query.natural_language.lower():
+        return f"garbled requirement echo in NL query: {plan.query.natural_language!r}"
+    return None
+
+
 def check_role_model(model: RoleModel, expect: dict) -> List[str]:
     """Run the applicable checks for a golden role's `expect` block. Returns the
     list of failure messages (empty = pass)."""
