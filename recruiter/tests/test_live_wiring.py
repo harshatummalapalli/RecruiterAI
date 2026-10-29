@@ -13,6 +13,27 @@ def test_parse_proposal_specialised():
     assert cap.label == "Salesforce" and cap.terms == ("Salesforce", "Apex", "SOQL")  # deduped
 
 
+def test_sanitizer_drops_the_junk_the_live_run_produced():
+    # The exact bad output gpt-4o-mini returned: requirement/language/SWE terms.
+    cap = _parse_proposal(
+        {"broad": False, "label": "AI Architect",
+         "terms": ["AI Architecture", "Java Development", "Agentic Systems", "Python", "Software Engineering"]},
+        identity="AI Architect",
+    )
+    assert cap is not None
+    kept = {t.lower() for t in cap.terms}
+    assert "java development" not in kept and "python" not in kept and "software engineering" not in kept
+    assert "agentic systems" in kept   # real capability signal survives
+
+
+def test_sanitizer_keeps_short_capability_acronyms():
+    cap = _parse_proposal({"broad": False, "label": "Agentic AI",
+                           "terms": ["AI", "ML", "LLM", "RAG", "agentic", "Java"]}, identity="AI Engineer")
+    kept = {t.lower() for t in cap.terms}
+    assert {"ai", "ml", "llm", "rag", "agentic"} <= kept
+    assert "java" not in kept          # language dropped
+
+
 def test_parse_proposal_broad_or_empty_is_none():
     assert _parse_proposal({"broad": True, "label": "Engineer", "terms": ["x"]}) is None
     assert _parse_proposal({"broad": False, "label": "X", "terms": []}) is None

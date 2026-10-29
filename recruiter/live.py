@@ -31,7 +31,7 @@ def build_live_pipeline(
     page_size: int = 50,
     admit_n: int = 25,
     show: int = 5,
-    capability_model: str = "gpt-4o-mini",
+    capability_model: str = "gpt-4o",
 ) -> Pipeline:
     intake = IntakeAgent(
         reader=keeper_reader,
