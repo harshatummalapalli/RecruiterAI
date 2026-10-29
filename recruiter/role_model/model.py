@@ -14,22 +14,30 @@ from recruiter.role_model.provenance import Provenance
 from recruiter.role_model.seniority import Seniority
 
 TIERS = ("core", "supporting", "differentiator")
+# When in the career the requirement must hold. 'past' = acceptable background,
+# not required now (e.g. "came from a Java background"); 'current' = must be
+# doing it now; 'any' = anytime in the career.
+WHEN = ("past", "current", "any")
 
 
 @dataclass(frozen=True)
 class Requirement:
     """One capability the role needs, in its own tier. `hard` means the
     recruiter/role marks it a precise must-have the Briefing agent may try to
-    enforce as a filter; otherwise it is a soft signal for retrieval + ranking."""
+    enforce as a filter; otherwise it is a soft signal for retrieval + ranking.
+    `when` separates present demands from acceptable background."""
 
     text: str
     tier: str
     provenance: Provenance
     hard: bool = False
+    when: str = "any"
 
     def __post_init__(self) -> None:
         if self.tier not in TIERS:
             raise ValueError(f"unknown requirement tier: {self.tier!r}")
+        if self.when not in WHEN:
+            raise ValueError(f"unknown requirement 'when': {self.when!r}")
 
 
 @dataclass(frozen=True)
@@ -53,6 +61,10 @@ class Location:
     countries: Tuple[str, ...] = ()
     states: Tuple[str, ...] = ()
     cities: Tuple[str, ...] = ()
+    # Soft preference: cities to PREFER (named in the NL query for a relevance
+    # boost) without excluding anyone — e.g. "ok anywhere in India, prefer these
+    # three". Never a hard filter; the hard scope stays countries/states/cities.
+    preferred_cities: Tuple[str, ...] = ()
     radius_place: Optional[str] = None
     radius_miles: Optional[float] = None
     work_mode: Optional[str] = None

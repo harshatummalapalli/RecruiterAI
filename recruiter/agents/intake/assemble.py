@@ -32,6 +32,7 @@ def _location(boundary: Dict[str, Any]) -> Location:
     cities = tuple(c for c in (boundary.get("cities") or []) if c)
     if not cities and boundary.get("city"):
         cities = (boundary["city"],)
+    preferred_cities = tuple(c for c in (boundary.get("preferred_cities") or []) if c)
     states = tuple(s for s in ([boundary.get("state")] if boundary.get("state") else []) if s)
     countries = tuple(c for c in ([boundary.get("country")] if boundary.get("country") else []) if c)
     radius_miles = boundary.get("radius_miles") if mode in ("onsite", "hybrid") else None
@@ -39,7 +40,7 @@ def _location(boundary: Dict[str, Any]) -> Location:
     if radius_miles and len(cities) == 1:
         radius_place = ", ".join(p for p in (cities[0], boundary.get("state")) if p)
     return Location(
-        countries=countries, states=states, cities=cities,
+        countries=countries, states=states, cities=cities, preferred_cities=preferred_cities,
         radius_place=radius_place, radius_miles=radius_miles, work_mode=mode,
     )
 
@@ -75,7 +76,7 @@ def assemble_role_model(
     exclude_titles = tuple(dict.fromkeys(default_title_exclusions(role_level)))
 
     requirements = tuple(
-        Requirement(text=r.text, tier=r.tier, provenance=Provenance(JD, r.evidence))
+        Requirement(text=r.text, tier=r.tier, provenance=Provenance(JD, r.evidence), when=r.when)
         for r in understanding.requirements
     )
 

@@ -32,17 +32,33 @@ def _join_or(items: List[str]) -> str:
 def build_nl_query(model: RoleModel) -> str:
     parts: List[str] = [model.identity.strip()]
 
-    core = [r.text for r in model.core]
-    if core:
-        parts.append("with experience in " + _join(core))
+    # Current/any-time cores are present demands; past cores are background
+    # (acceptable, not required) — phrased so retrieval doesn't over-weight them.
+    current_core = [r.text for r in model.core if r.when != "past"]
+    past_core = [r.text for r in model.core if r.when == "past"]
+    if current_core:
+        parts.append("with experience in " + _join(current_core))
+    if past_core:
+        parts.append("with a background in " + _join(past_core))
 
     supporting = [r.text for r in model.tier("supporting")]
     if supporting:
         parts.append("ideally " + _join(supporting))
 
-    places = list(model.location.cities) or list(model.location.states) or list(model.location.countries)
-    if places:
-        parts.append("based in " + _join_or(places))
+    parts.append(_location_phrase(model))
 
     sentence = ". ".join(p for p in parts if p).strip()
     return sentence + "." if sentence and not sentence.endswith(".") else sentence
+
+
+def _location_phrase(model: RoleModel) -> str:
+    loc = model.location
+    if loc.cities:
+        return "based in " + _join_or(list(loc.cities))
+    # Soft city preference: name them as a boost, scope stays the country/states.
+    if loc.preferred_cities:
+        scope = (list(loc.countries) or list(loc.states) or [""])[0]
+        lead = f"based in {scope}, " if scope else "based "
+        return lead + "preferably " + _join_or(list(loc.preferred_cities))
+    places = list(loc.states) or list(loc.countries)
+    return "based in " + _join_or(places) if places else ""

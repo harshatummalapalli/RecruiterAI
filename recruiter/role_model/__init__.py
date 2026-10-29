@@ -7,6 +7,7 @@ from recruiter.role_model.model import (
     Requirement,
     RoleModel,
     TIERS,
+    WHEN,
 )
 from recruiter.role_model.provenance import (
     BACKSTOP,
@@ -30,7 +31,7 @@ from recruiter.role_model.levels import (
 
 __all__ = [
     # spine
-    "RoleModel", "Requirement", "CapabilityGroup", "Location", "CompanyRules", "TIERS",
+    "RoleModel", "Requirement", "CapabilityGroup", "Location", "CompanyRules", "TIERS", "WHEN",
     # seniority (years)
     "Seniority", "needs_years_clarification",
     # levels (flag + exclusions, non-gating)

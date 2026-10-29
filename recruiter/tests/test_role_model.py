@@ -119,6 +119,12 @@ def test_requirement_rejects_bad_tier():
         Requirement(text="x", tier="nonsense", provenance=_prov())
 
 
+def test_requirement_rejects_bad_when():
+    with pytest.raises(ValueError):
+        Requirement(text="x", tier="core", provenance=_prov(), when="whenever")
+    assert Requirement(text="x", tier="core", provenance=_prov()).when == "any"
+
+
 def test_provenance_rejects_unknown_source():
     with pytest.raises(ValueError):
         Provenance(source="made_up")

@@ -19,6 +19,7 @@ class ReadRequirement:
     text: str
     tier: str                      # core | supporting | differentiator
     evidence: Optional[str] = None  # the notes span, when stated
+    when: str = "any"              # past | current | any (see temporal.py)
 
 
 @dataclass(frozen=True)

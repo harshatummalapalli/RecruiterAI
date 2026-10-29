@@ -13,6 +13,7 @@ from __future__ import annotations
 from typing import Optional
 
 from recruiter.agents.intake.model import ReadRequirement, Understanding
+from recruiter.agents.intake.temporal import infer_when
 
 
 def keeper_reader(notes: str, posted_title: Optional[str] = None) -> Understanding:
@@ -24,7 +25,7 @@ def keeper_reader(notes: str, posted_title: Optional[str] = None) -> Understandi
     evidence = fsi.evidence or {}
 
     def _reqs(texts, tier):
-        return [ReadRequirement(text=t, tier=tier, evidence=evidence.get(t)) for t in texts]
+        return [ReadRequirement(text=t, tier=tier, evidence=evidence.get(t), when=infer_when(notes, t)) for t in texts]
 
     requirements = (
         _reqs(fsi.hard_requirements, "core")
