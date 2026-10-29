@@ -14,6 +14,7 @@ from recruiter.agents.intake.assemble import assemble_role_model
 from recruiter.agents.intake.capability_memory import FileCapabilityMemory
 from recruiter.agents.intake.capability_proposal import CapabilityProposer
 from recruiter.agents.intake.model import IntakeOutcome, Understanding
+from recruiter.agents.intake.question_planner import plan_refinements
 from recruiter.agents.intake.reader import keeper_reader
 
 Reader = Callable[[str, Optional[str]], Understanding]
@@ -49,7 +50,13 @@ class IntakeAgent:
             understanding.posted_title,
             [r.text for r in understanding.requirements],
         )
-        return assemble_role_model(understanding, boundary, answers, capability_groups=groups)
+        outcome = assemble_role_model(understanding, boundary, answers, capability_groups=groups)
+        if not outcome.ready:
+            return outcome  # a required clarification (missing years) blocks first
+        return IntakeOutcome(
+            model=outcome.model,
+            refinements=tuple(plan_refinements(understanding, groups)),
+        )
 
     def run(
         self,

@@ -62,6 +62,8 @@ def assemble_role_model(
                 id="min_years",
                 prompt="The notes don't state a minimum experience. What's the minimum years of experience required?",
                 kind="min_years",
+                routing="filter",
+                required=True,
             ),
         ))
 

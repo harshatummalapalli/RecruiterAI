@@ -37,15 +37,20 @@ class Understanding:
 class Question:
     id: str
     prompt: str
-    kind: str                      # "min_years"
+    kind: str                      # min_years | capability_confirm | multi_select | rank | choice | free_text | confirm
+    routing: str = ""              # how the answer is used: filter | query | judge | ranking | confirm (+combos)
+    required: bool = False         # blocks the search until answered (only years today)
+    options: Tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
 class IntakeOutcome:
-    """Either a ready RoleModel, or clarifications the recruiter must answer."""
+    """A ready RoleModel plus any optional refinement questions, OR the required
+    clarifications that block the search until answered."""
 
     model: Optional[RoleModel] = None
-    clarifications: Tuple[Question, ...] = ()
+    clarifications: Tuple[Question, ...] = ()   # required/blocking (e.g. missing years)
+    refinements: Tuple[Question, ...] = ()      # optional, surfaced on the brief
 
     @property
     def ready(self) -> bool:

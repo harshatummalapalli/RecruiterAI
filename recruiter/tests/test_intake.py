@@ -63,20 +63,25 @@ def test_missing_years_triggers_the_ask_then_resolves():
 
 
 def test_architect_role_suppresses_exec_exclusions_and_enforces_capability():
-    model = _agent(_architect_understanding()).run(fx.ROLE.notes, fx.ROLE.boundary).model
+    outcome = _agent(_architect_understanding()).run(fx.ROLE.notes, fx.ROLE.boundary)
+    model = outcome.model
     assert model.role_level == "architect"
     assert model.exclude_titles == ()
     assert any("AI" in g.label for g in model.capability_groups)
+    # The adaptive planner surfaces the right refinements for a specialised senior role.
+    assert "capability" in {q.id for q in outcome.refinements}
 
 
 def test_ic_role_excludes_execs_and_has_no_capability_group():
     u = Understanding(identity="Senior Backend Engineer", min_years=6,
                       requirements=(ReadRequirement("Python backend services", "core"),))
-    model = _agent(u).run("Senior Backend Engineer, 6+ years, Python.",
-                          {"country": "India", "work_mode": "onsite", "city": "Pune"}).model
+    outcome = _agent(u).run("Senior Backend Engineer, 6+ years, Python.",
+                            {"country": "India", "work_mode": "onsite", "city": "Pune"})
+    model = outcome.model
     assert model.role_level == "ic"
     assert "VP" in model.exclude_titles and "Head of" in model.exclude_titles
     assert model.capability_groups == ()
+    assert outcome.refinements == ()   # broad single-core IC role -> the planner stays quiet
 
 
 def test_multi_city_and_hiring_company_exclusion():
