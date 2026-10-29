@@ -12,7 +12,7 @@ from recruiter.agents.calibration import CalibrationAgent
 from recruiter.agents.intake import IntakeAgent
 from recruiter.agents.intake.capability_memory import FileCapabilityMemory
 from recruiter.agents.intake.capability_proposal import CapabilityProposer
-from recruiter.agents.intake.llm_proposer import make_openai_proposer
+from recruiter.agents.intake.llm_proposer import make_proposer
 from recruiter.agents.intake.reader import keeper_reader
 from recruiter.agents.ranking import RankingAgent
 from recruiter.agents.ranking.judge_adapter import JudgeAdapter
@@ -36,7 +36,7 @@ def build_live_pipeline(
     intake = IntakeAgent(
         reader=keeper_reader,
         capability_proposer=CapabilityProposer(
-            FileCapabilityMemory(memory_root), make_openai_proposer(model=capability_model)
+            FileCapabilityMemory(memory_root), make_proposer(model=capability_model)
         ),
         org=org,
     )

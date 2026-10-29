@@ -6,7 +6,6 @@ model. Parsing is pure and tested; the network call is lazy and fails safe
 
 from __future__ import annotations
 
-import json
 import re
 from typing import List, Optional
 
@@ -82,35 +81,20 @@ def _user_prompt(identity: str, posted_title: Optional[str], requirement_texts: 
     return "\n".join(lines) + "\n\nReturn the JSON now."
 
 
-def make_openai_proposer(client=None, model: str = "gpt-4o"):
+def make_proposer(model: str = "gpt-4o", call=None):
     """Returns an LlmProposer: (identity, posted_title, requirement_texts) ->
-    LearnedCapability | None. Client is created lazily; any failure -> None."""
-
-    state = {"client": client}
+    LearnedCapability | None, over any provider (chosen by model name). `call`
+    is the JSON completion fn (default: the provider-agnostic llm.complete_json);
+    injectable for offline tests. Any failure -> None (role stays broad)."""
 
     def propose(identity: str, posted_title: Optional[str], requirement_texts: List[str]) -> Optional[LearnedCapability]:
+        fn = call
+        if fn is None:
+            from recruiter.llm import complete_json
+            fn = complete_json
         try:
-            if state["client"] is None:
-                from openai import OpenAI
-                from backend.config import get_openai_api_key
-                key = get_openai_api_key()
-                if not key:
-                    return None
-                state["client"] = OpenAI(api_key=key)
-            kwargs = dict(
-                model=model,
-                input=[{"role": "system", "content": _SYSTEM},
-                       {"role": "user", "content": _user_prompt(identity, posted_title, requirement_texts)}],
-                text={"format": {"type": "json_object"}},
-            )
-            try:
-                response = state["client"].responses.create(temperature=0, **kwargs)
-            except Exception as exc:  # some models reject temperature
-                if "temperature" in str(exc).lower():
-                    response = state["client"].responses.create(**kwargs)
-                else:
-                    raise
-            return _parse_proposal(json.loads(response.output_text), identity)
+            data = fn(_SYSTEM, _user_prompt(identity, posted_title, requirement_texts), model)
+            return _parse_proposal(data, identity)
         except Exception:
             return None
 

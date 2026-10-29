@@ -2,7 +2,7 @@
 assembles offline (no network, no credits)."""
 
 from recruiter.agents.intake.capability_memory import LearnedCapability
-from recruiter.agents.intake.llm_proposer import _parse_proposal, make_openai_proposer
+from recruiter.agents.intake.llm_proposer import _parse_proposal, make_proposer
 from recruiter.pipeline import Pipeline
 
 
@@ -40,29 +40,19 @@ def test_parse_proposal_broad_or_empty_is_none():
     assert _parse_proposal("nonsense") is None
 
 
-def test_proposer_with_fake_client_returns_capability():
-    class _Resp:
-        output_text = '{"broad": false, "label": "Agentic AI", "qualifier": "AI", "terms": ["agentic", "LLM", "RAG"]}'
+def test_proposer_with_injected_call_returns_capability():
+    def fake_call(system, user, model):
+        return {"broad": False, "label": "Agentic AI", "qualifier": "AI", "terms": ["agentic", "LLM", "RAG"]}
 
-    class _Client:
-        class responses:
-            @staticmethod
-            def create(**kwargs):
-                return _Resp()
-
-    propose = make_openai_proposer(client=_Client())
-    cap = propose("AI Architect", "AI Architect", ["Agentic Systems"])
+    cap = make_proposer(model="any", call=fake_call)("AI Architect", "AI Architect", ["Agentic Systems"])
     assert cap and cap.label == "Agentic AI" and "RAG" in cap.terms
 
 
 def test_proposer_fails_safe_to_none():
-    class _BadClient:
-        class responses:
-            @staticmethod
-            def create(**kwargs):
-                raise RuntimeError("boom")
+    def boom(system, user, model):
+        raise RuntimeError("boom")
 
-    assert make_openai_proposer(client=_BadClient())("AI Architect", None, []) is None
+    assert make_proposer(model="any", call=boom)("AI Architect", None, []) is None
 
 
 def test_build_live_pipeline_assembles_offline(tmp_path):
