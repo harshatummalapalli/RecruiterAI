@@ -95,7 +95,8 @@ def create_app(pipeline=None, org: str = "default") -> FastAPI:
         return {
             "authorized": True,
             "search": {"pulled": search.pulled, "geo_dropped": search.geo_dropped, "est_credits": search.est_credits},
-            "stats": {"admitted": ranking.admitted, "judged": ranking.judged, "judge_failures": ranking.judge_failures},
+            "stats": {"admitted": ranking.admitted, "judged": ranking.judged,
+                      "judge_failures": ranking.judge_failures, "experience_excluded": ranking.experience_excluded},
             "candidates": [
                 {"name": rc.record.name, "title": rc.record.title, "company": rc.record.company,
                  "location": rc.record.location, "profile_url": rc.record.profile_url,

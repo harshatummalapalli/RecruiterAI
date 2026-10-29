@@ -37,3 +37,4 @@ class RankingResult:
     admitted: int
     judged: int
     judge_failures: int
+    experience_excluded: int = 0          # dropped: dated experience clearly below the min-years floor

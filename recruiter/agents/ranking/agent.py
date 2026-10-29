@@ -15,6 +15,7 @@ from __future__ import annotations
 from typing import List, Optional, Tuple
 
 from recruiter.agents.ranking.evidence import verified_coverage
+from recruiter.agents.ranking.experience import below_floor
 from recruiter.agents.ranking.explain import explain_fit
 from recruiter.agents.ranking.model import Enricher, Judge, RankedCandidate, RankingResult
 from recruiter.agents.ranking.score import baseline_score, final_score
@@ -31,8 +32,15 @@ class RankingAgent:
         self._show = show
 
     def rank(self, role: RoleModel, candidates: List[CandidateRecord]) -> RankingResult:
+        # 0. Verified experience floor: drop candidates whose OWN dated roles are
+        # clearly below the min-years requirement — CrustData's years filter can
+        # leak (unreliable field / hybrid-search override), so we re-check here.
+        min_years = role.seniority.min_years
+        eligible = [c for c in candidates if not below_floor(c, min_years)]
+        experience_excluded = len(candidates) - len(eligible)
+
         # 1-2. evidence-aware baseline -> admit the top N.
-        by_baseline = sorted(candidates, key=lambda c: (-baseline_score(role, c), (c.name or "")))
+        by_baseline = sorted(eligible, key=lambda c: (-baseline_score(role, c), (c.name or "")))
         admitted = by_baseline[: self._admit_n]
 
         # 3. enrich + judge only the admitted.
@@ -62,4 +70,5 @@ class RankingAgent:
         return RankingResult(
             ranked=rows, shown=rows[: self._show],
             admitted=len(admitted), judged=judged, judge_failures=failures,
+            experience_excluded=experience_excluded,
         )

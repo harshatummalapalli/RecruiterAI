@@ -172,7 +172,8 @@ $("run").onclick = async () => {
 };
 
 function renderResults(res){
-  $("searchStats").textContent = `pulled ${res.search.pulled} · in-scope kept ${res.search.pulled-res.search.geo_dropped} · admitted ${res.stats.admitted} · judged ${res.stats.judged} · ~${res.search.est_credits} credits`;
+  const exp = res.stats.experience_excluded ? ` · below-years dropped ${res.stats.experience_excluded}` : "";
+  $("searchStats").textContent = `pulled ${res.search.pulled} · in-scope kept ${res.search.pulled-res.search.geo_dropped}${exp} · admitted ${res.stats.admitted} · judged ${res.stats.judged} · ~${res.search.est_credits} credits`;
   $("candidates").innerHTML = res.candidates.map((c,i)=>`
     <div class="cand">
       <div class="top">
