@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>RecruiterAI</title>
+<style>
+  :root { --bg:#0f1115; --card:#171a21; --line:#2a2f3a; --fg:#e7e9ee; --mut:#9aa3b2; --acc:#6ea8fe; --good:#5ad19b; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui,Segoe UI,Roboto,sans-serif; }
+  .wrap { max-width:860px; margin:0 auto; padding:24px 16px 64px; }
+  h1 { font-size:20px; margin:0 0 4px; } .sub { color:var(--mut); margin:0 0 20px; font-size:13px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; margin:14px 0; }
+  label { display:block; font-size:12px; color:var(--mut); margin:10px 0 4px; }
+  textarea, input, select { width:100%; background:#0d0f14; color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:9px 11px; font:inherit; }
+  textarea { min-height:150px; resize:vertical; }
+  .row { display:flex; gap:12px; } .row > div { flex:1; }
+  button { background:var(--acc); color:#0b0e14; border:0; border-radius:8px; padding:10px 16px; font-weight:600; cursor:pointer; margin-top:14px; }
+  button.secondary { background:#242a35; color:var(--fg); }
+  button:disabled { opacity:.5; cursor:default; }
+  .line { display:flex; gap:10px; padding:6px 0; border-bottom:1px solid var(--line); }
+  .line .k { color:var(--mut); width:220px; flex:none; font-size:13px; } .line .v { flex:1; }
+  .limit { color:#e0b36a; font-size:13px; margin:6px 0; }
+  .q { margin:12px 0; } .q .ask { font-size:14px; margin-bottom:6px; } .q .tag { font-size:11px; color:var(--mut); }
+  .opt { display:inline-flex; align-items:center; gap:6px; margin:4px 12px 4px 0; font-size:14px; color:var(--fg); }
+  .cand { border:1px solid var(--line); border-radius:10px; padding:12px; margin:10px 0; }
+  .cand .top { display:flex; justify-content:space-between; gap:10px; }
+  .cand .nm { font-weight:600; } .cand .meta { color:var(--mut); font-size:13px; } .cand .score { color:var(--good); font-weight:700; }
+  .cand .fit { font-size:13px; color:#c6ccd8; margin-top:6px; }
+  .err { color:#ff8080; font-size:13px; margin-top:8px; }
+  .muted { color:var(--mut); font-size:12px; }
+  .rankrow { display:flex; align-items:center; gap:8px; padding:3px 0; }
+  .rankrow .txt { flex:1; } .rankrow button { margin:0; padding:2px 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>RecruiterAI</h1>
+  <p class="sub">New engine · describe the role, review how it's understood, then run the search.</p>
+
+  <div class="card" id="formCard">
+    <label>Hiring notes / JD</label>
+    <textarea id="notes" placeholder="Paste the role notes…"></textarea>
+    <div class="row">
+      <div><label>Hiring company</label><input id="company" placeholder="e.g. Epiq"></div>
+      <div><label>Country</label><input id="country" value="India"></div>
+      <div><label>Work mode</label>
+        <select id="workmode"><option>onsite</option><option>hybrid</option><option selected>remote</option></select></div>
+    </div>
+    <div class="row">
+      <div><label>Cities (hard filter, comma-sep)</label><input id="cities" placeholder="Noida"></div>
+      <div><label>Preferred cities (soft, comma-sep)</label><input id="pcities" placeholder="Hyderabad, Bengaluru, Pune"></div>
+    </div>
+    <div id="yearsAsk"></div>
+    <button id="analyze">Analyze role</button>
+    <div class="err" id="formErr"></div>
+  </div>
+
+  <div class="card" id="reviewCard" style="display:none">
+    <h1 style="font-size:16px">How we understood this role</h1>
+    <div id="summary"></div>
+    <div id="limits"></div>
+    <h1 style="font-size:16px;margin-top:16px">A few questions</h1>
+    <div id="questions"></div>
+    <button id="run">Run search</button>
+    <span class="muted" id="credits"></span>
+    <div class="err" id="runErr"></div>
+  </div>
+
+  <div class="card" id="resultsCard" style="display:none">
+    <h1 style="font-size:16px">Top candidates</h1>
+    <div class="muted" id="searchStats"></div>
+    <div id="candidates"></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let SESSION = null, QUESTIONS = [];
+
+function listVals(id){ return $(id).value.split(",").map(s=>s.trim()).filter(Boolean); }
+function boundary(){
+  const b = { hiring_company: $("company").value.trim(), country: $("country").value.trim(), work_mode: $("workmode").value };
+  const c = listVals("cities"), p = listVals("pcities");
+  if (c.length) b.cities = c; if (p.length) b.preferred_cities = p;
+  return b;
+}
+
+async function post(url, body){
+  const r = await fetch(url, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)});
+  const data = await r.json().catch(()=>({detail:"bad response"}));
+  if (!r.ok) throw new Error(data.detail || ("HTTP "+r.status));
+  return data;
+}
+
+$("analyze").onclick = async () => {
+  $("formErr").textContent = ""; $("analyze").disabled = true;
+  try {
+    const answers = {};
+    const y = $("years"); if (y && y.value) answers.min_years = parseInt(y.value, 10);
+    const res = await post("/api/intake", { notes: $("notes").value, boundary: boundary(), answers });
+    if (!res.ready) { renderYears(res.clarifications); return; }
+    SESSION = res.session; QUESTIONS = res.review.questions;
+    renderReview(res.review);
+  } catch(e){ $("formErr").textContent = e.message; }
+  finally { $("analyze").disabled = false; }
+};
+
+function renderYears(clars){
+  const q = clars.find(c=>c.kind==="min_years") || clars[0];
+  $("yearsAsk").innerHTML = `<label>${q ? q.prompt : "Minimum years?"}</label><input id="years" type="number" min="0" placeholder="e.g. 8">`;
+}
+
+function renderReview(rev){
+  $("summary").innerHTML = rev.summary.map(l=>`<div class="line"><div class="k">${l.label}</div><div class="v">${esc(l.value)}</div></div>`).join("");
+  $("limits").innerHTML = rev.limits.map(l=>`<div class="limit">⚠ ${esc(l)}</div>`).join("");
+  $("questions").innerHTML = rev.questions.map(renderQ).join("");
+  QUESTIONS.forEach(q => { if (q.kind==="rank") wireRank(q.id); });
+  $("reviewCard").style.display = "block";
+  $("resultsCard").style.display = "none";
+  $("reviewCard").scrollIntoView({behavior:"smooth"});
+}
+
+function renderQ(q){
+  const head = `<div class="ask">${esc(q.prompt)} <span class="tag">[${q.routing}]</span></div>`;
+  let body = "";
+  if (q.kind==="multi_select")
+    body = q.options.map((o,i)=>`<label class="opt"><input type="checkbox" data-q="${q.id}" value="${esc(o)}">${esc(o)}</label>`).join("");
+  else if (q.kind==="choice" || q.kind==="confirm" || q.kind==="capability_confirm")
+    body = q.options.map(o=>`<label class="opt"><input type="radio" name="r_${q.id}" data-q="${q.id}" value="${esc(o)}">${esc(o)}</label>`).join("");
+  else if (q.kind==="free_text")
+    body = `<input data-q="${q.id}" placeholder="optional…">`;
+  else if (q.kind==="rank")
+    body = `<div id="rank_${q.id}">` + q.options.map(o=>`<div class="rankrow" data-v="${esc(o)}"><span class="txt">${esc(o)}</span><button class="secondary up">↑</button><button class="secondary down">↓</button></div>`).join("") + `</div>`;
+  return `<div class="q" data-qid="${q.id}" data-kind="${q.kind}">${head}${body}</div>`;
+}
+
+function wireRank(id){
+  const box = $("rank_"+id); if(!box) return;
+  box.querySelectorAll("button").forEach(btn=>btn.onclick=(e)=>{
+    e.preventDefault(); const row=btn.closest(".rankrow");
+    if(btn.classList.contains("up") && row.previousElementSibling) box.insertBefore(row, row.previousElementSibling);
+    if(btn.classList.contains("down") && row.nextElementSibling) box.insertBefore(row.nextElementSibling, row);
+  });
+}
+
+function collectAnswers(){
+  const a = {};
+  QUESTIONS.forEach(q=>{
+    if (q.kind==="multi_select"){
+      const v=[...document.querySelectorAll(`input[data-q="${q.id}"]:checked`)].map(x=>x.value); if(v.length) a[q.id]=v;
+    } else if (q.kind==="choice"||q.kind==="confirm"||q.kind==="capability_confirm"){
+      const sel=document.querySelector(`input[data-q="${q.id}"]:checked`); if(sel) a[q.id]=sel.value;
+    } else if (q.kind==="free_text"){
+      const t=document.querySelector(`input[data-q="${q.id}"]`); if(t && t.value.trim()) a[q.id]=t.value.trim();
+    } else if (q.kind==="rank"){
+      const order=[...document.querySelectorAll(`#rank_${q.id} .rankrow`)].map(r=>r.dataset.v); if(order.length) a[q.id]=order;
+    }
+  });
+  return a;
+}
+
+$("run").onclick = async () => {
+  if (!confirm("This runs a live CrustData search (≈1.5 credits). Continue?")) return;
+  $("runErr").textContent=""; $("run").disabled=true; $("credits").textContent=" searching…";
+  try {
+    const res = await post("/api/execute", { session: SESSION, answers: collectAnswers() });
+    if (!res.authorized){ $("runErr").textContent = res.reason || "Not authorized."; return; }
+    renderResults(res);
+  } catch(e){ $("runErr").textContent = e.message; }
+  finally { $("run").disabled=false; $("credits").textContent=""; }
+};
+
+function renderResults(res){
+  $("searchStats").textContent = `pulled ${res.search.pulled} · in-scope kept ${res.search.pulled-res.search.geo_dropped} · admitted ${res.stats.admitted} · judged ${res.stats.judged} · ~${res.search.est_credits} credits`;
+  $("candidates").innerHTML = res.candidates.map((c,i)=>`
+    <div class="cand">
+      <div class="top">
+        <div><span class="nm">${i+1}. ${esc(c.name||"(unnamed)")}</span>
+          <div class="meta">${esc(c.title||"")}${c.company? " · "+esc(c.company):""}${c.location? " · "+esc(c.location):""}</div></div>
+        <div class="score">${c.score}</div>
+      </div>
+      <div class="fit">${esc(c.fit||"")}</div>
+      ${c.profile_url? `<div class="meta"><a href="${esc(c.profile_url)}" target="_blank" style="color:var(--acc)">profile ↗</a></div>`:""}
+    </div>`).join("") || `<div class="muted">No candidates.</div>`;
+  $("resultsCard").style.display="block";
+  $("resultsCard").scrollIntoView({behavior:"smooth"});
+}
+
+function esc(s){ return (s==null?"":String(s)).replace(/[&<>"]/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m])); }
+</script>
+</body>
+</html>
