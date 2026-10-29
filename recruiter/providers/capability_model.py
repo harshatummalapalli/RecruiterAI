@@ -24,6 +24,19 @@ from typing import Dict, List, Optional, Tuple
 
 VERSION = "v1-2026-10-01"
 
+# CrustData's person_search employment_type vocabulary (live-confirmed). An
+# unvalidated value silently returns zero rows, so only a value in this set is
+# ever enforced; anything else is disclosed instead.
+SUPPORTED_EMPLOYMENT_TYPES = frozenset({"full-time", "part-time", "internship", "contract", "self-employed"})
+
+
+def normalize_employment_type(value):
+    if not value:
+        return None
+    norm = value.strip().lower().replace(" ", "-")
+    return norm if norm in SUPPORTED_EMPLOYMENT_TYPES else None
+
+
 VERIFIED, UNVERIFIED, UNAVAILABLE = "verified", "unverified", "unavailable"
 RETURNED, GATED = "returned", "gated"
 HIGH, UNKNOWN = "high", "unknown"

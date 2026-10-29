@@ -41,6 +41,22 @@ class BriefingAgent:
         consider("exclude_titles", tuple(model.exclude_titles))
         consider("exclude_current_companies", tuple(model.companies.exclude_current))
 
+        # Radius (geo_distance) — a location hard filter, enforced when anchored.
+        if model.location.radius_place and model.location.radius_miles and cap.route_filter("radius_place") in _ENFORCEABLE:
+            enforced["radius_place"] = model.location.radius_place
+            enforced["radius_miles"] = model.location.radius_miles
+
+        # Employment type — enforce only a CrustData-recognised value; an
+        # unrecognised one silently returns zero rows, so disclose instead.
+        if model.employment_type:
+            normalized = cap.normalize_employment_type(model.employment_type)
+            if normalized and cap.route_filter("employment_type") in _ENFORCEABLE:
+                enforced["employment_type"] = normalized
+            else:
+                disclosures.append(
+                    f"Employment type '{model.employment_type}' isn't a filterable CrustData value — recorded only."
+                )
+
         groups: Tuple[Tuple[str, ...], ...] = tuple(tuple(g.terms) for g in model.capability_groups if g.terms)
         if groups and cap.route_filter("must_have_keyword_groups") in _ENFORCEABLE:
             enforced["must_have_keyword_groups"] = groups
@@ -52,6 +68,9 @@ class BriefingAgent:
             cities=enforced.get("cities", ()),
             min_years=enforced.get("minimum_years"),
             max_years=enforced.get("maximum_years"),
+            radius_place=enforced.get("radius_place"),
+            radius_miles=enforced.get("radius_miles"),
+            employment_type=enforced.get("employment_type"),
             exclude_titles=enforced.get("exclude_titles", ()),
             exclude_current_companies=enforced.get("exclude_current_companies", ()),
             must_have_keyword_groups=enforced.get("must_have_keyword_groups", ()),

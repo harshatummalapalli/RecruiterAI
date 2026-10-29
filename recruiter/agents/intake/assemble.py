@@ -28,14 +28,31 @@ from recruiter.role_model import (
 
 
 def _location(boundary: Dict[str, Any]) -> Location:
+    """Turn the recruiter boundary into the hard location scope. Work mode is
+    NOT a filter (CrustData can't) — it decides HOW geography becomes the hard
+    filter: remote -> a country/states/cities scope; onsite/hybrid -> a city
+    (+ radius) scope. Work mode itself is recorded and disclosed downstream."""
     mode = (boundary.get("work_mode") or "").strip().lower() or None
+    countries = tuple(c for c in ([boundary.get("country")] if boundary.get("country") else []) if c)
+    preferred_cities = tuple(c for c in (boundary.get("preferred_cities") or []) if c)
+
+    if mode == "remote":
+        scope = (boundary.get("remote_scope") or "").strip().lower()
+        if scope == "cities":
+            cities, states = tuple(boundary.get("remote_cities") or []), ()
+        elif scope == "states":
+            cities, states = (), tuple(boundary.get("remote_states") or [])
+        else:  # "anywhere" / unspecified -> country-wide
+            cities, states = (), ()
+        return Location(countries=countries, states=states, cities=cities,
+                        preferred_cities=preferred_cities, work_mode=mode)
+
+    # onsite / hybrid (or unspecified): city/cities (+ radius anchor on one city).
     cities = tuple(c for c in (boundary.get("cities") or []) if c)
     if not cities and boundary.get("city"):
         cities = (boundary["city"],)
-    preferred_cities = tuple(c for c in (boundary.get("preferred_cities") or []) if c)
     states = tuple(s for s in ([boundary.get("state")] if boundary.get("state") else []) if s)
-    countries = tuple(c for c in ([boundary.get("country")] if boundary.get("country") else []) if c)
-    radius_miles = boundary.get("radius_miles") if mode in ("onsite", "hybrid") else None
+    radius_miles = boundary.get("radius_miles")
     radius_place = None
     if radius_miles and len(cities) == 1:
         radius_place = ", ".join(p for p in (cities[0], boundary.get("state")) if p)

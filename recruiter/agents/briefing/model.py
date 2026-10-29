@@ -22,6 +22,9 @@ class ProviderQuery:
     cities: Tuple[str, ...] = ()
     min_years: Optional[int] = None
     max_years: Optional[int] = None
+    radius_place: Optional[str] = None
+    radius_miles: Optional[float] = None
+    employment_type: Optional[str] = None
     exclude_titles: Tuple[str, ...] = ()
     exclude_current_companies: Tuple[str, ...] = ()
     must_have_keyword_groups: Tuple[Tuple[str, ...], ...] = ()
