@@ -13,10 +13,11 @@ from recruiter.agents.intake import IntakeAgent
 from recruiter.agents.intake.capability_memory import FileCapabilityMemory
 from recruiter.agents.intake.capability_proposal import CapabilityProposer
 from recruiter.agents.intake.llm_proposer import make_proposer
-from recruiter.agents.intake.reader import keeper_reader
+from recruiter.agents.intake.native_reader import make_native_reader
 from recruiter.agents.ranking import RankingAgent
 from recruiter.agents.ranking.judge_adapter import JudgeAdapter
 from recruiter.agents.search import SearchAgent
+from recruiter.config import CAPABILITY_MODEL, JUDGE_MODEL, READER_MODEL
 from recruiter.pipeline import Pipeline
 from recruiter.providers.crustdata_adapter import CrustDataAdapter
 from recruiter.providers.harvest_adapter import HarvestAdapter
@@ -31,10 +32,12 @@ def build_live_pipeline(
     page_size: int = 50,
     admit_n: int = 25,
     show: int = 5,
-    capability_model: str = "gpt-4o",
+    reader_model: str = READER_MODEL,
+    capability_model: str = CAPABILITY_MODEL,
+    judge_model: str = JUDGE_MODEL,
 ) -> Pipeline:
     intake = IntakeAgent(
-        reader=keeper_reader,
+        reader=make_native_reader(reader_model),
         capability_proposer=CapabilityProposer(
             FileCapabilityMemory(memory_root), make_proposer(model=capability_model)
         ),
@@ -45,5 +48,8 @@ def build_live_pipeline(
         briefing=BriefingAgent(),
         calibration=CalibrationAgent(),
         search=SearchAgent(CrustDataAdapter(), page_size=page_size),
-        ranking=RankingAgent(judge=JudgeAdapter(), enricher=HarvestAdapter(), admit_n=admit_n, show=show),
+        ranking=RankingAgent(
+            judge=JudgeAdapter(model=judge_model), enricher=HarvestAdapter(),
+            admit_n=admit_n, show=show,
+        ),
     )

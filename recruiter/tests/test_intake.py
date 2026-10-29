@@ -84,6 +84,20 @@ def test_ic_role_excludes_execs_and_has_no_capability_group():
     assert outcome.refinements == ()   # broad single-core IC role -> the planner stays quiet
 
 
+def test_identity_is_normalized_to_title_shape():
+    # Newer models append descriptors; the identity must stay title-shaped so
+    # title-relevance scoring works.
+    cases = {
+        "AI Architect (Agentic Systems, production AI)": "AI Architect",
+        "Sales Manager — single-outlet restaurant acquisition": "Sales Manager",
+        "Sales Manager, B2B restaurant partner acquisition (field sales)": "Sales Manager",
+    }
+    for verbose, expected in cases.items():
+        u = Understanding(identity=verbose, min_years=5, requirements=(ReadRequirement("x", "core"),))
+        model = _agent(u).run("notes", {"country": "India", "work_mode": "onsite", "city": "Pune"}).model
+        assert model.identity == expected, (verbose, model.identity)
+
+
 def test_multi_city_and_hiring_company_exclusion():
     model = _agent(_architect_understanding()).run(fx.ROLE.notes, {**fx.ROLE.boundary, "hiring_company": "Acme"}).model
     assert model.location.cities == ("Hyderabad", "Bengaluru", "Pune")

@@ -24,13 +24,14 @@ def _to_intent(role: RoleModel):
 
 
 class JudgeAdapter:
-    def __init__(self, judge=None) -> None:
+    def __init__(self, judge=None, model: Optional[str] = None) -> None:
         self._judge = judge
+        self._model = model
 
     def _get(self):
         if self._judge is None:
             from backend.services.requirement_judge import RequirementJudge
-            self._judge = RequirementJudge()
+            self._judge = RequirementJudge(model=self._model) if self._model else RequirementJudge()
         return self._judge
 
     def judge(self, role: RoleModel, record: CandidateRecord) -> Optional[Tuple[dict, ...]]:

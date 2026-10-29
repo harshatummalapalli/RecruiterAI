@@ -8,6 +8,7 @@ group is derived, and un-filterable facts (work mode) are disclosed.
 
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, Optional, Tuple
 
 from recruiter.agents.intake.model import IntakeOutcome, Question, Understanding
@@ -25,6 +26,25 @@ from recruiter.role_model import (
     default_title_exclusions,
     needs_years_clarification,
 )
+
+
+# Separators newer models append a descriptor after ("AI Architect (Agentic
+# Systems)", "Sales Manager — restaurant acquisition", "Sales Manager, B2B …").
+# The identity drives title-relevance scoring, so keep it title-shaped. " / " is
+# NOT a separator (real compound titles like "Field Sales / BD Manager").
+_IDENTITY_SEPARATORS = (" (", " — ", " – ", " - ", " | ", ", ")
+
+
+def _normalize_identity(identity: Optional[str], posted_title: Optional[str]) -> str:
+    text = (identity or "").strip()
+    for sep in _IDENTITY_SEPARATORS:
+        if sep in text:
+            text = text.split(sep, 1)[0].strip()
+    text = re.sub(r"\s*\(.*$", "", text).strip()   # drop any stray trailing "(...)"
+    words = text.split()
+    if len(words) > 6:
+        text = " ".join(words[:6])
+    return text or (posted_title or (identity or "").strip())
 
 
 def _location(boundary: Dict[str, Any]) -> Location:
@@ -85,7 +105,7 @@ def assemble_role_model(
             ),
         ))
 
-    identity = understanding.identity
+    identity = _normalize_identity(understanding.identity, understanding.posted_title)
     role_level = classify_role_level(identity, understanding.posted_title)
 
     # Default exec exclusions (suppressed for architect/manager/director+), plus
