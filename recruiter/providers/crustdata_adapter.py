@@ -13,6 +13,7 @@ from typing import List
 
 from recruiter.agents.briefing.model import ProviderQuery
 from recruiter.candidates import CandidateRecord
+from recruiter.search_policy import expand_city_aliases, hard_title_exclusions
 
 
 def _to_search_query(pq: ProviderQuery):
@@ -23,13 +24,18 @@ def _to_search_query(pq: ProviderQuery):
         natural_language_query=pq.natural_language,
         countries=list(pq.countries),
         states=list(pq.states),
-        cities=list(pq.cities),
+        # CrustData's city filter is literal + exact-mode binds it, so send every
+        # spelling (a "Bangalore" filter matches 0; "Bengaluru" matches millions).
+        cities=list(expand_city_aliases(pq.cities)),
         minimum_years=pq.min_years,
         maximum_years=pq.max_years,
         radius_place=pq.radius_place,
         radius_miles=pq.radius_miles,
         employment_type=pq.employment_type,
-        exclude_titles=list(pq.exclude_titles),
+        # Hand CrustData only the unambiguous leadership titles; the ambiguous
+        # ones ("Manager") are decided by the verify net, which spares a
+        # hands-on capability match. (The full list still rides pq for the net.)
+        exclude_titles=list(hard_title_exclusions(pq.exclude_titles)),
         exclude_current_companies=list(pq.exclude_current_companies),
         must_have_keyword_groups=[list(g) for g in pq.must_have_keyword_groups],
     )

@@ -13,6 +13,7 @@ import re
 from typing import Iterable, List, Tuple
 
 from recruiter.candidates import CandidateRecord
+from recruiter.search_policy import AMBIGUOUS_TITLES, city_aliases
 
 
 def merge(records: Iterable[CandidateRecord]) -> List[CandidateRecord]:
@@ -47,25 +48,6 @@ def enforce_geo(
         else:
             dropped.append(r)
     return kept, dropped
-
-
-# City name variants — CrustData's canonical is usually the first, but profiles
-# carry either, so we match any. Extend as needed (verified: CrustData uses
-# "Bengaluru"/"Hyderabad"/"Pune"/"New Delhi").
-_CITY_ALIAS_GROUPS = [
-    {"bengaluru", "bangalore"}, {"gurugram", "gurgaon"}, {"mumbai", "bombay"},
-    {"kolkata", "calcutta"}, {"chennai", "madras"}, {"pune", "poona"},
-    {"new delhi", "delhi"}, {"kochi", "cochin"}, {"vadodara", "baroda"},
-    {"prayagraj", "allahabad"}, {"thiruvananthapuram", "trivandrum"},
-]
-
-
-def _aliases(city: str) -> set:
-    key = city.strip().lower()
-    for group in _CITY_ALIAS_GROUPS:
-        if key in group:
-            return group
-    return {key}
 
 
 def _candidate_location_text(record: CandidateRecord) -> str:
@@ -113,14 +95,6 @@ def enforce_company_exclusions(
     return kept, dropped
 
 
-# Titles that are ambiguous between leadership and a senior IC — in many domains
-# "eDiscovery Manager" / "ESI Manager" is a hands-on specialist, not a people
-# manager. These are SPARED from the title-exclusion net when the candidate's
-# profile matches the role's capability; everything else on the exclude list
-# (Founder/CxO/VP/Director/Head of…) is unambiguous leadership and always drops.
-_AMBIGUOUS_TITLES = {"manager"}
-
-
 def _candidate_current_title(record: CandidateRecord) -> str:
     parts = [record.title or ""]
     raw = record.raw if isinstance(record.raw, dict) else {}
@@ -156,7 +130,7 @@ def enforce_title_exclusions(
         if not key:
             continue
         rx = re.compile(r"\b" + re.escape(key) + r"\b", re.I)
-        (spare if key in _AMBIGUOUS_TITLES else hard).append(rx)
+        (spare if key in AMBIGUOUS_TITLES else hard).append(rx)
     cap = [c.strip().lower() for c in capability_terms if c and c.strip()]
     records = list(records)
     if not hard and not spare:
@@ -189,7 +163,7 @@ def enforce_cities(
     has no city match and is dropped."""
     wanted: set = set()
     for c in cities:
-        wanted |= _aliases(c)
+        wanted |= city_aliases(c)
     records = list(records)
     if not wanted:
         return records, []

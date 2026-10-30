@@ -16,16 +16,22 @@ from recruiter.role_model import JD, Provenance, Requirement, RoleModel, Seniori
 def test_provider_query_maps_to_keeper_search_query():
     pq = ProviderQuery(
         natural_language="AI Architect based in India",
-        countries=("India",), cities=("Pune",), min_years=12,
+        countries=("India",), cities=("Bangalore",), min_years=12,
         exclude_current_companies=("Epiq",),
+        exclude_titles=("VP", "Director", "Manager"),
         must_have_keyword_groups=(("agentic", "LLM"),),
         employment_type="full-time",
     )
     sq = _to_search_query(pq)
     assert sq.natural_language_query == "AI Architect based in India"
-    assert sq.countries == ["India"] and sq.cities == ["Pune"]
+    assert sq.countries == ["India"]
+    # city alias-expanded so exact mode doesn't drop the canonical spelling
+    assert "Bengaluru" in sq.cities and "Bangalore" in sq.cities
     assert sq.minimum_years == 12
     assert sq.exclude_current_companies == ["Epiq"]
+    # ambiguous "Manager" is NOT sent to CrustData (verify net handles it)
+    assert "Manager" not in sq.exclude_titles
+    assert "VP" in sq.exclude_titles and "Director" in sq.exclude_titles
     assert sq.must_have_keyword_groups == [["agentic", "LLM"]]
     assert sq.employment_type == "full-time"
 
