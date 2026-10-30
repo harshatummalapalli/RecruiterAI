@@ -25,6 +25,7 @@ _DOMAIN_HINTS = (
     "fintech", "payments", "banking", "insurance", "healthcare", "health", "ecommerce",
     "e-commerce", "gaming", "edtech", "logistics", "telecom", "retail", "cybersecurity",
     "defense", "aerospace", "automotive", "manufacturing", "pharma", "biotech",
+    "legal", "litigation", "ediscovery", "e-discovery",
 )
 
 _LOOKALIKE_PRONE = ("architect", "manager", "director+")

@@ -48,6 +48,16 @@ def test_domain_asked_only_when_present_and_is_a_filter():
     assert domain_q.routing == "filter"   # CrustData can filter industry
 
 
+def test_legal_ediscovery_domain_is_recognized():
+    u = Understanding(
+        identity="eDiscovery Operations Analyst",
+        requirements=(ReadRequirement("end-to-end eDiscovery operations", "core"),
+                      ReadRequirement("Relativity and Nuix", "core")),
+    )
+    domain_q = next((q for q in plan_refinements(u, ()) if q.id == "domain"), None)
+    assert domain_q is not None and domain_q.routing == "filter"
+
+
 def test_capability_confirm_is_a_filter_and_offers_remove():
     u = Understanding(identity="Salesforce Developer", requirements=(ReadRequirement("Apex", "core"),))
     groups = (CapabilityGroup("Salesforce", ("Salesforce", "Apex", "SOQL"), "Salesforce", "r"),)
