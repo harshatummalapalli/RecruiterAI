@@ -35,16 +35,44 @@ from recruiter.role_model import (
 _IDENTITY_SEPARATORS = (" (", " — ", " – ", " - ", " | ", ", ")
 
 
-def _normalize_identity(identity: Optional[str], posted_title: Optional[str]) -> str:
+def _is_specialization(token: str, requirement_texts: Tuple[str, ...]) -> bool:
+    """A trailing title segment is a SPECIALIZATION (keep it) — not a descriptive
+    clause (drop it) — when it's a single token the requirements corroborate.
+    "Operations Analyst – eDiscovery" keeps "eDiscovery" (it's in the reqs);
+    "Sales Manager — restaurant acquisition" drops the multi-word clause."""
+    token = token.strip()
+    if not token or len(token.split()) != 1:
+        return False
+    blob = " ".join(requirement_texts).lower()
+    return token.lower() in blob
+
+
+def normalize_identity(
+    identity: Optional[str],
+    posted_title: Optional[str],
+    requirement_texts: Tuple[str, ...] = (),
+) -> str:
     text = (identity or "").strip()
+    spec: Optional[str] = None
     for sep in _IDENTITY_SEPARATORS:
         if sep in text:
-            text = text.split(sep, 1)[0].strip()
+            head, tail = text.split(sep, 1)
+            # the " (" separator leaves the paren already consumed; strip any other.
+            tail_token = re.sub(r"\s*\(.*$", "", tail).strip()
+            if spec is None and _is_specialization(tail_token, requirement_texts):
+                spec = tail_token
+            text = head.strip()
     text = re.sub(r"\s*\(.*$", "", text).strip()   # drop any stray trailing "(...)"
     words = text.split()
     if len(words) > 6:
         text = " ".join(words[:6])
-    return text or (posted_title or (identity or "").strip())
+    base = text or (posted_title or (identity or "").strip())
+    # Re-attach the specialization so it anchors title-relevance, the NL query,
+    # and (critically) the per-org capability-memory key — a generic "Operations
+    # Analyst" key would let one role's learned capability contaminate another.
+    if spec and spec.lower() not in base.lower():
+        base = f"{spec} {base}".strip()
+    return base
 
 
 def _location(boundary: Dict[str, Any]) -> Location:
@@ -105,7 +133,11 @@ def assemble_role_model(
             ),
         ))
 
-    identity = _normalize_identity(understanding.identity, understanding.posted_title)
+    identity = normalize_identity(
+        understanding.identity,
+        understanding.posted_title,
+        tuple(r.text for r in understanding.requirements),
+    )
     role_level = classify_role_level(identity, understanding.posted_title)
 
     # Default exec exclusions (suppressed for architect/manager/director+), plus

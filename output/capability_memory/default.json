@@ -1,0 +1,18 @@
+{
+  "ai engineer": {
+    "label": "Generative AI",
+    "terms": [
+      "generative AI",
+      "GenAI",
+      "LLM",
+      "RAG",
+      "agentic",
+      "AI agents",
+      "LangChain",
+      "embeddings",
+      "vector database"
+    ],
+    "source_qualifier": "AI",
+    "is_broad": false
+  }
+}

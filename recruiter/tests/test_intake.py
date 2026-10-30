@@ -98,6 +98,28 @@ def test_identity_is_normalized_to_title_shape():
         assert model.identity == expected, (verbose, model.identity)
 
 
+def test_specialization_after_a_separator_is_kept_when_the_reqs_corroborate():
+    # "Operations Analyst – eDiscovery": the token after the dash is the defining
+    # specialization (it's in the requirements), NOT a descriptive clause, so it
+    # must survive — otherwise the identity, title-relevance and the capability
+    # memory key all collapse to a generic "Operations Analyst".
+    u = Understanding(
+        identity="Operations Analyst – eDiscovery",
+        posted_title="Operations Analyst – eDiscovery",
+        min_years=2,
+        requirements=(
+            ReadRequirement("end-to-end eDiscovery operations across the EDRM lifecycle", "core"),
+            ReadRequirement("Relativity and Nuix", "core"),
+        ),
+    )
+    model = _agent(u).run("notes", {"country": "India"}).model
+    assert "eDiscovery" in model.identity
+    # A multi-word clause the reqs don't corroborate is still dropped.
+    v = Understanding(identity="Operations Analyst – restaurant partner acquisition",
+                      min_years=2, requirements=(ReadRequirement("x", "core"),))
+    assert _agent(v).run("notes", {"country": "India"}).model.identity == "Operations Analyst"
+
+
 def test_multi_city_and_hiring_company_exclusion():
     model = _agent(_architect_understanding()).run(fx.ROLE.notes, {**fx.ROLE.boundary, "hiring_company": "Acme"}).model
     assert model.location.cities == ("Hyderabad", "Bengaluru", "Pune")

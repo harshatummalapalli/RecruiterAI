@@ -18,6 +18,12 @@ from typing import List
 
 from recruiter.role_model import RoleModel
 
+# Naming years in the NL text skews CrustData's hybrid retrieval toward seniors —
+# useful at a real senior bar, pure noise at a junior one (everyone clears "2+
+# years"), where it only dilutes the semantic vector. Below this, years stay a
+# hard filter only.
+_NL_YEARS_THRESHOLD = 5
+
 
 def _join(items: List[str]) -> str:
     return ", ".join(items)
@@ -36,8 +42,18 @@ def build_nl_query(model: RoleModel) -> str:
     # CrustData's hybrid search, naming a constraint is what makes it bind and
     # skews relevance toward seniors (same lesson as the location geo-leak). The
     # role's own seniority word already rides in the identity/title.
-    if model.seniority.min_years:
+    if model.seniority.min_years and model.seniority.min_years >= _NL_YEARS_THRESHOLD:
         parts.append(f"with {model.seniority.min_years}+ years of experience")
+
+    # The role-defining capability is the strongest retrieval signal, but it only
+    # ever hard-filters on the one-line headline (where niche tools like Relativity
+    # or Nuix often don't appear). Naming it in the NL text too lets CrustData's
+    # semantic match recover a headline-miss, instead of silently dropping a real
+    # candidate whose tools live in their experience, not their headline.
+    for group in model.capability_groups:
+        if group.terms:
+            shown = _join_or(list(group.terms[:5]))
+            parts.append(f"with hands-on {group.label} experience ({shown})")
 
     # Current/any-time cores are present demands; past cores are background
     # (acceptable, not required) — phrased so retrieval doesn't over-weight them.

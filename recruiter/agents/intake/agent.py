@@ -10,7 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Callable, Dict, Optional
 
-from recruiter.agents.intake.assemble import assemble_role_model
+from recruiter.agents.intake.assemble import assemble_role_model, normalize_identity
 from recruiter.agents.intake.capability_memory import FileCapabilityMemory
 from recruiter.agents.intake.capability_proposal import CapabilityProposer
 from recruiter.agents.intake.model import IntakeOutcome, Understanding
@@ -44,9 +44,17 @@ class IntakeAgent:
         boundary: Dict[str, Any],
         answers: Optional[Dict[str, Any]] = None,
     ) -> IntakeOutcome:
+        # Key the capability memory on the SAME normalized identity used
+        # downstream, so a generic base title ("Operations Analyst") can't let
+        # one role's learned capability (eDiscovery) contaminate another's.
+        identity = normalize_identity(
+            understanding.identity,
+            understanding.posted_title,
+            tuple(r.text for r in understanding.requirements),
+        )
         groups = self._capabilities.propose(
             self._org,
-            understanding.identity,
+            identity,
             understanding.posted_title,
             [r.text for r in understanding.requirements],
         )

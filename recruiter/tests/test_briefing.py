@@ -57,6 +57,28 @@ def test_years_are_filtered_and_named_in_query():
     assert "15+ years" in plan.query.natural_language   # named so CrustData hybrid binds it
 
 
+def test_capability_is_woven_into_the_nl_query():
+    # The defining capability must appear in the NL text (not only as a headline
+    # keyword group), so CrustData's semantic match can recover a headline-miss.
+    plan = BriefingAgent().build(_architect_model())
+    nl = plan.query.natural_language
+    assert "AI / ML" in nl and "RAG" in nl
+
+
+def test_low_years_are_filtered_but_not_named_in_the_query():
+    # A junior bar (2+) is a hard filter but NOT NL noise — everyone clears it.
+    model = RoleModel(
+        identity="eDiscovery Operations Analyst",
+        seniority=Seniority(2, None, Provenance(JD)),
+        role_level=IC,
+        location=Location(countries=("India",)),
+        requirements=(Requirement("eDiscovery operations", "core", Provenance(JD)),),
+    )
+    plan = BriefingAgent().build(model)
+    assert plan.query.min_years == 2                       # still a hard filter
+    assert "2+ years" not in plan.query.natural_language   # but not named
+
+
 def test_work_mode_disclosed_not_filtered():
     plan = BriefingAgent().build(_architect_model())
     assert assertions.work_mode_disclosed_not_filtered(plan) is None
