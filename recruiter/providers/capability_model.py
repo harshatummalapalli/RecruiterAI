@@ -140,6 +140,14 @@ FILTER_FIELD_MAP: Dict[str, str] = {
     # Recorded but unenforceable — mapped so routing resolves to 'disclose'
     # (not the unknown-field default), never appearing in supported_filters().
     "work_mode": "work_mode",
+    # Capability keywords are a COARSE recall pre-filter, not a precise gate.
+    # Live probe (2026-10-30, India + 2y base = 22.8M): the `(.)` keyword group is
+    # OR'd fuzzily across description+headline+summary, and ambiguous terms
+    # over-match hugely ("ESI" -> Employee State Insurance ~56k; "Relativity" ->
+    # physics ~190k). It narrows the pool ~40x (recall), but PRECISION comes from
+    # the NL hybrid ranking + the Judge downstream, not from this filter. It's
+    # mapped to headline only so routing stays 'enforce' (it belongs in the
+    # query); do not mistake it for a discriminating hard filter.
     "must_have_keywords": "basic_profile.headline",
     "must_have_keyword_groups": "basic_profile.headline",
 }
