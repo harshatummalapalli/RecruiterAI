@@ -95,11 +95,13 @@ def work_mode_disclosed_not_filtered(plan) -> Optional[str]:
     return "work mode not disclosed as a non-filter"
 
 
-def years_filtered_not_searched(plan, min_years) -> Optional[str]:
+def years_enforced(plan, min_years) -> Optional[str]:
+    """Years must be a structured filter AND named in the NL query (naming it is
+    what makes CrustData's hybrid search actually bind it / skew to seniors)."""
     if plan.query.min_years != min_years:
         return f"min_years not a filter: {plan.query.min_years!r} != {min_years!r}"
-    if f"{min_years} year" in plan.query.natural_language.lower():
-        return "years leaked into the NL query as a search term"
+    if f"{min_years}+ years" not in plan.query.natural_language.lower():
+        return "years not named in the NL query (won't bind on CrustData hybrid)"
     return None
 
 

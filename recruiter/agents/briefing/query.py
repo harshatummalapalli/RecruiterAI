@@ -32,6 +32,13 @@ def _join_or(items: List[str]) -> str:
 def build_nl_query(model: RoleModel) -> str:
     parts: List[str] = [model.identity.strip()]
 
+    # Name the experience in the query, not just as a structured filter: on
+    # CrustData's hybrid search, naming a constraint is what makes it bind and
+    # skews relevance toward seniors (same lesson as the location geo-leak). The
+    # role's own seniority word already rides in the identity/title.
+    if model.seniority.min_years:
+        parts.append(f"with {model.seniority.min_years}+ years of experience")
+
     # Current/any-time cores are present demands; past cores are background
     # (acceptable, not required) — phrased so retrieval doesn't over-weight them.
     current_core = [r.text for r in model.core if r.when != "past"]

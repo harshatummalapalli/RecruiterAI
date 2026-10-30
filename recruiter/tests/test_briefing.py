@@ -50,10 +50,11 @@ def test_capability_group_enforced_and_no_garble():
     assert assertions.no_garbled_requirement_echo(plan) is None
 
 
-def test_years_are_a_filter_not_a_search_term():
+def test_years_are_filtered_and_named_in_query():
     plan = BriefingAgent().build(_architect_model())
-    assert assertions.years_filtered_not_searched(plan, 15) is None
+    assert assertions.years_enforced(plan, 15) is None
     assert plan.query.min_years == 15
+    assert "15+ years" in plan.query.natural_language   # named so CrustData hybrid binds it
 
 
 def test_work_mode_disclosed_not_filtered():
@@ -98,7 +99,7 @@ def test_full_front_half_intake_then_briefing_golden():
     assert assertions.nl_names_all_cities(plan, cities) is None
     assert assertions.cities_are_filtered(plan, cities) is None
     assert assertions.capability_enforced_as_keyword_group(plan) is None
-    assert assertions.years_filtered_not_searched(plan, 15) is None
+    assert assertions.years_enforced(plan, 15) is None
     assert assertions.work_mode_disclosed_not_filtered(plan) is None
     assert assertions.no_garbled_requirement_echo(plan) is None
 
