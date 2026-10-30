@@ -35,12 +35,11 @@ def _architect_model() -> RoleModel:
     )
 
 
-def test_all_cities_named_and_filtered():
+def test_hard_cities_are_filtered_not_in_nl():
     plan = BriefingAgent().build(_architect_model())
-    assert assertions.nl_names_all_cities(plan, ["Hyderabad", "Bengaluru", "Pune"]) is None
+    # Hard cities bind in `filters` (exact mode) and must NOT dilute the NL query.
     assert assertions.cities_are_filtered(plan, ["Hyderabad", "Bengaluru", "Pune"]) is None
-    # natural phrasing with "or" across the three cities
-    assert "Hyderabad, Bengaluru or Pune" in plan.query.natural_language
+    assert assertions.hard_cities_not_in_nl(plan, ["Hyderabad", "Bengaluru", "Pune"]) is None
 
 
 def test_capability_group_enforced_and_no_garble():
@@ -50,11 +49,11 @@ def test_capability_group_enforced_and_no_garble():
     assert assertions.no_garbled_requirement_echo(plan) is None
 
 
-def test_years_are_filtered_and_named_in_query():
+def test_years_are_hard_filtered_not_in_nl():
     plan = BriefingAgent().build(_architect_model())
     assert assertions.years_enforced(plan, 15) is None
-    assert plan.query.min_years == 15
-    assert "15+ years" in plan.query.natural_language   # named so CrustData hybrid binds it
+    assert plan.query.min_years == 15                   # binds in filters (exact mode)
+    assert "15+ years" not in plan.query.natural_language   # not diluting the ranking vector
 
 
 def test_capability_is_woven_into_the_nl_query():
@@ -118,8 +117,8 @@ def test_full_front_half_intake_then_briefing_golden():
 
     plan = BriefingAgent().build(model)
     cities = ["Hyderabad", "Bengaluru", "Pune"]
-    assert assertions.nl_names_all_cities(plan, cities) is None
     assert assertions.cities_are_filtered(plan, cities) is None
+    assert assertions.hard_cities_not_in_nl(plan, cities) is None
     assert assertions.capability_enforced_as_keyword_group(plan) is None
     assert assertions.years_enforced(plan, 15) is None
     assert assertions.work_mode_disclosed_not_filtered(plan) is None

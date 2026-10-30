@@ -69,11 +69,22 @@ def has_core_requirements(model: RoleModel) -> Optional[str]:
 
 # --- Briefing-plan checks (retrieval quality) --------------------------------
 
-def nl_names_all_cities(plan, cities) -> Optional[str]:
+def hard_cities_not_in_nl(plan, cities) -> Optional[str]:
+    """Hard cities bind in `filters` (exact mode); naming them in the NL text only
+    dilutes ranking, so they must NOT appear there."""
+    nl = plan.query.natural_language.lower()
+    leaked = [c for c in cities if c.lower() in nl]
+    if leaked:
+        return f"hard cities {leaked} should not be in the NL query: {plan.query.natural_language!r}"
+    return None
+
+
+def nl_names_preferred_cities(plan, cities) -> Optional[str]:
+    """SOFT preferred cities are a ranking boost and SHOULD ride the NL query."""
     nl = plan.query.natural_language.lower()
     missing = [c for c in cities if c.lower() not in nl]
     if missing:
-        return f"NL query omits cities {missing}: {plan.query.natural_language!r}"
+        return f"NL query omits preferred cities {missing}: {plan.query.natural_language!r}"
     return None
 
 
@@ -96,12 +107,12 @@ def work_mode_disclosed_not_filtered(plan) -> Optional[str]:
 
 
 def years_enforced(plan, min_years) -> Optional[str]:
-    """Years must be a structured filter AND named in the NL query (naming it is
-    what makes CrustData's hybrid search actually bind it / skew to seniors)."""
+    """Years are a hard structured filter (exact mode binds it). They must NOT ride
+    the NL query, where they'd only dilute the ranking vector."""
     if plan.query.min_years != min_years:
         return f"min_years not a filter: {plan.query.min_years!r} != {min_years!r}"
-    if f"{min_years}+ years" not in plan.query.natural_language.lower():
-        return "years not named in the NL query (won't bind on CrustData hybrid)"
+    if f"{min_years}+ years" in plan.query.natural_language.lower():
+        return "years should not be named in the NL query (exact mode binds the filter)"
     return None
 
 

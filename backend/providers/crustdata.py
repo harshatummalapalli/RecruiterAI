@@ -156,6 +156,14 @@ class CrustDataProvider(BaseProvider):
 
         payload: Dict[str, Any] = {
             "filters": filters,
+            # mode="exact": the structured `filters` ALONE define the result set,
+            # so our hard filters (geo, years, company/title exclusions, keyword
+            # group) actually bind. The default "managed" mode OR-unions the
+            # constraints the NL query names with the filters — and a long NL query
+            # then swamps the filters (live probe 2026-10-30: managed+long NL = 60M
+            # near-global pool vs exact = 557k). The NL `search` below still ranks
+            # the exact set; it just can't widen it any more.
+            "mode": "exact",
             "limit": int(options.get("page_size") or DEFAULT_LIMIT),
             "fields": DEFAULT_FIELDS,
         }
