@@ -9,6 +9,7 @@ so this is the backstop, not the primary filter).
 
 from __future__ import annotations
 
+import re
 from typing import Iterable, List, Tuple
 
 from recruiter.candidates import CandidateRecord
@@ -109,6 +110,71 @@ def enforce_company_exclusions(
             dropped.append(r)
         else:
             kept.append(r)                   # unknown employer -> keep
+    return kept, dropped
+
+
+# Titles that are ambiguous between leadership and a senior IC — in many domains
+# "eDiscovery Manager" / "ESI Manager" is a hands-on specialist, not a people
+# manager. These are SPARED from the title-exclusion net when the candidate's
+# profile matches the role's capability; everything else on the exclude list
+# (Founder/CxO/VP/Director/Head of…) is unambiguous leadership and always drops.
+_AMBIGUOUS_TITLES = {"manager"}
+
+
+def _candidate_current_title(record: CandidateRecord) -> str:
+    parts = [record.title or ""]
+    raw = record.raw if isinstance(record.raw, dict) else {}
+    exp = raw.get("experience") if isinstance(raw.get("experience"), dict) else {}
+    cur = exp.get("current") if isinstance(exp, dict) else None
+    if isinstance(cur, dict):
+        parts.append(str(cur.get("title") or ""))
+    return " ".join(parts)
+
+
+def _capability_evidence_text(record: CandidateRecord) -> str:
+    parts = [record.title or ""]
+    raw = record.raw if isinstance(record.raw, dict) else {}
+    bp = raw.get("basic_profile") if isinstance(raw.get("basic_profile"), dict) else {}
+    parts += [str(bp.get("headline") or ""), str(bp.get("summary") or "")]
+    return " ".join(parts).lower()
+
+
+def enforce_title_exclusions(
+    records: Iterable[CandidateRecord],
+    exclude_titles: Tuple[str, ...],
+    capability_terms: Tuple[str, ...] = (),
+) -> Tuple[List[CandidateRecord], List[CandidateRecord]]:
+    """Hard title-exclusion gate on the CURRENT title (CrustData's `(!)` negative
+    leaks). Unambiguous leadership titles always drop; an ambiguous title
+    ("Manager") is spared when the candidate's profile carries the role's
+    capability (so a hands-on "eDiscovery Manager" survives but a plain people
+    "Manager" doesn't). Past titles never disqualify; an unknown title is kept."""
+    hard: List[re.Pattern] = []
+    spare: List[re.Pattern] = []
+    for t in exclude_titles:
+        key = (t or "").strip().lower()
+        if not key:
+            continue
+        rx = re.compile(r"\b" + re.escape(key) + r"\b", re.I)
+        (spare if key in _AMBIGUOUS_TITLES else hard).append(rx)
+    cap = [c.strip().lower() for c in capability_terms if c and c.strip()]
+    records = list(records)
+    if not hard and not spare:
+        return records, []
+    kept: List[CandidateRecord] = []
+    dropped: List[CandidateRecord] = []
+    for r in records:
+        title = _candidate_current_title(r)
+        if any(rx.search(title) for rx in hard):
+            dropped.append(r)
+        elif any(rx.search(title) for rx in spare):
+            evidence = _capability_evidence_text(r)
+            if cap and any(c in evidence for c in cap):
+                kept.append(r)               # ambiguous title + capability -> senior IC, keep
+            else:
+                dropped.append(r)
+        else:
+            kept.append(r)
     return kept, dropped
 
 

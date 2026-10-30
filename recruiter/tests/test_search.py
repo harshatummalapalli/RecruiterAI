@@ -7,6 +7,7 @@ from recruiter.agents.search.merge import (
     enforce_cities,
     enforce_company_exclusions,
     enforce_geo,
+    enforce_title_exclusions,
     merge,
 )
 from recruiter.candidates import CandidateRecord
@@ -49,6 +50,34 @@ def test_company_exclusion_drops_the_hiring_company_and_keeps_unknown():
     kept, dropped = enforce_company_exclusions(recs, ("Epiq",))
     assert {r.candidate_id for r in kept} == {"other", "unknown"}   # substring + keep-unknown
     assert {r.candidate_id for r in dropped} == {"insider"}
+
+
+_EXEC = ("Founder", "VP", "Director", "Head of", "Manager")
+
+
+def _title_rec(cid, title, headline=""):
+    return CandidateRecord(cid, name=cid, title=title,
+                           raw={"basic_profile": {"headline": headline}})
+
+
+def test_title_net_drops_leadership_but_spares_manager_with_capability():
+    recs = [
+        _title_rec("vp", "VP Legal Operations"),
+        _title_rec("dir", "Associate Director"),
+        _title_rec("edm", "Associate Manager", "eDiscovery | RelativityOne Processing"),
+        _title_rec("esim", "ESI Manager", "eDiscovery professional"),
+        _title_rec("peoplem", "Manager", "Operations team lead"),       # no capability -> drop
+        _title_rec("ic", "Senior Analyst", "Relativity certified"),
+    ]
+    kept, dropped = enforce_title_exclusions(recs, _EXEC, capability_terms=("eDiscovery", "Relativity"))
+    assert {r.candidate_id for r in kept} == {"edm", "esim", "ic"}
+    assert {r.candidate_id for r in dropped} == {"vp", "dir", "peoplem"}
+
+
+def test_title_net_does_not_false_match_management_word():
+    kept, dropped = enforce_title_exclusions(
+        [_title_rec("x", "Management Consultant")], _EXEC, capability_terms=("eDiscovery",))
+    assert len(kept) == 1 and dropped == []     # \bmanager\b != "management"
 
 
 def test_search_agent_enforces_company_exclusions():
