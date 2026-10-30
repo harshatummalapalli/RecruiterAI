@@ -94,7 +94,8 @@ def create_app(pipeline=None, org: str = "default") -> FastAPI:
         sessions[body.session]["model"] = auth.model  # keep the answered model for the admin view
         return {
             "authorized": True,
-            "search": {"pulled": search.pulled, "geo_dropped": search.geo_dropped, "est_credits": search.est_credits},
+            "search": {"pulled": search.pulled, "geo_dropped": search.geo_dropped,
+                       "excluded_dropped": search.excluded_dropped, "est_credits": search.est_credits},
             "stats": {"admitted": ranking.admitted, "judged": ranking.judged,
                       "judge_failures": ranking.judge_failures, "experience_excluded": ranking.experience_excluded},
             "candidates": [

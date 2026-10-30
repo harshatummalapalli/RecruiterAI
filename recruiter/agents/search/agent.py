@@ -9,7 +9,12 @@ Search stops at a clean, de-duplicated, in-scope pool.
 from __future__ import annotations
 
 from recruiter.agents.briefing.model import ProviderQuery
-from recruiter.agents.search.merge import enforce_cities, enforce_geo, merge
+from recruiter.agents.search.merge import (
+    enforce_cities,
+    enforce_company_exclusions,
+    enforce_geo,
+    merge,
+)
 from recruiter.agents.search.model import SearchResult, SourcingProvider
 
 CREDITS_PER_RESULT = 0.03  # CrustData person_search charge
@@ -27,9 +32,13 @@ class SearchAgent:
         city_dropped: list = []
         if query.cities:                      # hard-city gate (CrustData leaks the city filter)
             kept, city_dropped = enforce_cities(kept, query.cities)
+        excluded_dropped: list = []
+        if query.exclude_current_companies:   # CrustData leaks the negative company filter
+            kept, excluded_dropped = enforce_company_exclusions(kept, query.exclude_current_companies)
         return SearchResult(
             candidates=tuple(kept),
             pulled=len(raw),
             geo_dropped=len(dropped) + len(city_dropped),
             est_credits=round(len(raw) * CREDITS_PER_RESULT, 2),
+            excluded_dropped=len(excluded_dropped),
         )

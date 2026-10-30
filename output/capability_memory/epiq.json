@@ -10,5 +10,20 @@
     ],
     "source_qualifier": "AI",
     "is_broad": false
+  },
+  "ediscovery operations analyst": {
+    "label": "eDiscovery",
+    "terms": [
+      "eDiscovery",
+      "e-discovery",
+      "Relativity",
+      "Nuix",
+      "EDRM",
+      "ESI",
+      "document review",
+      "litigation support"
+    ],
+    "source_qualifier": "eDiscovery",
+    "is_broad": false
   }
 }

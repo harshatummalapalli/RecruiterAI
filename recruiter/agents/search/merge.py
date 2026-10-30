@@ -77,6 +77,41 @@ def _candidate_location_text(record: CandidateRecord) -> str:
     return " ".join(parts).lower()
 
 
+def _candidate_company_text(record: CandidateRecord) -> str:
+    """The candidate's CURRENT employer. Prefer the mapped company; fall back to
+    the structured current employment record."""
+    parts = [record.company or ""]
+    raw = record.raw if isinstance(record.raw, dict) else {}
+    exp = raw.get("experience") if isinstance(raw.get("experience"), dict) else {}
+    cur = exp.get("current") if isinstance(exp, dict) else None
+    if isinstance(cur, dict):
+        parts.append(str(cur.get("company_name") or ""))
+    return " ".join(parts).lower()
+
+
+def enforce_company_exclusions(
+    records: Iterable[CandidateRecord], excluded: Tuple[str, ...]
+) -> Tuple[List[CandidateRecord], List[CandidateRecord]]:
+    """Hard company-exclusion gate. CrustData's negative company filter (`not_in`
+    on current.company_name) leaks — on a live run the hiring company's own
+    current employees came back despite being excluded. So we re-check each
+    candidate's current employer and drop a known match (substring, case-fold, so
+    "Epiq" also catches "Epiq Global"). An unknown employer is kept."""
+    wanted = [e.strip().lower() for e in excluded if e and e.strip()]
+    records = list(records)
+    if not wanted:
+        return records, []
+    kept: List[CandidateRecord] = []
+    dropped: List[CandidateRecord] = []
+    for r in records:
+        hay = _candidate_company_text(r).strip()
+        if hay and any(w in hay for w in wanted):
+            dropped.append(r)
+        else:
+            kept.append(r)                   # unknown employer -> keep
+    return kept, dropped
+
+
 def enforce_cities(
     records: Iterable[CandidateRecord], cities: Tuple[str, ...]
 ) -> Tuple[List[CandidateRecord], List[CandidateRecord]]:

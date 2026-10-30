@@ -20,5 +20,6 @@ class SourcingProvider(Protocol):
 class SearchResult:
     candidates: Tuple[CandidateRecord, ...]
     pulled: int               # raw records the provider returned
-    geo_dropped: int          # records removed by the geo safety net
+    geo_dropped: int          # records removed by the geo/city safety net
     est_credits: float        # pulled * CrustData per-result charge (informational)
+    excluded_dropped: int = 0  # removed by the company-exclusion verify net

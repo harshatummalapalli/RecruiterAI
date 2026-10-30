@@ -3,7 +3,12 @@
 from recruiter.agents.briefing.model import ProviderQuery
 from recruiter.agents.briefing.model import ProviderQuery
 from recruiter.agents.search import SearchAgent
-from recruiter.agents.search.merge import enforce_cities, enforce_geo, merge
+from recruiter.agents.search.merge import (
+    enforce_cities,
+    enforce_company_exclusions,
+    enforce_geo,
+    merge,
+)
 from recruiter.candidates import CandidateRecord
 
 
@@ -32,6 +37,27 @@ def test_city_gate_alias_bangalore_matches_bengaluru():
 def test_city_gate_keeps_unknown_location():
     kept, dropped = enforce_cities([CandidateRecord("x", location=None, raw={})], ("Pune",))
     assert len(kept) == 1 and dropped == []
+
+
+def _co_rec(cid, company):
+    return CandidateRecord(cid, name=cid, company=company)
+
+
+def test_company_exclusion_drops_the_hiring_company_and_keeps_unknown():
+    recs = [_co_rec("insider", "Epiq Global"), _co_rec("other", "Consilio LLC"),
+            _co_rec("unknown", None)]
+    kept, dropped = enforce_company_exclusions(recs, ("Epiq",))
+    assert {r.candidate_id for r in kept} == {"other", "unknown"}   # substring + keep-unknown
+    assert {r.candidate_id for r in dropped} == {"insider"}
+
+
+def test_search_agent_enforces_company_exclusions():
+    provider = _FakeProvider([_co_rec("a", "Epiq"), _co_rec("b", "Morae")])
+    query = ProviderQuery(natural_language="x", countries=("India",),
+                          exclude_current_companies=("Epiq",))
+    result = SearchAgent(provider, page_size=50).run(query)
+    assert {r.candidate_id for r in result.candidates} == {"b"}
+    assert result.excluded_dropped == 1
 
 
 class _FakeProvider:
