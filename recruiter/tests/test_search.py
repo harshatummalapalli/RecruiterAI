@@ -1,9 +1,37 @@
 """Agent 4 (Search) — merge + geo net, offline (fake provider, no credits)."""
 
 from recruiter.agents.briefing.model import ProviderQuery
+from recruiter.agents.briefing.model import ProviderQuery
 from recruiter.agents.search import SearchAgent
-from recruiter.agents.search.merge import enforce_geo, merge
+from recruiter.agents.search.merge import enforce_cities, enforce_geo, merge
 from recruiter.candidates import CandidateRecord
+
+
+def _city_rec(cid, city_text):
+    return CandidateRecord(cid, name=cid, location=city_text,
+                           raw={"basic_profile": {"location": {"city": city_text.split(",")[0], "full_location": city_text}}})
+
+
+def test_city_gate_drops_other_city_and_country_only():
+    recs = [_city_rec("blr", "Bengaluru, Karnataka, India"),
+            _city_rec("pune", "Pune, Maharashtra, India"),
+            _city_rec("delhi", "New Delhi, Delhi, India"),
+            _city_rec("noida", "Noida, Uttar Pradesh, India"),
+            _city_rec("country", "India")]
+    kept, dropped = enforce_cities(recs, ("Bengaluru", "Hyderabad", "Pune"))
+    assert {r.candidate_id for r in kept} == {"blr", "pune"}
+    assert {r.candidate_id for r in dropped} == {"delhi", "noida", "country"}
+
+
+def test_city_gate_alias_bangalore_matches_bengaluru():
+    recs = [_city_rec("b", "Bangalore, Karnataka, India")]
+    kept, _ = enforce_cities(recs, ("Bengaluru",))
+    assert len(kept) == 1          # alias match
+
+
+def test_city_gate_keeps_unknown_location():
+    kept, dropped = enforce_cities([CandidateRecord("x", location=None, raw={})], ("Pune",))
+    assert len(kept) == 1 and dropped == []
 
 
 class _FakeProvider:
@@ -38,6 +66,18 @@ def test_geo_keeps_unknown_drops_out_of_scope():
     )
     assert {r.candidate_id for r in kept} == {"a", "c"}        # unknown kept
     assert {r.candidate_id for r in dropped} == {"b"}
+
+
+def test_search_agent_enforces_hard_cities():
+    provider = _FakeProvider([
+        _city_rec("blr", "Bengaluru, Karnataka, India"),
+        _city_rec("delhi", "New Delhi, Delhi, India"),
+        _city_rec("country", "India"),
+    ])
+    query = ProviderQuery(natural_language="x", countries=("India",), cities=("Bengaluru", "Pune"))
+    result = SearchAgent(provider, page_size=50).run(query)
+    assert {r.candidate_id for r in result.candidates} == {"blr"}
+    assert result.geo_dropped == 2
 
 
 def test_no_geo_scope_keeps_everyone():

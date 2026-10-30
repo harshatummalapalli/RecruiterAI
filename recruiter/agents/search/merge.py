@@ -46,3 +46,60 @@ def enforce_geo(
         else:
             dropped.append(r)
     return kept, dropped
+
+
+# City name variants — CrustData's canonical is usually the first, but profiles
+# carry either, so we match any. Extend as needed (verified: CrustData uses
+# "Bengaluru"/"Hyderabad"/"Pune"/"New Delhi").
+_CITY_ALIAS_GROUPS = [
+    {"bengaluru", "bangalore"}, {"gurugram", "gurgaon"}, {"mumbai", "bombay"},
+    {"kolkata", "calcutta"}, {"chennai", "madras"}, {"pune", "poona"},
+    {"new delhi", "delhi"}, {"kochi", "cochin"}, {"vadodara", "baroda"},
+    {"prayagraj", "allahabad"}, {"thiruvananthapuram", "trivandrum"},
+]
+
+
+def _aliases(city: str) -> set:
+    key = city.strip().lower()
+    for group in _CITY_ALIAS_GROUPS:
+        if key in group:
+            return group
+    return {key}
+
+
+def _candidate_location_text(record: CandidateRecord) -> str:
+    """Prefer the structured city + full_location; fall back to the location string."""
+    parts = [record.location or ""]
+    raw = record.raw if isinstance(record.raw, dict) else {}
+    loc = (raw.get("basic_profile") or {}).get("location") if isinstance(raw.get("basic_profile"), dict) else None
+    if isinstance(loc, dict):
+        parts += [str(loc.get("city") or ""), str(loc.get("full_location") or "")]
+    return " ".join(parts).lower()
+
+
+def enforce_cities(
+    records: Iterable[CandidateRecord], cities: Tuple[str, ...]
+) -> Tuple[List[CandidateRecord], List[CandidateRecord]]:
+    """Hard city gate — the recruiter restricted to specific cities, and
+    CrustData's hybrid search leaks other-city / country-only people past the
+    city filter. So we re-check each candidate's own location (alias-aware) and
+    drop anyone whose KNOWN location isn't one of the chosen cities. A truly
+    empty location is kept (can't tell); a country-only string like "India"
+    has no city match and is dropped."""
+    wanted: set = set()
+    for c in cities:
+        wanted |= _aliases(c)
+    records = list(records)
+    if not wanted:
+        return records, []
+    kept: List[CandidateRecord] = []
+    dropped: List[CandidateRecord] = []
+    for r in records:
+        hay = _candidate_location_text(r).strip()
+        if not hay:
+            kept.append(r)                       # no location at all -> keep
+        elif any(a in hay for a in wanted):
+            kept.append(r)
+        else:
+            dropped.append(r)
+    return kept, dropped
