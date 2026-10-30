@@ -84,6 +84,21 @@ def _location(boundary: Dict[str, Any]) -> Location:
     countries = tuple(c for c in ([boundary.get("country")] if boundary.get("country") else []) if c)
     preferred_cities = tuple(c for c in (boundary.get("preferred_cities") or []) if c)
 
+    # Explicit radius targeting takes PRECEDENCE over literal city/state geo:
+    # geo_distance is the right filter for a metro (a literal city match misses
+    # most of it — "San Francisco" = 724k vs a 10-mile radius = 2M), and ANDing a
+    # literal city with the radius would cancel the radius out. So when a radius is
+    # given we drop the literal city/state and let geo_distance define the geo.
+    radius_miles = boundary.get("radius_miles")
+    radius_place = (boundary.get("radius_place") or "").strip() or None
+    if radius_miles and not radius_place:
+        anchor = next((c for c in ((boundary.get("cities") or []) + [boundary.get("city")]) if c), None)
+        if anchor:
+            radius_place = ", ".join(p for p in (anchor, boundary.get("state")) if p)
+    if radius_miles and radius_place:
+        return Location(countries=countries, preferred_cities=preferred_cities,
+                        radius_place=radius_place, radius_miles=radius_miles, work_mode=mode)
+
     if mode == "remote":
         scope = (boundary.get("remote_scope") or "").strip().lower()
         if scope == "cities":
@@ -95,19 +110,13 @@ def _location(boundary: Dict[str, Any]) -> Location:
         return Location(countries=countries, states=states, cities=cities,
                         preferred_cities=preferred_cities, work_mode=mode)
 
-    # onsite / hybrid (or unspecified): city/cities (+ radius anchor on one city).
+    # onsite / hybrid (or unspecified): literal city/cities geo.
     cities = tuple(c for c in (boundary.get("cities") or []) if c)
     if not cities and boundary.get("city"):
         cities = (boundary["city"],)
     states = tuple(s for s in ([boundary.get("state")] if boundary.get("state") else []) if s)
-    radius_miles = boundary.get("radius_miles")
-    radius_place = None
-    if radius_miles and len(cities) == 1:
-        radius_place = ", ".join(p for p in (cities[0], boundary.get("state")) if p)
-    return Location(
-        countries=countries, states=states, cities=cities, preferred_cities=preferred_cities,
-        radius_place=radius_place, radius_miles=radius_miles, work_mode=mode,
-    )
+    return Location(countries=countries, states=states, cities=cities,
+                    preferred_cities=preferred_cities, work_mode=mode)
 
 
 def assemble_role_model(

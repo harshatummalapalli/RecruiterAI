@@ -21,6 +21,9 @@ _LEVEL_WORDS = {
 
 def _location_sentence(model: RoleModel) -> str:
     loc = model.location
+    if loc.radius_place and loc.radius_miles:
+        scope = f"within {int(loc.radius_miles)} miles of {loc.radius_place}"
+        return scope + (f" (in {', '.join(loc.countries)})" if loc.countries else "")
     if loc.cities:
         scope = ", ".join(loc.cities)
     elif loc.states:

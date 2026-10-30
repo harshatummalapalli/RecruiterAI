@@ -51,6 +51,11 @@
       <div><label>Cities (hard filter, comma-sep)</label><input id="cities" placeholder="Noida"></div>
       <div><label>Preferred cities (soft, comma-sep)</label><input id="pcities" placeholder="Hyderabad, Bengaluru, Pune"></div>
     </div>
+    <div class="row">
+      <div><label>Radius — anchor place (overrides cities)</label><input id="radplace" placeholder="e.g. San Francisco, California"></div>
+      <div><label>Radius miles</label><input id="radmiles" type="number" min="1" placeholder="e.g. 25"></div>
+    </div>
+    <p class="muted">Radius catches the whole metro (a literal city misses most of it). When set, it replaces the city filter.</p>
     <div id="yearsAsk"></div>
     <button id="analyze">Analyze role</button>
     <div class="err" id="formErr"></div>
@@ -83,6 +88,8 @@ function boundary(){
   const b = { hiring_company: $("company").value.trim(), country: $("country").value.trim(), work_mode: $("workmode").value };
   const c = listVals("cities"), p = listVals("pcities");
   if (c.length) b.cities = c; if (p.length) b.preferred_cities = p;
+  const rp = $("radplace").value.trim(), rm = parseFloat($("radmiles").value);
+  if (rp && rm > 0) { b.radius_place = rp; b.radius_miles = rm; }  // overrides cities
   return b;
 }
 

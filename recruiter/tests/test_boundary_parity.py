@@ -49,8 +49,18 @@ def test_radius_flows_into_the_query():
     loc = _location({"country": "USA", "work_mode": "onsite", "city": "Austin",
                      "state": "Texas", "radius_miles": 25})
     assert loc.radius_place == "Austin, Texas" and loc.radius_miles == 25
+    # radius REPLACES the literal city/state geo (so geo_distance isn't AND-cancelled)
+    assert loc.cities == () and loc.states == ()
     plan = BriefingAgent().build(_model(loc))
     assert plan.query.radius_place == "Austin, Texas" and plan.query.radius_miles == 25
+    assert plan.query.cities == ()
+
+
+def test_explicit_radius_place_overrides_literal_geo():
+    loc = _location({"country": "USA", "work_mode": "onsite",
+                     "radius_place": "San Francisco, California", "radius_miles": 25})
+    assert loc.radius_place == "San Francisco, California" and loc.radius_miles == 25
+    assert loc.cities == () and loc.countries == ("USA",)
 
 
 # --- employment type ---------------------------------------------------------
