@@ -81,6 +81,18 @@ export function BoundaryEditor({ boundary, onApply, limitation, open, onOpenChan
             <dd>{formatBoundaryLocation(boundary)}</dd>
             <dt>Work mode</dt>
             <dd>{workModeLabel(boundary)}</dd>
+            {boundary.include_companies?.length ? (
+              <>
+                <dt>Only from</dt>
+                <dd>{boundary.include_companies.join(', ')}</dd>
+              </>
+            ) : null}
+            {boundary.exclude_companies?.length ? (
+              <>
+                <dt>Exclude</dt>
+                <dd>{boundary.exclude_companies.join(', ')}</dd>
+              </>
+            ) : null}
           </dl>
           <button type="button" className="lb-link" onClick={begin}>
             <Pencil size={13} aria-hidden="true" /> Edit boundary

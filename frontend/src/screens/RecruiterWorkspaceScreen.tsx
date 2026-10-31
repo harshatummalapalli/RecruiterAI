@@ -759,7 +759,7 @@ export function RecruiterWorkspaceScreen() {
                       {isBusy ? (
                         <>
                           <span className="workspace__spinner" aria-hidden="true" />
-                          <span>Understanding the role…</span>
+                          <span>Reading the role… this takes ~30s</span>
                         </>
                       ) : (
                         <span>Build brief</span>
