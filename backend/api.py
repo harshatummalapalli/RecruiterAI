@@ -11,7 +11,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
 from backend.auth import (
@@ -72,6 +72,7 @@ from backend.services.confirmation import (
     search_intent_from_snapshot,
 )
 from backend.services.search_translator import build_confirmed_hiring_intent, to_search_intent
+from backend.bridge.intake_service import ConfirmationNotReady
 from backend.services.jd_parser import JDParser
 from backend.services.match_explainer import MatchExplainer
 from backend.services.query_expansion import QueryExpansionService
@@ -417,6 +418,7 @@ def create_app(
     confirmation_store: Optional[ConfirmationStore] = None,
     require_confirmation: Optional[bool] = None,
     role_clock: Optional[Callable[[], datetime]] = None,
+    intake_service: Optional[Any] = None,
 ) -> FastAPI:
     app = FastAPI(title="RecruiterAI API")
     app.add_middleware(
@@ -447,6 +449,12 @@ def create_app(
     search_store = search_store or SearchStore()
     intake_session_manager = intake_session_manager or IntakeSessionManager()
     confirmation_store = confirmation_store or ConfirmationStore()
+    # New 7-agent engine (opt-in). Off by default -> every route stays legacy, so
+    # production is unchanged until RECRUITER_NEW_ENGINE is set. When on, the
+    # intake/search routes below run through backend.bridge.IntakeService instead.
+    if intake_service is None and os.environ.get("RECRUITER_NEW_ENGINE", "").strip().lower() in ("1", "true", "yes"):
+        from backend.bridge import build_intake_service
+        intake_service = build_intake_service(org=os.environ.get("ALLOWED_EMAIL_DOMAIN") or "default")
     if require_confirmation is None:
         require_confirmation = os.environ.get("RECRUITERAI_REQUIRE_CONFIRMATION", "true").strip().lower() not in ("0", "false", "no")
     # Retrieval parity: the browser has never sent the model-written search sentence, so it has never reached the
@@ -637,6 +645,8 @@ def create_app(
 
     @app.post("/parse-jd", dependencies=[Depends(require_session)])
     def parse_jd(request: ParseRequest) -> SearchIntent:
+        if intake_service is not None:
+            return JSONResponse(intake_service.parse_jd(request.jd_text))
         try:
             intent = jd_parser.parse(request.jd_text)
         except ConfigurationError as exc:
@@ -677,6 +687,9 @@ def create_app(
         boundary = _validated_boundary(request.boundary)
         if not (request.raw_input or "").strip():
             raise HTTPException(status_code=422, detail={"message": "Describe the role first.", "errors": ["Paste a job description or describe the role."]})
+        if intake_service is not None:
+            return intake_service.start(request.raw_input, request.boundary.model_dump(),
+                                        posted_title=request.posted_title)
         try:
             record = intake_session_manager.start(request.raw_input, boundary=boundary, posted_title=request.posted_title)
         except ConfigurationError as exc:
@@ -689,6 +702,11 @@ def create_app(
 
     @app.post("/intake/{session_id}/answer", dependencies=[Depends(require_session)])
     def intake_answer(session_id: str, request: IntakeAnswerRequest) -> Dict[str, Any]:
+        if intake_service is not None:
+            try:
+                return intake_service.answer(session_id, request.issue_id, request.value, request.label)
+            except KeyError:
+                raise HTTPException(status_code=404, detail="Intake session not found.")
         try:
             record = intake_session_manager.answer(session_id, request.issue_id, request.value, request.label)
         except KeyError:
@@ -725,6 +743,13 @@ def create_app(
     def intake_confirmations(session_id: str, request: ConfirmationRequest) -> Dict[str, Any]:
         """The recruiter presses Search. The server checks the gate, builds the executable intent itself, applies the
         whitelisted edits, and stores an immutable snapshot that /search then runs from."""
+        if intake_service is not None:
+            try:
+                return intake_service.confirm(session_id, request.edits.model_dump())
+            except KeyError:
+                raise HTTPException(status_code=404, detail="Intake session not found.")
+            except ConfirmationNotReady as exc:
+                raise HTTPException(status_code=409, detail={"message": "This brief is not ready to search.", "reasons": exc.reasons})
         record = intake_session_manager.get(session_id)
         if record is None or record.result is None:
             raise HTTPException(status_code=404, detail="Intake session not found.")
@@ -738,6 +763,11 @@ def create_app(
     @app.get("/intake/{session_id}", dependencies=[Depends(require_session)])
     def intake_get(session_id: str) -> Dict[str, Any]:
         """Everything needed to resume a brief after a reload. Read only: no model call."""
+        if intake_service is not None:
+            data = intake_service.get(session_id)
+            if data is None:
+                raise HTTPException(status_code=404, detail="Intake session not found.")
+            return data
         record = intake_session_manager.get(session_id)
         if record is None or record.result is None:
             raise HTTPException(status_code=404, detail="Intake session not found.")
@@ -753,6 +783,11 @@ def create_app(
         """The recruiter edits the Search Boundary. Deterministic: validated and re-applied to the pinned reading with
         no model call."""
         boundary = _validated_boundary(request)
+        if intake_service is not None:
+            try:
+                return intake_service.update_boundary(session_id, request.model_dump())
+            except KeyError:
+                raise HTTPException(status_code=404, detail="Intake session not found.")
         try:
             record = intake_session_manager.update_boundary(session_id, boundary)
         except KeyError:
@@ -1016,6 +1051,22 @@ def create_app(
 
     @app.post("/search", response_model=SearchResponse, dependencies=[Depends(require_session)])
     def search(request: SearchRequest) -> SearchResponse:
+        if intake_service is not None:
+            if not request.confirmation_id:
+                raise HTTPException(status_code=409, detail="Confirm the brief before searching.")
+            search_id = request.search_id or str(uuid.uuid4())
+            try:
+                resp = intake_service.run_search(request.confirmation_id, search_id,
+                                                 provider=request.provider or "crustdata")
+            except KeyError:
+                raise HTTPException(status_code=422, detail="This confirmation is not valid. Confirm the brief again before searching.")
+            now = datetime.now(timezone.utc).isoformat()
+            search_store.save(search_id, {
+                "search_id": search_id, "status": "complete", "created_at": now, "updated_at": now,
+                "response": resp, "recruiter_decisions": {}, "notes": {}, "candidate_states": {},
+                "confirmed_brief": resp.get("confirmed_brief"), "harvest_evidence": {}, "internal_diagnostics": {},
+            })
+            return SearchResponse(**resp)
         request, confirmed_snapshot = _gate_search_request(request)
         confirmed_brief = brief_summary(confirmed_snapshot) if confirmed_snapshot else None
         search_id = request.search_id or str(uuid.uuid4())

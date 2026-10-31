@@ -158,7 +158,13 @@ class IntakeService:
         plan = self._pipe.briefing.build(model)
         search_result = self._pipe.search.run(plan.query)
         ranking = self._pipe.ranking.rank(model, list(search_result.candidates))
-        return to_search_response(provider, search_id, model, search_result, ranking)
+        resp = to_search_response(provider, search_id, model, search_result, ranking)
+        resp["confirmed_brief"] = {
+            "confirmation_id": confirmation_id, "session_id": "",
+            "posted_title": model.posted_title, "posted_title_source": model.posted_title_source,
+            "candidate_identity": model.identity, "content_hash": confirmation_id,
+        }
+        return resp
 
     def preview(self, confirmation_id: str):
         model = self._confirmations.load(confirmation_id)
