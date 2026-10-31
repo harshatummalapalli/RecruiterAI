@@ -273,6 +273,11 @@ def _record_from_dict(data: Dict[str, Any]) -> IntakeSessionRecord:
         )
 
     boundary_data = data.get("boundary")
+    # Defensive: ignore keys this legacy SearchBoundary doesn't know (e.g. a
+    # new-engine session's include_companies) so a stray file never 500s a load.
+    if boundary_data:
+        _known = set(getattr(SearchBoundary, "__dataclass_fields__", {}))
+        boundary_data = {k: v for k, v in boundary_data.items() if k in _known}
     boundary = SearchBoundary(**boundary_data) if boundary_data else None
 
     return IntakeSessionRecord(

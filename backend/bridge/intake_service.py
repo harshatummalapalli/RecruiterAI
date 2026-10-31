@@ -40,8 +40,11 @@ class ConfirmationNotReady(ValueError):
 
 
 def _session_store():
+    # A DEDICATED dir — must NOT collide with the legacy intake_session_manager's
+    # output/intake_sessions: new-engine sessions carry fields (understanding,
+    # include_companies) that the legacy SearchBoundary loader can't reconstruct.
     from backend.services.search_store import SearchStore
-    return SearchStore(storage_dir=_ROOT / "intake_sessions")
+    return SearchStore(storage_dir=_ROOT / "engine_intake_sessions")
 
 
 def _u_to_dict(u) -> Dict[str, Any]:
