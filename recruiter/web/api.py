@@ -43,6 +43,10 @@ _AC_FIELDS = {
     "state": "basic_profile.location.state",
     "city": "basic_profile.location.city",
     "industry": "experience.employment_details.current.company_industries",
+    # Latent (Tier 3) — education is a capability, off by default; autocomplete is
+    # ready so a school/branch picker can be added if a recruiter asks for it.
+    "school": "education.schools.school",
+    "field_of_study": "education.schools.field_of_study",
 }
 
 

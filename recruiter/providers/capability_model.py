@@ -82,6 +82,12 @@ _MAP: Dict[str, FieldCapability] = {c.field: c for c in [
     _c("experience.employment_details.current.company_headcount_latest", VERIFIED, RETURNED, UNKNOWN, False, "not in profile text; judge can't re-verify"),
     _c("education.schools.degree", VERIFIED, RETURNED, UNKNOWN, True),
     _c("education.schools.field_of_study", VERIFIED, GATED, UNKNOWN, True, "returned blank; verify via Harvest"),
+    # Education is a LATENT capability — filterable (probe 2026-10-31: school IIT
+    # 467k, field_of_study CS 3.35M), but OFF by default: hard-gating on school/
+    # branch over-excludes (incomplete education data), and field_of_study is
+    # blank-returned. Nothing populates RoleModel education today; when a recruiter
+    # asks, Briefing can route these (prefer soft/Judge) — the plumbing is ready.
+    _c("education.schools.school", VERIFIED, RETURNED, UNKNOWN, True, "filterable; messy names -> use autocomplete"),
     _c("company_industries", VERIFIED, RETURNED, UNKNOWN, True, "industry classification; career-signals can judge"),
     _c("skills.professional_network_skills", UNAVAILABLE, GATED, UNKNOWN, True, "skills-list filter unavailable on our plan"),
     _c("work_mode", UNAVAILABLE, GATED, UNKNOWN, False, "no work_mode filter on person_search -> disclose"),
@@ -137,6 +143,10 @@ FILTER_FIELD_MAP: Dict[str, str] = {
     "preferred_companies_ever": "experience.employment_details.company_name",
     "exclude_companies_ever": "experience.employment_details.company_name",
     "industries": "company_industries",
+    # Latent education filter-names (off by default — see the map entries above).
+    "education_school": "education.schools.school",
+    "education_field": "education.schools.field_of_study",
+    "education_degree": "education.schools.degree",
     # Recorded but unenforceable — mapped so routing resolves to 'disclose'
     # (not the unknown-field default), never appearing in supported_filters().
     "work_mode": "work_mode",
