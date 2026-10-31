@@ -128,3 +128,44 @@ def to_intake_result(raw_input: str, model: RoleModel, questions: Sequence, stat
     }
     return {"raw_input": raw_input, "role_understanding": role_understanding,
             "decision": decision, "status": status}
+
+
+# --- engine -> SearchResponse ------------------------------------------------
+
+def to_search_response(provider: str, search_id: str, model: RoleModel,
+                       search_result, ranking) -> Dict[str, Any]:
+    """Map the ranked result into the frontend SearchResponse. Minimal-but-valid:
+    candidates + evidence-based explanations + diagnostics. `evidence` (the rich
+    CandidateEvidence) is left empty for now — reusing the keeper
+    candidate_evidence_builder (it wants a legacy Candidate + SearchIntent) is a
+    follow-up; every rich SearchResponse field is optional, so the record renders."""
+    candidates: List[Dict[str, Any]] = []
+    explanations: List[Dict[str, Any]] = []
+    for rc in ranking.shown:
+        r = rc.record
+        candidates.append({
+            "candidate_id": r.candidate_id or None, "name": r.name, "title": r.title,
+            "company": r.company, "location": r.location, "provider_score": r.provider_score,
+            "final_score": rc.score, "profile_url": r.profile_url, "source": "crustdata",
+            "experience_years": None, "years_of_experience": None, "summary": None,
+            "ai_skills": None, "raw_data": r.raw if isinstance(r.raw, dict) else {},
+        })
+        explanations.append({
+            "relevance_tier": "direct", "why_this_candidate": rc.fit,
+            "strong_evidence": [rc.fit] if rc.fit else [], "potential_concerns": [],
+            "what_we_dont_know": [], "matched_signals": [], "seniority_alignment": None,
+            "provider_fit": None, "convergence": False, "matched_queries": list(r.matched_queries),
+            "final_score": rc.score, "review_first": [], "experience_floor": None, "level_fit": None,
+        })
+    diagnostics = {
+        "pulled": search_result.pulled, "kept": len(search_result.candidates),
+        "geo_dropped": search_result.geo_dropped, "excluded_dropped": search_result.excluded_dropped,
+        "est_credits": search_result.est_credits, "admitted": ranking.admitted,
+        "judged": ranking.judged, "judge_failures": ranking.judge_failures,
+        "experience_excluded": ranking.experience_excluded,
+    }
+    return {
+        "provider": provider, "search_id": search_id, "candidate_count": len(candidates),
+        "candidates": candidates, "explanations": explanations, "evidence": [],
+        "diagnostics": diagnostics, "warnings": [], "status": "complete",
+    }

@@ -2,8 +2,11 @@
 
 import json
 
-from backend.bridge.translate import to_intake_result, to_search_intent
+from backend.bridge.translate import to_intake_result, to_search_intent, to_search_response
 from recruiter.agents.intake.model import Question
+from recruiter.agents.ranking.model import RankedCandidate, RankingResult
+from recruiter.agents.search.model import SearchResult
+from recruiter.candidates import CandidateRecord
 from recruiter.role_model import (
     ARCHITECT,
     JD,
@@ -74,3 +77,20 @@ def test_intake_result_maps_brief_and_marks_status():
     assert result["decision"]["issues"][0]["question"] == "Require eDiscovery?"
     assert result["status"] == "ready"
     json.dumps(result)  # must serialize
+
+
+def test_search_response_maps_candidates_and_diagnostics():
+    rec = CandidateRecord("c1", name="Asha", title="eDiscovery Analyst", company="KLDiscovery",
+                          location="Pune, India", profile_url="http://x", provider_score=0.8,
+                          matched_queries=("natural_language",), raw={"basic_profile": {"headline": "Relativity"}})
+    ranking = RankingResult(ranked=(), shown=(RankedCandidate(rec, 0.91, "Strong Relativity match."),),
+                            admitted=25, judged=5, judge_failures=0, experience_excluded=2)
+    search = SearchResult(candidates=(rec,), pulled=50, geo_dropped=1, est_credits=1.5, excluded_dropped=3)
+    resp = to_search_response("crustdata", "s-1", _model(), search, ranking)
+    assert resp["candidate_count"] == 1 and resp["search_id"] == "s-1"
+    c = resp["candidates"][0]
+    assert c["name"] == "Asha" and c["final_score"] == 0.91 and c["raw_data"]["basic_profile"]["headline"] == "Relativity"
+    assert resp["explanations"][0]["why_this_candidate"] == "Strong Relativity match."
+    assert resp["diagnostics"]["pulled"] == 50 and resp["diagnostics"]["excluded_dropped"] == 3
+    assert resp["diagnostics"]["experience_excluded"] == 2 and resp["status"] == "complete"
+    json.dumps(resp)
