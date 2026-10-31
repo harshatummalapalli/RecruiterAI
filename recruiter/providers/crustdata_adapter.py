@@ -71,3 +71,7 @@ class CrustDataAdapter:
                           reasoning="rearch pipeline", confidence_score=None)
         candidates = self._get().search_with_options(plan, options={"page_size": page_size, "max_pages": 1})
         return [_to_record(c) for c in candidates]
+
+    def count(self, query: ProviderQuery) -> int:
+        """How many match the filters (exact mode) — the cheap preview (~0.03 cr)."""
+        return self._get().count(_to_search_query(query))

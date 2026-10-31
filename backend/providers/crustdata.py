@@ -148,6 +148,20 @@ class CrustDataProvider(BaseProvider):
 
         return all_candidates
 
+    def count(self, search: SearchQuery, options: Optional[Dict[str, Any]] = None) -> int:
+        """Count-only request (exact mode): how many people match the FILTERS, with
+        no results pulled. ~one result's charge (~0.03 cr) vs ~1.5 for a 50-pull —
+        the cheap confidence signal used before a paid search. `count` and `limit`
+        are mutually exclusive on CrustData, so we drop limit/fields/search (the NL
+        ranking doesn't change the exact-mode set, only its order)."""
+        payload = self._build_payload(search, options=options)
+        payload.pop("limit", None)
+        payload.pop("fields", None)
+        payload.pop("search", None)
+        payload["count"] = True
+        response = self._search_api(payload, options=options)
+        return int(response.get("total_count") or 0)
+
     def _build_payload(self, search: SearchQuery, options: Optional[Dict[str, Any]] = None, cursor: Optional[str] = None) -> Dict[str, Any]:
         """Translate a provider-agnostic SearchQuery into a CrustData-compatible payload."""
         options = options or {}

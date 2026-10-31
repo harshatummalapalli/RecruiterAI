@@ -26,6 +26,12 @@ class SearchAgent:
         self._provider = provider
         self._page_size = page_size
 
+    def preview_count(self, query: ProviderQuery):
+        """How many profiles match the filters, BEFORE any paid pull (~0.03 cr).
+        Returns None when the provider can't count (e.g. the offline fake)."""
+        counter = getattr(self._provider, "count", None)
+        return counter(query) if callable(counter) else None
+
     def run(self, query: ProviderQuery) -> SearchResult:
         raw = self._provider.search(query, self._page_size)
         merged = merge(raw)

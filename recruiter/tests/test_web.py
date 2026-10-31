@@ -24,6 +24,9 @@ def _understanding(notes, posted_title=None):
 
 
 class _Provider:
+    def count(self, query):
+        return 1234
+
     def search(self, query, page_size):
         return [CandidateRecord("real", name="Real", title="AI Architect", location="Pune, India",
                                 raw={"basic_profile": {"headline": "Agentic Systems and Python in production"}},
@@ -72,6 +75,22 @@ def test_execute_returns_ranked_candidates():
     assert res["candidates"][0]["name"] == "Real"
     assert "Evidence:" in res["candidates"][0]["fit"]
     assert res["search"]["est_credits"] > 0
+
+
+def test_preview_returns_pool_count():
+    c = _client()
+    session = c.post("/api/intake", json=BODY).json()["session"]
+    r = c.get("/api/preview", params={"session": session}).json()
+    assert r["matched"] == 1234 and r["preview_credits"] == 0.03
+
+
+def test_preview_graceful_without_count_support():
+    class _NoCount:
+        def search(self, query, page_size):
+            return []
+    agent = SearchAgent(_NoCount(), page_size=50)
+    from recruiter.agents.briefing.model import ProviderQuery
+    assert agent.preview_count(ProviderQuery(natural_language="x")) is None
 
 
 def test_confirm_no_blocks_execution():

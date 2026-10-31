@@ -95,6 +95,7 @@
     <div id="limits"></div>
     <h1 style="font-size:16px;margin-top:16px">A few questions</h1>
     <div id="questions"></div>
+    <div class="card" id="poolCard" style="margin:14px 0;padding:12px"><div class="muted" id="poolPreview">checking pool size…</div></div>
     <button id="run">Run search</button>
     <span class="muted" id="credits"></span>
     <div class="err" id="runErr"></div>
@@ -173,6 +174,20 @@ function renderReview(rev){
   $("reviewCard").style.display = "block";
   $("resultsCard").style.display = "none";
   $("reviewCard").scrollIntoView({behavior:"smooth"});
+  fetchPreview();
+}
+
+async function fetchPreview(){
+  $("poolPreview").textContent = "checking pool size…";
+  try {
+    const r = await fetch("/api/preview?session=" + encodeURIComponent(SESSION));
+    const d = await r.json().catch(()=>({}));
+    if (!r.ok || d.matched == null){ $("poolPreview").textContent = "Pool preview unavailable."; return; }
+    const n = d.matched;
+    const note = n > 200000 ? " — very broad, consider tightening the filters"
+               : (n < 30 ? " — very narrow, consider widening" : "");
+    $("poolPreview").innerHTML = `≈ <b>${n.toLocaleString()}</b> profiles match this intent${note}.<br>A search pulls & ranks the top 50 (~1.5 credits). Adjust the role above and re-analyze to change this.`;
+  } catch(e){ $("poolPreview").textContent = "Pool preview unavailable."; }
 }
 
 function renderQ(q){

@@ -20,6 +20,7 @@ from recruiter.agents.calibration import CalibrationAgent, CalibrationResult, Re
 from recruiter.agents.intake import IntakeAgent, IntakeOutcome
 from recruiter.agents.ranking import RankingAgent, RankingResult
 from recruiter.agents.search import SearchAgent, SearchResult
+from recruiter.agents.search.agent import CREDITS_PER_RESULT
 from recruiter.role_model import RoleModel
 
 
@@ -61,6 +62,12 @@ class Pipeline:
         plan = self.briefing.build(outcome.model)
         review = self.calibration.review(outcome.model, plan, outcome.refinements)
         return plan, review
+
+    def preview(self, model: RoleModel):
+        """The free confidence signal: how many profiles match this intent, before
+        any paid search. Returns (matched_count|None, preview_credits)."""
+        plan = self.briefing.build(model)
+        return self.search.preview_count(plan.query), round(CREDITS_PER_RESULT, 2)
 
     def execute(
         self,

@@ -79,6 +79,20 @@ def create_app(pipeline=None, org: str = "default") -> FastAPI:
             },
         }
 
+    @app.get("/api/preview")
+    def preview(session: str):
+        """Free confidence signal: how many profiles match this intent (~0.03 cr),
+        before any paid search. Shown on the review so the recruiter can tighten or
+        widen the filters until the pool looks right."""
+        sess = sessions.get(session)
+        if sess is None:
+            raise HTTPException(status_code=404, detail="Session not found — re-run Analyze.")
+        try:
+            matched, preview_credits = get_pipeline().preview(sess["model"])
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(status_code=502, detail=f"Preview failed: {exc}")
+        return {"matched": matched, "preview_credits": preview_credits}
+
     @app.post("/api/execute")
     def execute(body: ExecuteBody):
         sess = sessions.get(body.session)
