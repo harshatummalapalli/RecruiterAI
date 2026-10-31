@@ -405,6 +405,18 @@ class _SummaryCache:
         return entry
 
 
+def _engine_boundary(validated, include_companies=None, exclude_companies=None) -> Dict[str, Any]:
+    """The boundary dict handed to the new engine: the NORMALIZED geo from
+    validate_search_boundary (preserving the old app's country/state
+    canonicalization and its onsite/remote rules) plus the company include/exclude
+    lists (which the legacy SearchBoundary dataclass doesn't carry)."""
+    import dataclasses
+    data = dataclasses.asdict(validated)
+    data["include_companies"] = list(include_companies or [])
+    data["exclude_companies"] = list(exclude_companies or [])
+    return data
+
+
 def create_app(
     jd_parser: Optional[JDParser] = None,
     search_planner: Optional[SearchPlanner] = None,
@@ -693,8 +705,10 @@ def create_app(
         if not (request.raw_input or "").strip():
             raise HTTPException(status_code=422, detail={"message": "Describe the role first.", "errors": ["Paste a job description or describe the role."]})
         if intake_service is not None:
-            return intake_service.start(request.raw_input, request.boundary.model_dump(),
-                                        posted_title=request.posted_title)
+            return intake_service.start(
+                request.raw_input,
+                _engine_boundary(boundary, request.boundary.include_companies, request.boundary.exclude_companies),
+                posted_title=request.posted_title)
         try:
             record = intake_session_manager.start(request.raw_input, boundary=boundary, posted_title=request.posted_title)
         except ConfigurationError as exc:
@@ -790,7 +804,9 @@ def create_app(
         boundary = _validated_boundary(request)
         if intake_service is not None:
             try:
-                return intake_service.update_boundary(session_id, request.model_dump())
+                return intake_service.update_boundary(
+                    session_id,
+                    _engine_boundary(boundary, request.include_companies, request.exclude_companies))
             except KeyError:
                 raise HTTPException(status_code=404, detail="Intake session not found.")
         try:
