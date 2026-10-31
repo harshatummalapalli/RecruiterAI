@@ -26,9 +26,16 @@ def _cap_item(req) -> Dict[str, Any]:
     return {"value": req.text, "tier_signal": req.tier, "evidence": req.provenance.evidence}
 
 
+# Only these BLOCK the search (decision "ask"): the mandatory years clarification
+# and the capability confirm (the learning-loop step, default "keep"). Every other
+# refinement is OPTIONAL -> "tell" (shown as an insight, never blocks Search).
+_BLOCKING_ISSUES = {"min_years", "capability"}
+
+
 def _issue(q) -> Dict[str, Any]:
     return {
-        "issue": q.id, "decision": "ask", "id": q.id, "reasoning": None,
+        "issue": q.id, "decision": "ask" if q.id in _BLOCKING_ISSUES else "tell",
+        "id": q.id, "reasoning": None,
         "question": q.prompt, "options": [{"value": o, "label": o} for o in q.options],
         "consequence_if_answer_a": None, "consequence_if_answer_b": None,  # brain-only -> trim
         "insight_text": None, "injected_by_backstop": False, "backstop_category": None,
