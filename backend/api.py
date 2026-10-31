@@ -344,6 +344,11 @@ class SearchBoundaryRequest(BaseModel):
     remote_scope: Optional[str] = None
     remote_states: List[str] = Field(default_factory=list)
     remote_cities: List[str] = Field(default_factory=list)
+    # Company targeting (new engine): include = ever worked at ANY of these (OR),
+    # exclude = not currently at these (the hiring company is always excluded too).
+    # Consumed by the bridge's assemble -> CompanyRules; ignored on the legacy path.
+    include_companies: List[str] = Field(default_factory=list)
+    exclude_companies: List[str] = Field(default_factory=list)
 
 
 class IntakeStartRequest(BaseModel):

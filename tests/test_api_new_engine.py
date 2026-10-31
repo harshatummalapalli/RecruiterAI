@@ -96,6 +96,17 @@ def test_new_engine_full_flow(tmp_path):
     assert resp["status"] == "complete"
 
 
+def test_company_include_exclude_tags_flow_through(tmp_path):
+    c = _client(tmp_path)
+    boundary = {**_BOUNDARY, "include_companies": ["KLDiscovery", "Consilio"],
+                "exclude_companies": ["RivalCorp"]}
+    sid = c.post("/intake/start", json={"raw_input": "eDiscovery ops", "boundary": boundary}).json()["session_id"]
+    si = c.post(f"/intake/{sid}/confirmations", json={"edits": {}}).json()["search_intent"]
+    assert si["company_preferences"]["preferred_companies_ever"] == ["KLDiscovery", "Consilio"]  # include = OR
+    # exclude = recruiter's list + the always-excluded hiring company
+    assert set(si["company_preferences"]["exclude_current_companies"]) == {"Epiq", "RivalCorp"}
+
+
 def test_new_engine_search_requires_confirmation(tmp_path):
     c = _client(tmp_path)
     assert c.post("/search", json={"jd_text": "", "provider": "crustdata"}).status_code == 409

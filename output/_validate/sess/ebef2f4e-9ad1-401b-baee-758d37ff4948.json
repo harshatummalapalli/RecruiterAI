@@ -1,0 +1,103 @@
+{
+  "session_id": "ebef2f4e-9ad1-401b-baee-758d37ff4948",
+  "raw_input": "Job Summary\n\nWe are looking for an Operations Analyst \u2013 eDiscovery with hands-on experience supporting end-to-end eDiscovery operations across the EDRM lifecycle.\n\nThe role will involve data ingestion, processing, analysis, hosting, review support, quality control, and document production. The ideal candidate will have experience in end-to-end eDiscovery operations and/or Hosting & Production, along with hands-on expertise in Relativity and Nuix.\n\nThis role is suited for someone with strong analytical and problem-solving skills, excellent attention to detail, and the ability to manage multiple projects in a fast-paced, deadline-driven environment.\n\nKey Responsibilities\n- Support end-to-end eDiscovery workflows across the EDRM lifecycle, including data ingestion, processing, hosting, review support, quality control, and production.\n- Process, load, search, analyze, and manage electronically stored information (ESI) across multiple file formats.\n- Work hands-on with Relativity, Nuix, and other eDiscovery applications to support project requirements.\n- Manage Hosting & Production workflows, including data loading, workspace/database activities, searches, exports, and document productions.\n- Perform quality control checks to ensure the accuracy, completeness, and integrity of processed data and deliverables.\n- Troubleshoot data processing, application, and workflow-related issues, escalating complex matters when required.\n- Conduct searches and data analysis based on project and client requirements.\n- Generate operational and project status reports for internal stakeholders and Project Managers.\n- Collaborate closely with Project Managers and cross-functional teams to ensure projects are delivered accurately and within agreed timelines.\n- Maintain appropriate documentation for processes, workflows, issues, and resolutions.\n- Contribute to process improvements and initiatives focused on operational efficiency, quality, and standardization.\n- Manage multiple projects and priorities while consistently meeting quality standards and deadlines.\n\nRequired Qualifications & Experience\n- Bachelor's degree in Information Technology, Computer Science, Law, or a relevant field.\n- Minimum 2+ years of experience in eDiscovery Operations.\n- Hands-on experience with Relativity and Nuix.\n- Good understanding of the Electronic Discovery Reference Model (EDRM) and the eDiscovery lifecycle.\n- Practical experience with eDiscovery activities such as data processing, loading, searching, hosting, review support, quality control, exports, and productions.\n- Understanding of commonly used eDiscovery data types, metadata, load files, and document production workflows.\n- Strong analytical, troubleshooting, and problem-solving abilities.\n- Excellent attention to detail and ability to follow established processes and procedures.\n- Ability to manage multiple priorities and deliver under tight deadlines.\n- Strong written and verbal communication skills in English.\n- Ability to work effectively within operational and cross-functional teams.\n- Proficiency in Windows and Microsoft Office applications.\n",
+  "understanding": {
+    "identity": "eDiscovery Operations Analyst",
+    "requirements": [
+      {
+        "text": "End-to-end eDiscovery operations across the EDRM lifecycle (ingestion, processing, hosting, review support, quality control, production)",
+        "tier": "core",
+        "evidence": "Support end-to-end eDiscovery workflows across the EDRM lifecycle, including data ingestion, processing, hosting, review support, quality control, and production.",
+        "when": "any"
+      },
+      {
+        "text": "Hands-on Relativity experience (workspace/database activities, loading, searching, exports, productions)",
+        "tier": "core",
+        "evidence": null,
+        "when": "any"
+      },
+      {
+        "text": "Hands-on Nuix experience (processing and data handling)",
+        "tier": "core",
+        "evidence": null,
+        "when": "any"
+      },
+      {
+        "text": "Hosting & Production workflow management (data loading, searches, exports, document productions)",
+        "tier": "core",
+        "evidence": "Manage Hosting & Production workflows, including data loading, workspace/database activities, searches, exports, and document productions.",
+        "when": "any"
+      },
+      {
+        "text": "Quality control of processed data and deliverables for accuracy, completeness, and integrity",
+        "tier": "core",
+        "evidence": "Perform quality control checks to ensure the accuracy, completeness, and integrity of processed data and deliverables.",
+        "when": "any"
+      },
+      {
+        "text": "Processing, loading, and searching ESI across multiple file formats, including metadata and load files",
+        "tier": "supporting",
+        "evidence": null,
+        "when": "any"
+      },
+      {
+        "text": "Troubleshooting data processing, application, and workflow issues with escalation of complex matters",
+        "tier": "supporting",
+        "evidence": "Troubleshoot data processing, application, and workflow-related issues, escalating complex matters when required.",
+        "when": "any"
+      },
+      {
+        "text": "Search and data analysis per project and client requirements",
+        "tier": "supporting",
+        "evidence": "Conduct searches and data analysis based on project and client requirements.",
+        "when": "any"
+      },
+      {
+        "text": "Operational and project status reporting for stakeholders and Project Managers",
+        "tier": "supporting",
+        "evidence": "Generate operational and project status reports for internal stakeholders and Project Managers.",
+        "when": "any"
+      },
+      {
+        "text": "Managing multiple projects and priorities against tight deadlines",
+        "tier": "supporting",
+        "evidence": null,
+        "when": "any"
+      },
+      {
+        "text": "Process documentation and adherence to established procedures",
+        "tier": "supporting",
+        "evidence": null,
+        "when": "any"
+      },
+      {
+        "text": "Contribution to process improvement and standardization initiatives",
+        "tier": "differentiator",
+        "evidence": "Contribute to process improvements and initiatives focused on operational efficiency, quality, and standardization.",
+        "when": "any"
+      },
+      {
+        "text": "Experience with eDiscovery applications beyond Relativity and Nuix",
+        "tier": "differentiator",
+        "evidence": "Work hands-on with Relativity, Nuix, and other eDiscovery applications to support project requirements.",
+        "when": "any"
+      }
+    ],
+    "posted_title": "Operations Analyst \u2013 eDiscovery",
+    "posted_title_source": "recruiter",
+    "min_years": 2,
+    "max_years": null,
+    "employment_type": null,
+    "work_mode_in_notes": null
+  },
+  "boundary": {
+    "hiring_company": "Epiq",
+    "country": "India",
+    "work_mode": "remote",
+    "remote_scope": "anywhere",
+    "remote_states": [],
+    "remote_cities": []
+  },
+  "answers": {},
+  "posted_title": "Operations Analyst \u2013 eDiscovery"
+}

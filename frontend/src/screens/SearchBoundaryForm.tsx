@@ -8,6 +8,7 @@
 import type { SearchBoundary, WorkMode, RemoteScope } from '../models/searchBoundary'
 import { LocationTypeahead } from '../components/LocationTypeahead'
 import { LocationMultiTypeahead } from '../components/LocationMultiTypeahead'
+import { TagInput } from '../components/TagInput'
 import { searchCountries, searchStatesForCountry, searchCitiesForState, searchCitiesForCountry } from '../intelligence/locationData'
 
 type SearchBoundaryFormProps = {
@@ -198,6 +199,25 @@ export function SearchBoundaryForm({ boundary, onChange, disabled }: SearchBound
           ) : null}
         </div>
       ) : null}
+
+      <div className="brief-field-grid brief-field-grid--two">
+        <TagInput
+          label="Only from companies (optional)"
+          values={boundary.include_companies ?? []}
+          disabled={disabled}
+          placeholder="Type a company, press Enter"
+          caption="Candidates who ever worked at ANY of these (OR)."
+          onChange={(include_companies) => onChange((current) => ({ ...current, include_companies }))}
+        />
+        <TagInput
+          label="Exclude companies (optional)"
+          values={boundary.exclude_companies ?? []}
+          disabled={disabled}
+          placeholder="Type a company, press Enter"
+          caption="Dropped if currently at any of these. The hiring company is always excluded."
+          onChange={(exclude_companies) => onChange((current) => ({ ...current, exclude_companies }))}
+        />
+      </div>
     </section>
   )
 }

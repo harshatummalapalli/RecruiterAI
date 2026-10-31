@@ -22,6 +22,11 @@ export type SearchBoundary = {
   remote_scope?: RemoteScope | null
   remote_states: string[]
   remote_cities: string[]
+  // Company targeting. include = candidates who EVER worked at any of these (OR);
+  // exclude = not currently at these (the hiring company is always excluded too).
+  // Optional so a boundary restored from an older session still type-checks.
+  include_companies?: string[]
+  exclude_companies?: string[]
 }
 
 export function createEmptySearchBoundary(): SearchBoundary {
@@ -36,6 +41,8 @@ export function createEmptySearchBoundary(): SearchBoundary {
     remote_scope: null,
     remote_states: [],
     remote_cities: [],
+    include_companies: [],
+    exclude_companies: [],
   }
 }
 
