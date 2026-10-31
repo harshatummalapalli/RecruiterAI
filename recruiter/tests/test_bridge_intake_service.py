@@ -78,6 +78,17 @@ def test_start_ready_then_confirm_then_search(tmp_path):
     assert resp["diagnostics"]["pulled"] == 1
 
 
+def test_answering_a_refinement_clears_it(tmp_path):
+    svc = _service(_ready_reader, tmp_path)
+    started = svc.start("JD", _BOUNDARY, posted_title="Operations Analyst – eDiscovery")
+    sid = started["session_id"]
+    ids = {i["id"] for i in started["result"]["decision"]["issues"]}
+    assert "capability" in ids                       # refinement shown
+    answered = svc.answer(sid, "capability", "keep", "keep")
+    cleared = {i["id"] for i in answered["result"]["decision"]["issues"]}
+    assert "capability" not in cleared               # answered -> gone (card clears)
+
+
 def test_missing_years_clarifies_then_resolves(tmp_path):
     def no_years(notes, posted_title=None):
         return Understanding(identity="Analyst", min_years=None,

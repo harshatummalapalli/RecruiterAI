@@ -1,0 +1,95 @@
+{
+  "session_id": "2ff26c51-3666-4387-8ca8-0a555f4420c6",
+  "raw_input": "Job Summary\nWe are looking for an Operations Analyst \u2013 eDiscovery with hands-on experience supporting end-to-end eDiscovery operations across the EDRM lifecycle. The role will involve data ingestion, processing, analysis, hosting, review support, quality control, and document production. The ideal candidate will have experience in end-to-end eDiscovery operations and/or Hosting & Production, along with hands-on expertise in Relativity and Nuix.\n\nKey Responsibilities\n- Support end-to-end eDiscovery workflows across the EDRM lifecycle (ingestion, processing, hosting, review support, QC, production).\n- Process, load, search, analyze and manage ESI across multiple file formats.\n- Work hands-on with Relativity, Nuix and other eDiscovery applications.\n- Manage Hosting & Production workflows: data loading, workspace/database activities, searches, exports, document productions.\n- Perform quality-control checks on processed data and deliverables.\n\nRequired Qualifications & Experience\n- Bachelor's degree in IT, Computer Science, Law or a relevant field.\n- Minimum 2+ years of experience in eDiscovery Operations.\n- Hands-on experience with Relativity and Nuix.\n- Good understanding of EDRM and the eDiscovery lifecycle.\n- Understanding of eDiscovery data types, metadata, load files and document production workflows.",
+  "understanding": {
+    "identity": "eDiscovery Operations Analyst",
+    "requirements": [
+      {
+        "text": "Hands-on end-to-end eDiscovery operations experience across the EDRM lifecycle (ingestion, processing, hosting, review support, QC, production)",
+        "tier": "core",
+        "evidence": "Support end-to-end eDiscovery workflows across the EDRM lifecycle (ingestion, processing, hosting, review support, QC, production).",
+        "when": "any"
+      },
+      {
+        "text": "Minimum 2+ years of eDiscovery operations experience",
+        "tier": "core",
+        "evidence": "Minimum 2+ years of experience in eDiscovery Operations.",
+        "when": "any"
+      },
+      {
+        "text": "Hands-on Relativity experience",
+        "tier": "core",
+        "evidence": "The ideal candidate will have experience in end-to-end eDiscovery operations and/or Hosting & Production, along with hands-on expertise in Relativity and Nuix.",
+        "when": "any"
+      },
+      {
+        "text": "Hands-on Nuix experience",
+        "tier": "core",
+        "evidence": "The ideal candidate will have experience in end-to-end eDiscovery operations and/or Hosting & Production, along with hands-on expertise in Relativity and Nuix.",
+        "when": "any"
+      },
+      {
+        "text": "Hosting & Production workflows, including data loading, workspace activities, searches, exports, and document productions",
+        "tier": "supporting",
+        "evidence": "Manage Hosting & Production workflows: data loading, workspace/database activities, searches, exports, document productions.",
+        "when": "any"
+      },
+      {
+        "text": "ESI processing, loading, searching, and analysis across multiple file formats",
+        "tier": "supporting",
+        "evidence": null,
+        "when": "any"
+      },
+      {
+        "text": "Quality-control checks on processed data and deliverables",
+        "tier": "supporting",
+        "evidence": "Perform quality-control checks on processed data and deliverables.",
+        "when": "any"
+      },
+      {
+        "text": "Knowledge of eDiscovery data types, metadata, load files, and document production workflows",
+        "tier": "supporting",
+        "evidence": "Understanding of eDiscovery data types, metadata, load files and document production workflows.",
+        "when": "any"
+      },
+      {
+        "text": "Experience with other eDiscovery applications beyond Relativity and Nuix",
+        "tier": "supporting",
+        "evidence": "Work hands-on with Relativity, Nuix and other eDiscovery applications.",
+        "when": "any"
+      },
+      {
+        "text": "Bachelor's degree in IT, Computer Science, Law, or a relevant field",
+        "tier": "supporting",
+        "evidence": "Bachelor's degree in IT, Computer Science, Law or a relevant field.",
+        "when": "any"
+      }
+    ],
+    "posted_title": "Operations Analyst \u2013 eDiscovery",
+    "posted_title_source": "recruiter",
+    "min_years": 2,
+    "max_years": null,
+    "employment_type": null,
+    "work_mode_in_notes": null
+  },
+  "boundary": {
+    "hiring_company": "Epiq",
+    "country": "India",
+    "work_mode": "onsite",
+    "state": "Karnataka",
+    "city": "Bengaluru",
+    "radius_miles": 25.0,
+    "cities": [],
+    "remote_scope": null,
+    "remote_states": [],
+    "remote_cities": [],
+    "include_companies": [
+      "KLDiscovery"
+    ],
+    "exclude_companies": []
+  },
+  "answers": {
+    "capability": "keep"
+  },
+  "posted_title": "Operations Analyst \u2013 eDiscovery"
+}
