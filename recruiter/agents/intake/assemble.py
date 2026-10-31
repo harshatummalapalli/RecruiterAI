@@ -166,6 +166,11 @@ def assemble_role_model(
         )
 
     hiring_company = (boundary.get("hiring_company") or "").strip() or None
+    include_companies = tuple(c.strip() for c in (boundary.get("include_companies") or []) if c and c.strip())
+    exclude_companies = tuple(c.strip() for c in (boundary.get("exclude_companies") or []) if c and c.strip())
+    # The hiring company is always excluded (don't show a client its own people),
+    # plus any companies the recruiter named. Include = "ever worked at one of these".
+    exclude_current = tuple(dict.fromkeys(((hiring_company,) if hiring_company else ()) + exclude_companies))
 
     model = RoleModel(
         identity=identity,
@@ -178,7 +183,7 @@ def assemble_role_model(
         location=loc,
         requirements=requirements,
         capability_groups=capability_groups,
-        companies=CompanyRules(exclude_current=(hiring_company,) if hiring_company else ()),
+        companies=CompanyRules(exclude_current=exclude_current, prefer_ever=include_companies),
         exclude_titles=exclude_titles,
         posted_title=understanding.posted_title,
         posted_title_source=understanding.posted_title_source,

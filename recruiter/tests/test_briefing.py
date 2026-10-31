@@ -89,6 +89,21 @@ def test_company_exclusion_enforced_and_judge_signals_passed():
     assert len(plan.judge_signals) == 4
 
 
+def test_company_include_and_exclude_are_hard_filters():
+    from recruiter.role_model import CompanyRules
+    model = RoleModel(
+        identity="Backend Engineer",
+        seniority=Seniority(5, None, Provenance(JD)),
+        role_level=IC,
+        location=Location(countries=("India",)),
+        requirements=(Requirement("Python", "core", Provenance(JD)),),
+        companies=CompanyRules(prefer_ever=("Google", "Stripe"), exclude_current=("Epiq",)),
+    )
+    plan = BriefingAgent().build(model)
+    assert plan.query.preferred_companies_ever == ("Google", "Stripe")   # ever worked at
+    assert plan.query.exclude_current_companies == ("Epiq",)              # not currently at
+
+
 def test_full_front_half_intake_then_briefing_golden():
     """notes + boundary -> Intake -> RoleModel -> Briefing -> query, all offline,
     passing both the role-model and the briefing net checks for the golden role."""

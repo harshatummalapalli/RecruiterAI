@@ -40,6 +40,7 @@ class BriefingAgent:
         consider("maximum_years", model.seniority.max_years)
         consider("exclude_titles", tuple(model.exclude_titles))
         consider("exclude_current_companies", tuple(model.companies.exclude_current))
+        consider("preferred_companies_ever", tuple(model.companies.prefer_ever))
         consider("industries", tuple(model.industries))
 
         # Radius (geo_distance) — a location hard filter, enforced when anchored.
@@ -74,6 +75,7 @@ class BriefingAgent:
             employment_type=enforced.get("employment_type"),
             exclude_titles=enforced.get("exclude_titles", ()),
             exclude_current_companies=enforced.get("exclude_current_companies", ()),
+            preferred_companies_ever=enforced.get("preferred_companies_ever", ()),
             must_have_keyword_groups=enforced.get("must_have_keyword_groups", ()),
             industries=enforced.get("industries", ()),
         )

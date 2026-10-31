@@ -124,3 +124,12 @@ def test_multi_city_and_hiring_company_exclusion():
     model = _agent(_architect_understanding()).run(fx.ROLE.notes, {**fx.ROLE.boundary, "hiring_company": "Acme"}).model
     assert model.location.cities == ("Hyderabad", "Bengaluru", "Pune")
     assert model.companies.exclude_current == ("Acme",)
+
+
+def test_company_include_exclude_from_boundary():
+    boundary = {**fx.ROLE.boundary, "hiring_company": "Acme",
+                "include_companies": ["Google", "Stripe"], "exclude_companies": ["Infosys"]}
+    model = _agent(_architect_understanding()).run(fx.ROLE.notes, boundary).model
+    assert model.companies.prefer_ever == ("Google", "Stripe")
+    # hiring company + recruiter excludes, de-duped, hiring company first
+    assert model.companies.exclude_current == ("Acme", "Infosys")

@@ -27,6 +27,7 @@ class ProviderQuery:
     employment_type: Optional[str] = None
     exclude_titles: Tuple[str, ...] = ()
     exclude_current_companies: Tuple[str, ...] = ()
+    preferred_companies_ever: Tuple[str, ...] = ()   # include: ever worked at one of these
     must_have_keyword_groups: Tuple[Tuple[str, ...], ...] = ()
     industries: Tuple[str, ...] = ()
 

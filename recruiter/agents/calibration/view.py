@@ -61,8 +61,12 @@ def build_review(model: RoleModel, disclosures: Tuple[str, ...], questions: Tupl
     for group in model.capability_groups:
         lines.append(ReviewLine("Specialisation required", f"genuine {group.label} experience"))
 
-    if model.hiring_company:
-        lines.append(ReviewLine("Excluding", f"people currently at {model.hiring_company}"))
+    if model.companies.prefer_ever:
+        lines.append(ReviewLine("Only from", f"people who worked at {', '.join(model.companies.prefer_ever)}"))
+    if model.companies.exclude_current:
+        lines.append(ReviewLine("Excluding", f"people currently at {', '.join(model.companies.exclude_current)}"))
+    if model.industries:
+        lines.append(ReviewLine("Industry", ", ".join(model.industries)))
     if model.role_level in ("architect", "manager", "director+"):
         lines.append(ReviewLine("Seniority titles", "kept eligible (this is a senior/leadership role)"))
 

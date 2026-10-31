@@ -31,6 +31,7 @@
   .muted { color:var(--mut); font-size:12px; }
   .rankrow { display:flex; align-items:center; gap:8px; padding:3px 0; }
   .rankrow .txt { flex:1; } .rankrow button { margin:0; padding:2px 8px; }
+  details.adv { margin:12px 0 4px; } details.adv summary { cursor:pointer; color:var(--acc); font-size:13px; }
 </style>
 </head>
 <body>
@@ -41,6 +42,8 @@
   <div class="card" id="formCard">
     <label>Hiring notes / JD</label>
     <textarea id="notes" placeholder="Paste the role notes…"></textarea>
+    <label>Title (as posted)</label>
+    <input id="title" placeholder="e.g. Operations Analyst – eDiscovery">
     <div class="row">
       <div><label>Hiring company</label><input id="company" placeholder="e.g. Epiq"></div>
       <div><label>Country</label><input id="country" value="India"></div>
@@ -48,14 +51,39 @@
         <select id="workmode"><option>onsite</option><option>hybrid</option><option selected>remote</option></select></div>
     </div>
     <div class="row">
-      <div><label>Cities (hard filter, comma-sep)</label><input id="cities" placeholder="Noida"></div>
-      <div><label>Preferred cities (soft, comma-sep)</label><input id="pcities" placeholder="Hyderabad, Bengaluru, Pune"></div>
+      <div><label>Min years (required)</label><input id="minyears" type="number" min="0" placeholder="e.g. 8"></div>
+      <div><label>Max years (optional)</label><input id="maxyears" type="number" min="0" placeholder="e.g. 12"></div>
     </div>
-    <div class="row">
-      <div><label>Radius — anchor place (overrides cities)</label><input id="radplace" placeholder="e.g. San Francisco, California"></div>
-      <div><label>Radius miles</label><input id="radmiles" type="number" min="1" placeholder="e.g. 25"></div>
+
+    <label>Location scope</label>
+    <select id="geoscope">
+      <option value="country" selected>Country-wide (anywhere in the country)</option>
+      <option value="cities">Specific cities</option>
+      <option value="radius">Within a radius of a place</option>
+    </select>
+    <div id="geo_cities" style="display:none">
+      <div class="row">
+        <div><label>Cities (hard filter, comma-sep)</label><input id="cities" placeholder="Bengaluru, Pune"></div>
+        <div><label>Preferred cities (soft boost, comma-sep)</label><input id="pcities" placeholder="Hyderabad, Bengaluru, Pune"></div>
+      </div>
     </div>
-    <p class="muted">Radius catches the whole metro (a literal city misses most of it). When set, it replaces the city filter.</p>
+    <div id="geo_radius" style="display:none">
+      <div class="row">
+        <div><label>Anchor place</label><input id="radplace" placeholder="e.g. San Francisco, California"></div>
+        <div><label>Radius miles</label><input id="radmiles" type="number" min="1" placeholder="e.g. 25"></div>
+      </div>
+      <p class="muted">Radius catches the whole metro (a literal city misses most of it).</p>
+    </div>
+
+    <details class="adv">
+      <summary>Advanced filters</summary>
+      <div class="row">
+        <div><label>Only from companies (ever worked at, comma-sep)</label><input id="inccos" placeholder="e.g. Relativity, KLDiscovery"></div>
+        <div><label>Exclude companies (current, comma-sep)</label><input id="exccos" placeholder="e.g. a competitor"></div>
+      </div>
+      <p class="muted">The hiring company is always excluded. Education / industry filters coming next.</p>
+    </details>
+
     <div id="yearsAsk"></div>
     <button id="analyze">Analyze role</button>
     <div class="err" id="formErr"></div>
@@ -84,13 +112,34 @@ const $ = id => document.getElementById(id);
 let SESSION = null, QUESTIONS = [];
 
 function listVals(id){ return $(id).value.split(",").map(s=>s.trim()).filter(Boolean); }
+
+$("geoscope").onchange = () => {
+  const s = $("geoscope").value;
+  $("geo_cities").style.display = s === "cities" ? "block" : "none";
+  $("geo_radius").style.display = s === "radius" ? "block" : "none";
+};
+
 function boundary(){
   const b = { hiring_company: $("company").value.trim(), country: $("country").value.trim(), work_mode: $("workmode").value };
-  const c = listVals("cities"), p = listVals("pcities");
-  if (c.length) b.cities = c; if (p.length) b.preferred_cities = p;
-  const rp = $("radplace").value.trim(), rm = parseFloat($("radmiles").value);
-  if (rp && rm > 0) { b.radius_place = rp; b.radius_miles = rm; }  // overrides cities
+  if ($("title").value.trim()) b.posted_title = $("title").value.trim();
+  const scope = $("geoscope").value;
+  if (scope === "cities"){
+    const c = listVals("cities"), p = listVals("pcities");
+    if (c.length) b.cities = c; if (p.length) b.preferred_cities = p;
+  } else if (scope === "radius"){
+    const rp = $("radplace").value.trim(), rm = parseFloat($("radmiles").value);
+    if (rp && rm > 0){ b.radius_place = rp; b.radius_miles = rm; }
+  }
+  const inc = listVals("inccos"), exc = listVals("exccos");
+  if (inc.length) b.include_companies = inc; if (exc.length) b.exclude_companies = exc;
   return b;
+}
+function yearAnswers(){
+  const a = {};
+  const mn = parseInt($("minyears").value, 10); if (!isNaN(mn)) a.min_years = mn;
+  const mx = parseInt($("maxyears").value, 10); if (!isNaN(mx)) a.max_years = mx;
+  const y = $("years"); if (y && y.value) a.min_years = parseInt(y.value, 10);  // clarification fallback
+  return a;
 }
 
 async function post(url, body){
@@ -103,9 +152,7 @@ async function post(url, body){
 $("analyze").onclick = async () => {
   $("formErr").textContent = ""; $("analyze").disabled = true;
   try {
-    const answers = {};
-    const y = $("years"); if (y && y.value) answers.min_years = parseInt(y.value, 10);
-    const res = await post("/api/intake", { notes: $("notes").value, boundary: boundary(), answers });
+    const res = await post("/api/intake", { notes: $("notes").value, boundary: boundary(), answers: yearAnswers() });
     if (!res.ready) { renderYears(res.clarifications); return; }
     SESSION = res.session; QUESTIONS = res.review.questions;
     renderReview(res.review);
