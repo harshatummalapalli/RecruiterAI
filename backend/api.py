@@ -819,6 +819,13 @@ def create_app(
 
     @app.post("/intake/{session_id}/confirm", dependencies=[Depends(require_session)])
     def intake_confirm(session_id: str) -> SearchIntent:
+        if intake_service is not None:
+            try:
+                return JSONResponse(intake_service.search_intent_preview(session_id))
+            except KeyError:
+                raise HTTPException(status_code=404, detail="Intake session not found.")
+            except ConfirmationNotReady as exc:
+                raise HTTPException(status_code=409, detail={"message": "This brief is not ready to search.", "reasons": exc.reasons})
         record = intake_session_manager.get(session_id)
         if record is None or record.result is None:
             raise HTTPException(status_code=404, detail="Intake session not found.")

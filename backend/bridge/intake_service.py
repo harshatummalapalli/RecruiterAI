@@ -151,6 +151,17 @@ class IntakeService:
                 "candidate_identity": model.identity, "content_hash": model.model_id,
                 "search_intent": to_search_intent(model), "edits": edits or {}}
 
+    def search_intent_preview(self, session_id: str) -> Dict[str, Any]:
+        """What /intake/{id}/confirm returns: the SearchIntent for the current
+        (ready) brief, WITHOUT creating a snapshot — the frontend fires this to
+        render 'this is what I will search for'. 409 if still missing years."""
+        rec = self._require(session_id)
+        u = _u_from_dict(rec["understanding"])
+        outcome = self._pipe.intake.assemble(u, rec.get("boundary") or {}, rec.get("answers") or {})
+        if not outcome.ready:
+            raise ConfirmationNotReady([q.prompt for q in outcome.clarifications])
+        return to_search_intent(outcome.model)
+
     def run_search(self, confirmation_id: str, search_id: str, provider: str = "crustdata") -> Dict[str, Any]:
         model = self._confirmations.load(confirmation_id)
         if model is None:

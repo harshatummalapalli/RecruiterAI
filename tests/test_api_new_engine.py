@@ -96,6 +96,16 @@ def test_new_engine_full_flow(tmp_path):
     assert resp["status"] == "complete"
 
 
+def test_confirm_singular_returns_search_intent_preview(tmp_path):
+    # The frontend auto-fires POST /intake/{id}/confirm (singular) on brief load
+    # to preview the search intent — this must NOT 503 on the new engine.
+    c = _client(tmp_path)
+    sid = c.post("/intake/start", json={"raw_input": "eDiscovery ops", "boundary": _BOUNDARY}).json()["session_id"]
+    r = c.post(f"/intake/{sid}/confirm")
+    assert r.status_code == 200
+    assert r.json()["role"]["title"] == "eDiscovery Operations Analyst"
+
+
 def test_company_include_exclude_tags_flow_through(tmp_path):
     c = _client(tmp_path)
     boundary = {**_BOUNDARY, "include_companies": ["KLDiscovery", "Consilio"],
