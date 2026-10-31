@@ -93,4 +93,8 @@ def test_search_response_maps_candidates_and_diagnostics():
     assert resp["explanations"][0]["why_this_candidate"] == "Strong Relativity match."
     assert resp["diagnostics"]["pulled"] == 50 and resp["diagnostics"]["excluded_dropped"] == 3
     assert resp["diagnostics"]["experience_excluded"] == 2 and resp["status"] == "complete"
+    # rich evidence now built via the keeper candidate_evidence_builder
+    ev = resp["evidence"][0]
+    assert ev["current_company"] == "KLDiscovery" and "Relativity" in ev["headline"]
+    assert "past_roles" in ev and "education" in ev and "role_alignment" in ev
     json.dumps(resp)

@@ -174,23 +174,55 @@ def to_intake_result_pending(raw_input: str, u, questions: Sequence) -> Dict[str
 
 # --- engine -> SearchResponse ------------------------------------------------
 
+def _search_intent_dataclass(model: RoleModel):
+    """A legacy SearchIntent dataclass built from the RoleModel — what the keeper
+    candidate_evidence_builder needs to derive role-alignment (title relevance,
+    experience floor, level fit, matched signals)."""
+    from backend.models.search_intent import (
+        CompanyPreferences, Experience, Location as _Loc, Role, SearchIntent, Skills, Titles,
+    )
+    loc = model.location
+    cores = [r.text for r in model.tier("core")]
+    supporting = [r.text for r in model.tier("supporting")]
+    diffs = [r.text for r in model.tier("differentiator")]
+    return SearchIntent(
+        role=Role(title=model.identity, posted_title=model.posted_title,
+                  posted_title_source=model.posted_title_source, employment_type=model.employment_type),
+        location=_Loc(countries=list(loc.countries), states=list(loc.states), cities=list(loc.cities),
+                      radius_miles=loc.radius_miles, radius_place=loc.radius_place, work_mode=loc.work_mode),
+        experience=Experience(minimum_years=model.seniority.min_years, maximum_years=model.seniority.max_years),
+        titles=Titles(exclude_titles=list(model.exclude_titles)),
+        skills=Skills(required_skills=cores, preferred_skills=supporting),
+        company_preferences=CompanyPreferences(exclude_current_companies=list(model.companies.exclude_current),
+                                               preferred_companies_ever=list(model.companies.prefer_ever)),
+        natural_language_search_query=build_nl_query(model),
+        core_signals=cores, supporting_signals=supporting, differentiator_signals=diffs,
+    )
+
+
 def to_search_response(provider: str, search_id: str, model: RoleModel,
                        search_result, ranking) -> Dict[str, Any]:
-    """Map the ranked result into the frontend SearchResponse. Minimal-but-valid:
-    candidates + evidence-based explanations + diagnostics. `evidence` (the rich
-    CandidateEvidence) is left empty for now — reusing the keeper
-    candidate_evidence_builder (it wants a legacy Candidate + SearchIntent) is a
-    follow-up; every rich SearchResponse field is optional, so the record renders."""
+    """Map the ranked result into the frontend SearchResponse: candidates +
+    evidence-based explanations + rich CandidateEvidence (career/education/contact/
+    role-alignment, via the keeper candidate_evidence_builder) + diagnostics. An
+    evidence build never sinks the search — a bad card falls back to {}."""
+    from dataclasses import asdict
+    from backend.models.candidate import Candidate
+    from backend.services.candidate_evidence_builder import build_candidate_evidence
+
+    intent = _search_intent_dataclass(model)
     candidates: List[Dict[str, Any]] = []
     explanations: List[Dict[str, Any]] = []
+    evidence: List[Dict[str, Any]] = []
     for rc in ranking.shown:
         r = rc.record
+        raw = r.raw if isinstance(r.raw, dict) else {}
         candidates.append({
             "candidate_id": r.candidate_id or None, "name": r.name, "title": r.title,
             "company": r.company, "location": r.location, "provider_score": r.provider_score,
             "final_score": rc.score, "profile_url": r.profile_url, "source": "crustdata",
             "experience_years": None, "years_of_experience": None, "summary": None,
-            "ai_skills": None, "raw_data": r.raw if isinstance(r.raw, dict) else {},
+            "ai_skills": None, "raw_data": raw,
         })
         explanations.append({
             "relevance_tier": "direct", "why_this_candidate": rc.fit,
@@ -199,6 +231,13 @@ def to_search_response(provider: str, search_id: str, model: RoleModel,
             "provider_fit": None, "convergence": False, "matched_queries": list(r.matched_queries),
             "final_score": rc.score, "review_first": [], "experience_floor": None, "level_fit": None,
         })
+        try:
+            cand = Candidate(candidate_id=r.candidate_id or None, name=r.name, title=r.title,
+                             company=r.company, location=r.location, provider_score=r.provider_score,
+                             final_score=rc.score, profile_url=r.profile_url, source="crustdata", raw_data=raw)
+            evidence.append(asdict(build_candidate_evidence(cand, intent)))
+        except Exception:
+            evidence.append({})
     diagnostics = {
         "pulled": search_result.pulled, "kept": len(search_result.candidates),
         "geo_dropped": search_result.geo_dropped, "excluded_dropped": search_result.excluded_dropped,
@@ -208,6 +247,6 @@ def to_search_response(provider: str, search_id: str, model: RoleModel,
     }
     return {
         "provider": provider, "search_id": search_id, "candidate_count": len(candidates),
-        "candidates": candidates, "explanations": explanations, "evidence": [],
+        "candidates": candidates, "explanations": explanations, "evidence": evidence,
         "diagnostics": diagnostics, "warnings": [], "status": "complete",
     }
