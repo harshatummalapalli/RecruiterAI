@@ -46,7 +46,7 @@
     <input id="title" placeholder="e.g. Operations Analyst – eDiscovery">
     <div class="row">
       <div><label>Hiring company</label><input id="company" placeholder="e.g. Epiq"></div>
-      <div><label>Country</label><input id="country" value="India"></div>
+      <div><label>Country</label><input id="country" value="India" list="dl_country" autocomplete="off"><datalist id="dl_country"></datalist></div>
       <div><label>Work mode</label>
         <select id="workmode"><option>onsite</option><option>hybrid</option><option selected>remote</option></select></div>
     </div>
@@ -63,9 +63,11 @@
     </select>
     <div id="geo_cities" style="display:none">
       <div class="row">
-        <div><label>Cities (hard filter, comma-sep)</label><input id="cities" placeholder="Bengaluru, Pune"></div>
+        <div><label>State (optional)</label><input id="state" placeholder="start typing…" list="dl_state" autocomplete="off"><datalist id="dl_state"></datalist></div>
+        <div><label>Cities (hard filter, comma-sep)</label><input id="cities" placeholder="Bengaluru, Pune" list="dl_city" autocomplete="off"><datalist id="dl_city"></datalist></div>
         <div><label>Preferred cities (soft boost, comma-sep)</label><input id="pcities" placeholder="Hyderabad, Bengaluru, Pune"></div>
       </div>
+      <p class="muted">Pick canonical names from the dropdown so the exact-match filter doesn't miss (e.g. "Bengaluru", not "Bangalore").</p>
     </div>
     <div id="geo_radius" style="display:none">
       <div class="row">
@@ -120,6 +122,26 @@ $("geoscope").onchange = () => {
   $("geo_radius").style.display = s === "radius" ? "block" : "none";
 };
 
+// Canonical-value typeahead: query the last comma-token, fill the datalist.
+function attachAC(inputId, dlId, field){
+  let t;
+  $(inputId).addEventListener("input", () => {
+    clearTimeout(t);
+    t = setTimeout(async () => {
+      const q = $(inputId).value.split(",").pop().trim();
+      if (q.length < 2) return;
+      try {
+        const r = await fetch(`/api/autocomplete?field=${field}&q=${encodeURIComponent(q)}`);
+        const d = await r.json().catch(()=>({values:[]}));
+        $(dlId).innerHTML = (d.values || []).map(v=>`<option value="${esc(v)}"></option>`).join("");
+      } catch(e){ /* dropdown is a convenience; ignore failures */ }
+    }, 220);
+  });
+}
+attachAC("country", "dl_country", "country");
+attachAC("state", "dl_state", "state");
+attachAC("cities", "dl_city", "city");
+
 function boundary(){
   const b = { hiring_company: $("company").value.trim(), country: $("country").value.trim(), work_mode: $("workmode").value };
   if ($("title").value.trim()) b.posted_title = $("title").value.trim();
@@ -127,6 +149,7 @@ function boundary(){
   if (scope === "cities"){
     const c = listVals("cities"), p = listVals("pcities");
     if (c.length) b.cities = c; if (p.length) b.preferred_cities = p;
+    if ($("state").value.trim()) b.state = $("state").value.trim();
   } else if (scope === "radius"){
     const rp = $("radplace").value.trim(), rm = parseFloat($("radmiles").value);
     if (rp && rm > 0){ b.radius_place = rp; b.radius_miles = rm; }

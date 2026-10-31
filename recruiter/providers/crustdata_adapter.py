@@ -75,3 +75,7 @@ class CrustDataAdapter:
     def count(self, query: ProviderQuery) -> int:
         """How many match the filters (exact mode) — the cheap preview (~0.03 cr)."""
         return self._get().count(_to_search_query(query))
+
+    def autocomplete(self, field: str, query: str, limit: int = 8) -> List[str]:
+        """Canonical-value typeahead for a filter field (free)."""
+        return self._get().autocomplete(field, query, limit)

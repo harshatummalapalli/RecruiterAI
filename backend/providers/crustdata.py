@@ -148,6 +148,33 @@ class CrustDataProvider(BaseProvider):
 
         return all_candidates
 
+    def autocomplete(self, field: str, query: str, limit: int = 8, options: Optional[Dict[str, Any]] = None) -> List[str]:
+        """Typeahead for a filter field's CANONICAL values (free — no credits).
+        POST /person/search/autocomplete. Lets the UI offer dropdowns of the exact
+        strings CrustData indexes, so an exact-mode filter never misses on a
+        spelling variant ("Bangalore" -> pick "Bengaluru")."""
+        options = options or {}
+        api_key = get_crustdata_api_key()
+        if not api_key:
+            raise ConfigurationError("Sourcing configuration is unavailable.")
+        url = self._base_url.rstrip("/") + "/autocomplete"
+        timeout_seconds = float(options.get("request_timeout") or DEFAULT_REQUEST_TIMEOUT)
+        client = self._client or httpx.Client(
+            timeout=httpx.Timeout(timeout_seconds, connect=DEFAULT_CONNECT_TIMEOUT)
+        )
+        should_close_client = self._client is None
+        try:
+            response = client.post(url, json={"field": field, "query": query, "limit": int(limit)},
+                                   headers=self._build_headers(api_key))
+            response.raise_for_status()
+            data = response.json()
+        except httpx.HTTPError as exc:
+            raise ProviderError(f"CrustData autocomplete failed: {exc}") from exc
+        finally:
+            if should_close_client:
+                client.close()
+        return [s.get("value") for s in (data.get("suggestions") or []) if isinstance(s, dict) and s.get("value")]
+
     def count(self, search: SearchQuery, options: Optional[Dict[str, Any]] = None) -> int:
         """Count-only request (exact mode): how many people match the FILTERS, with
         no results pulled. ~one result's charge (~0.03 cr) vs ~1.5 for a 50-pull —

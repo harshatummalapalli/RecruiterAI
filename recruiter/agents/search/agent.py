@@ -26,6 +26,11 @@ class SearchAgent:
         self._provider = provider
         self._page_size = page_size
 
+    def autocomplete(self, field: str, query: str, limit: int = 8):
+        """Canonical-value typeahead (free). Empty when the provider can't do it."""
+        fn = getattr(self._provider, "autocomplete", None)
+        return list(fn(field, query, limit)) if callable(fn) else []
+
     def preview_count(self, query: ProviderQuery):
         """How many profiles match the filters, BEFORE any paid pull (~0.03 cr).
         Returns None when the provider can't count (e.g. the offline fake)."""

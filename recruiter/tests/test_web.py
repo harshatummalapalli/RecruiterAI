@@ -27,6 +27,9 @@ class _Provider:
     def count(self, query):
         return 1234
 
+    def autocomplete(self, field, query, limit=8):
+        return [f"{query}-A", f"{query}-B"] if "city" in field else ["United States"]
+
     def search(self, query, page_size):
         return [CandidateRecord("real", name="Real", title="AI Architect", location="Pune, India",
                                 raw={"basic_profile": {"headline": "Agentic Systems and Python in production"}},
@@ -75,6 +78,14 @@ def test_execute_returns_ranked_candidates():
     assert res["candidates"][0]["name"] == "Real"
     assert "Evidence:" in res["candidates"][0]["fit"]
     assert res["search"]["est_credits"] > 0
+
+
+def test_autocomplete_proxy_maps_field_and_returns_values():
+    c = _client()
+    r = c.get("/api/autocomplete", params={"field": "city", "q": "beng"})
+    assert r.status_code == 200 and r.json()["values"] == ["beng-A", "beng-B"]
+    assert c.get("/api/autocomplete", params={"field": "salary", "q": "x"}).status_code == 400  # not whitelisted
+    assert c.get("/api/autocomplete", params={"field": "city", "q": ""}).json()["values"] == []
 
 
 def test_preview_returns_pool_count():

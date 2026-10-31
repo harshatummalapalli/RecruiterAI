@@ -36,6 +36,16 @@ class ExecuteBody(BaseModel):
     answers: Dict[str, Any] = Field(default_factory=dict)
 
 
+# Short UI keys -> the CrustData filter field they autocomplete (raw paths stay
+# server-side, so the UI can't query arbitrary columns).
+_AC_FIELDS = {
+    "country": "basic_profile.location.country",
+    "state": "basic_profile.location.state",
+    "city": "basic_profile.location.city",
+    "industry": "experience.employment_details.current.company_industries",
+}
+
+
 def _question(q) -> Dict[str, Any]:
     return {"id": q.id, "kind": q.kind, "prompt": q.prompt, "routing": q.routing,
             "required": q.required, "options": list(q.options)}
@@ -78,6 +88,20 @@ def create_app(pipeline=None, org: str = "default") -> FastAPI:
                 "questions": [_question(q) for q in review.questions],
             },
         }
+
+    @app.get("/api/autocomplete")
+    def autocomplete(field: str, q: str = "", limit: int = 8):
+        """Canonical-value typeahead for the geo/industry dropdowns (free)."""
+        col = _AC_FIELDS.get(field)
+        if not col:
+            raise HTTPException(status_code=400, detail=f"unknown autocomplete field: {field}")
+        if not q.strip():
+            return {"values": []}
+        try:
+            values = get_pipeline().search.autocomplete(col, q.strip(), min(max(int(limit), 1), 15))
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(status_code=502, detail=f"Autocomplete failed: {exc}")
+        return {"values": values}
 
     @app.get("/api/preview")
     def preview(session: str):
