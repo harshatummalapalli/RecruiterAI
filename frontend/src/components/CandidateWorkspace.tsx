@@ -125,6 +125,9 @@ function CandidateCard({ item, decision, selected, onOpen, onDecide, register, p
         <div className="ws-card__identity">
           <h3 className="ws-card__name">{candidate.name}</h3>
           <p className="ws-card__role">{place}</p>
+          {candidate.experienceYears ? (
+            <p className="ws-card__meta">~{Math.round(candidate.experienceYears)} yrs experience</p>
+          ) : null}
         </div>
       </div>
 

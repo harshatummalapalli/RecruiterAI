@@ -122,6 +122,8 @@ export type DiscoveryCandidate = {
   reviewFirst: string[]
   ledger: LedgerGroup[]
   experienceLine: string | null
+  /** Approx. years of professional experience from dated history — shown on the list card for quick scanning. */
+  experienceYears: number | null
   levelLine: string | null
   levelFit: 'aligned' | 'above' | 'below' | 'unclear' | null
   /** false only when role dates show fewer years than the brief asks; null when it cannot be checked. */
@@ -360,6 +362,12 @@ export function buildDiscoveryCandidates(response: SearchResponse): DiscoveryCan
       reviewFirst: readStringArray(explanation.review_first),
       ledger: buildLedger(evidence.requirement_judgments),
       experienceLine: readString(evidence.role_alignment?.experience_floor_basis),
+      experienceYears:
+        typeof evidence.derived_experience_years === 'number'
+          ? evidence.derived_experience_years
+          : typeof candidate.experience_years === 'number'
+            ? candidate.experience_years
+            : null,
       levelLine: readString(evidence.role_alignment?.level_basis),
       levelFit: evidence.role_alignment?.level_fit ?? explanation.level_fit ?? null,
       experienceFloor:

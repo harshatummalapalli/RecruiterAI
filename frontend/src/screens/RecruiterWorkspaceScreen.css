@@ -1243,6 +1243,12 @@
   font-size: 14px;
 }
 
+.discovery-reviewed-note {
+  margin: 0 0 12px;
+  color: var(--color-muted);
+  font-size: 13px;
+}
+
 .discovery-write-error__dismiss {
   background: none;
   border: none;

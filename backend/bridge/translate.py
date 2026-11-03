@@ -316,11 +316,25 @@ def to_search_response(provider: str, search_id: str, model: RoleModel,
     for rc in ranking.shown:
         r = rc.record
         raw = r.raw if isinstance(r.raw, dict) else {}
+        # Build the rich evidence first so we can surface its derived years-of-
+        # experience on the candidate card (the keeper computes it from the dated
+        # career history; without this the card showed no experience at all).
+        built_evidence: Dict[str, Any] = {}
+        years = None
+        try:
+            cand = Candidate(candidate_id=r.candidate_id or None, name=r.name, title=r.title,
+                             company=r.company, location=r.location, provider_score=r.provider_score,
+                             final_score=rc.score, profile_url=r.profile_url, source="crustdata", raw_data=raw)
+            built = build_candidate_evidence(cand, intent)
+            built_evidence = asdict(built)
+            years = getattr(built, "derived_experience_years", None)
+        except Exception:
+            built_evidence = {}
         candidates.append({
             "candidate_id": r.candidate_id or None, "name": r.name, "title": r.title,
             "company": r.company, "location": r.location, "provider_score": r.provider_score,
             "final_score": rc.score, "profile_url": r.profile_url, "source": "crustdata",
-            "experience_years": None, "years_of_experience": None, "summary": None,
+            "experience_years": years, "years_of_experience": years, "summary": None,
             "ai_skills": None, "raw_data": raw,
         })
         explanations.append({
@@ -330,13 +344,7 @@ def to_search_response(provider: str, search_id: str, model: RoleModel,
             "provider_fit": None, "convergence": False, "matched_queries": list(r.matched_queries),
             "final_score": rc.score, "review_first": [], "experience_floor": None, "level_fit": None,
         })
-        try:
-            cand = Candidate(candidate_id=r.candidate_id or None, name=r.name, title=r.title,
-                             company=r.company, location=r.location, provider_score=r.provider_score,
-                             final_score=rc.score, profile_url=r.profile_url, source="crustdata", raw_data=raw)
-            evidence.append(asdict(build_candidate_evidence(cand, intent)))
-        except Exception:
-            evidence.append({})
+        evidence.append(built_evidence)
     diagnostics = {
         "pulled": search_result.pulled, "kept": len(search_result.candidates),
         "geo_dropped": search_result.geo_dropped, "excluded_dropped": search_result.excluded_dropped,

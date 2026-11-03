@@ -263,6 +263,14 @@ export function CandidateReviewScreen({
   const showSkeleton = searchState === 'searching' && (isRole ? arrangedItems.length === 0 : candidates.length === 0)
   const showZeroResults = searchState === 'done' && hasSearchedOnce && candidates.length === 0
   const showError = searchState === 'error' && !showSkeleton && candidates.length === 0
+  // Answer "where did the other candidates go?": the shown few are the strongest of a
+  // larger reviewed pool. Honest, without exposing raw retrieval counts.
+  const diag = (searchResponse?.diagnostics ?? {}) as Record<string, unknown>
+  const reviewedCount = Number(diag.judged ?? diag.admitted ?? 0)
+  const reviewedNote =
+    !isRole && searchState === 'done' && candidates.length > 0 && reviewedCount > candidates.length
+      ? `Showing the ${candidates.length} strongest of ${reviewedCount} profiles reviewed.`
+      : null
 
   const availability = availabilityNotice(searchResponse?.availability)
   const paused = role ? pauseCopy(role) : null
@@ -357,6 +365,8 @@ export function CandidateReviewScreen({
                 </button>
               </div>
             ) : null}
+
+            {reviewedNote ? <p className="discovery-reviewed-note">{reviewedNote}</p> : null}
 
             {!showSkeleton && arrangedItems.length > 0 ? (
               <CandidateWorkspace
