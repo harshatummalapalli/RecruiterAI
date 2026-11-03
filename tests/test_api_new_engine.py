@@ -43,11 +43,11 @@ def _reader(notes, posted_title=None):
                          requirements=(ReadRequirement("eDiscovery operations", "core", "EDRM"),))
 
 
-def _service(tmp_path) -> IntakeService:
+def _service(tmp_path, reader=_reader) -> IntakeService:
     proposer = CapabilityProposer(InMemoryCapabilityMemory(),
                                   llm_proposer=lambda *a: LearnedCapability("", "eDiscovery", ("Relativity", "Nuix"), "eDiscovery"))
     pipe = Pipeline(
-        intake=IntakeAgent(reader=_reader, capability_proposer=proposer, org="example.com"),
+        intake=IntakeAgent(reader=reader, capability_proposer=proposer, org="example.com"),
         briefing=BriefingAgent(), calibration=CalibrationAgent(),
         search=SearchAgent(_Provider(), page_size=50),
         ranking=RankingAgent(judge=_Judge(), admit_n=25, show=5),
@@ -56,8 +56,8 @@ def _service(tmp_path) -> IntakeService:
                          confirmations=ConfirmationStore(store=SearchStore(storage_dir=tmp_path / "conf")))
 
 
-def _client(tmp_path) -> TestClient:
-    app = create_app(intake_service=_service(tmp_path), search_store=SearchStore(storage_dir=tmp_path / "searches"))
+def _client(tmp_path, reader=_reader) -> TestClient:
+    app = create_app(intake_service=_service(tmp_path, reader), search_store=SearchStore(storage_dir=tmp_path / "searches"))
     client = TestClient(app)
     client.cookies.set(SESSION_COOKIE_NAME, create_session_cookie_value("a@example.com"))
     return client
@@ -115,6 +115,18 @@ def test_company_include_exclude_tags_flow_through(tmp_path):
     assert si["company_preferences"]["preferred_companies_ever"] == ["KLDiscovery", "Consilio"]  # include = OR
     # exclude = recruiter's list + the always-excluded hiring company
     assert set(si["company_preferences"]["exclude_current_companies"]) == {"Epiq", "RivalCorp"}
+
+
+def test_boundary_min_years_over_http_prevents_clarification(tmp_path):
+    # Full HTTP path: JD omits years, recruiter supplies min_years in the boundary.
+    def no_years(notes, posted_title=None):
+        return Understanding(identity="Director", min_years=None, requirements=(ReadRequirement("x", "core"),))
+    c = _client(tmp_path, reader=no_years)
+    body = {"raw_input": "Senior Director JD", "boundary": {**_BOUNDARY, "min_years": 10, "max_years": 15}}
+    res = c.post("/intake/start", json=body).json()
+    assert res["result"]["status"] == "ready"
+    ec = res["result"]["role_understanding"]["explicit_constraints"]
+    assert ec["experience_minimum_years"] == 10 and ec["experience_maximum_years"] == 15
 
 
 def test_new_engine_search_requires_confirmation(tmp_path):
