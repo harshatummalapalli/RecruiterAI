@@ -46,5 +46,21 @@
     ],
     "source_qualifier": "Data",
     "is_broad": false
+  },
+  "agentic platform software engineer": {
+    "label": "Agentic AI",
+    "terms": [
+      "agentic",
+      "agents",
+      "LLM",
+      "RAG",
+      "GenAI",
+      "multi-agent",
+      "orchestration",
+      "LangChain",
+      "LangGraph"
+    ],
+    "source_qualifier": "AI",
+    "is_broad": false
   }
 }

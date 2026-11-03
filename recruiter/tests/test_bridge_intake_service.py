@@ -89,6 +89,17 @@ def test_answering_a_refinement_clears_it(tmp_path):
     assert "capability" not in cleared               # answered -> gone (card clears)
 
 
+def test_remove_capability_drops_it_from_core_live(tmp_path):
+    svc = _service(_ready_reader, tmp_path)
+    started = svc.start("JD", _BOUNDARY)
+    sid = started["session_id"]
+    cores = [c["value"] for c in started["result"]["role_understanding"]["core_capabilities"]]
+    assert any("eDiscovery" in c and "(" in c for c in cores)   # capability shown as core
+    removed = svc.answer(sid, "capability", "remove", "remove")
+    cores2 = [c["value"] for c in removed["result"]["role_understanding"]["core_capabilities"]]
+    assert not any("(" in c for c in cores2)                    # capability dropped from core, live
+
+
 def test_missing_years_clarifies_then_resolves(tmp_path):
     def no_years(notes, posted_title=None):
         return Understanding(identity="Analyst", min_years=None,

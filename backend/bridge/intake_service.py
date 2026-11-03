@@ -87,12 +87,16 @@ class IntakeService:
         outcome = self._pipe.intake.assemble(understanding, boundary, answers)
         if not outcome.ready:
             return to_intake_result_pending(raw_input, understanding, outcome.clarifications)
+        # Apply the recruiter's refinement answers so the brief reflects them LIVE
+        # (e.g. capability 'remove' drops it from Core and widens the search; a
+        # dealbreaker is marked hard) — the same apply confirm/search will use.
+        model = apply_answers(outcome.model, answers or {}, outcome.refinements)
         # Refinements are stateless (regenerated every assemble), so drop the ones
         # the recruiter already answered — otherwise the decision card never clears
         # and Search stays locked (the frontend gates on pending 'ask' issues).
         answered = set(answers or {})
         pending = tuple(q for q in outcome.refinements if q.id not in answered)
-        return to_intake_result(raw_input, outcome.model, pending, "ready")
+        return to_intake_result(raw_input, model, pending, "ready")
 
     def _save(self, session_id, raw_input, understanding, boundary, answers, posted_title) -> None:
         self._sessions.save(session_id, {
