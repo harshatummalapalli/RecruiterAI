@@ -63,7 +63,9 @@ def test_intake_result_maps_brief_and_marks_status():
     ru = result["role_understanding"]
     assert ru["primary_candidate_identity"]["value"] == "eDiscovery Operations Analyst"
     assert ru["posted_title"] == "Operations Analyst – eDiscovery"
-    assert ru["core_capabilities"][0]["value"] == "eDiscovery operations"
+    # the role-defining capability leads the core requirements (was empty before)
+    assert ru["core_capabilities"][0]["value"] == "eDiscovery (Relativity, Nuix, EDRM)"
+    assert any(c["value"] == "eDiscovery operations" for c in ru["core_capabilities"])
     assert ru["technologies_mentioned"] == [{"category": "eDiscovery", "items": ["Relativity", "Nuix", "EDRM"]}]
     assert ru["explicit_constraints"]["experience_minimum_years"] == 8
     assert ru["explicit_constraints"]["locations"] == [
@@ -72,8 +74,8 @@ def test_intake_result_maps_brief_and_marks_status():
     ]
     # brain-only fields present but empty (Phase-2 trim targets)
     assert ru["role_interpretation"] == {"value": None, "evidence": None, "source": None}
-    # the one hard requirement rides final_search_intent
-    assert result["decision"]["final_search_intent"]["hard_requirements"] == ["eDiscovery operations"]
+    # capability leads the hard requirements, then the recruiter-marked dealbreaker
+    assert result["decision"]["final_search_intent"]["hard_requirements"] == ["eDiscovery", "eDiscovery operations"]
     assert result["decision"]["issues"][0]["question"] == "Require eDiscovery?"
     assert result["status"] == "ready"
     json.dumps(result)  # must serialize

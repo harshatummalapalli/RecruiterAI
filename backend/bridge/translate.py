@@ -26,6 +26,20 @@ def _cap_item(req) -> Dict[str, Any]:
     return {"value": req.text, "tier_signal": req.tier, "evidence": req.provenance.evidence}
 
 
+def _capability_core(group) -> Dict[str, Any]:
+    """Show the role-defining capability AS a core requirement. The reader tiers
+    required skills into the capability group + strong_signals (not
+    hard_requirements, to avoid over-filtering), which otherwise leaves the brief's
+    core list empty even though the capability IS the role's required skill."""
+    shown = ", ".join(group.terms[:5])
+    return {"value": f"{group.label} ({shown})" if shown else group.label,
+            "tier_signal": "core", "evidence": None}
+
+
+def _core_capabilities(model) -> list:
+    return [_capability_core(g) for g in model.capability_groups] + [_cap_item(r) for r in model.tier("core")]
+
+
 # Only these BLOCK the search (decision "ask"): the mandatory years clarification
 # and the capability confirm (the learning-loop step, default "keep"). Every other
 # refinement is OPTIONAL -> "tell" (shown as an insight, never blocks Search).
@@ -118,7 +132,7 @@ def to_intake_result(raw_input: str, model: RoleModel, questions: Sequence, stat
         "role_interpretation": _fv(None),      # brain-only -> trim
         "seniority_scope": _fv(None),          # brain-only -> trim
         "leadership_type": _fv(None),          # brain-only -> trim
-        "core_capabilities": [_cap_item(r) for r in model.tier("core")],
+        "core_capabilities": _core_capabilities(model),
         "supporting_capabilities": [_cap_item(r) for r in model.tier("supporting")],
         "differentiators": [_cap_item(r) for r in model.tier("differentiator")],
         "technologies_mentioned": [{"category": g.label, "items": list(g.terms)} for g in model.capability_groups],
@@ -141,7 +155,9 @@ def to_intake_result(raw_input: str, model: RoleModel, questions: Sequence, stat
         "search_consequence_summary": None,   # brain-only -> trim
         "limitations": list(model.limitations),
         "final_search_intent": {
-            "hard_requirements": [r.text for r in model.hard_requirements],
+            # The capability group is the role-defining required skill, so it leads
+            # the hard requirements (alongside any recruiter-marked dealbreakers).
+            "hard_requirements": [g.label for g in model.capability_groups] + [r.text for r in model.hard_requirements],
             "strong_signals": [r.text for r in model.tier("supporting")],
             "preferred_differentiators": [r.text for r in model.tier("differentiator")],
             "natural_language_search_query": build_nl_query(model),
