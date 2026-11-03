@@ -111,6 +111,8 @@ export function CandidateReviewScreen({
   // Recruiter working memory — separate from AI-generated evidence. Persisted per candidate via updateCandidateRecord.
   const [notes, setNotes] = useState<Record<string, RecordNote[]>>({})
   const [noteDraft, setNoteDraft] = useState('')
+  // A save that failed (network/server). Shown so a Shortlist/Reject/note never looks saved when it wasn't.
+  const [writeError, setWriteError] = useState<string | null>(null)
   // Choices made here that the server has not confirmed yet. A poll that lands between a click and its save must not
   // flip the card back, so these are laid over whatever the server returns until it agrees.
   const pendingDecisions = useRef<Record<string, Decision | null>>({})
@@ -190,21 +192,30 @@ export function CandidateReviewScreen({
   }
 
   const decide = (id: string, next: Decision | undefined) => {
+    const previous = decisions[id]
     pendingDecisions.current[id] = next ?? null
     setDecisions((current) => ({ ...current, [id]: next }))
+    setWriteError(null)
     if (searchId) {
       // An empty decision clears it on the server.
       updateCandidateRecord(searchId, id, { decision: next ?? '' })
         .then(saved)
-        .catch(() => {})
+        .catch(() => {
+          // The save failed — roll the card back to what's actually stored and say so,
+          // rather than leaving a decision that looks saved but isn't.
+          delete pendingDecisions.current[id]
+          setDecisions((current) => ({ ...current, [id]: previous }))
+          setWriteError('That change could not be saved — check your connection and try again.')
+        })
     }
   }
 
   const giveFeedback = (id: string, update: { reason?: string; note?: string }) => {
     if (!searchId) return
+    setWriteError(null)
     updateCandidateRecord(searchId, id, { feedback_reason: update.reason, feedback_note: update.note })
       .then(saved)
-      .catch(() => {})
+      .catch(() => setWriteError('That change could not be saved — check your connection and try again.'))
   }
 
   const runRoleAction = async (task: () => Promise<void> | undefined) => {
@@ -229,12 +240,20 @@ export function CandidateReviewScreen({
   const addNote = (id: string) => {
     const text = noteDraft.trim()
     if (!text) return
+    const noteId = `${Date.now()}`
     setNotes((current) => ({
       ...current,
-      [id]: [...(current[id] ?? []), { id: `${Date.now()}`, text, createdAt: new Date().toISOString() }],
+      [id]: [...(current[id] ?? []), { id: noteId, text, createdAt: new Date().toISOString() }],
     }))
+    setWriteError(null)
     if (searchId) {
-      updateCandidateRecord(searchId, id, { note: text }).then(saved).catch(() => {})
+      updateCandidateRecord(searchId, id, { note: text })
+        .then(saved)
+        .catch(() => {
+          // Drop the optimistic note so it doesn't look saved, and surface the error.
+          setNotes((current) => ({ ...current, [id]: (current[id] ?? []).filter((note) => note.id !== noteId) }))
+          setWriteError('That note could not be saved — check your connection and try again.')
+        })
     }
     setNoteDraft('')
   }
@@ -309,6 +328,13 @@ export function CandidateReviewScreen({
 
             {searchNotice ? <p className="role-more__message">{searchNotice}</p> : null}
 
+            {writeError ? (
+              <p className="discovery-write-error" role="alert">
+                {writeError}{' '}
+                <button type="button" className="discovery-write-error__dismiss" onClick={() => setWriteError(null)}>Dismiss</button>
+              </p>
+            ) : null}
+
             {showSkeleton ? <SkeletonRows /> : null}
             {showSkeleton && progress?.admitted ? <p className="role-more__message">Reading profiles: {progress.review_ready ?? 0} of {progress.admitted}</p> : null}
 
@@ -339,7 +365,7 @@ export function CandidateReviewScreen({
                 selectedId={selectedId}
                 onOpen={setSelectedId}
                 onDecide={decide}
-                orderNote={isRole ? ROLE_ORDER_NOTE : undefined}
+                orderNote={isRole ? ROLE_ORDER_NOTE : 'Strongest matches first.'}
                 feedback={isRole ? (searchResponse?.feedback ?? {}) : undefined}
                 onFeedback={isRole ? giveFeedback : undefined}
               />

@@ -86,6 +86,28 @@ def test_intake_result_maps_brief_and_marks_status():
     json.dumps(result)  # must serialize
 
 
+def test_core_requirements_show_even_without_a_capability_group():
+    # A role where the reader found core requirements but no capability was inferred
+    # (e.g. a Data Engineer). The brief must still show those cores — not "No core
+    # requirements" while the summary counts them.
+    model = RoleModel(
+        identity="Senior Data Engineer",
+        seniority=Seniority(7, 12, Provenance(JD)),
+        role_level=ARCHITECT,
+        location=Location(countries=("India",)),
+        requirements=(
+            Requirement("Spark", "core", Provenance(JD)),
+            Requirement("Airflow", "core", Provenance(JD)),
+            Requirement("Python/SQL", "core", Provenance(JD)),
+            Requirement("dbt", "supporting", Provenance(JD)),
+        ),
+    )
+    result = to_intake_result("JD", model, (), status="ready")
+    core = result["decision"]["final_search_intent"]["hard_requirements"]
+    assert core == ["Spark", "Airflow", "Python/SQL"]            # the reader's cores, shown
+    assert result["decision"]["final_search_intent"]["strong_signals"] == ["dbt"]
+
+
 def test_search_response_maps_candidates_and_diagnostics():
     rec = CandidateRecord("c1", name="Asha", title="eDiscovery Analyst", company="KLDiscovery",
                           location="Pune, India", profile_url="http://x", provider_score=0.8,

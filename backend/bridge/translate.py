@@ -40,6 +40,18 @@ def _core_capabilities(model) -> list:
     return [_capability_core(g) for g in model.capability_groups] + [_cap_item(r) for r in model.tier("core")]
 
 
+def _display_core(model) -> list:
+    """The brief's 'Core requirements' list, as text: the role-defining capability
+    label(s), then the reader's core requirements, then any recruiter-marked hard
+    requirement not already shown. Mirrors `_core_capabilities` so the brief's Core
+    section and its summary count agree and are never empty when cores exist."""
+    labels = [g.label for g in model.capability_groups]
+    cores = [r.text for r in model.tier("core")]
+    seen = set(labels) | set(cores)
+    extra_hard = [r.text for r in model.hard_requirements if r.text not in seen]
+    return labels + cores + extra_hard
+
+
 # The ONLY thing that blocks the search (decision "ask") is the mandatory years
 # clarification — and that only fires when the recruiter left years off the first
 # step. Everything else, the capability included, is resolved as a stated
@@ -176,9 +188,11 @@ def to_intake_result(raw_input: str, model: RoleModel, questions: Sequence, stat
         "search_consequence_summary": None,   # brain-only -> trim
         "limitations": list(model.limitations),
         "final_search_intent": {
-            # The capability group is the role-defining required skill, so it leads
-            # the hard requirements (alongside any recruiter-marked dealbreakers).
-            "hard_requirements": [g.label for g in model.capability_groups] + [r.text for r in model.hard_requirements],
+            # The brief's "Core" list: the role-defining capability leads, then the
+            # reader's core requirements, then any recruiter-marked dealbreaker not
+            # already shown. Without the tier("core") items a role with no inferred
+            # capability showed "No core requirements" while 5 were really in play.
+            "hard_requirements": _display_core(model),
             "strong_signals": [r.text for r in model.tier("supporting")],
             "preferred_differentiators": [r.text for r in model.tier("differentiator")],
             "natural_language_search_query": build_nl_query(model),

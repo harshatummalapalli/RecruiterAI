@@ -1233,6 +1233,27 @@
   margin: 0;
 }
 
+.discovery-write-error {
+  margin: 0 0 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--color-error);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-error) 8%, var(--color-surface));
+  color: var(--color-error);
+  font-size: 14px;
+}
+
+.discovery-write-error__dismiss {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 6px;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 /* Candidate list */
 
 .discovery-list {

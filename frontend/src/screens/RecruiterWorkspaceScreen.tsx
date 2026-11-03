@@ -662,7 +662,12 @@ export function RecruiterWorkspaceScreen() {
       return `${roleStatusLabel}${company ? ` · ${company}` : ''}`
     }
     if (!progress || !progress.admitted) {
-      return searchState === 'searching' ? 'Finding candidates…' : 'What are you hiring for today?'
+      if (searchState === 'searching') return 'Finding candidates…'
+      if (searchState === 'done') {
+        const n = searchResponse?.candidate_count ?? 0
+        return n > 0 ? `${n} candidate${n === 1 ? '' : 's'}` : 'No candidates matched'
+      }
+      return 'What are you hiring for today?'
     }
     const parts = [`${progress.admitted} candidate${progress.admitted === 1 ? '' : 's'} selected`]
     if (progress.review_ready) parts.push(`${progress.review_ready} ready for review`)
@@ -681,7 +686,11 @@ export function RecruiterWorkspaceScreen() {
     intakeResult && (step === 'brief' || step === 'review')
       ? {
           title: roleTitle,
-          statusLabel: isRole ? roleStatusLabel : 'Drafting',
+          statusLabel: isRole
+            ? roleStatusLabel
+            : step === 'review'
+              ? (searchState === 'searching' ? 'Searching' : searchState === 'done' ? 'Complete' : 'Draft')
+              : 'Draft',
           company: searchResponse?.role?.label?.company ?? '',
           section: step === 'brief' ? 'understanding' : 'candidates',
           candidatesEnabled: Boolean(searchResponse),

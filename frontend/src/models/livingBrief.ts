@@ -201,10 +201,13 @@ export type ConfirmationLine = { label: string; value: string }
  * provider language. */
 export function confirmationSummary(result: IntakeResult, boundary: SearchBoundary, brief: SearchBrief): ConfirmationLine[] {
   const title = titleView(result)
+  // Count from the SAME groups the brief's Requirements section renders, so the
+  // "N core · M supporting · K differentiator" line can never disagree with what's
+  // shown above it (it used to count a different source — brief.requirements).
   const groups = requirementGroups(result)
-  const core = brief.requirements?.core ?? groups[0].items.map((item) => item.text)
-  const supporting = brief.requirements?.supporting ?? groups[1].items.map((item) => item.text)
-  const preferred = brief.requirements?.differentiators ?? groups[2].items.map((item) => item.text)
+  const core = groups[0].items.map((item) => item.text)
+  const supporting = groups[1].items.map((item) => item.text)
+  const preferred = groups[2].items.map((item) => item.text)
   const minimum = brief.experience.minimumYears
   const maximum = brief.experience.maximumYears
   const experience = minimum && maximum ? `${minimum}–${maximum} years` : minimum ? `${minimum}+ years` : maximum ? `up to ${maximum} years` : null
