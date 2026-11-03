@@ -552,3 +552,19 @@
     animation: none;
   }
 }
+
+/* Phone widths: the three decision buttons overflowed a ~390px viewport on one
+   line, and their 30px height was below the 44px tap-target minimum. Let them
+   share the row evenly and grow tall enough to tap. */
+@media (max-width: 640px) {
+  .ws-decisions {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .ws-decision {
+    flex: 1 1 auto;
+    min-height: 44px;
+  }
+}

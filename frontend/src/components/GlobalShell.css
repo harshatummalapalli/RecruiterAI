@@ -80,3 +80,35 @@
   align-items: center;
   opacity: 0.85;
 }
+
+/* Narrow screens: the vertical rail would eat ~45% of a phone's width, so it
+   becomes a compact horizontal top bar and the body takes the full width. */
+@media (max-width: 640px) {
+  .global-shell {
+    flex-direction: column;
+  }
+
+  .global-nav {
+    flex: 0 0 auto;
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+    overflow-x: auto;
+  }
+
+  .global-nav__brand {
+    padding: 0 8px 0 0;
+  }
+
+  .global-nav__item {
+    width: auto;
+    min-height: 44px;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+}

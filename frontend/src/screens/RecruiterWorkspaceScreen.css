@@ -451,6 +451,16 @@
     margin-left: 0;
     justify-content: space-between;
   }
+
+  /* The 48px greeting was clipping on a phone; scale it and let it wrap. */
+  .workspace__greeting h1 {
+    font-size: 30px;
+    overflow-wrap: anywhere;
+  }
+
+  .workspace__greeting p {
+    font-size: 17px;
+  }
 }
 
 /* Search Brief Review (State 2) */

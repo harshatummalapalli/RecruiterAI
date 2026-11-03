@@ -114,10 +114,11 @@ function CandidateCard({ item, decision, selected, onOpen, onDecide, register, p
   return (
     <article
       ref={register}
-      tabIndex={-1}
+      tabIndex={0}
+      role="button"
       data-card-id={candidate.id}
       className={`ws-card${selected ? ' is-selected' : ''}${decision ? ` is-${decision}` : ''}`}
-      aria-label={candidate.name}
+      aria-label={`Open ${candidate.name}`}
       onClick={onCardClick}
     >
       <div className="ws-card__who">
@@ -404,7 +405,7 @@ export function CandidateWorkspace({
       decide(id, key === 's' ? 'shortlist' : key === 'm' ? 'maybe' : 'reject')
       return
     }
-    if (key === 'enter' && target.hasAttribute('data-card-id')) {
+    if ((key === 'enter' || key === ' ' || key === 'spacebar') && target.hasAttribute('data-card-id')) {
       event.preventDefault()
       onOpen(id)
       return
