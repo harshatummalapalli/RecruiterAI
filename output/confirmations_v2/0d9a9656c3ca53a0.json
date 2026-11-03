@@ -1,0 +1,66 @@
+{
+  "model_id": "0d9a9656c3ca53a0",
+  "model": {
+    "identity": "Senior Director",
+    "seniority": {
+      "min_years": 18,
+      "max_years": null,
+      "provenance": {
+        "source": "recruiter",
+        "evidence": null
+      }
+    },
+    "role_level": "director+",
+    "location": {
+      "countries": [
+        "India"
+      ],
+      "states": [],
+      "cities": [
+        "Hyderabad"
+      ],
+      "preferred_cities": [],
+      "radius_place": null,
+      "radius_miles": null,
+      "work_mode": "hybrid"
+    },
+    "requirements": [],
+    "capability_groups": [
+      {
+        "label": "Data and AI Platforms",
+        "terms": [
+          "data platform",
+          "data engineering",
+          "Spark",
+          "Databricks",
+          "Snowflake",
+          "ETL",
+          "ELT",
+          "vector search",
+          "feature store"
+        ],
+        "source_qualifier": "Data",
+        "rationale": "This is Data and AI Platforms work \u2014 requiring evidence of it (any of: data platform, data engineering, Spark, Databricks, Snowflake, ETL, ELT, vector search, feature store) keeps the shortlist on genuine Data and AI Platforms candidates, not look-alikes who share only the base title."
+      }
+    ],
+    "companies": {
+      "exclude_current": [
+        "Epiq"
+      ],
+      "exclude_ever": [],
+      "prefer_current": [],
+      "prefer_ever": []
+    },
+    "exclude_titles": [],
+    "industries": [],
+    "disqualifiers": [],
+    "posted_title": "Senior Director, Software Engineering - Data and AI Platforms",
+    "posted_title_source": "recruiter",
+    "employment_type": null,
+    "hiring_company": "Epiq",
+    "limitations": [
+      "Work mode (hybrid) is recorded for context; the search cannot filter candidates by work mode."
+    ],
+    "model_id": "0d9a9656c3ca53a0"
+  }
+}

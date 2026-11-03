@@ -1,0 +1,37 @@
+{
+  "session_id": "07c69585-d22e-4aea-ae05-b30c477eef7c",
+  "raw_input": "Responsibilities \n\nDemonstrated hands-on software engineering background (e.g., Python, Scala, or Java), with a track record of personally writing, reviewing, and shipping production-grade code, not solely directing the work of others.\nSolid grounding in core engineering practices: version control (Git), CI/CD pipelines, automated testing, and formal code review standards.\nExperience designing and building APIs, services, and event-driven/ microservices architectures that other engineering and product teams build on top of.\nWorking knowledge of infrastructure-as-code (e.g., Terraform, CloudFormation) and containerized deployment (Docker/Kubernetes) from an ownership and architecture standpoint, not just as a consumer.\nFamiliarity with secure software development lifecycle (SDLC) practices \u2014 dependency management, secrets management, and security review \u2014 particularly relevant given the sensitivity of legal data.\nExperience architecting for reliability and scale: observability (logging, monitoring, alerting), incident response, and performance/cost tuning of production data services.\nDevelop a critical understanding of business data to proactively identify opportunities to improve data quality and deliver solutions and insights. Partner with AI/ML and Product teams to build the data foundations (pipelines, feature stores, vector search, RAG-ready datasets) that power our GenAI and agentic product capabilities.\nProvide guidance for data integrity issues, ongoing maintenance, and data governance, including responsible-AI data practices such as lineage tracking and PII/PHI handling appropriate for legal data.\nMaintain detailed documentation of data collection methods and dependencies.\nWork with key stakeholders to understand BI/Analytics and reporting requirements.\nConduct audits and troubleshoot tracking gaps to maintain data confidence and implement data standardization practices.\nSupport a data-driven culture by educating the organization on everyday uses of data, and increasingly AI, as a resource.\nWork with our Data Science / Analytics organization to help achieve product goals, including supporting model evaluation and monitoring once in production.\n\nQualifications \n\nMinimum Bachelor\u2019s degree in a related field of study required.\nMaster\u2019s degree in a related field is highly desirable.\nMinimum of 15-20 years of technology leadership experience.\nMinimum of 5 years of experience leading teams building data platforms.\nUnderstanding of machine learning, with prior experience implementing end-toend ML-powered models highly desirable; exposure to GenAI/LLM-based systems (RAG, vector search, prompt/eval pipelines) is a strong plus.\nAWS/Azure cloud experience around data integration technologies and frameworks.\nKnowledge of common ingestion patterns, ETL/ELT, and streaming architectures.\nHands-on familiarity with modern data stack tooling (e.g., dbt, Spark/Databricksclass compute) and data observability/quality platforms.\nProven experience working with large-scale data processing platforms and distributed computing frameworks (e.g., Spark, Snowflake, or similar), handling high-volume, high-velocity data at enterprise scale.\nWorking knowledge of data governance/cataloging tools and vector database concepts.\nKnowledge of Agile development methodologies.\nExperience leading a Shared Services / Platform organization, with a client-first mentality and a collaborative, helpful attitude.\nExperience managing distributed teams across India and global time zones, with strong stakeholder management across US/UK/EU counterparts.\nTrack record of managing and growing remote teams over time, including hiring, mentoring, and building out organizational capability as scope expands.\nExpert knowledge of data warehousing concepts and data schemas.\nAwareness of data privacy and security regulations relevant to legal/regulated data (GDPR, CCPA, etc.) and how they intersect with AI system design.\nPrior experience in the legal industry or legal technology is a plus, though not required.\nHigh level of attention to detail, quality, and effective verbal and written communication skills along with excellent follow-through.",
+  "understanding": {
+    "identity": "Senior Director, Software Engineering - Data and AI Platforms",
+    "requirements": [],
+    "posted_title": "Senior Director, Software Engineering - Data and AI Platforms",
+    "posted_title_source": "recruiter",
+    "min_years": null,
+    "max_years": null,
+    "employment_type": null,
+    "work_mode_in_notes": null
+  },
+  "boundary": {
+    "hiring_company": "Epiq",
+    "country": "India",
+    "work_mode": "hybrid",
+    "state": null,
+    "city": null,
+    "radius_miles": null,
+    "cities": [
+      "Hyderabad"
+    ],
+    "remote_scope": null,
+    "remote_states": [],
+    "remote_cities": [],
+    "include_companies": [],
+    "exclude_companies": [],
+    "min_years": 18,
+    "max_years": null
+  },
+  "answers": {
+    "min_years": 18,
+    "capability": "keep"
+  },
+  "posted_title": "Senior Director, Software Engineering - Data and AI Platforms"
+}
