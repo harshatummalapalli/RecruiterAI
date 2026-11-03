@@ -40,19 +40,38 @@ def _core_capabilities(model) -> list:
     return [_capability_core(g) for g in model.capability_groups] + [_cap_item(r) for r in model.tier("core")]
 
 
-# Only these BLOCK the search (decision "ask"): the mandatory years clarification
-# and the capability confirm (the learning-loop step, default "keep"). Every other
-# refinement is OPTIONAL -> "tell" (shown as an insight, never blocks Search).
-_BLOCKING_ISSUES = {"min_years", "capability"}
+# The ONLY thing that blocks the search (decision "ask") is the mandatory years
+# clarification — and that only fires when the recruiter left years off the first
+# step. Everything else, the capability included, is resolved as a stated
+# ASSUMPTION (decision "tell"): the engine takes the sensible default (require the
+# role-defining capability), shows the brief straight away, and states what it
+# assumed as a recruiter note the recruiter can override in the requirements — no
+# back-and-forth decision card before the brief is shown.
+_BLOCKING_ISSUES = {"min_years"}
 
 
-def _issue(q) -> Dict[str, Any]:
+def _capability_assumption(model) -> Optional[str]:
+    """State the capability assumption the engine made, so the brief says what it
+    did rather than asking. Rendered as a recruiter note; the item itself also
+    appears (inferred) in the Core requirements, where it can be removed to widen."""
+    groups = list(model.capability_groups)
+    if not groups:
+        return None
+    g = groups[0]
+    shown = ", ".join(g.terms[:6])
+    terms = f" (any of: {shown})" if shown else ""
+    return (f"I'm treating this as a {g.label} role and requiring evidence of it{terms}. "
+            "It's enforced in the search — remove it from the core requirements below if "
+            "the role is broader than that.")
+
+
+def _issue(q, insight_text: Optional[str] = None) -> Dict[str, Any]:
     return {
         "issue": q.id, "decision": "ask" if q.id in _BLOCKING_ISSUES else "tell",
         "id": q.id, "reasoning": None,
         "question": q.prompt, "options": [{"value": o, "label": o} for o in q.options],
         "consequence_if_answer_a": None, "consequence_if_answer_b": None,  # brain-only -> trim
-        "insight_text": None, "injected_by_backstop": False, "backstop_category": None,
+        "insight_text": insight_text, "injected_by_backstop": False, "backstop_category": None,
     }
 
 
@@ -147,8 +166,9 @@ def to_intake_result(raw_input: str, model: RoleModel, questions: Sequence, stat
         },
         "open_questions": [q.prompt for q in questions if q.kind != "min_years"],
     }
+    cap_insight = _capability_assumption(model)
     decision = {
-        "issues": [_issue(q) for q in questions],
+        "issues": [_issue(q, cap_insight if q.id == "capability" else None) for q in questions],
         "recommended_ask_count": len(list(questions)),
         "stop_reasoning": None,
         "warnings": [],
@@ -167,6 +187,32 @@ def to_intake_result(raw_input: str, model: RoleModel, questions: Sequence, stat
     }
     return {"raw_input": raw_input, "role_understanding": role_understanding,
             "decision": decision, "status": status}
+
+
+def to_intake_result_reading(raw_input: str) -> Dict[str, Any]:
+    """Placeholder brief while the reader (LLM) is still running on a background
+    thread. status 'understanding' tells the frontend to hold the "Reading the
+    role…" state and poll GET /intake/{id} until it flips to ready — the read no
+    longer blocks the POST /intake/start request (no 30s held connection)."""
+    empty_ru = {
+        "posted_title": None, "posted_title_source": None,
+        "primary_candidate_identity": _fv(None), "hiring_company": _fv(None),
+        "candidate_archetype": _fv(None), "role_interpretation": _fv(None),
+        "seniority_scope": _fv(None), "leadership_type": _fv(None),
+        "core_capabilities": [], "supporting_capabilities": [], "differentiators": [],
+        "technologies_mentioned": [], "domain": [],
+        "explicit_constraints": {"locations": [], "work_mode": None,
+                                 "experience_minimum_years": None, "experience_maximum_years": None,
+                                 "employment_type": None, "exclusions": []},
+        "open_questions": [],
+    }
+    decision = {"issues": [], "recommended_ask_count": 0, "stop_reasoning": None, "warnings": [],
+                "search_consequence_summary": None, "limitations": [],
+                "final_search_intent": {"hard_requirements": [], "strong_signals": [],
+                                        "preferred_differentiators": [], "natural_language_search_query": None,
+                                        "exclusions": [], "evidence": {}}}
+    return {"raw_input": raw_input, "role_understanding": empty_ru, "decision": decision,
+            "status": "understanding"}
 
 
 def to_intake_result_pending(raw_input: str, u, questions: Sequence) -> Dict[str, Any]:

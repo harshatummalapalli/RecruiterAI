@@ -143,6 +143,9 @@ export function RecruiterWorkspaceScreen() {
   // The poll loop for a running search. A ref because it is plumbing, cleared when a search is opened or started or the
   // component unmounts, so at most one poll loop is ever active.
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // The poll loop for the background role read (POST /intake/start now returns an 'understanding' placeholder and the
+  // ~30s read runs on a backend thread). Separate ref so it never collides with the search poll.
+  const intakePollRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Guards against a slow load finishing after the recruiter has already switched to another search.
   const loadToken = useRef(0)
   const stateRef = useRef({ active, searchState, searchResponse })
@@ -186,6 +189,13 @@ export function RecruiterWorkspaceScreen() {
     }
   }
 
+  const stopIntakePolling = () => {
+    if (intakePollRef.current !== null) {
+      clearTimeout(intakePollRef.current)
+      intakePollRef.current = null
+    }
+  }
+
   // Progressive Candidate Workspace: POST /search returns almost immediately with status="running" — the actual
   // pipeline runs on a backend background thread. This polls GET /search/{id} every 1.5s and updates the list as
   // candidates move SURFACED -> BUILDING_CONTEXT -> REVIEW_READY, stopping once the search leaves "running".
@@ -225,6 +235,7 @@ export function RecruiterWorkspaceScreen() {
   // searches are untouched: each one is stored on the server.
   const clearWorkingState = () => {
     stopPolling()
+    stopIntakePolling()
     setPostedTitle('')
     setJdText('')
     setBoundary(createEmptySearchBoundary())
@@ -400,30 +411,78 @@ export function RecruiterWorkspaceScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  useEffect(() => stopPolling, [])
+  useEffect(() => () => { stopPolling(); stopIntakePolling() }, [])
 
   // RecruiterAI understands the role before searching: the title, the description and the Search Boundary go to the
   // backend, which reads the role once and returns the brief. Nothing is searched yet.
+  // The role read is done: show the brief. Shared by the fast (synchronous) path and the end of the background poll.
+  const finishParse = (sessionId: string, result: IntakeResult, stored?: SearchBoundary | null) => {
+    setIntakeSessionId(sessionId)
+    setIntakeResult(result)
+    if (stored) setBoundary(stored)
+    setBaselineBrief(null)
+    setParseState('success')
+    setStep('brief')
+    setActiveSearch({ kind: 'draft', id: sessionId })
+    removeKey(COMPOSE_KEY)
+    refreshSearches()
+    if (result.status === 'ready') void refreshProposal(sessionId)
+  }
+
+  // Background role read: POST /intake/start returns an 'understanding' placeholder almost at once; the ~30s LLM read
+  // runs on a backend thread. Hold the "Reading the role…" state and poll GET /intake/{id} until the brief is ready.
+  const INTAKE_POLL_INTERVAL_MS = 1500
+  const pollIntake = (sessionId: string) => {
+    stopIntakePolling()
+    let consecutiveFailures = 0
+    const tick = async () => {
+      let data
+      try {
+        data = await loadIntakeSession(sessionId)
+      } catch (error) {
+        // A 502 means the server-side read failed — surface it and stop.
+        setParseState('error')
+        setParseErrors(messagesOf(error, 'Unable to understand this job description.'))
+        return
+      }
+      if (!data) {
+        // Transient 404 before the first save lands — retry a few times, then give up.
+        consecutiveFailures += 1
+        if (consecutiveFailures >= 5) {
+          setParseState('error')
+          setParseErrors(['Unable to understand this job description. Please try again.'])
+          return
+        }
+        intakePollRef.current = setTimeout(tick, INTAKE_POLL_INTERVAL_MS)
+        return
+      }
+      consecutiveFailures = 0
+      if (data.result.status === 'understanding') {
+        intakePollRef.current = setTimeout(tick, INTAKE_POLL_INTERVAL_MS)
+        return
+      }
+      finishParse(sessionId, data.result, data.boundary)
+    }
+    void tick()
+  }
+
   const handleParse = async () => {
     if (!canParse) {
       return
     }
+    stopIntakePolling()
     setParseState('parsing')
     setParseErrors([])
     try {
       const { session_id, result, boundary: stored } = await startIntake(jdText, boundary, postedTitle)
-      setIntakeSessionId(session_id)
-      setIntakeResult(result)
-      if (stored) setBoundary(stored)
-      setBaselineBrief(null)
-      setParseState('success')
-      setStep('brief')
-      setActiveSearch({ kind: 'draft', id: session_id })
-      removeKey(COMPOSE_KEY)
-      refreshSearches()
-      if (result.status === 'ready') {
-        await refreshProposal(session_id)
+      if (result.status === 'understanding') {
+        // Still reading — keep the spinner and poll until the brief is ready.
+        setIntakeSessionId(session_id)
+        if (stored) setBoundary(stored)
+        pollIntake(session_id)
+        return
       }
+      finishParse(session_id, result, stored)
     } catch (error) {
       setParseState('error')
       setParseErrors(messagesOf(error, 'Unable to understand this job description.'))

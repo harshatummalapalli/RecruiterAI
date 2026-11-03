@@ -72,7 +72,7 @@ from backend.services.confirmation import (
     search_intent_from_snapshot,
 )
 from backend.services.search_translator import build_confirmed_hiring_intent, to_search_intent
-from backend.bridge.intake_service import ConfirmationNotReady
+from backend.bridge.intake_service import ConfirmationNotReady, IntakeReadError
 from backend.services.jd_parser import JDParser
 from backend.services.match_explainer import MatchExplainer
 from backend.services.query_expansion import QueryExpansionService
@@ -712,9 +712,23 @@ def create_app(
         if not (request.raw_input or "").strip():
             raise HTTPException(status_code=422, detail={"message": "Describe the role first.", "errors": ["Paste a job description or describe the role."]})
         if intake_service is not None:
-            return intake_service.start(
+            # The role read (LLM, ~30s) runs on a background thread so this request
+            # returns at once with an 'understanding' placeholder; the frontend
+            # polls GET /intake/{id} until the brief is ready (same pattern as
+            # /search). No 30s held connection to time out on OCI.
+            started = intake_service.begin(
                 request.raw_input, _engine_boundary(boundary, request.boundary),
                 posted_title=request.posted_title)
+            session_id = started["session_id"]
+
+            def _read_role() -> None:
+                try:
+                    intake_service.read_into(session_id)
+                except Exception:
+                    logger.exception("[INTAKE] Background role read failed | session_id=%s", session_id)
+
+            threading.Thread(target=_read_role, daemon=True, name=f"intake-read-{session_id}").start()
+            return started
         try:
             record = intake_session_manager.start(request.raw_input, boundary=boundary, posted_title=request.posted_title)
         except ConfigurationError as exc:
@@ -789,7 +803,10 @@ def create_app(
     def intake_get(session_id: str) -> Dict[str, Any]:
         """Everything needed to resume a brief after a reload. Read only: no model call."""
         if intake_service is not None:
-            data = intake_service.get(session_id)
+            try:
+                data = intake_service.get(session_id)
+            except IntakeReadError:
+                _raise_recruiter_friendly_error("Unable to understand this role right now. Please try again.", status_code=502)
             if data is None:
                 raise HTTPException(status_code=404, detail="Intake session not found.")
             return data
@@ -1087,18 +1104,60 @@ def create_app(
             if not request.confirmation_id:
                 raise HTTPException(status_code=409, detail="Confirm the brief before searching.")
             search_id = request.search_id or str(uuid.uuid4())
-            try:
-                resp = intake_service.run_search(request.confirmation_id, search_id,
-                                                 provider=request.provider or "crustdata")
-            except KeyError:
-                raise HTTPException(status_code=422, detail="This confirmation is not valid. Confirm the brief again before searching.")
+            provider_name = request.provider or "crustdata"
+            confirmation_id = request.confirmation_id
+            existing = search_store.load(search_id) or {}
             now = datetime.now(timezone.utc).isoformat()
+
+            # The CrustData pull + Judge ranking take 30-90s, so — exactly like the
+            # legacy Progressive Candidate Workspace — POST /search returns at once
+            # with status="running" and the work runs on a background thread. The
+            # frontend already polls GET /search/{id} until it leaves "running".
+            running: Dict[str, Any] = {
+                "provider": provider_name, "search_id": search_id, "candidate_count": 0,
+                "candidates": [], "explanations": [], "evidence": [], "diagnostics": {},
+                "warnings": [], "debug": None, "status": STATUS_RUNNING, "candidate_states": {},
+                "progress": {"admitted": 0, "surfaced": 0, "building_context": 0, "review_ready": 0},
+                "recruiter_decisions": existing.get("recruiter_decisions", {}),
+                "notes": existing.get("notes", {}),
+            }
             search_store.save(search_id, {
-                "search_id": search_id, "status": "complete", "created_at": now, "updated_at": now,
-                "response": resp, "recruiter_decisions": {}, "notes": {}, "candidate_states": {},
-                "confirmed_brief": resp.get("confirmed_brief"), "harvest_evidence": {}, "internal_diagnostics": {},
+                "search_id": search_id, "status": STATUS_RUNNING,
+                "created_at": existing.get("created_at", now), "updated_at": now,
+                "response": running, "recruiter_decisions": existing.get("recruiter_decisions", {}),
+                "notes": existing.get("notes", {}), "candidate_states": {},
+                "confirmed_brief": existing.get("confirmed_brief"), "harvest_evidence": {},
+                "internal_diagnostics": {},
             })
-            return SearchResponse(**resp)
+
+            def _run_engine_search() -> None:
+                try:
+                    resp = intake_service.run_search(confirmation_id, search_id, provider=provider_name)
+                    status = "complete"
+                except KeyError:
+                    resp = {**running, "status": "error",
+                            "warnings": ["This confirmation is no longer valid. Confirm the brief again before searching."]}
+                    status = "error"
+                except Exception:
+                    logger.exception("[SEARCH] New-engine background search failed | search_id=%s", search_id)
+                    resp = {**running, "status": "error",
+                            "warnings": ["The search could not be completed. Please try again."]}
+                    status = "error"
+                ended = datetime.now(timezone.utc).isoformat()
+                prior = search_store.load(search_id) or {}
+                search_store.save(search_id, {
+                    "search_id": search_id, "status": status,
+                    "created_at": prior.get("created_at", now), "updated_at": ended,
+                    "response": resp, "recruiter_decisions": prior.get("recruiter_decisions", {}),
+                    "notes": prior.get("notes", {}), "candidate_states": prior.get("candidate_states", {}),
+                    "confirmed_brief": resp.get("confirmed_brief") or prior.get("confirmed_brief"),
+                    "harvest_evidence": {}, "internal_diagnostics": {},
+                })
+
+            threading.Thread(target=_run_engine_search, daemon=True,
+                             name=f"engine-search-{search_id}").start()
+            logger.info("[SEARCH] New-engine background search started | search_id=%s", search_id)
+            return SearchResponse(**running)
         request, confirmed_snapshot = _gate_search_request(request)
         confirmed_brief = brief_summary(confirmed_snapshot) if confirmed_snapshot else None
         search_id = request.search_id or str(uuid.uuid4())

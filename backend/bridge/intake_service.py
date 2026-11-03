@@ -23,6 +23,7 @@ from backend.bridge.session_store import ConfirmationStore
 from backend.bridge.translate import (
     to_intake_result,
     to_intake_result_pending,
+    to_intake_result_reading,
     to_search_intent,
     to_search_intent_from_understanding,
     to_search_response,
@@ -37,6 +38,11 @@ class ConfirmationNotReady(ValueError):
     def __init__(self, reasons: List[str]) -> None:
         super().__init__("; ".join(reasons) or "The brief is not ready to search.")
         self.reasons = reasons
+
+
+class IntakeReadError(RuntimeError):
+    """The background role read (the LLM) failed for this session — the caller
+    should surface a recruiter-friendly error on the poll."""
 
 
 def _session_store():
@@ -130,12 +136,46 @@ class IntakeService:
         return to_search_intent_from_understanding(self._pipe.intake.read(jd_text, None))
 
     def start(self, raw_input: str, boundary: Dict[str, Any], posted_title: Optional[str] = None) -> Dict[str, Any]:
+        """Synchronous read + assemble (used by tests and as a fallback). The HTTP
+        path uses begin()+read_into() so the ~30s read never blocks the request."""
         u = self._pipe.intake.read(raw_input, posted_title or (boundary or {}).get("posted_title"))
         session_id = str(uuid4())
         answers = self._seed_answers(boundary)
         result = self._result_from(raw_input, u, boundary or {}, answers)
         self._save(session_id, raw_input, u, boundary or {}, answers, posted_title)
         return {"session_id": session_id, "result": result, "boundary": boundary or {}}
+
+    def begin(self, raw_input: str, boundary: Dict[str, Any], posted_title: Optional[str] = None) -> Dict[str, Any]:
+        """Allocate a session and mark it 'reading' WITHOUT running the LLM — the
+        caller then runs read_into(session_id) on a background thread. Returns the
+        'understanding' placeholder brief the frontend polls on."""
+        session_id = str(uuid4())
+        self._sessions.save(session_id, {
+            "session_id": session_id, "raw_input": raw_input, "understanding": None,
+            "boundary": boundary or {}, "answers": self._seed_answers(boundary),
+            "posted_title": posted_title, "reading": True,
+        })
+        return {"session_id": session_id, "result": to_intake_result_reading(raw_input),
+                "boundary": boundary or {}}
+
+    def read_into(self, session_id: str) -> None:
+        """Run the LLM read for a session begun with begin() and store the full
+        brief. On failure, mark the session so get() raises IntakeReadError."""
+        rec = self._sessions.load(session_id)
+        if rec is None:
+            return
+        try:
+            u = self._pipe.intake.read(
+                rec["raw_input"],
+                rec.get("posted_title") or (rec.get("boundary") or {}).get("posted_title"))
+        except Exception:
+            cur = self._sessions.load(session_id) or rec
+            cur["reading"] = False
+            cur["read_error"] = True
+            self._sessions.save(session_id, cur)
+            raise
+        self._save(session_id, rec["raw_input"], u, rec.get("boundary") or {},
+                   dict(rec.get("answers") or {}), rec.get("posted_title"))
 
     def answer(self, session_id: str, issue_id: str, value: Any, label: str = "") -> Dict[str, Any]:
         rec = self._require(session_id)
@@ -157,7 +197,16 @@ class IntakeService:
 
     def get(self, session_id: str) -> Optional[Dict[str, Any]]:
         rec = self._sessions.load(session_id)
-        if rec is None or not rec.get("understanding"):
+        if rec is None:
+            return None
+        if rec.get("read_error"):
+            raise IntakeReadError(session_id)
+        if not rec.get("understanding"):
+            # Still reading on the background thread — hand back the placeholder so
+            # the frontend keeps polling (None would 404 and look like a lost session).
+            if rec.get("reading"):
+                return {"session_id": session_id, "result": to_intake_result_reading(rec.get("raw_input", "")),
+                        "boundary": rec.get("boundary") or {}, "posted_title_input": rec.get("posted_title")}
             return None
         u = _u_from_dict(rec["understanding"])
         result = self._result_from(rec["raw_input"], u, rec.get("boundary") or {}, rec.get("answers") or {})

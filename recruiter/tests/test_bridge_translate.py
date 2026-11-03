@@ -76,7 +76,12 @@ def test_intake_result_maps_brief_and_marks_status():
     assert ru["role_interpretation"] == {"value": None, "evidence": None, "source": None}
     # capability leads the hard requirements, then the recruiter-marked dealbreaker
     assert result["decision"]["final_search_intent"]["hard_requirements"] == ["eDiscovery", "eDiscovery operations"]
-    assert result["decision"]["issues"][0]["question"] == "Require eDiscovery?"
+    # the capability is NOT a blocking decision card — it is a stated assumption
+    # (non-blocking "tell" with an insight note), so the brief shows straight away
+    cap = result["decision"]["issues"][0]
+    assert cap["question"] == "Require eDiscovery?"
+    assert cap["decision"] == "tell"
+    assert cap["insight_text"] and "eDiscovery" in cap["insight_text"]
     assert result["status"] == "ready"
     json.dumps(result)  # must serialize
 
