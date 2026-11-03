@@ -5,6 +5,7 @@ no credits); the first CrustData call happens only when you run a search.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from recruiter.agents.briefing import BriefingAgent
@@ -32,6 +33,7 @@ def build_live_pipeline(
     page_size: int = 50,
     admit_n: int = 25,
     show: int = 5,
+    judge_workers: int = int(os.environ.get("RECRUITER_JUDGE_WORKERS") or 8),
     reader_model: str = READER_MODEL,
     capability_model: str = CAPABILITY_MODEL,
     judge_model: str = JUDGE_MODEL,
@@ -50,6 +52,6 @@ def build_live_pipeline(
         search=SearchAgent(CrustDataAdapter(), page_size=page_size),
         ranking=RankingAgent(
             judge=JudgeAdapter(model=judge_model), enricher=HarvestAdapter(),
-            admit_n=admit_n, show=show,
+            admit_n=admit_n, show=show, max_judge_workers=judge_workers,
         ),
     )

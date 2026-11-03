@@ -1130,9 +1130,27 @@ def create_app(
                 "internal_diagnostics": {},
             })
 
+            def _save_progress(partial: Dict[str, Any]) -> None:
+                # Persist each mid-flight snapshot so polls show "Reading profiles:
+                # N of M" climbing instead of a frozen running state for minutes.
+                prior = search_store.load(search_id) or {}
+                snapshot = {**partial,
+                            "recruiter_decisions": prior.get("recruiter_decisions", {}),
+                            "notes": prior.get("notes", {})}
+                search_store.save(search_id, {
+                    "search_id": search_id, "status": STATUS_RUNNING,
+                    "created_at": prior.get("created_at", now),
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                    "response": snapshot, "recruiter_decisions": prior.get("recruiter_decisions", {}),
+                    "notes": prior.get("notes", {}), "candidate_states": {},
+                    "confirmed_brief": prior.get("confirmed_brief"), "harvest_evidence": {},
+                    "internal_diagnostics": {},
+                })
+
             def _run_engine_search() -> None:
                 try:
-                    resp = intake_service.run_search(confirmation_id, search_id, provider=provider_name)
+                    resp = intake_service.run_search(confirmation_id, search_id, provider=provider_name,
+                                                     on_progress=_save_progress)
                     status = "complete"
                 except KeyError:
                     resp = {**running, "status": "error",

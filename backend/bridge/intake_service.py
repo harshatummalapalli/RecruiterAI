@@ -24,6 +24,7 @@ from backend.bridge.translate import (
     to_intake_result,
     to_intake_result_pending,
     to_intake_result_reading,
+    to_running_search_response,
     to_search_intent,
     to_search_intent_from_understanding,
     to_search_response,
@@ -239,13 +240,26 @@ class IntakeService:
             raise ConfirmationNotReady([q.prompt for q in outcome.clarifications])
         return to_search_intent(outcome.model)
 
-    def run_search(self, confirmation_id: str, search_id: str, provider: str = "crustdata") -> Dict[str, Any]:
+    def run_search(self, confirmation_id: str, search_id: str, provider: str = "crustdata",
+                   on_progress: Optional[Any] = None) -> Dict[str, Any]:
         model = self._confirmations.load(confirmation_id)
         if model is None:
             raise KeyError(confirmation_id)
         plan = self._pipe.briefing.build(model)
         search_result = self._pipe.search.run(plan.query)
-        ranking = self._pipe.ranking.rank(model, list(search_result.candidates))
+        candidates = list(search_result.candidates)
+        # Stream progress while the slow per-candidate Judge loop runs: the caller's
+        # on_progress sink persists each snapshot so GET /search/{id} shows movement.
+        rank_progress = None
+        if on_progress is not None:
+            on_progress(to_running_search_response(
+                provider, search_id, pulled=search_result.pulled, kept=len(candidates)))
+
+            def rank_progress(admitted: int, processed: int) -> None:
+                on_progress(to_running_search_response(
+                    provider, search_id, pulled=search_result.pulled, kept=len(candidates),
+                    admitted=admitted, processed=processed))
+        ranking = self._pipe.ranking.rank(model, candidates, on_progress=rank_progress)
         resp = to_search_response(provider, search_id, model, search_result, ranking)
         resp["confirmed_brief"] = {
             "confirmation_id": confirmation_id, "session_id": "",

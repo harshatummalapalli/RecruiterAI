@@ -26,6 +26,9 @@ output/experiments/
 # Shadow-mode compiler divergence logs (candidate-derived) and confirmation store (real PII)
 output/compiler_shadow/
 output/confirmations/
+# New-engine (recruiter/) runtime stores — sessions + confirmed briefs (real PII)
+output/engine_intake_sessions/
+output/confirmations_v2/
 # Local dev server logs
 *_dev.log
 

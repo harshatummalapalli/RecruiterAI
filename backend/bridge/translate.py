@@ -60,7 +60,8 @@ def _capability_assumption(model) -> Optional[str]:
     g = groups[0]
     shown = ", ".join(g.terms[:6])
     terms = f" (any of: {shown})" if shown else ""
-    return (f"I'm treating this as a {g.label} role and requiring evidence of it{terms}. "
+    article = "an" if g.label[:1].lower() in "aeiou" else "a"
+    return (f"I'm treating this as {article} {g.label} role and requiring evidence of it{terms}. "
             "It's enforced in the search — remove it from the core requirements below if "
             "the role is broader than that.")
 
@@ -267,6 +268,21 @@ def _search_intent_dataclass(model: RoleModel):
         natural_language_search_query=build_nl_query(model),
         core_signals=cores, supporting_signals=supporting, differentiator_signals=diffs,
     )
+
+
+def to_running_search_response(provider: str, search_id: str, *, pulled: int = 0, kept: int = 0,
+                               admitted: int = 0, processed: int = 0) -> Dict[str, Any]:
+    """A mid-flight SearchResponse the background search saves as it works, so each
+    GET /search/{id} poll shows real movement ("Reading profiles: N of M") instead
+    of a frozen running state until the whole thing finishes."""
+    return {
+        "provider": provider, "search_id": search_id, "candidate_count": 0,
+        "candidates": [], "explanations": [], "evidence": [], "debug": None,
+        "warnings": [], "status": "running", "candidate_states": {},
+        "diagnostics": {"pulled": pulled, "kept": kept, "admitted": admitted, "judged": processed},
+        "progress": {"admitted": admitted, "surfaced": max(admitted - processed, 0),
+                     "building_context": 0, "review_ready": processed},
+    }
 
 
 def to_search_response(provider: str, search_id: str, model: RoleModel,

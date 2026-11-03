@@ -78,8 +78,12 @@ def test_admission_caps_and_enrich_only_admitted():
     cands = [_rec(f"c{i}", "AI Architect", "Agentic Python" if i < 2 else "") for i in range(30)]
 
     class _Counter:
-        def __init__(self): self.n = 0
-        def enrich(self, record): self.n += 1
+        def __init__(self):
+            self.n = 0
+            self._lock = __import__("threading").Lock()
+        def enrich(self, record):
+            with self._lock:   # enrichment now runs on a thread pool
+                self.n += 1
 
     enricher = _Counter()
     result = RankingAgent(enricher=enricher, admit_n=25, show=5).rank(role, cands)
@@ -87,6 +91,33 @@ def test_admission_caps_and_enrich_only_admitted():
     assert enricher.n == 25                 # only the admitted were enriched
     assert len(result.shown) == 5
     assert all(rc.record.enriched for rc in result.ranked)
+
+
+def test_judging_runs_concurrently():
+    # A barrier that only releases once all N judge calls are in flight at the same
+    # time. If judging were sequential the first wait() would never be joined and the
+    # barrier would break on timeout -> judged would not reach N. It does, so the
+    # calls run concurrently.
+    import threading
+    role = _role()
+    n = 4
+    barrier = threading.Barrier(n, timeout=5)
+
+    class _BarrierJudge:
+        def judge(self, role, record):
+            barrier.wait()
+            return ()
+
+    cands = [_rec(f"c{i}", "AI Architect", "Agentic Python") for i in range(n)]
+    result = RankingAgent(judge=_BarrierJudge(), admit_n=n, show=n, max_judge_workers=n).rank(role, cands)
+    assert result.judged == n and result.judge_failures == 0
+
+
+def test_sequential_when_single_worker():
+    role = _role()
+    cands = [_rec(f"c{i}", "AI Architect", "Agentic Python") for i in range(3)]
+    result = RankingAgent(judge=_FakeJudge(), admit_n=25, show=3, max_judge_workers=1).rank(role, cands)
+    assert result.judged == 3 and result.judge_failures == 0
 
 
 def test_explanation_falls_back_without_a_judge():

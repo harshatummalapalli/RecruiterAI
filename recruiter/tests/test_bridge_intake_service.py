@@ -78,6 +78,23 @@ def test_start_ready_then_confirm_then_search(tmp_path):
     assert resp["diagnostics"]["pulled"] == 1
 
 
+def test_run_search_streams_progress(tmp_path):
+    svc = _service(_ready_reader, tmp_path)
+    started = svc.start("JD text", _BOUNDARY, posted_title="Operations Analyst – eDiscovery")
+    cid = svc.confirm(started["session_id"], edits={})["confirmation_id"]
+
+    snapshots = []
+    svc.run_search(cid, "search-1", on_progress=snapshots.append)
+
+    # At least: a retrieval snapshot, admitted(processed=0), then processed=1.
+    assert snapshots, "no progress emitted"
+    assert all(s["status"] == "running" for s in snapshots)
+    assert snapshots[-1]["progress"]["admitted"] == 1
+    # review_ready (profiles read) climbs and never exceeds the admitted count.
+    reads = [s["progress"]["review_ready"] for s in snapshots]
+    assert reads == sorted(reads) and max(reads) == 1
+
+
 def test_answering_a_refinement_clears_it(tmp_path):
     svc = _service(_ready_reader, tmp_path)
     started = svc.start("JD", _BOUNDARY, posted_title="Operations Analyst – eDiscovery")

@@ -310,7 +310,7 @@ export function CandidateReviewScreen({
             {searchNotice ? <p className="role-more__message">{searchNotice}</p> : null}
 
             {showSkeleton ? <SkeletonRows /> : null}
-            {showSkeleton && isRole && progress?.admitted ? <p className="role-more__message">Reading profiles: {progress.review_ready ?? 0} of {progress.admitted}</p> : null}
+            {showSkeleton && progress?.admitted ? <p className="role-more__message">Reading profiles: {progress.review_ready ?? 0} of {progress.admitted}</p> : null}
 
             {!showSkeleton && !hasSearchedOnce ? <p className="discovery-empty">No candidates yet.</p> : null}
 
