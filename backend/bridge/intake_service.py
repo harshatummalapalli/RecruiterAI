@@ -101,6 +101,20 @@ class IntakeService:
             "answers": answers or {}, "posted_title": posted_title,
         })
 
+    def _seed_answers(self, boundary) -> Dict[str, Any]:
+        """Min/max years are now first-step recruiter inputs (on the boundary), so
+        seed them as answers — authoritative, and they stop the missing-years
+        clarification from ever firing."""
+        answers: Dict[str, Any] = {}
+        b = boundary or {}
+        for key in ("min_years", "max_years"):
+            if b.get(key) not in (None, ""):
+                try:
+                    answers[key] = int(b[key])
+                except (TypeError, ValueError):
+                    pass
+        return answers
+
     def _require(self, session_id) -> Dict[str, Any]:
         rec = self._sessions.load(session_id)
         if rec is None or not rec.get("understanding"):
@@ -114,8 +128,9 @@ class IntakeService:
     def start(self, raw_input: str, boundary: Dict[str, Any], posted_title: Optional[str] = None) -> Dict[str, Any]:
         u = self._pipe.intake.read(raw_input, posted_title or (boundary or {}).get("posted_title"))
         session_id = str(uuid4())
-        result = self._result_from(raw_input, u, boundary or {}, {})
-        self._save(session_id, raw_input, u, boundary or {}, {}, posted_title)
+        answers = self._seed_answers(boundary)
+        result = self._result_from(raw_input, u, boundary or {}, answers)
+        self._save(session_id, raw_input, u, boundary or {}, answers, posted_title)
         return {"session_id": session_id, "result": result, "boundary": boundary or {}}
 
     def answer(self, session_id: str, issue_id: str, value: Any, label: str = "") -> Dict[str, Any]:
@@ -131,6 +146,7 @@ class IntakeService:
         rec = self._require(session_id)
         u = _u_from_dict(rec["understanding"])
         answers = dict(rec.get("answers") or {})
+        answers.update(self._seed_answers(boundary))   # boundary years override
         result = self._result_from(rec["raw_input"], u, boundary or {}, answers)
         self._save(session_id, rec["raw_input"], u, boundary or {}, answers, rec.get("posted_title"))
         return {"session_id": session_id, "result": result, "boundary": boundary or {}}

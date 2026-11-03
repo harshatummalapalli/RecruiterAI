@@ -30,5 +30,21 @@
     ],
     "source_qualifier": "eDiscovery",
     "is_broad": false
+  },
+  "": {
+    "label": "Data and AI Platforms",
+    "terms": [
+      "data platform",
+      "data engineering",
+      "Spark",
+      "Databricks",
+      "Snowflake",
+      "ETL",
+      "ELT",
+      "vector search",
+      "feature store"
+    ],
+    "source_qualifier": "Data",
+    "is_broad": false
   }
 }

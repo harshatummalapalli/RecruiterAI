@@ -68,6 +68,43 @@ export function SearchBoundaryForm({ boundary, onChange, disabled }: SearchBound
         />
       </div>
 
+      <div className="brief-field-grid brief-field-grid--two">
+        <div className="brief-field">
+          <label className="brief-field__label" htmlFor="boundary-min-years">
+            Minimum years <span aria-hidden="true">*</span>
+          </label>
+          <input
+            id="boundary-min-years"
+            type="number"
+            min={0}
+            className="brief-input"
+            value={boundary.min_years ?? ''}
+            disabled={disabled}
+            placeholder="e.g. 8"
+            onChange={(event) => {
+              const value = event.target.value
+              onChange((current) => ({ ...current, min_years: value === '' ? null : Number(value) }))
+            }}
+          />
+        </div>
+        <div className="brief-field">
+          <label className="brief-field__label" htmlFor="boundary-max-years">Maximum years (optional)</label>
+          <input
+            id="boundary-max-years"
+            type="number"
+            min={0}
+            className="brief-input"
+            value={boundary.max_years ?? ''}
+            disabled={disabled}
+            placeholder="e.g. 12"
+            onChange={(event) => {
+              const value = event.target.value
+              onChange((current) => ({ ...current, max_years: value === '' ? null : Number(value) }))
+            }}
+          />
+        </div>
+      </div>
+
       <div className="brief-field">
         <span className="brief-field__label">
           Work Mode <span aria-hidden="true">*</span>

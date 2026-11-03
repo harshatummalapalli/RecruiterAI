@@ -349,6 +349,11 @@ class SearchBoundaryRequest(BaseModel):
     # Consumed by the bridge's assemble -> CompanyRules; ignored on the legacy path.
     include_companies: List[str] = Field(default_factory=list)
     exclude_companies: List[str] = Field(default_factory=list)
+    # Experience is now a first-step recruiter input (min required, max optional),
+    # instead of only being read from the JD — so a JD that omits it never forces
+    # an unanswerable clarification. Consumed by the bridge; ignored by legacy.
+    min_years: Optional[int] = None
+    max_years: Optional[int] = None
 
 
 class IntakeStartRequest(BaseModel):
@@ -405,15 +410,17 @@ class _SummaryCache:
         return entry
 
 
-def _engine_boundary(validated, include_companies=None, exclude_companies=None) -> Dict[str, Any]:
+def _engine_boundary(validated, req) -> Dict[str, Any]:
     """The boundary dict handed to the new engine: the NORMALIZED geo from
-    validate_search_boundary (preserving the old app's country/state
-    canonicalization and its onsite/remote rules) plus the company include/exclude
-    lists (which the legacy SearchBoundary dataclass doesn't carry)."""
+    validate_search_boundary (preserving the old app's canonicalization + onsite/
+    remote rules) plus the fields the legacy SearchBoundary doesn't carry — company
+    include/exclude and the first-step min/max years."""
     import dataclasses
     data = dataclasses.asdict(validated)
-    data["include_companies"] = list(include_companies or [])
-    data["exclude_companies"] = list(exclude_companies or [])
+    data["include_companies"] = list(req.include_companies or [])
+    data["exclude_companies"] = list(req.exclude_companies or [])
+    data["min_years"] = req.min_years
+    data["max_years"] = req.max_years
     return data
 
 
@@ -706,8 +713,7 @@ def create_app(
             raise HTTPException(status_code=422, detail={"message": "Describe the role first.", "errors": ["Paste a job description or describe the role."]})
         if intake_service is not None:
             return intake_service.start(
-                request.raw_input,
-                _engine_boundary(boundary, request.boundary.include_companies, request.boundary.exclude_companies),
+                request.raw_input, _engine_boundary(boundary, request.boundary),
                 posted_title=request.posted_title)
         try:
             record = intake_session_manager.start(request.raw_input, boundary=boundary, posted_title=request.posted_title)
@@ -804,9 +810,7 @@ def create_app(
         boundary = _validated_boundary(request)
         if intake_service is not None:
             try:
-                return intake_service.update_boundary(
-                    session_id,
-                    _engine_boundary(boundary, request.include_companies, request.exclude_companies))
+                return intake_service.update_boundary(session_id, _engine_boundary(boundary, request))
             except KeyError:
                 raise HTTPException(status_code=404, detail="Intake session not found.")
         try:

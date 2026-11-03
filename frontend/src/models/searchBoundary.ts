@@ -27,6 +27,10 @@ export type SearchBoundary = {
   // Optional so a boundary restored from an older session still type-checks.
   include_companies?: string[]
   exclude_companies?: string[]
+  // Experience is a first-step recruiter input now (min required, max optional),
+  // not only read from the JD — so a JD that omits it never blocks on a clarification.
+  min_years?: number | null
+  max_years?: number | null
 }
 
 export function createEmptySearchBoundary(): SearchBoundary {
@@ -43,6 +47,8 @@ export function createEmptySearchBoundary(): SearchBoundary {
     remote_cities: [],
     include_companies: [],
     exclude_companies: [],
+    min_years: null,
+    max_years: null,
   }
 }
 
@@ -56,6 +62,8 @@ export function isSearchBoundaryComplete(boundary: SearchBoundary): boolean {
   if (!boundary.hiring_company.trim() || !boundary.country.trim() || !boundary.work_mode) {
     return false
   }
+  // Minimum years is a required first-step input.
+  if (boundary.min_years == null || boundary.min_years < 0) return false
   if (boundary.work_mode === 'onsite' || boundary.work_mode === 'hybrid') {
     // Multi-city mode (several named cities) is complete on its own; otherwise
     // the classic single city + radius is required.

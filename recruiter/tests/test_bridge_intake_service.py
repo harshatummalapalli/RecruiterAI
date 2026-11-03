@@ -104,6 +104,18 @@ def test_missing_years_clarifies_then_resolves(tmp_path):
     assert answered["result"]["role_understanding"]["explicit_constraints"]["experience_minimum_years"] == 6
 
 
+def test_boundary_min_years_prevents_clarification(tmp_path):
+    # JD omits years, but the recruiter entered min_years in the first step ->
+    # no missing-years clarification; the brief is ready.
+    def no_years(notes, posted_title=None):
+        return Understanding(identity="Director", min_years=None, requirements=(ReadRequirement("x", "core"),))
+    svc = _service(no_years, tmp_path)
+    started = svc.start("JD", {**_BOUNDARY, "min_years": 10, "max_years": 15})
+    assert started["result"]["status"] == "ready"
+    ec = started["result"]["role_understanding"]["explicit_constraints"]
+    assert ec["experience_minimum_years"] == 10 and ec["experience_maximum_years"] == 15
+
+
 def test_confirm_blocks_when_not_ready(tmp_path):
     def no_years(notes, posted_title=None):
         return Understanding(identity="Analyst", min_years=None, requirements=(ReadRequirement("ops", "core"),))
