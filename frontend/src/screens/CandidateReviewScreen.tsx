@@ -258,6 +258,24 @@ export function CandidateReviewScreen({
     setNoteDraft('')
   }
 
+  // Export what's already on screen — no re-search, no credits, no data leaves that the recruiter can't already see.
+  const exportCsv = () => {
+    const header = ['Name', 'Title', 'Company', 'Location', 'Years', 'Decision', 'Email', 'Profile URL']
+    const esc = (value: string) => `"${value.replace(/"/g, '""')}"`
+    const rows = candidates.map((c) => [
+      c.name, c.title, c.company, c.location,
+      c.experienceYears != null ? String(Math.round(c.experienceYears)) : '',
+      decisions[c.id] ?? '', c.contactEmail ?? '', c.profileUrl ?? '',
+    ])
+    const csv = [header, ...rows].map((row) => row.map((cell) => esc(String(cell ?? ''))).join(',')).join('\r\n')
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `candidates-${searchId ?? 'export'}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   const hasSearchedOnce = searchResponse !== null
   // The skeleton is only for the brief window before the FIRST candidates are admitted.
   const showSkeleton = searchState === 'searching' && (isRole ? arrangedItems.length === 0 : candidates.length === 0)
@@ -366,7 +384,12 @@ export function CandidateReviewScreen({
               </div>
             ) : null}
 
-            {reviewedNote ? <p className="discovery-reviewed-note">{reviewedNote}</p> : null}
+            {!showSkeleton && candidates.length > 0 ? (
+              <div className="discovery-toolbar">
+                {reviewedNote ? <span className="discovery-reviewed-note">{reviewedNote}</span> : <span />}
+                <button type="button" className="discovery-export" onClick={exportCsv}>Export CSV</button>
+              </div>
+            ) : null}
 
             {!showSkeleton && arrangedItems.length > 0 ? (
               <CandidateWorkspace

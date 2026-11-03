@@ -532,6 +532,10 @@ export function RecruiterWorkspaceScreen() {
     }
     const activeBrief = briefOverride ?? brief
     const rerun = searchId !== null
+    // A re-run searches the market again and costs credits — confirm before spending.
+    if (rerun && !window.confirm('Run a new search for this role? This searches the market again and uses about 1–2 credits.')) {
+      return
+    }
     setSearchState('searching')
     setSearchErrors([])
     setSearchNotice(null)
