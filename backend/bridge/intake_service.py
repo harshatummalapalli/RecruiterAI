@@ -80,6 +80,17 @@ def _coerce_answer(issue_id: str, value: Any) -> Any:
             return int(value)
         except (TypeError, ValueError):
             return value
+    if issue_id == "retier":
+        # The editable-brief tier map ({requirement_text: tier}) arrives as a JSON
+        # string (the /answer value field is a str). Decode to the dict apply_answers
+        # expects; a malformed map is dropped rather than poisoning the brief.
+        if isinstance(value, dict):
+            return value
+        try:
+            parsed = json.loads(value)
+        except (TypeError, ValueError):
+            return {}
+        return parsed if isinstance(parsed, dict) else {}
     return value
 
 

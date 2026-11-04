@@ -46,6 +46,7 @@ type CandidateReviewScreenProps = {
   // so rather than showing a broken or fabricated reading.
   intakeResult?: IntakeResult | null
   onAnswer?: (issue: IntakeIssue, value: string, label: string) => void
+  onRetier?: (assignments: Record<string, string>) => void
   isAnswering?: boolean
   // Why the last attempt to search again was refused, in plain sentences.
   searchErrors?: string[]
@@ -93,6 +94,7 @@ export function CandidateReviewScreen({
   onApplyBoundary,
   intakeResult = null,
   onAnswer = () => {},
+  onRetier = () => {},
   isAnswering = false,
   searchErrors = [],
   onShowMore,
@@ -329,6 +331,7 @@ export function CandidateReviewScreen({
               brief={brief}
               onChangeBrief={onChangeBrief}
               onAnswer={onAnswer}
+              onRetier={onRetier}
               isAnswering={isAnswering}
               onApplyBoundary={onApplyBoundary}
               onSearch={onRunSearch}

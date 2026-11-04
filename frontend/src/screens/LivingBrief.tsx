@@ -24,6 +24,16 @@ import '../components/LivingBrief.css'
 
 type FieldChange = (path: string, updater: (current: SearchBrief) => SearchBrief) => void
 
+// The brief groups use 'preferred' for the differentiator tier; the engine's tier
+// token is 'differentiator'. Map between them so retier edits speak the engine's
+// vocabulary.
+const GROUP_TO_TIER: Record<string, string> = { core: 'core', supporting: 'supporting', preferred: 'differentiator' }
+const TIER_OPTIONS: { value: string; label: string }[] = [
+  { value: 'core', label: 'Core' },
+  { value: 'supporting', label: 'Supporting' },
+  { value: 'differentiator', label: 'Differentiator' },
+]
+
 const TAG_HINT: Record<ProvenanceKind, string> = {
   stated: 'The job description says this.',
   inferred: 'RecruiterAI concluded this. The job description does not say it outright.',
@@ -48,6 +58,9 @@ type LivingBriefProps = {
   brief: SearchBrief
   onChangeBrief: FieldChange
   onAnswer: (issue: IntakeIssue, value: string, label: string) => void
+  /** Option A editable brief: the recruiter moves a requirement between tiers. The
+   * full {requirement: tier} assignment is sent, applied over the original read. */
+  onRetier: (assignments: Record<string, string>) => void
   isAnswering: boolean
   onApplyBoundary: (boundary: SearchBoundary) => Promise<void>
   onSearch: () => void
@@ -91,7 +104,7 @@ function DecisionCard({ issue, onAnswer, isAnswering, onReconsider }: { issue: I
   )
 }
 
-export function LivingBrief({ result, boundary, brief, onChangeBrief, onAnswer, isAnswering, onApplyBoundary, onSearch, isSearching, searchErrors = [] }: LivingBriefProps) {
+export function LivingBrief({ result, boundary, brief, onChangeBrief, onAnswer, onRetier, isAnswering, onApplyBoundary, onSearch, isSearching, searchErrors = [] }: LivingBriefProps) {
   const [boundaryOpen, setBoundaryOpen] = useState(false)
   const role = result.role_understanding
   const title = titleView(result)
@@ -105,6 +118,16 @@ export function LivingBrief({ result, boundary, brief, onChangeBrief, onAnswer, 
   const summary = status.state === 'ready' ? confirmationSummary(result, boundary, brief) : []
   const zeroCore = groups[0].items.length === 0
   const provisional = status.state === 'draft'
+
+  // Full current requirement -> tier assignment, from what's displayed (which
+  // already reflects any applied retier). Moving one item sends the whole map,
+  // applied over the original read, so no separate client state is needed.
+  const moveRequirement = (text: string, tier: string) => {
+    const assignments: Record<string, string> = {}
+    groups.forEach((group) => group.items.forEach((item) => { assignments[item.text] = GROUP_TO_TIER[group.tier] ?? 'core' }))
+    assignments[text] = tier
+    onRetier(assignments)
+  }
 
   return (
     <div className={`lb${provisional ? ' lb--draft' : ''}`}>
@@ -209,6 +232,20 @@ export function LivingBrief({ result, boundary, brief, onChangeBrief, onAnswer, 
                   <li key={item.text} title={item.evidence ?? undefined}>
                     <span>{item.text}</span>
                     <ProvenanceTag kind={item.provenance} />
+                    <label className="lb-tier__move" title="Move this requirement between tiers">
+                      <span className="lb-visually-hidden">Tier for {item.text}</span>
+                      <select
+                        value={GROUP_TO_TIER[group.tier] ?? 'core'}
+                        disabled={isAnswering}
+                        onChange={(event) => moveRequirement(item.text, event.target.value)}
+                      >
+                        {TIER_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                   </li>
                 ))}
               </ul>

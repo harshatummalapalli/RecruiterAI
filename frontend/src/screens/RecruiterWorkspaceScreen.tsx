@@ -508,6 +508,26 @@ export function RecruiterWorkspaceScreen() {
     }
   }
 
+  // Editable brief (Option A): the recruiter overrides the reader's tier guess by
+  // moving a requirement between Core / Supporting / Differentiator. We send the
+  // FULL current assignment each time (applied over the original read), so the map
+  // is self-consistent and needs no separate client state. Deterministic server-side
+  // (apply_answers), no model call.
+  const handleRetier = async (assignments: Record<string, string>) => {
+    if (!intakeSessionId) {
+      return
+    }
+    setIsAnswering(true)
+    try {
+      const { result } = await answerIntake(intakeSessionId, 'retier', JSON.stringify(assignments), '')
+      setIntakeResult(result)
+    } catch {
+      setSearchErrors(['That change could not be saved. Please try again.'])
+    } finally {
+      setIsAnswering(false)
+    }
+  }
+
   // Boundary edits are deterministic: validated and re-applied on the server with no model call. Rejects with plain
   // messages, which the boundary editor shows.
   const handleApplyBoundary = async (next: SearchBoundary) => {
@@ -860,6 +880,7 @@ export function RecruiterWorkspaceScreen() {
                 brief={brief}
                 onChangeBrief={(_path, updater) => setBrief((current) => updater(current))}
                 onAnswer={handleAnswerIntake}
+                onRetier={handleRetier}
                 isAnswering={isAnswering}
                 onApplyBoundary={handleApplyBoundary}
                 onSearch={() => void handleSearch()}
@@ -882,6 +903,7 @@ export function RecruiterWorkspaceScreen() {
               onApplyBoundary={handleApplyBoundary}
               intakeResult={intakeSessionId ? intakeResult : null}
               onAnswer={handleAnswerIntake}
+              onRetier={handleRetier}
               isAnswering={isAnswering}
               searchErrors={searchErrors}
               onShowMore={handleShowMore}

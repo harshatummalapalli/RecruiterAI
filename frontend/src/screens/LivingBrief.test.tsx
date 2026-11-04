@@ -14,6 +14,7 @@ let container: HTMLElement
 
 const handlers = {
   onAnswer: vi.fn(),
+  onRetier: vi.fn(),
   onSearch: vi.fn(),
   onApplyBoundary: vi.fn((_boundary: SearchBoundary) => Promise.resolve()),
   onChangeBrief: vi.fn(),
@@ -28,6 +29,7 @@ async function render(result: IntakeResult, extra: { boundary?: SearchBoundary; 
         brief={makeBrief()}
         onChangeBrief={handlers.onChangeBrief}
         onAnswer={handlers.onAnswer}
+        onRetier={handlers.onRetier}
         isAnswering={false}
         onApplyBoundary={handlers.onApplyBoundary}
         onSearch={handlers.onSearch}

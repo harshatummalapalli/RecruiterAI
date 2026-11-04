@@ -74,7 +74,7 @@ def _capability_assumption(model) -> Optional[str]:
     terms = f" (any of: {shown})" if shown else ""
     article = "an" if g.label[:1].lower() in "aeiou" else "a"
     return (f"I'm treating this as {article} {g.label} role and requiring evidence of it{terms}. "
-            "It's enforced in the search — remove it from the core requirements below if "
+            "It's enforced in the search — remove it from the core requirements above if "
             "the role is broader than that.")
 
 
@@ -316,6 +316,13 @@ def to_search_response(provider: str, search_id: str, model: RoleModel,
     for rc in ranking.shown:
         r = rc.record
         raw = r.raw if isinstance(r.raw, dict) else {}
+        # Surface the Judge's verified requirement judgments so the evidence builder
+        # rebuilds them onto the card: this drives the green alignment dots AND the
+        # "met / not evidenced" requirement ledger. The Judge already produced these
+        # (record.judgments); without this stash they were silently dropped and the
+        # dots/ledger came back empty. build_candidate_evidence reads this exact key.
+        if r.judgments:
+            raw["__requirement_judgments"] = list(r.judgments)
         # Build the rich evidence first so we can surface its derived years-of-
         # experience on the candidate card (the keeper computes it from the dated
         # career history; without this the card showed no experience at all).

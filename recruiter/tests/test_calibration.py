@@ -63,6 +63,27 @@ def test_capability_remove_widens():
     assert out.model.capability_groups == ()
 
 
+def test_retier_moves_requirements_between_tiers():
+    # Option A: the recruiter overrides the reader's tier guess on the brief.
+    out = CalibrationAgent().authorize(_model(), {"retier": {"Java": "differentiator", "Python": "supporting"}})
+    tiers = {r.text: r.tier for r in out.model.requirements}
+    assert tiers["Java"] == "differentiator" and tiers["Python"] == "supporting"
+    assert tiers["Agentic Systems"] == "core"  # untouched
+
+
+def test_retier_then_priority_sees_the_new_cores():
+    # retier is applied before priority, so a requirement promoted to Core can be ranked.
+    out = CalibrationAgent().authorize(
+        _model(), {"retier": {"Java": "supporting"}, "priority": ["Python", "Agentic Systems"]})
+    core_order = [r.text for r in out.model.requirements if r.tier == "core"]
+    assert core_order == ["Python", "Agentic Systems"]  # Java left Core
+
+
+def test_retier_ignores_unknown_tiers():
+    out = CalibrationAgent().authorize(_model(), {"retier": {"Python": "bogus"}})
+    assert {r.text: r.tier for r in out.model.requirements}["Python"] == "core"  # unchanged
+
+
 def test_priority_reorders_cores():
     out = CalibrationAgent().authorize(_model(), {"priority": ["Python", "Agentic Systems", "Java"]})
     core_order = [r.text for r in out.model.requirements if r.tier == "core"]

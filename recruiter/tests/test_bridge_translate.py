@@ -127,3 +127,25 @@ def test_search_response_maps_candidates_and_diagnostics():
     assert ev["current_company"] == "KLDiscovery" and "Relativity" in ev["headline"]
     assert "past_roles" in ev and "education" in ev and "role_alignment" in ev
     json.dumps(resp)
+
+
+def test_judge_judgments_flow_into_evidence_for_the_dots_and_ledger():
+    # The Judge's verified judgments must reach the frontend evidence, or the green
+    # alignment dots and the requirement ledger come back empty (the regression we
+    # are fixing). They ride through raw['__requirement_judgments'].
+    judgment = {
+        "tier": "core", "signal_text": "Relativity", "verdict": "met",
+        "quote": "Led Relativity review workflows", "term": "Relativity",
+        "source": "headline", "evidence_detail": "", "strength": "strong",
+    }
+    rec = CandidateRecord("c1", name="Asha", title="eDiscovery Analyst", company="KLDiscovery",
+                          profile_url="http://x", provider_score=0.8,
+                          raw={"basic_profile": {"headline": "Led Relativity review workflows"}},
+                          judgments=(judgment,))
+    ranking = RankingResult(ranked=(), shown=(RankedCandidate(rec, 0.91, "Strong match."),),
+                            admitted=25, judged=5, judge_failures=0)
+    search = SearchResult(candidates=(rec,), pulled=50, geo_dropped=0, est_credits=1.5, excluded_dropped=0)
+    resp = to_search_response("crustdata", "s-2", _model(), search, ranking)
+    rows = resp["evidence"][0]["requirement_judgments"]
+    assert rows and any(r["signal_text"] == "Relativity" and r["verdict"] == "met" for r in rows)
+    json.dumps(resp)

@@ -4,6 +4,9 @@ Pure: a new RoleModel out, never mutating the input. `answers` is keyed by
 question id; `questions` is passed so structured payloads (the domain name)
 are available.
   capability   : "keep" | "remove"  -> drop the capability group to widen
+  retier       : {text: tier}       -> move a requirement between core/supporting/
+                                       differentiator (the recruiter's call overrides
+                                       the reader's guess — Option A editable brief)
   dealbreakers : [core texts]       -> mark those requirements hard (must-pass)
   priority     : [core texts]       -> reorder cores (top matters most)
   domain       : required|preferred|irrelevant -> industry filter / soft / drop
@@ -18,6 +21,8 @@ from typing import Any, Dict, Tuple
 from recruiter.agents.intake.model import Question
 from recruiter.role_model import Provenance, RECRUITER, Requirement, RoleModel
 
+_TIERS = ("core", "supporting", "differentiator")
+
 
 def apply_answers(model: RoleModel, answers: Dict[str, Any], questions: Tuple[Question, ...] = ()) -> RoleModel:
     requirements = list(model.requirements)
@@ -27,6 +32,15 @@ def apply_answers(model: RoleModel, answers: Dict[str, Any], questions: Tuple[Qu
 
     if answers.get("capability") == "remove":
         capability_groups = ()
+
+    # Recruiter tier overrides FIRST, so dealbreakers/priority below see the final
+    # tiers (e.g. a requirement moved into Core can then be ranked or made hard).
+    retier = answers.get("retier") or {}
+    if isinstance(retier, dict) and retier:
+        requirements = [
+            replace(r, tier=retier[r.text]) if r.text in retier and retier[r.text] in _TIERS else r
+            for r in requirements
+        ]
 
     dealbreakers = set(answers.get("dealbreakers") or [])
     if dealbreakers:

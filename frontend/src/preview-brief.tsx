@@ -95,6 +95,9 @@ function Preview() {
                 if (next) setCurrent(next.name)
                 else setMessage(`You chose “${label}”. No saved result exists for this answer in the preview.`)
               }}
+              onRetier={() => {
+                setMessage('Tier changed. In the product this is one small call to the server, which re-applies it to the reading it already has, with no model call.')
+              }}
               isAnswering={false}
               onApplyBoundary={async () => {
                 setMessage('Boundary applied. In the product the server validates it and re-applies it to the reading it already has, with no model call.')
