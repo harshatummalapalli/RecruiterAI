@@ -91,6 +91,38 @@ ssh -i ~/Downloads/ssh-key-2026-09-14.key opc@140.245.235.18 '
   systemctl is-active recruiterai-backend'
 ```
 
+## New-engine cutover deltas (NOT yet live-verified — first new-engine deploy)
+The verified `e4a137d` sequence above was for the LEGACY engine. The 7-agent
+engine (`recruiter/`) needs these deltas; they have not been run on the server yet,
+so treat them as unverified until the first cutover deploy confirms them.
+
+1. **Ship the `recruiter/` package.** `backend/bridge` imports `recruiter.*` at
+   runtime when the engine flag is on, so the package MUST be in the tarball (the
+   legacy tar omitted it). Package step becomes:
+   ```bash
+   tar czf "$TB" --exclude='backend/experiments' --exclude='recruiter/tests' \
+       --exclude='recruiter/evals' --exclude='__pycache__' --exclude='*.pyc' \
+       backend recruiter prompts frontend/dist requirements.txt
+   ```
+   And add `recruiter` to the server-side `chown -R opc:opc …` list.
+2. **New Python deps.** `requirements.txt` now includes `anthropic` and
+   `json_repair` (the engine's reader/Judge/capability are Claude via
+   `recruiter/llm/core.py`). The deploy MUST run, after extract and before restart:
+   `/opt/recruiterai/.venv/bin/pip install -r /opt/recruiterai/requirements.txt`.
+3. **Secrets / flags in `/etc/recruiterai.env`:**
+   - `ANTHROPIC_API_KEY=…` — REQUIRED (not in the legacy env; every engine LLM call
+     fails without it). Secret: set on the server only, never in the repo.
+   - `RECRUITER_NEW_ENGINE=1` — the flip that makes the engine live. Omit/remove to
+     fall back to legacy.
+   - `RECRUITER_JUDGE_WORKERS=2` — recommended on this 1 GB box. The engine judges up
+     to N admitted candidates concurrently; the default 8 can spike memory/threads
+     and this host has a documented swap-storm failure mode (see below). Start low,
+     raise after watching `free -m` under a real search.
+4. **Engine-level rollback (fastest):** remove `RECRUITER_NEW_ENGINE` from
+   `/etc/recruiterai.env` and `sudo systemctl restart recruiterai-backend` — reverts
+   to legacy with no code change. The build-level rollback (restore the backup
+   tarball) still applies if the deployed code itself must be reverted.
+
 ## SSH "banner exchange" timeout — diagnosis (encountered before this deploy)
 Symptom: `Test-NetConnection … -Port 22` succeeds (TCP open) but SSH hangs with
 "Connection timed out during banner exchange." That is **server-side `sshd` unable
