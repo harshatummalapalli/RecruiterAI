@@ -39,7 +39,7 @@ const click = (element: Element | null | undefined) =>
   act(async () => {
     element!.dispatchEvent(new MouseEvent('click', { bubbles: true }))
   })
-const sidebarButton = (label: RegExp) => Array.from(container.querySelectorAll('.app-sidebar__item')).find((b) => label.test(b.textContent ?? '')) as HTMLButtonElement
+const sidebarButton = (label: RegExp) => Array.from(container.querySelectorAll('.global-nav__role')).find((b) => label.test(b.textContent ?? '')) as HTMLButtonElement
 // Home ("Your searches") is now the landing screen when nothing is remembered as open — these tests exercise the
 // jd/brief/review flow and its sidebar, so they reach past Home the same way a recruiter would: New Search.
 const enterWorkspace = () => click(button(/New Search/i))
@@ -126,14 +126,15 @@ describe('the sidebar and switching between searches', () => {
     expect(rows[0]).toContain('AI Engineer')
     expect(rows[0]).toContain('Northwind · Toronto')
     await enterWorkspace()
-    const sidebarRows = Array.from(container.querySelectorAll('.app-sidebar__item')).map((row) => row.textContent)
+    // The single rail's recents list the active roles for one-click return.
+    const sidebarRows = Array.from(container.querySelectorAll('.global-nav__role')).map((row) => row.textContent)
     expect(sidebarRows[0]).toContain('AI Engineer')
     expect(sidebarRows[0]).toContain('Northwind · Toronto')
     expect(sidebarRows[1]).toContain('Staff Backend Engineer')
     expect(sidebarRows[1]).toContain('Epiq · Hyderabad')
-    expect(sidebarRows[2]).toContain('Draft')
+    expect(sidebarRows[2]).toContain('Data Engineer')
     expect($('#posted-title')).not.toBeNull()
-    expect($('.app-sidebar__new')?.className).toContain('is-active')
+    expect($('.global-nav__new')?.className).toContain('is-active')
   })
 
   it('uses the plain intake copy', async () => {
@@ -262,28 +263,24 @@ describe('roles: show more and pause, wired to the server', () => {
     expect($('.role-bar')?.textContent).toContain('Paused')
   })
 
-  it('switching to an empty candidate filter closes the record but never resurrects the sidebar', async () => {
-    // The regression this pins down: CandidateWorkspace.changeFilter() calls
-    // onOpen(null) when the open candidate doesn't match the new filter —
-    // that's correct (candidate content only). What must NOT happen is the
-    // role sidebar re-expanding as a SIDE EFFECT of that close, the way
-    // Glue-off behavior previously did for every candidateOpen transition,
-    // open or close alike.
+  it('opening a candidate record and changing a filter never changes the shell rail', async () => {
+    // There is one persistent rail now (.global-nav); opening a candidate
+    // record or changing a candidate filter is candidate content only and must
+    // never add, remove, or swap the shell around it.
     await mountWithSearches({ kind: 'search', id: 'role-a' })
-    expect($('.app-sidebar')).not.toBeNull()
+    expect($('.global-nav')).not.toBeNull()
 
     const firstCard = container.querySelector('article.ws-card')!
     await click(firstCard)
     await act(async () => {})
-    // Opening a candidate collapses the rail, exactly as before.
-    expect($('.app-sidebar')).toBeNull()
+    expect($('.global-nav')).not.toBeNull() // the rail stays exactly as it was
 
     // None of the 25 fixture candidates have a decision, so Shortlisted is
     // empty and the open candidate (undecided) no longer matches it.
     await click(button(/^Shortlisted/))
     await act(async () => {})
 
-    expect($('.app-sidebar')).toBeNull() // still collapsed — the shell did not change
+    expect($('.global-nav')).not.toBeNull()
     expect(container.textContent).toContain('No candidates have been shortlisted yet.')
   })
 

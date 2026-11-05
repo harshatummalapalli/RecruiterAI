@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { Lock, Menu } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Lock } from 'lucide-react'
 import {
   runCandidateSearch,
   loadPersistedSearch,
@@ -26,8 +26,8 @@ import { SettingsScreen } from './SettingsScreen'
 import { UnderstandScreen } from './UnderstandScreen'
 import { SearchBoundaryForm } from './SearchBoundaryForm'
 import { GlobalShell, type GlobalDestination } from '../components/GlobalShell'
-import { SearchSidebar } from '../components/SearchSidebar'
 import { StepPlayer, type Stage } from '../components/StepPlayer'
+import { readOverrides, recentRoles, setOverride, type Overrides } from '../models/roleLifecycle'
 import { createEmptySearchBoundary, isSearchBoundaryComplete, type SearchBoundary } from '../models/searchBoundary'
 import type { SearchListItem, SearchResponse } from '../types'
 import './RecruiterWorkspaceScreen.css'
@@ -45,7 +45,6 @@ const ACTIVE_KEY = 'recruiterai:activeSearch'
 const LEGACY_POINTER_KEY = 'recruiterai:lastSearch'
 const BRIEFS_KEY = 'recruiterai:briefs'
 const COMPOSE_KEY = 'recruiterai:composeDraft'
-const SIDEBAR_PIN_KEY = 'recruiterai:sidebarPinned'
 const SIDEBAR_REFRESH_MS = 30000
 
 type ComposeDraft = { postedTitle: string; jdText: string; boundary: SearchBoundary }
@@ -122,26 +121,12 @@ export function RecruiterWorkspaceScreen() {
   const [searchGeneration, setSearchGeneration] = useState(0)
   // Multiple searches: the sidebar's list and which one is open. `active === null` is the new-search form.
   const [searches, setSearches] = useState<SearchListItem[]>([])
+  const [searchesLoaded, setSearchesLoaded] = useState(false)
+  // Phase-1 Active↔Completed overrides (Close / Reopen), remembered locally.
+  const [overrides, setOverrides] = useState<Overrides>(() => readOverrides())
   const [active, setActive] = useState<ActiveSearch | null>(null)
   const [roleMessage, setRoleMessage] = useState<string | null>(null)
   const [searchNotice, setSearchNotice] = useState<string | null>(null)
-  // The role sidebar collapses to a narrow rail when a candidate record opens, so the record pane has the room —
-  // unless the recruiter has pinned it open. "Keep roles open" persists across sessions; whether a candidate is
-  // currently open does not (it's not meaningful state to remember on reload).
-  //
-  // One-directional on purpose: collapsing only ever happens because a candidate record OPENED. It never
-  // auto-reopens just because a record closed — including when a candidate filter change closes the record as a
-  // side effect (CandidateWorkspace.changeFilter's onOpen(null), when the open candidate doesn't match the new
-  // filter). A candidate filter is candidate-content only; it must never visibly change the workspace shell. The
-  // sidebar only reopens via an explicit recruiter action — the header hamburger (equivalent to Glue) or Glue
-  // itself — never as a side effect of which candidates happen to be visible.
-  const [sidebarPinned, setSidebarPinned] = useState<boolean>(() => readJson<boolean>(SIDEBAR_PIN_KEY) ?? false)
-  const [candidateOpen, setCandidateOpen] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  useEffect(() => {
-    if (candidateOpen && !sidebarPinned) setSidebarCollapsed(true)
-    else if (sidebarPinned) setSidebarCollapsed(false)
-  }, [candidateOpen, sidebarPinned])
   // The poll loop for a running search. A ref because it is plumbing, cleared when a search is opened or started or the
   // component unmounts, so at most one poll loop is ever active.
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -163,9 +148,15 @@ export function RecruiterWorkspaceScreen() {
     void listSearches()
       .then(setSearches)
       .catch(() => {
-        // The sidebar is a convenience; the open search keeps working without it.
+        // The rail recents are a convenience; the open search keeps working without them.
       })
+      .finally(() => setSearchesLoaded(true))
   }
+
+  const closeRole = (id: string) => setOverrides((current) => setOverride(current, id, 'closed'))
+  const reopenRole = (id: string) => setOverrides((current) => setOverride(current, id, 'open'))
+
+  const recents = useMemo(() => recentRoles(searches, overrides), [searches, overrides])
 
   const setActiveSearch = (next: ActiveSearch | null) => {
     setActive(next)
@@ -254,9 +245,6 @@ export function RecruiterWorkspaceScreen() {
     setSearchId(null)
     setRoleMessage(null)
     setSearchNotice(null)
-    // A fresh workspace context (new role opened, or back to composing) never starts pre-collapsed from
-    // whatever the previous role left behind.
-    setSidebarCollapsed(false)
   }
 
   // The brief and boundary a search came from, resumed read only so the boundary can still be edited and re-confirmed.
@@ -341,14 +329,6 @@ export function RecruiterWorkspaceScreen() {
     }
   }
 
-  const toggleSidebarPin = () => {
-    setSidebarPinned((current) => {
-      const next = !current
-      writeJson(SIDEBAR_PIN_KEY, next)
-      return next
-    })
-  }
-
   const handleSignOut = () => {
     logout().finally(() => window.location.reload())
   }
@@ -414,6 +394,21 @@ export function RecruiterWorkspaceScreen() {
   }, [])
 
   useEffect(() => () => { stopPolling(); stopIntakePolling() }, [])
+
+  // "n" starts a new search from anywhere — unless the recruiter is typing or using a modifier chord.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'n' && event.key !== 'N') return
+      if (event.metaKey || event.ctrlKey || event.altKey) return
+      const target = event.target as HTMLElement | null
+      if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) return
+      event.preventDefault()
+      handleStartNewSearch()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // RecruiterAI understands the role before searching: the title, the description and the Search Boundary go to the
   // backend, which reads the role once and returns the brief. Nothing is searched yet.
@@ -714,16 +709,33 @@ export function RecruiterWorkspaceScreen() {
     setStep(stage)
   }
 
+  const shellProps = {
+    active: globalDestination,
+    onHome: handleGoHome,
+    onSettings: handleGoSettings,
+    recruiterName: RECRUITER_NAME,
+    onSignOut: handleSignOut,
+    recents,
+    activeId: active?.id ?? null,
+    newActive: active === null && step !== 'home' && step !== 'settings',
+    onNew: handleStartNewSearch,
+    onOpenRole: (item: Pick<SearchListItem, 'kind' | 'id'>) => void openSearch(item),
+  }
+
   if (step === 'home') {
     return (
-      <GlobalShell active={globalDestination} onHome={handleGoHome} onSettings={handleGoSettings} recruiterName={RECRUITER_NAME} onSignOut={handleSignOut}>
+      <GlobalShell {...shellProps}>
         <HomeScreen
           items={searches}
+          overrides={overrides}
+          loading={!searchesLoaded}
           recruiterName={RECRUITER_NAME}
           onOpen={(item) => void openSearch(item)}
           onNew={handleStartNewSearch}
           onPause={(id) => void handleRoleActionFromHome(id, 'pause')}
           onResume={(id) => void handleRoleActionFromHome(id, 'resume')}
+          onClose={closeRole}
+          onReopen={reopenRole}
         />
       </GlobalShell>
     )
@@ -731,25 +743,14 @@ export function RecruiterWorkspaceScreen() {
 
   if (step === 'settings') {
     return (
-      <GlobalShell active={globalDestination} onHome={handleGoHome} onSettings={handleGoSettings} recruiterName={RECRUITER_NAME} onSignOut={handleSignOut}>
+      <GlobalShell {...shellProps}>
         <SettingsScreen recruiterName={RECRUITER_NAME} />
       </GlobalShell>
     )
   }
 
   return (
-    <GlobalShell active={globalDestination} onHome={handleGoHome} onSettings={handleGoSettings} recruiterName={RECRUITER_NAME} onSignOut={handleSignOut}>
-    <div className="app-shell">
-      <SearchSidebar
-        items={searches}
-        active={active}
-        onSelect={(item) => void openSearch(item)}
-        onNew={handleStartNewSearch}
-        isNewActive={active === null}
-        collapsed={sidebarCollapsed}
-        glued={sidebarPinned}
-        onToggleGlue={toggleSidebarPin}
-      />
+    <GlobalShell {...shellProps}>
       <main className="workspace">
         <div className={`workspace__content${step === 'review' ? ' workspace__content--wide' : ''}`}>
           {step === 'jd' || step === 'brief' || step === 'review' ? (
@@ -757,17 +758,6 @@ export function RecruiterWorkspaceScreen() {
           ) : null}
           <header className="workspace__greeting">
             <div className="workspace__greeting-row">
-              {step === 'review' && sidebarCollapsed ? (
-                <button
-                  type="button"
-                  className="workspace__reopen-sidebar"
-                  onClick={toggleSidebarPin}
-                  aria-label="Show roles"
-                  title="Show roles"
-                >
-                  <Menu size={16} aria-hidden="true" />
-                </button>
-              ) : null}
               {step === 'review' ? (
                 <div>
                   <h1>{roleTitle}</h1>
@@ -933,12 +923,11 @@ export function RecruiterWorkspaceScreen() {
               onSearchResponse={handleSearchResponse}
               roleMessage={roleMessage}
               searchNotice={searchNotice}
-              onSelectionChange={setCandidateOpen}
+              onSelectionChange={() => {}}
             />
           ) : null}
         </div>
       </main>
-    </div>
     </GlobalShell>
   )
 }

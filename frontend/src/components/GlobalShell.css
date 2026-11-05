@@ -1,7 +1,6 @@
-/* The outermost product shell — brand, Home, Settings, account. Always
-   present, always the same width, never collapses: infrastructure, not a
-   working surface. Role navigation (SearchSidebar in role-nav mode) and the
-   workspace itself render inside .global-shell__body. */
+/* The single product rail — brand, Home, Settings, New search, recent roles,
+   account. The only sidebar in the product; the workspace renders directly in
+   .global-shell__body beside it. */
 
 .global-shell {
   display: flex;
@@ -14,8 +13,8 @@
   position: sticky;
   top: 0;
   align-self: flex-start;
-  flex: 0 0 176px;
-  width: 176px;
+  flex: 0 0 244px;
+  width: 244px;
   height: 100vh;
   box-sizing: border-box;
   display: flex;
@@ -24,12 +23,21 @@
   padding: 18px 12px;
   background: var(--color-sidebar-bg);
   border-right: 1px solid var(--color-border);
+  overflow: hidden;
 }
 
 .global-nav__brand {
   display: flex;
   align-items: center;
-  padding: 4px 8px 18px;
+  gap: 9px;
+  padding: 4px 8px 16px;
+}
+
+.global-nav__wordmark {
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--color-primary-text);
 }
 
 .global-nav__item {
@@ -60,8 +68,121 @@
   color: var(--color-accent);
 }
 
+.global-nav__new {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: 38px;
+  margin-top: 12px;
+  padding: 0 12px;
+  border: 1px solid var(--color-accent);
+  border-radius: 9px;
+  background: var(--color-accent);
+  color: #fff;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity var(--motion-fast, 0.15s) ease;
+}
+
+.global-nav__new:hover,
+.global-nav__new.is-active {
+  opacity: 0.9;
+}
+
+.global-nav__recents {
+  margin-top: 18px;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.global-nav__label {
+  margin: 0 8px 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+}
+
+.global-nav__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.global-nav__role {
+  display: block;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  color: var(--color-secondary-text);
+}
+
+.global-nav__role:hover {
+  background: var(--color-surface);
+}
+
+.global-nav__role.is-active {
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.global-nav__role-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.global-nav__role-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.global-nav__role-sub {
+  display: block;
+  margin-top: 1px;
+  font-size: 11.5px;
+  color: var(--color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.global-nav__role-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.global-nav__role-dot.is-live {
+  background: var(--color-signal, var(--color-accent));
+}
+
+.global-nav__role-dot.is-paused {
+  background: var(--color-faint);
+}
+
 .global-nav__spacer {
   flex: 1 1 auto;
+  min-height: 8px;
 }
 
 .global-shell__body {
@@ -70,19 +191,25 @@
   width: auto;
 }
 
-/* A small, unobtrusive fallback brand mark for a context that isn't nested
-   inside .global-shell (there is none today — the shell is always present
-   — but kept as the one place this treatment is defined, per the
-   requirement that RecruiterAI stay identifiable even if a future screen
-   renders outside the shell). */
 .global-brand-fallback {
   display: inline-flex;
   align-items: center;
   opacity: 0.85;
 }
 
-/* Narrow screens: the vertical rail would eat ~45% of a phone's width, so it
-   becomes a compact horizontal top bar and the body takes the full width. */
+/* Medium widths: keep the rail but drop the recent-role subtitles so it stays lean. */
+@media (max-width: 1100px) {
+  .global-nav {
+    flex-basis: 212px;
+    width: 212px;
+  }
+
+  .global-nav__role-sub {
+    display: none;
+  }
+}
+
+/* Narrow screens: the vertical rail becomes a compact horizontal top bar. */
 @media (max-width: 640px) {
   .global-shell {
     flex-direction: column;
@@ -105,10 +232,25 @@
     padding: 0 8px 0 0;
   }
 
+  .global-nav__wordmark {
+    display: none;
+  }
+
   .global-nav__item {
     width: auto;
     min-height: 44px;
     padding: 0 12px;
     white-space: nowrap;
+  }
+
+  .global-nav__new {
+    width: auto;
+    margin-top: 0;
+    white-space: nowrap;
+  }
+
+  /* Recents live on Home at phone width, not in a horizontal scrolling bar. */
+  .global-nav__recents {
+    display: none;
   }
 }

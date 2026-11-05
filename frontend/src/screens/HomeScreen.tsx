@@ -1,41 +1,26 @@
-// Home — the landing screen, decluttered to the mockup: a short welcome, one
-// "Start a new search" call, then a card grid of recent searches (active first,
-// then drafts). No tabs / filter pills / table header anymore. Only the row
-// actions actually wired to a backend call (Open, Pause, Resume, Continue) —
-// no faked Archive/Rename/Delete. Account access lives in the global shell.
+// Home — live work only. A short welcome, a New-search call, then the Active
+// roles grouped by where attention is owed (review → searching → paused →
+// drafts). Completed work lives behind its own tab, never the main grid.
+// Status is the role lifecycle (roleLifecycle.ts), never the pipeline flag.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { MoreHorizontal } from 'lucide-react'
 import type { SearchListItem } from '../types'
+import {
+  activitySummary,
+  displayTitle,
+  groupActive,
+  partitionRoles,
+  roleStatus,
+  timeAgo,
+  type Overrides,
+} from '../models/roleLifecycle'
+import { sidebarSubtitle } from '../models/roleWorkspace'
 import './HomeScreen.css'
 
 function getGreeting(hour: number): string {
   if (hour < 12) return 'Good morning'
   if (hour < 18) return 'Good afternoon'
   return 'Good evening'
-}
-
-// A few legacy searches carry a JD's own heading line (literally "Job
-// Description") as their title — a real fallback, never a role name. Recognized
-// narrowly, by exact generic phrasing only; never fabricates a title.
-const GENERIC_TITLES = new Set(['job description', 'jd', 'untitled', ''])
-
-function displayTitle(title: string): string {
-  return GENERIC_TITLES.has(title.trim().toLowerCase()) ? 'Untitled search' : title
-}
-
-// Honest, count-derived activity text — the API carries no per-role activity
-// log, so this only shows what SearchListItem actually provides.
-function activeActivity(item: SearchListItem): { text: string; green: boolean } {
-  if (item.role_status === 'paused') return { text: 'Paused', green: false }
-  if (item.to_review_count !== null) return { text: `${item.to_review_count} to review`, green: item.role_status === 'searching' }
-  if (item.new_count > 0) return { text: `${item.new_count} new`, green: item.role_status === 'searching' }
-  return { text: item.status === 'complete' ? 'Complete' : '—', green: false }
-}
-
-function draftActivity(status: string | null): string {
-  if (status === 'ready') return 'Brief ready to confirm'
-  if (status === 'needs_clarification') return 'Clarifying the role'
-  return 'Finish the brief'
 }
 
 function RowMenu({ actions, onClose }: { actions: Array<{ label: string; onClick: () => void }>; onClose: () => void }) {
@@ -74,50 +59,61 @@ function RowMenu({ actions, onClose }: { actions: Array<{ label: string; onClick
   )
 }
 
-function SearchCard({
+type CardActions = {
+  onOpen: (item: Pick<SearchListItem, 'kind' | 'id'>) => void
+  onPause: (id: string) => void
+  onResume: (id: string) => void
+  onClose: (id: string) => void
+  onReopen: (id: string) => void
+}
+
+function RoleCard({
   item,
-  onOpen,
-  onPause,
-  onResume,
+  completed,
+  actions,
   openMenu,
   setOpenMenu,
 }: {
   item: SearchListItem
-  onOpen: (item: Pick<SearchListItem, 'kind' | 'id'>) => void
-  onPause: (id: string) => void
-  onResume: (id: string) => void
+  completed: boolean
+  actions: CardActions
   openMenu: boolean
   setOpenMenu: (open: boolean) => void
 }) {
-  const isDraft = item.kind === 'draft'
-  const paused = item.role_status === 'paused'
-  const meta = [item.company, item.place].filter(Boolean).join(' · ') || (isDraft ? 'Not yet searched' : '—')
-  const activity = isDraft ? draftActivity(item.status) : activeActivity(item)
-  const actions = isDraft
-    ? [{ label: 'Continue', onClick: () => onOpen(item) }]
-    : paused
-      ? [{ label: 'Open', onClick: () => onOpen(item) }, { label: 'Resume', onClick: () => onResume(item.id) }]
-      : [{ label: 'Open', onClick: () => onOpen(item) }, { label: 'Pause', onClick: () => onPause(item.id) }]
+  const status = roleStatus(item)
+  const meta = sidebarSubtitle(item) || (item.kind === 'draft' ? 'Not yet searched' : '—')
+  const foot = completed ? { text: `Closed · last active ${timeAgo(item.updated_at)}`, emphasis: false } : activitySummary(item)
+
+  const menuActions = completed
+    ? [{ label: 'Open', onClick: () => actions.onOpen(item) }, { label: 'Reopen', onClick: () => actions.onReopen(item.id) }]
+    : item.kind === 'draft'
+      ? [{ label: 'Continue', onClick: () => actions.onOpen(item) }, { label: 'Close', onClick: () => actions.onClose(item.id) }]
+      : status === 'paused'
+        ? [
+            { label: 'Open', onClick: () => actions.onOpen(item) },
+            { label: 'Resume', onClick: () => actions.onResume(item.id) },
+            { label: 'Close', onClick: () => actions.onClose(item.id) },
+          ]
+        : [
+            { label: 'Open', onClick: () => actions.onOpen(item) },
+            { label: 'Pause', onClick: () => actions.onPause(item.id) },
+            { label: 'Close', onClick: () => actions.onClose(item.id) },
+          ]
+
+  const badgeClass = completed ? 'complete' : status
+  const badgeText = completed ? 'Closed' : status === 'searching' ? 'Searching' : status === 'paused' ? 'Paused' : 'Draft'
 
   return (
-    <div className="home__row" role="button" tabIndex={0} onClick={() => onOpen(item)}>
+    <div className="home__row" role="button" tabIndex={0} onClick={() => actions.onOpen(item)}>
       <div className="home__rc-top">
         <span className="home__rc-name">{displayTitle(item.title)}</span>
-        {isDraft ? (
-          <span className="home__status home__status--draft">Draft</span>
-        ) : paused ? (
-          <span className="home__status home__status--paused">Paused</span>
-        ) : (
-          <span className="home__status home__status--searching">
-            <span className="home__status-dot" aria-hidden="true" />
-            Searching
-          </span>
-        )}
+        <span className={`home__status home__status--${badgeClass}`}>
+          {!completed && status === 'searching' ? <span className="home__status-dot" aria-hidden="true" /> : null}
+          {badgeText}
+        </span>
       </div>
       <p className="home__rc-meta">{meta}</p>
-      <p className={`home__rc-foot${!isDraft && typeof activity === 'object' && activity.green ? ' is-green' : ''}`}>
-        {typeof activity === 'string' ? activity : activity.text}
-      </p>
+      <p className={`home__rc-foot${foot.emphasis ? ' is-green' : ''}`}>{foot.text}</p>
 
       <div className="home__cell--menu">
         <button
@@ -133,7 +129,7 @@ function SearchCard({
         </button>
         {openMenu ? (
           <div onClick={(event) => event.stopPropagation()}>
-            <RowMenu onClose={() => setOpenMenu(false)} actions={actions} />
+            <RowMenu onClose={() => setOpenMenu(false)} actions={menuActions} />
           </div>
         ) : null}
       </div>
@@ -143,25 +139,45 @@ function SearchCard({
 
 export function HomeScreen({
   items,
+  overrides,
+  loading,
   recruiterName,
   onOpen,
   onNew,
   onPause,
   onResume,
+  onClose,
+  onReopen,
 }: {
   items: SearchListItem[]
+  overrides: Overrides
+  loading: boolean
   recruiterName: string
   onOpen: (item: Pick<SearchListItem, 'kind' | 'id'>) => void
   onNew: () => void
   onPause: (id: string) => void
   onResume: (id: string) => void
+  onClose: (id: string) => void
+  onReopen: (id: string) => void
 }) {
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [view, setView] = useState<'active' | 'completed'>('active')
+  const [openMenuKey, setOpenMenuKey] = useState<string | null>(null)
 
-  // Active searches first, then drafts — the order the cards read in.
-  const ordered = useMemo(
-    () => [...items.filter((i) => i.kind === 'search'), ...items.filter((i) => i.kind === 'draft')],
-    [items],
+  const { active, completed } = useMemo(() => partitionRoles(items, overrides), [items, overrides])
+  const groups = useMemo(() => groupActive(active), [active])
+  const actions: CardActions = { onOpen, onPause, onResume, onClose, onReopen }
+
+  const keyOf = (item: SearchListItem) => `${item.kind}:${item.id}`
+
+  const renderCard = (item: SearchListItem, inCompleted: boolean) => (
+    <RoleCard
+      key={keyOf(item)}
+      item={item}
+      completed={inCompleted}
+      actions={actions}
+      openMenu={openMenuKey === keyOf(item)}
+      setOpenMenu={(open) => setOpenMenuKey(open ? keyOf(item) : null)}
+    />
   )
 
   return (
@@ -181,28 +197,48 @@ export function HomeScreen({
         </span>
       </div>
 
-      {ordered.length === 0 ? (
+      <div className="home__tabs" role="tablist" aria-label="Searches">
+        <button type="button" role="tab" aria-selected={view === 'active'} className={`home__tab${view === 'active' ? ' is-active' : ''}`} onClick={() => setView('active')}>
+          Active <span className="home__tab-count">{active.length}</span>
+        </button>
+        <button type="button" role="tab" aria-selected={view === 'completed'} className={`home__tab${view === 'completed' ? ' is-active' : ''}`} onClick={() => setView('completed')}>
+          Completed <span className="home__tab-count">{completed.length}</span>
+        </button>
+      </div>
+
+      {loading && items.length === 0 ? (
+        <div className="home__grid">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="home__row home__row--skeleton" aria-hidden="true">
+              <span className="home__sk home__sk--title" />
+              <span className="home__sk home__sk--meta" />
+              <span className="home__sk home__sk--foot" />
+            </div>
+          ))}
+        </div>
+      ) : view === 'active' ? (
+        active.length === 0 ? (
+          <div className="home__empty">
+            <p className="home__empty-title">No active searches</p>
+            <p className="home__empty-body">Start a new search to find candidates. Completed work moves to the Completed tab.</p>
+          </div>
+        ) : (
+          groups.map((group) => (
+            <section key={group.key} className="home__group" aria-label={group.label}>
+              <h2 className="home__group-title">
+                {group.label} <span className="home__group-count">{group.items.length}</span>
+              </h2>
+              <div className="home__grid">{group.items.map((item) => renderCard(item, false))}</div>
+            </section>
+          ))
+        )
+      ) : completed.length === 0 ? (
         <div className="home__empty">
-          <p className="home__empty-title">No searches yet</p>
-          <p className="home__empty-body">Start a new search to find your first candidates.</p>
+          <p className="home__empty-title">Nothing completed yet</p>
+          <p className="home__empty-body">Roles you Close — or that stay idle for 14 days — land here, ready to reopen anytime.</p>
         </div>
       ) : (
-        <>
-          <h2 className="home__recent">Recent searches</h2>
-          <div className="home__grid">
-            {ordered.map((item) => (
-              <SearchCard
-                key={`${item.kind}:${item.id}`}
-                item={item}
-                onOpen={onOpen}
-                onPause={onPause}
-                onResume={onResume}
-                openMenu={openMenuId === `${item.kind}:${item.id}`}
-                setOpenMenu={(open) => setOpenMenuId(open ? `${item.kind}:${item.id}` : null)}
-              />
-            ))}
-          </div>
-        </>
+        <div className="home__grid">{completed.map((item) => renderCard(item, true))}</div>
       )}
     </div>
   )

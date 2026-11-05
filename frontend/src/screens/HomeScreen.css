@@ -64,13 +64,55 @@
   color: var(--color-muted);
 }
 
-.home__recent {
-  margin: 0 0 12px;
+.home__tabs {
+  display: flex;
+  align-items: baseline;
+  gap: 22px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.home__tab {
+  border: none;
+  background: none;
+  padding: 0 0 10px;
+  margin-bottom: -1px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-muted);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+}
+
+.home__tab.is-active {
+  color: var(--color-primary-text);
+  border-bottom-color: var(--color-accent);
+}
+
+.home__tab-count {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.home__group {
+  margin-bottom: 26px;
+}
+
+.home__group-title {
+  margin: 0 0 11px;
   font-size: 12px;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   font-weight: 700;
   color: var(--color-faint);
+}
+
+.home__group-count {
+  color: var(--color-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .home__grid {
@@ -149,10 +191,50 @@
 }
 
 .home__status--paused,
-.home__status--draft {
+.home__status--draft,
+.home__status--complete {
   color: var(--color-muted);
   background: var(--color-sidebar-bg, var(--color-surface));
   border: 1px solid var(--color-border);
+}
+
+/* Skeleton loaders while the first search list loads. */
+.home__row--skeleton {
+  cursor: default;
+  pointer-events: none;
+}
+
+.home__row--skeleton:hover {
+  border-color: var(--color-border);
+}
+
+.home__sk {
+  display: block;
+  border-radius: 6px;
+  background: var(--color-sidebar-bg, var(--color-surface));
+  animation: home-sk-pulse 1.3s ease-in-out infinite;
+}
+
+.home__sk--title {
+  width: 70%;
+  height: 14px;
+}
+
+.home__sk--meta {
+  width: 50%;
+  height: 11px;
+  margin-top: 10px;
+}
+
+.home__sk--foot {
+  width: 40%;
+  height: 11px;
+  margin-top: 16px;
+}
+
+@keyframes home-sk-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
 }
 
 .home__cell--menu {
