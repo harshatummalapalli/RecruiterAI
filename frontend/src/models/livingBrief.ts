@@ -137,6 +137,9 @@ export function recruiterNotes(result: IntakeResult): string[] {
 
 export function formatBoundaryLocation(boundary: SearchBoundary): string {
   if (boundary.work_mode === 'onsite' || boundary.work_mode === 'hybrid') {
+    // Multi-city (several named cities) takes precedence over the single city + radius.
+    const cities = (boundary.cities ?? []).map((c) => c.trim()).filter(Boolean)
+    if (cities.length) return [cities.join(', '), boundary.country].filter(Boolean).join(', ')
     const place = [boundary.city, boundary.state, boundary.country].filter(Boolean).join(', ')
     return boundary.radius_miles ? `${place} · ${boundary.radius_miles} mi radius` : place
   }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Menu } from 'lucide-react'
+import { Lock, Menu } from 'lucide-react'
 import {
   runCandidateSearch,
   loadPersistedSearch,
@@ -23,9 +23,11 @@ import { CandidateReviewScreen } from './CandidateReviewScreen'
 import { HomeScreen } from './HomeScreen'
 import { LivingBrief } from './LivingBrief'
 import { SettingsScreen } from './SettingsScreen'
+import { UnderstandScreen } from './UnderstandScreen'
 import { SearchBoundaryForm } from './SearchBoundaryForm'
 import { GlobalShell, type GlobalDestination } from '../components/GlobalShell'
-import { SearchSidebar, type RoleNavInfo } from '../components/SearchSidebar'
+import { SearchSidebar } from '../components/SearchSidebar'
+import { StepPlayer, type Stage } from '../components/StepPlayer'
 import { createEmptySearchBoundary, isSearchBoundaryComplete, type SearchBoundary } from '../models/searchBoundary'
 import type { SearchListItem, SearchResponse } from '../types'
 import './RecruiterWorkspaceScreen.css'
@@ -702,28 +704,15 @@ export function RecruiterWorkspaceScreen() {
 
   const globalDestination: GlobalDestination = step === 'home' ? 'home' : step === 'settings' ? 'settings' : 'role'
 
-  // Role nav ("where am I inside this hiring mandate") once the role's own
-  // reading exists — Understanding is always reachable; Candidates only
-  // once a search has actually run (nothing to show before that).
   const roleTitle = posted || identity || 'Untitled role'
-  const roleNavInfo: RoleNavInfo | undefined =
-    intakeResult && (step === 'brief' || step === 'review')
-      ? {
-          title: roleTitle,
-          statusLabel: isRole
-            ? roleStatusLabel
-            : step === 'review'
-              ? (searchState === 'searching' ? 'Searching' : searchState === 'done' ? 'Complete' : 'Draft')
-              : 'Draft',
-          company: searchResponse?.role?.label?.company ?? '',
-          section: step === 'brief' ? 'understanding' : 'candidates',
-          candidatesEnabled: Boolean(searchResponse),
-          onSelectUnderstanding: () => setStep('brief'),
-          onSelectCandidates: () => {
-            if (searchResponse) setStep('review')
-          },
-        }
-      : undefined
+  // Stage navigation now lives in the top StepPlayer (Define · Discover · Decide),
+  // so the sidebar stays the saved-search list. Discover is reachable once the role
+  // has been read; Decide once a search has run.
+  const navStage = (stage: Stage) => {
+    if (stage === 'brief' && !intakeResult) return
+    if (stage === 'review' && !searchResponse) return
+    setStep(stage)
+  }
 
   if (step === 'home') {
     return (
@@ -760,10 +749,12 @@ export function RecruiterWorkspaceScreen() {
         collapsed={sidebarCollapsed}
         glued={sidebarPinned}
         onToggleGlue={toggleSidebarPin}
-        roleNav={roleNavInfo}
       />
       <main className="workspace">
         <div className={`workspace__content${step === 'review' ? ' workspace__content--wide' : ''}`}>
+          {step === 'jd' || step === 'brief' || step === 'review' ? (
+            <StepPlayer step={step} onStep={navStage} canDiscover={Boolean(intakeResult)} canDecide={Boolean(searchResponse)} />
+          ) : null}
           <header className="workspace__greeting">
             <div className="workspace__greeting-row">
               {step === 'review' && sidebarCollapsed ? (
@@ -790,6 +781,20 @@ export function RecruiterWorkspaceScreen() {
                     {workspaceSubtitle}
                   </p>
                 </div>
+              ) : step === 'jd' ? (
+                parseState === 'parsing' ? null : (
+                  <div className="workspace__compose-head">
+                    <p className="workspace__eyebrow">New search</p>
+                    <h1 className="workspace__display">Let's write the brief.</h1>
+                    <p className="workspace__lead">Give me the role and the lines I must not cross — I'll do the rest.</p>
+                  </div>
+                )
+              ) : step === 'brief' ? (
+                <div className="workspace__compose-head">
+                  <p className="workspace__eyebrow">Discover</p>
+                  <h1 className="workspace__display">Here's how I read the role.</h1>
+                  <p className="workspace__lead">Check it, correct anything I got wrong, then search.</p>
+                </div>
               ) : (
                 <div>
                   <h1>{greeting}</h1>
@@ -799,12 +804,16 @@ export function RecruiterWorkspaceScreen() {
             </div>
           </header>
 
-          {step === 'jd' ? (
+          {step === 'jd' && parseState === 'parsing' ? (
+            <UnderstandScreen jd={jdText} title={postedTitle} boundary={boundary} />
+          ) : null}
+
+          {step === 'jd' && parseState !== 'parsing' ? (
             <div className="workspace__grid workspace__grid--single">
               <section className="workspace__composer" aria-label="Job description composer">
                 <div className="brief-field workspace__title-field">
                   <label className="brief-field__label" htmlFor="posted-title">
-                    Job Title
+                    The role
                   </label>
                   <input
                     id="posted-title"
@@ -815,20 +824,32 @@ export function RecruiterWorkspaceScreen() {
                     placeholder="e.g. AI Engineer"
                     onChange={(event) => setPostedTitle(event.target.value)}
                   />
-                  <span className="boundary-form__caption">The title you're hiring for.</span>
                 </div>
 
-                <textarea
-                  className="workspace__editor"
-                  value={jdText}
-                  onChange={(event) => setJdText(event.target.value)}
-                  placeholder="What are you hiring for? Paste the full job description, rough hiring-manager notes, or just describe the role in your own words."
-                  disabled={isBusy}
-                  aria-label="Job description"
-                  rows={14}
-                />
+                <div className="brief-field">
+                  <label className="brief-field__label" htmlFor="jd-text">
+                    The description <span className="workspace__label-note">· I read this to learn what to look for</span>
+                  </label>
+                  <textarea
+                    id="jd-text"
+                    className="workspace__editor"
+                    value={jdText}
+                    onChange={(event) => setJdText(event.target.value)}
+                    placeholder="Paste the full job description, rough hiring-manager notes, or just describe the role in your own words."
+                    disabled={isBusy}
+                    rows={12}
+                  />
+                </div>
 
-                <SearchBoundaryForm boundary={boundary} onChange={(updater) => setBoundary(updater)} disabled={isBusy} />
+                <div className="workspace__fence">
+                  <div className="workspace__fence-cap">
+                    <Lock size={14} aria-hidden="true" /> The non-negotiables
+                  </div>
+                  <p className="workspace__fence-hint">
+                    Hard filters, enforced at search time. I set these from what you choose here — not from the description — so only people inside them are ever pulled.
+                  </p>
+                  <SearchBoundaryForm boundary={boundary} onChange={(updater) => setBoundary(updater)} disabled={isBusy} />
+                </div>
 
                 <div className="workspace__composer-foot">
                   <span className="workspace__char-count">{jdText.length > 0 ? `${jdText.length.toLocaleString()} characters` : ''}</span>
@@ -854,7 +875,7 @@ export function RecruiterWorkspaceScreen() {
                           <span>Reading the role… this takes ~30s</span>
                         </>
                       ) : (
-                        <span>Build brief</span>
+                        <span>Read &amp; plan the search</span>
                       )}
                     </button>
                   </div>

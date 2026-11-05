@@ -208,7 +208,7 @@
 }
 
 .record-coverage strong {
-  color: var(--color-accent, #15803d);
+  color: var(--color-signal-ink, #c0381f);
 }
 
 .record-ledger__all {

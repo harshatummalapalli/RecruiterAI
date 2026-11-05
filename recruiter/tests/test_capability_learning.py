@@ -91,6 +91,18 @@ def test_generic_base_title_keeps_capability_when_requirements_corroborate():
     assert len(ml) == 1 and ml[0].label == "ML Platform"  # this role really is ML
 
 
+def test_empty_normalized_identity_never_matches_a_bad_row():
+    # "Senior Manager" normalises to "" (all seniority words). A corrupt "" row (as
+    # once held "Data and AI Platforms") must never be applied to such a role.
+    assert normalise_key("Senior Manager") == ""
+    mem = InMemoryCapabilityMemory()
+    mem.put("acme", LearnedCapability("", "Data and AI Platforms", ("Spark", "ETL"), "Data"))
+    calls = []
+    proposer = CapabilityProposer(mem, llm_proposer=lambda *a: calls.append(1) or None)
+    assert proposer.propose("acme", "Senior Manager") == ()
+    assert calls == []  # nothing to learn from an empty key — no LLM call either
+
+
 def test_specific_identity_still_applies_its_capability_without_corroboration():
     # "ai engineer" / "salesforce developer" name a domain, so they are NOT generic
     # base titles — their learned capability applies directly (existing behaviour).

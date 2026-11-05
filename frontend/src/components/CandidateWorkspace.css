@@ -152,9 +152,9 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 12px 14px;
+  padding: 15px 16px;
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--color-surface);
   cursor: default;
 }
@@ -185,8 +185,8 @@
 
 .ws-avatar {
   flex: none;
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   object-fit: cover;
   background: var(--color-preview-bg);
@@ -197,9 +197,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-secondary-text);
+  font-size: 15px;
+  font-weight: 700;
+  border-color: transparent;
+  background: var(--color-signal-soft);
+  color: var(--color-signal-ink);
 }
 
 .ws-card__identity {
@@ -261,16 +263,16 @@
 }
 
 .ws-dot {
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
-  border: 1.5px solid var(--color-faint);
+  border: 2px solid var(--color-faint);
   background: transparent;
 }
 
 .ws-dot.is-shown {
-  border-color: var(--color-accent);
-  background: var(--color-accent);
+  border-color: var(--color-signal);
+  background: var(--color-signal);
 }
 
 /* Roles with many core requirements: smaller dots and a tighter gap, wrapping rather than dropping any. */

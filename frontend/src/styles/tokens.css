@@ -8,27 +8,31 @@
    ThemeProvider (src/theme/ThemeProvider.tsx) is the only thing that ever sets/removes data-theme. */
 
 :root {
-  /* Neutral light background — the previous warm-ivory tint (#f7f5f0 and its family) is retired per the frozen
-     visual direction; this and the surface/border family below are now hue-neutral gray, not cream. */
-  --color-bg: #f5f5f7;
+  /* Midnight & Coral: cool near-white neutrals with a slight navy bias. */
+  --color-bg: #fbfbfd;
   --color-surface: #ffffff;
   --color-surface-raised: #ffffff;
-  --color-preview-bg: #fafafb;
-  --color-sidebar-bg: #eeeef0;
-  --color-border: #d8d8dc;
-  --color-border-subtle: rgba(29, 29, 31, 0.06);
-  --color-primary-text: #1d1d1f;
-  --color-secondary-text: #475569;
-  --color-muted: #64748b;
-  --color-faint: #94a3b8;
-  --color-placeholder: #a8a29e;
-  /* Semantic green — frozen direction: #2F7D5B in light. Used only for evidence/searching/shortlisted signal,
-     never as decorative branding — see the components that consume --color-accent. */
-  --color-accent: #2f7d5b;
-  --color-accent-hover: #256b4c;
-  --color-accent-subtle: rgba(47, 125, 91, 0.1);
-  --color-focus-ring: rgba(47, 125, 91, 0.18);
-  --color-focus: #2f7d5b;
+  --color-preview-bg: #f5f6fa;
+  --color-sidebar-bg: #f0f2f8;
+  --color-border: #e5e8f1;
+  --color-border-subtle: rgba(24, 34, 58, 0.07);
+  --color-primary-text: #18223a;
+  --color-secondary-text: #46506a;
+  --color-muted: #68718a;
+  --color-faint: #99a1b6;
+  --color-placeholder: #9aa1b5;
+  /* Primary = midnight navy: brand, primary actions, structure (the non-negotiables fence), links,
+     active states. This is what --color-accent names across the components. */
+  --color-accent: #16203a;
+  --color-accent-hover: #0f1830;
+  --color-accent-subtle: rgba(22, 32, 58, 0.08);
+  --color-focus-ring: rgba(22, 32, 58, 0.2);
+  --color-focus: #16203a;
+  /* Signal = coral: used sparingly for what needs the eye — evidence dots, the live/searching state,
+     candidate avatars, the reserve reveal. NOT a primary action color. */
+  --color-signal: #ff6a4d;
+  --color-signal-soft: #ffe9e3;
+  --color-signal-ink: #c0381f;
   --color-success: #15803d;
   --color-error: #b91c1c;
   --color-danger: #b91c1c;
@@ -43,25 +47,27 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --color-bg: #000000;
-    --color-surface: #121212;
-    --color-surface-raised: #1a1a1a;
-    --color-preview-bg: #0d0d0d;
-    --color-sidebar-bg: #0a0a0a;
-    --color-border: #2a2a2a;
+    --color-bg: #0f1420;
+    --color-surface: #1a2230;
+    --color-surface-raised: #222c3d;
+    --color-preview-bg: #151d2b;
+    --color-sidebar-bg: #121826;
+    --color-border: #2c3750;
     --color-border-subtle: rgba(255, 255, 255, 0.08);
-    --color-primary-text: #f5f3ee;
-    --color-secondary-text: #b8b5ad;
-    --color-muted: #8f8b82;
-    --color-faint: #6b675f;
-    --color-placeholder: #6b675f;
-    /* Frozen direction's dark-mode green — lighter than the light-mode #2F7D5B so it reads against true black
-       without going neon. */
-    --color-accent: #5db88a;
-    --color-accent-hover: #72c79b;
-    --color-accent-subtle: rgba(93, 184, 138, 0.16);
-    --color-focus-ring: rgba(93, 184, 138, 0.28);
-    --color-focus: #5db88a;
+    --color-primary-text: #eef1f8;
+    --color-secondary-text: #bcc4d8;
+    --color-muted: #8d97b0;
+    --color-faint: #68728c;
+    --color-placeholder: #68728c;
+    /* Navy lightens to a slate-indigo so it reads as text and structure against the dark canvas. */
+    --color-accent: #93a7e6;
+    --color-accent-hover: #abbcf0;
+    --color-accent-subtle: rgba(147, 167, 230, 0.18);
+    --color-focus-ring: rgba(147, 167, 230, 0.32);
+    --color-focus: #93a7e6;
+    --color-signal: #ff7a5f;
+    --color-signal-soft: #3d241c;
+    --color-signal-ink: #ffb8a6;
     --color-success: #4ade80;
     --color-error: #f87171;
     --color-danger: #f87171;
@@ -73,23 +79,26 @@
 }
 
 :root[data-theme='dark'] {
-  --color-bg: #000000;
-  --color-surface: #121212;
-  --color-surface-raised: #1a1a1a;
-  --color-preview-bg: #0d0d0d;
-  --color-sidebar-bg: #0a0a0a;
-  --color-border: #2a2a2a;
+  --color-bg: #0f1420;
+  --color-surface: #1a2230;
+  --color-surface-raised: #222c3d;
+  --color-preview-bg: #151d2b;
+  --color-sidebar-bg: #121826;
+  --color-border: #2c3750;
   --color-border-subtle: rgba(255, 255, 255, 0.08);
-  --color-primary-text: #f5f3ee;
-  --color-secondary-text: #b8b5ad;
-  --color-muted: #8f8b82;
-  --color-faint: #6b675f;
-  --color-placeholder: #6b675f;
-  --color-accent: #5db88a;
-  --color-accent-hover: #72c79b;
-  --color-accent-subtle: rgba(93, 184, 138, 0.16);
-  --color-focus-ring: rgba(93, 184, 138, 0.28);
-  --color-focus: #5db88a;
+  --color-primary-text: #eef1f8;
+  --color-secondary-text: #bcc4d8;
+  --color-muted: #8d97b0;
+  --color-faint: #68728c;
+  --color-placeholder: #68728c;
+  --color-accent: #93a7e6;
+  --color-accent-hover: #abbcf0;
+  --color-accent-subtle: rgba(147, 167, 230, 0.18);
+  --color-focus-ring: rgba(147, 167, 230, 0.32);
+  --color-focus: #93a7e6;
+  --color-signal: #ff7a5f;
+  --color-signal-soft: #3d241c;
+  --color-signal-ink: #ffb8a6;
   --color-success: #4ade80;
   --color-error: #f87171;
   --color-danger: #f87171;

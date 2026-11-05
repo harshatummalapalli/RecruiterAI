@@ -10,30 +10,18 @@ import { offeredDecisions } from '../models/intake'
 import {
   PROVENANCE_LABEL,
   confirmationSummary,
-  experienceView,
   fieldProvenance,
   readyStatus,
-  recruiterNotes,
   requirementGroups,
   titleView,
   type ProvenanceKind,
 } from '../models/livingBrief'
 import type { SearchBoundary } from '../models/searchBoundary'
 import type { SearchBrief } from '../models/searchBrief'
-import { SearchBriefReview } from './SearchBriefReview'
 import '../components/LivingBrief.css'
 
 type FieldChange = (path: string, updater: (current: SearchBrief) => SearchBrief) => void
 
-// The brief groups use 'preferred' for the differentiator tier; the engine's tier
-// token is 'differentiator'. Map between them so retier edits speak the engine's
-// vocabulary.
-const GROUP_TO_TIER: Record<string, string> = { core: 'core', supporting: 'supporting', preferred: 'differentiator' }
-const TIER_OPTIONS: { value: string; label: string }[] = [
-  { value: 'core', label: 'Core' },
-  { value: 'supporting', label: 'Supporting' },
-  { value: 'differentiator', label: 'Differentiator' },
-]
 
 const TAG_HINT: Record<ProvenanceKind, string> = {
   stated: 'The job description says this.',
@@ -105,7 +93,7 @@ function DecisionCard({ issue, onAnswer, isAnswering, onReconsider }: { issue: I
   )
 }
 
-export function LivingBrief({ result, boundary, brief, onChangeBrief, onAnswer, onRetier, isAnswering, onApplyBoundary, onSearch, isSearching, searchErrors = [] }: LivingBriefProps) {
+export function LivingBrief({ result, boundary, brief, onAnswer, isAnswering, onApplyBoundary, onSearch, isSearching, searchErrors = [] }: LivingBriefProps) {
   const [boundaryOpen, setBoundaryOpen] = useState(false)
   const role = result.role_understanding
   const title = titleView(result)
@@ -113,23 +101,11 @@ export function LivingBrief({ result, boundary, brief, onChangeBrief, onAnswer, 
   const nextQuestion = status.questions[0] ?? null
   const offers = offeredDecisions(result)
   const groups = requirementGroups(result)
-  const experience = experienceView(result)
-  const notes = recruiterNotes(result)
   const warnings = result.decision.warnings
   const limitations = result.decision.limitations ?? []
   const summary = status.state === 'ready' ? confirmationSummary(result, boundary, brief) : []
   const zeroCore = groups[0].items.length === 0
   const provisional = status.state === 'draft'
-
-  // Full current requirement -> tier assignment, from what's displayed (which
-  // already reflects any applied retier). Moving one item sends the whole map,
-  // applied over the original read, so no separate client state is needed.
-  const moveRequirement = (text: string, tier: string) => {
-    const assignments: Record<string, string> = {}
-    groups.forEach((group) => group.items.forEach((item) => { assignments[item.text] = GROUP_TO_TIER[group.tier] ?? 'core' }))
-    assignments[text] = tier
-    onRetier(assignments)
-  }
 
   return (
     <div className={`lb${provisional ? ' lb--draft' : ''}`}>
@@ -194,40 +170,7 @@ export function LivingBrief({ result, boundary, brief, onChangeBrief, onAnswer, 
         </section>
       ) : null}
 
-      {/* 5 Level */}
-      {role.seniority_scope.value || experience || (role.leadership_type.value && role.leadership_type.value !== 'none') ? (
-        <section className="lb-section" aria-labelledby="lb-level">
-          <h3 id="lb-level" className="lb-heading">
-            Level
-          </h3>
-          <dl className="lb-facts">
-            {role.seniority_scope.value ? (
-              <>
-                <dt>Seniority</dt>
-                <dd>
-                  {role.seniority_scope.value} <ProvenanceTag kind={fieldProvenance(role.seniority_scope)} />
-                </dd>
-              </>
-            ) : null}
-            {experience ? (
-              <>
-                <dt>Experience</dt>
-                <dd>
-                  {experience.text} <ProvenanceTag kind={experience.provenance} />
-                </dd>
-              </>
-            ) : null}
-            {role.leadership_type.value && role.leadership_type.value !== 'none' ? (
-              <>
-                <dt>Leadership</dt>
-                <dd>{role.leadership_type.value}</dd>
-              </>
-            ) : null}
-          </dl>
-        </section>
-      ) : null}
-
-      {/* 6 Requirements */}
+      {/* Requirements */}
       <section className="lb-section" aria-labelledby="lb-requirements">
         <h3 id="lb-requirements" className="lb-heading">
           Requirements
@@ -244,20 +187,6 @@ export function LivingBrief({ result, boundary, brief, onChangeBrief, onAnswer, 
                   <li key={item.text} title={item.evidence ?? undefined}>
                     <span>{item.text}</span>
                     <ProvenanceTag kind={item.provenance} />
-                    <label className="lb-tier__move" title="Move this requirement between tiers">
-                      <span className="lb-visually-hidden">Tier for {item.text}</span>
-                      <select
-                        value={GROUP_TO_TIER[group.tier] ?? 'core'}
-                        disabled={isAnswering}
-                        onChange={(event) => moveRequirement(item.text, event.target.value)}
-                      >
-                        {TIER_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
                   </li>
                 ))}
               </ul>
@@ -279,23 +208,6 @@ export function LivingBrief({ result, boundary, brief, onChangeBrief, onAnswer, 
         </section>
       ) : null}
 
-      {/* 7 Technologies mentioned */}
-      {role.technologies_mentioned.length ? (
-        <section className="lb-section" aria-labelledby="lb-tech">
-          <details>
-            <summary id="lb-tech" className="lb-heading lb-heading--summary">
-              Technologies mentioned <span className="lb-count">{role.technologies_mentioned.reduce((n, group) => n + group.items.length, 0)}</span>
-            </summary>
-            <p className="lb-muted">Everything named in the description. Listing a technology here does not make it a requirement.</p>
-            {role.technologies_mentioned.map((group) => (
-              <p key={group.category} className="lb-tech">
-                <strong>{group.category}:</strong> {group.items.join(', ')}
-              </p>
-            ))}
-          </details>
-        </section>
-      ) : null}
-
       {/* Search boundary — moved here (after Requirements/Technologies, before Notes) to follow the approved
           visual ordering; still the same BoundaryEditor, same edit/confirm behavior, unchanged. */}
       <section className="lb-section" aria-labelledby="lb-boundary">
@@ -305,22 +217,7 @@ export function LivingBrief({ result, boundary, brief, onChangeBrief, onAnswer, 
         <BoundaryEditor boundary={boundary} onApply={onApplyBoundary} limitation={limitations[0] ?? null} open={boundaryOpen} onOpenChange={setBoundaryOpen} />
       </section>
 
-      {/* 8 Recruiter notes */}
-      {notes.length || result.decision.search_consequence_summary ? (
-        <section className="lb-section" aria-labelledby="lb-notes">
-          <h3 id="lb-notes" className="lb-heading">
-            Recruiter notes
-          </h3>
-          <ul className="lb-notes">
-            {notes.map((note) => (
-              <li key={note}>{note}</li>
-            ))}
-            {result.decision.search_consequence_summary ? <li>{result.decision.search_consequence_summary}</li> : null}
-          </ul>
-        </section>
-      ) : null}
-
-      {/* 9 Warnings and limitations */}
+      {/* Warnings and limitations */}
       {warnings.length || limitations.length > 1 ? (
         <section className="lb-section" aria-labelledby="lb-warnings">
           <h3 id="lb-warnings" className="lb-heading">
@@ -381,13 +278,6 @@ export function LivingBrief({ result, boundary, brief, onChangeBrief, onAnswer, 
           {isSearching ? 'Searching the market…' : 'Search'}
         </button>
       </section>
-
-      {/* 11 Adjust before searching */}
-      <details className="lb-adjust">
-        <summary className="lb-heading lb-heading--summary">Adjust before searching</summary>
-        <p className="lb-muted">Titles, requirements and experience can be edited here. Location and work mode are set in the Search boundary above.</p>
-        <SearchBriefReview brief={brief} onChange={onChangeBrief} />
-      </details>
     </div>
   )
 }

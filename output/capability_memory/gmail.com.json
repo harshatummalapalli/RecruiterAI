@@ -31,22 +31,6 @@
     "source_qualifier": "eDiscovery",
     "is_broad": false
   },
-  "": {
-    "label": "Data and AI Platforms",
-    "terms": [
-      "data platform",
-      "data engineering",
-      "Spark",
-      "Databricks",
-      "Snowflake",
-      "ETL",
-      "ELT",
-      "vector search",
-      "feature store"
-    ],
-    "source_qualifier": "Data",
-    "is_broad": false
-  },
   "agentic platform software engineer": {
     "label": "Agentic AI",
     "terms": [
@@ -61,6 +45,108 @@
       "LangGraph"
     ],
     "source_qualifier": "AI",
+    "is_broad": false
+  },
+  "agentic ai platform software engineer": {
+    "label": "Agentic AI",
+    "terms": [
+      "agentic",
+      "agents",
+      "LLM",
+      "RAG",
+      "GenAI",
+      "tool-use",
+      "LangChain",
+      "orchestration"
+    ],
+    "source_qualifier": "AI",
+    "is_broad": false
+  },
+  "data engineer": {
+    "label": "",
+    "terms": [],
+    "source_qualifier": "",
+    "is_broad": true
+  },
+  "agentic ai platform engineer": {
+    "label": "Agentic AI",
+    "terms": [
+      "agentic",
+      "AI agents",
+      "multi-agent",
+      "LLM",
+      "RAG",
+      "GenAI",
+      "LangChain",
+      "LangGraph",
+      "orchestration"
+    ],
+    "source_qualifier": "AI",
+    "is_broad": false
+  },
+  "backend engineer": {
+    "label": "",
+    "terms": [],
+    "source_qualifier": "",
+    "is_broad": true
+  },
+  "software engineer": {
+    "label": "",
+    "terms": [],
+    "source_qualifier": "",
+    "is_broad": true
+  },
+  "backend software engineer": {
+    "label": "",
+    "terms": [],
+    "source_qualifier": "",
+    "is_broad": true
+  },
+  "ml platform engineer": {
+    "label": "ML Platform",
+    "terms": [
+      "MLOps",
+      "ML platform",
+      "Kubeflow",
+      "MLflow",
+      "model serving",
+      "feature store",
+      "ML pipelines",
+      "SageMaker",
+      "Vertex AI"
+    ],
+    "source_qualifier": "ML",
+    "is_broad": false
+  },
+  "solutions architect": {
+    "label": "AWS Cloud",
+    "terms": [
+      "AWS",
+      "Amazon Web Services",
+      "EC2",
+      "S3",
+      "Lambda",
+      "CloudFormation",
+      "VPC",
+      "Well-Architected"
+    ],
+    "source_qualifier": "AWS",
+    "is_broad": false
+  },
+  "hands on iam technical leader": {
+    "label": "Identity and Access Management",
+    "terms": [
+      "IAM",
+      "Okta",
+      "Active Directory",
+      "Entra ID",
+      "SSO",
+      "MFA",
+      "SAML",
+      "PAM",
+      "identity governance"
+    ],
+    "source_qualifier": "IAM",
     "is_broad": false
   }
 }

@@ -14,30 +14,9 @@ export function BrandMark({ size = 24 }: { size?: number }) {
   )
 }
 
-/** "Where am I inside this hiring mandate" — role title, status, and the two role-level destinations
- * (Understanding / Candidates). Shortlisted/Maybe/Rejected stay exactly where they already correctly live: the
- * Candidates screen's own filter pills, not duplicated here. No "Archive role" — the backend has no
- * archived-role concept (see HomeScreen's own Archived-tab comment), so it isn't offered as if it were real. */
-export type RoleNavInfo = {
-  title: string
-  statusLabel: string
-  company: string
-  section: 'understanding' | 'candidates'
-  /** False until a search has actually run for this role — nothing to
-   * show yet, so the destination is visible (the structure is always
-   * clear) but not yet clickable. */
-  candidatesEnabled: boolean
-  onSelectUnderstanding: () => void
-  onSelectCandidates: () => void
-}
-
-/** The role rail. Answers "where am I inside this hiring mandate" — distinct from the global shell (GlobalShell),
- * which answers "where am I in the product" and owns brand/Home/Settings/account; none of that is repeated here.
- *
- * Two content modes:
- *   - roleNav given: a specific role is open — shows its title/status and the Understanding/Candidates switch.
- *   - roleNav absent: no role is open yet (composing a new search) — shows the flat cross-role search list, the
- *     one place you can still jump directly into a different existing role without going through Home first.
+/** The search rail. Answers "which of my searches am I in" — distinct from the global shell (GlobalShell),
+ * which owns brand/Home/Settings/account. One flat cross-search list, grouped into Active and Drafts (the
+ * mockup's rail), the one place to jump straight into another search without going through Home first.
  *
  * Collapses to 0 width (unmounted, not a narrow icon rail) when a candidate record opens, unless "Glue" is on;
  * when collapsed, the workspace header's hamburger reopens it (equivalent to turning Glue on). */
@@ -50,7 +29,6 @@ export function SearchSidebar({
   collapsed,
   glued,
   onToggleGlue,
-  roleNav,
 }: {
   items: SearchListItem[]
   active: ActiveSearch | null
@@ -60,12 +38,29 @@ export function SearchSidebar({
   collapsed: boolean
   glued: boolean
   onToggleGlue: () => void
-  roleNav?: RoleNavInfo
 }) {
   if (collapsed) return null
 
+  const searches = items.filter((item) => item.kind === 'search')
+  const drafts = items.filter((item) => item.kind === 'draft')
+
+  const renderItem = (item: SearchListItem) => {
+    const badge = sidebarBadge(item)
+    const subtitle = sidebarSubtitle(item)
+    const selected = isActive(item, active)
+    return (
+      <li key={`${item.kind}:${item.id}`}>
+        <button type="button" className={`app-sidebar__item${selected ? ' is-active' : ''}`} aria-current={selected ? 'page' : undefined} onClick={() => onSelect(item)}>
+          <span className="app-sidebar__title">{item.title}</span>
+          {subtitle ? <span className="app-sidebar__subtitle">{subtitle}</span> : null}
+          {badge ? <span className={`app-sidebar__badge is-${badge.tone}`}>{badge.text}</span> : null}
+        </button>
+      </li>
+    )
+  }
+
   return (
-    <nav className="app-sidebar" aria-label={roleNav ? `${roleNav.title} navigation` : 'Searches'}>
+    <nav className="app-sidebar" aria-label="Searches">
       <div className="app-sidebar__top">
         <button type="button" className={`app-sidebar__new${isNewActive ? ' is-active' : ''}`} onClick={onNew}>
           New search
@@ -81,56 +76,21 @@ export function SearchSidebar({
         </button>
       </div>
 
-      {roleNav ? (
-        <div className="app-sidebar__role">
-          <p className="app-sidebar__role-title">{roleNav.title}</p>
-          <p className="app-sidebar__role-status">
-            <span className={`app-sidebar__role-dot${roleNav.statusLabel === 'Searching' ? ' is-active' : ''}`} aria-hidden="true" />
-            {[roleNav.statusLabel, roleNav.company].filter(Boolean).join(' · ')}
-          </p>
-          <div className="app-sidebar__role-nav">
-            <button
-              type="button"
-              className={`app-sidebar__role-nav-item${roleNav.section === 'understanding' ? ' is-active' : ''}`}
-              aria-current={roleNav.section === 'understanding' ? 'page' : undefined}
-              onClick={roleNav.onSelectUnderstanding}
-            >
-              Understanding
-            </button>
-            <button
-              type="button"
-              className={`app-sidebar__role-nav-item${roleNav.section === 'candidates' ? ' is-active' : ''}`}
-              aria-current={roleNav.section === 'candidates' ? 'page' : undefined}
-              disabled={!roleNav.candidatesEnabled}
-              title={roleNav.candidatesEnabled ? undefined : 'Run a search first to see candidates'}
-              onClick={roleNav.onSelectCandidates}
-            >
-              Candidates
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className="app-sidebar__scroll">
-          <p className="app-sidebar__label">SEARCHES</p>
-          {items.length === 0 ? <p className="app-sidebar__empty">Your searches will appear here.</p> : null}
-          <ul className="app-sidebar__list">
-            {items.map((item) => {
-              const badge = sidebarBadge(item)
-              const subtitle = sidebarSubtitle(item)
-              const selected = isActive(item, active)
-              return (
-                <li key={`${item.kind}:${item.id}`}>
-                  <button type="button" className={`app-sidebar__item${selected ? ' is-active' : ''}`} aria-current={selected ? 'page' : undefined} onClick={() => onSelect(item)}>
-                    <span className="app-sidebar__title">{item.title}</span>
-                    {subtitle ? <span className="app-sidebar__subtitle">{subtitle}</span> : null}
-                    {badge ? <span className={`app-sidebar__badge is-${badge.tone}`}>{badge.text}</span> : null}
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-      )}
+      <div className="app-sidebar__scroll">
+        {items.length === 0 ? <p className="app-sidebar__empty">Your searches will appear here.</p> : null}
+        {searches.length ? (
+          <>
+            <p className="app-sidebar__label">Active</p>
+            <ul className="app-sidebar__list">{searches.map(renderItem)}</ul>
+          </>
+        ) : null}
+        {drafts.length ? (
+          <>
+            <p className="app-sidebar__label">Drafts</p>
+            <ul className="app-sidebar__list">{drafts.map(renderItem)}</ul>
+          </>
+        ) : null}
+      </div>
     </nav>
   )
 }

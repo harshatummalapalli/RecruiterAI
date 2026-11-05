@@ -52,27 +52,26 @@ OUTPUT_USD_PER_MILLION_TOKENS = 0.60
 MAX_PASSAGES = 30
 MAX_PASSAGE_CHARS = 900
 
-_SYSTEM_PROMPT = """You verify whether a candidate's profile shows evidence for each hiring requirement.
+_SYSTEM_PROMPT = """You read a candidate's whole profile and decide, like an experienced recruiter, whether their career shows each hiring requirement.
 
-You get numbered PASSAGES copied from the candidate's profile and numbered REQUIREMENTS from the job.
+You get numbered PASSAGES copied from the candidate's profile — their job TITLES, a headline, and the descriptions and skills under their roles — and numbered REQUIREMENTS from the job. Read all the passages together as one career before you judge; a single role title or line can decide a requirement.
+
 For every requirement decide:
-- "met": a passage clearly demonstrates the requirement itself (the skill, tool, kind of work or duration it names).
-- "partly": a passage shows something related but not the whole requirement.
-- "not_evidenced": nothing in the passages demonstrates it.
+- "met": the career clearly shows the requirement's CORE capability — the main skill, tool, or kind of work it names. Judge on that primary subject; extra qualifiers the requirement lists (for example "consolidation and modernization", or a long protocol list like "SSO, MFA, SAML, OAuth/OIDC, RBAC") are added depth, NOT things that each have to appear.
+- "partly": the career shows something adjacent to the core, but not the core itself.
+- "not_evidenced": nothing in the career shows it.
+
+How to weigh the evidence:
+1. A role's JOB TITLE is real evidence. Someone titled "Manager, Identity and Access Management" or "Sr. IAM Applications Analyst" has done IAM work, even when that role carries no description — many strong profiles list senior roles with little text. Quote the title in that case.
+2. A description line that states the requirement's core capability is the strongest evidence.
+3. Judge MEANING, not keywords. A shared generic word is not evidence: "design" does not show database schema design, "applications" does not show AI/ML. And an EMPLOYER or its prestige is never evidence of a skill — "Engineer at Google" does not show IAM; only what the person themselves did counts.
 
 Rules:
-1. Judge the MEANING of the requirement. A shared generic word is not evidence: the word "design" does not evidence
-   database schema design, "applications" does not evidence AI/ML, "backend" does not evidence years of experience.
-2. For "met" and "partly" you MUST give the passage number and a quote copied EXACTLY, character for character,
-   from that passage (at most 220 characters). Never paraphrase. If you cannot quote it, answer "not_evidenced".
-3. "term" is the 1-4 word phrase inside your quote that carries the evidence, copied exactly.
-4. A duration requirement (for example "3+ years") is judged only from the passage labelled "career dates". That passage
-   gives TOTAL professional experience across all roles; it cannot show years in one specific discipline.
-5. Do not use outside knowledge about the person or their employers.
-6. The quote must itself state the requirement's own skill, tool, or kind of work. A tool or framework that COULD be
-   used for the requirement is not evidence that it was used for it, and a related activity is at most "partly".
-   If you would have to infer the requirement from general knowledge, answer "partly" or "not_evidenced".
-7. If several passages qualify, cite the one that states it most directly.
+- For "met" and "partly" give the passage number and a quote copied EXACTLY, character for character, from that passage (at most 220 characters) — the quote may be a role TITLE or a line from a description. Never paraphrase. If you cannot quote a title or line that carries the core, answer "not_evidenced".
+- "term" is the 1-4 word phrase inside your quote that carries the evidence, copied exactly.
+- A duration requirement (for example "3+ years") is judged only from the passage labelled "career dates" — TOTAL professional experience across all roles, not years in one discipline.
+- Use only the passages, not outside knowledge about the person or their employers.
+- If several passages qualify, cite the one that shows the requirement's core most directly.
 
 Return only JSON: {"results":[{"r":<requirement number>,"verdict":"met|partly|not_evidenced","p":<passage number or null>,"quote":"<exact quote or empty>","term":"<exact phrase or empty>"}]}
 Include every requirement exactly once."""
@@ -98,25 +97,29 @@ def _normalize(text: str) -> str:
 
 _REVIEW_PROMPT = """You review whether a quote from a candidate's profile is genuine evidence for a hiring requirement.
 
-For each CLAIM you get a job REQUIREMENT and a QUOTE. Judge every claim on its own, using only that requirement and
-that quote. Decide whether the QUOTE, read by itself, shows the candidate did or used what the requirement names.
+For each CLAIM you get a job REQUIREMENT and a QUOTE — which may be a role's job TITLE or a line from a role description.
+Judge each claim on its own: does the QUOTE, read by itself, show the candidate did or worked in the requirement's
+ESSENTIAL subject?
 
-supports=true when the quote states the requirement's own skill, tool or kind of work. A named tool of the
-requirement's own kind counts (Docker for containerized deployment, Kafka or RabbitMQ for message queues, PostgreSQL
-or MySQL for relational databases, AWS/GCP/Azure for a cloud platform). Details such as who consumes the work, scale, or
-"designing and implementing" do not each have to be restated.
+supports=true when the quote names the requirement's own essential subject — the skill, tool or kind of work at its
+heart — INCLUDING a job title that names it (title "Manager, Identity and Access Management" supports an IAM
+requirement; "Sr. Database Engineer" supports a databases requirement). A named tool of that kind counts (Okta or
+Entra ID for identity, Docker for containers, PostgreSQL for relational databases). The requirement's secondary
+qualifiers do NOT each have to be restated: who consumes the work, scale, sub-activities such as "consolidation and
+modernization", or every item in a long enumeration (SSO, MFA, SAML, OAuth/OIDC, RBAC).
 
 supports=false when the quote:
-- is about a different skill, tool or activity, or fits almost any engineering requirement (designing systems,
-  running infrastructure, working on services) without naming the requirement's own subject;
-- names a related tool, or a broader thing, without the requirement's distinguishing qualifier (for example "APIs" or
-  "services" without REST, "data" or "an API" without relational databases);
-- describes meeting, planning, scoping, assessing or intending to do the work rather than having done it;
-- would only support the requirement if you inferred it from general knowledge.
+- is about a different subject, or fits almost any role (designing systems, running infrastructure, working on
+  services) without naming the requirement's own subject;
+- drops the requirement's DISTINGUISHING subject for a broader word — "APIs" for "GraphQL APIs", "identity" for
+  "privileged access management", "data" for "relational databases";
+- is only the employer's name or prestige, not what the person did;
+- describes meeting, planning, scoping or intending to do the work rather than having done it.
 
-Example of the qualifier rule: requirement "Experience with GraphQL APIs" with quote "Built high-performance APIs for
-mobile clients" is supports=false, because the quote never says GraphQL. The same quote for "Experience building APIs"
-is supports=true.
+Examples: requirement "Active Directory management, consolidation, and modernization" with quote "Managed Active
+Directory environments for security compliance" is supports=true (names the core; consolidation and modernization are
+depth). Requirement "Experience with GraphQL APIs" with quote "Built high-performance APIs" is supports=false (never
+says GraphQL).
 
 Return only JSON: {"results":[{"i":<claim number>,"supports":true|false}]}
 Include every claim exactly once."""

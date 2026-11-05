@@ -74,13 +74,18 @@ const DENSE_DOTS = 10
 export function EvidenceDots({ facts }: { facts: CardFacts }) {
   if (facts.dots.length === 0) return null
   const shown = facts.dots.filter((dot) => dot.shown).length
+  // Fill the evidenced dots contiguously (●●●○○), not in requirement position
+  // (●●●○●) — the row reads as a coverage meter. Stable sort keeps the original
+  // requirement order within the shown group and within the not-shown group, so
+  // each dot's hover label still names its own requirement.
+  const ordered = [...facts.dots].sort((a, b) => Number(b.shown) - Number(a.shown))
   return (
     <span
       className={`ws-dots${facts.dots.length > DENSE_DOTS ? ' is-dense' : ''}`}
       role="img"
       aria-label={`${shown} of ${facts.dots.length} core requirements shown, not counting total years`}
     >
-      {facts.dots.map((dot, index) => (
+      {ordered.map((dot, index) => (
         <span key={index} className={`ws-dot${dot.shown ? ' is-shown' : ''}`} title={`${dot.label}${dot.shown ? '' : ' — not shown on the profile'}`} />
       ))}
     </span>

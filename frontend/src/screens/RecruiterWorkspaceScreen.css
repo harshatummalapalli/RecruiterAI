@@ -91,11 +91,73 @@
 
 .workspace__greeting h1 {
   margin: 0 0 10px;
-  font-size: 48px;
-  line-height: 1.15;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 44px;
+  line-height: 1.1;
+  font-weight: 800;
+  letter-spacing: -0.025em;
   color: var(--color-primary-text);
+}
+
+/* Ask composer header (3-step flow, step 1). */
+.workspace__compose-head {
+  max-width: 760px;
+}
+
+.workspace__eyebrow {
+  margin: 0 0 6px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.workspace__display {
+  margin: 0 0 6px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(28px, 4.5vw, 40px);
+  line-height: 1.08;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--color-primary-text);
+}
+
+.workspace__lead {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+.workspace__label-note {
+  font-weight: 400;
+  color: var(--color-muted);
+}
+
+/* The fenced non-negotiables block in the composer. */
+.workspace__fence {
+  margin-top: 4px;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 35%, var(--color-border));
+  background: color-mix(in srgb, var(--color-accent) 5%, var(--color-surface));
+  border-radius: 12px;
+  padding: 14px 15px;
+}
+
+.workspace__fence-cap {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-accent);
+  margin-bottom: 4px;
+}
+
+.workspace__fence-hint {
+  margin: 0 0 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--color-muted);
 }
 
 .workspace__greeting p {
@@ -2192,7 +2254,7 @@
 }
 
 .workspace__role-dot.is-active {
-  background: var(--color-accent);
+  background: var(--color-signal);
 }
 
 .workspace__brief {

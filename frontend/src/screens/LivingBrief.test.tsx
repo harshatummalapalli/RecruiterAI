@@ -67,14 +67,10 @@ describe('structure', () => {
       '.lb-header',
       '.lb-decision',
       '#lb-read',
-      '#lb-level',
       '#lb-requirements',
-      '#lb-tech',
       '#lb-boundary',
-      '#lb-notes',
       '#lb-warnings',
       '#lb-confirm',
-      '.lb-adjust',
     ].map((selector) => $(selector))
     expect(order.every(Boolean)).toBe(true)
     for (let i = 1; i < order.length; i++) {
@@ -96,14 +92,6 @@ describe('structure', () => {
     expect($('.lb-identity')?.textContent).toBe('Backend-heavy AI Engineer')
     expect(container.textContent).toContain('As you wrote it')
     expect(container.textContent).toContain('Searched for instead of the posted title')
-  })
-
-  it('offers the editable form without location or work mode, which belong to the boundary', async () => {
-    await render(makeIntakeResult())
-    const adjust = $('.lb-adjust')!.textContent!
-    expect(adjust).toMatch(/Experience/)
-    expect(adjust).toMatch(/Companies/)
-    expect(adjust).not.toMatch(/Search geography|Work Mode|Radius Search/)
   })
 
   it('uses no search machinery or provider language anywhere', async () => {
@@ -236,15 +224,4 @@ describe('the boundary', () => {
 })
 
 describe('seniority stays separate from experience', () => {
-  it('shows an inferred mid-level next to confirmed 8–10 years, each with its own tag', async () => {
-    const result = makeIntakeResult({ issues: [] })
-    result.role_understanding.seniority_scope = { value: 'mid-level', evidence: null, source: 'inferred' }
-    result.role_understanding.explicit_constraints.experience_minimum_years = 8
-    result.role_understanding.explicit_constraints.experience_maximum_years = 10
-    result.confirmed = [{ field: 'experience', description: 'Experience: 8-10 years', item: null, issue: 'x', answer: 'y' }]
-    await render(result)
-    const level = $('#lb-level')!.parentElement!.textContent ?? ''
-    expect(level).toMatch(/mid-level\s*Inferred/)
-    expect(level).toMatch(/8–10 years\s*Confirmed by you/)
-  })
 })

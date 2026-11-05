@@ -73,6 +73,11 @@ class CapabilityProposer:
         requirement_texts: Sequence[str] = (),
     ) -> Tuple[CapabilityGroup, ...]:
         key = normalise_key(identity)
+        if not key:
+            # An identity that normalizes to nothing (all seniority words, or empty)
+            # teaches no capability — never match or store under an empty key. A bad
+            # "" row once matched unrelated roles with a stale "Data and AI Platforms".
+            return ()
 
         cached = self._memory.get(org, key)
         if cached is not None:

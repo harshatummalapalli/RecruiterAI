@@ -139,9 +139,9 @@ describe('the sidebar and switching between searches', () => {
   it('uses the plain intake copy', async () => {
     await mountWithSearches()
     await enterWorkspace()
-    expect(container.querySelector('label[for="posted-title"]')?.textContent?.trim()).toBe('Job Title')
+    expect(container.querySelector('label[for="posted-title"]')?.textContent?.trim()).toBe('The role')
     expect(($('#posted-title') as HTMLInputElement).placeholder).toBe('e.g. AI Engineer')
-    expect(container.textContent).toContain("The title you're hiring for.")
+    expect(container.textContent).toContain('I read this to learn what to look for')
     expect(container.textContent).not.toMatch(/Exactly as the role is called|Kept exactly as you type it|optional/i)
   })
 
@@ -152,18 +152,15 @@ describe('the sidebar and switching between searches', () => {
     await act(async () => {})
     expect(service.loadPersistedSearch).toHaveBeenCalledWith('role-a')
     expect($('.workspace__greeting h1')?.textContent).toBe('AI Engineer')
-    // Once a role is open, the sidebar switches from the flat cross-role
-    // list to that role's own nav (Understanding/Candidates) — role
-    // switching now goes through Home, not a second sidebar click.
-    expect($('.app-sidebar__role-title')?.textContent).toBe('AI Engineer')
-    expect($('.app-sidebar__role-nav-item.is-active')?.textContent).toBe('Candidates')
+    // Stage nav is the top StepPlayer now (Define · Discover · Decide); a searched
+    // role opens on Decide. The sidebar stays the saved-search list.
+    expect($('.stepplayer__step.is-on')?.textContent).toContain('Decide')
     expect(container.querySelectorAll('article.ws-card')).toHaveLength(5)
   })
 
   it('switching to another search restores that search, not the previous one', async () => {
     await mountWithSearches({ kind: 'search', id: 'role-a' })
     expect($('.workspace__greeting h1')?.textContent).toBe('AI Engineer')
-    expect($('.app-sidebar__role-title')?.textContent).toBe('AI Engineer')
     // Role switching is a global-shell concern now: Home, then the target row.
     await click(button(/^Home$/))
     await act(async () => {})
@@ -172,7 +169,6 @@ describe('the sidebar and switching between searches', () => {
     await click(staffBackendRow)
     await act(async () => {})
     expect($('.workspace__greeting h1')?.textContent).toBe('Staff Backend Engineer')
-    expect($('.app-sidebar__role-title')?.textContent).toBe('Staff Backend Engineer')
     // Each search resumes its own brief.
     expect(service.loadIntakeSession).toHaveBeenCalledWith('session-role-a')
     expect(service.loadIntakeSession).toHaveBeenCalledWith('session-role-b')
@@ -184,12 +180,12 @@ describe('the sidebar and switching between searches', () => {
     expect(JSON.parse(window.localStorage.getItem('recruiterai:activeSearch')!)).toEqual({ kind: 'search', id: 'role-b' })
   })
 
-  it('New search opens a blank form without touching the open search, and Build brief needs a boundary', async () => {
+  it('New search opens a blank form without touching the open search, and Read & plan needs a boundary', async () => {
     await mountWithSearches({ kind: 'search', id: 'role-a' })
     await click(button(/New search/))
     expect($('#posted-title')).not.toBeNull()
     expect(($('#posted-title') as HTMLInputElement).value).toBe('')
-    expect(button(/Build brief/).disabled).toBe(true)
+    expect(button(/Read & plan/).disabled).toBe(true)
     expect(service.startIntake).not.toHaveBeenCalled()
     expect(service.runCandidateSearch).not.toHaveBeenCalled()
     expect(window.localStorage.getItem('recruiterai:activeSearch')).toBeNull()
@@ -202,7 +198,7 @@ describe('the sidebar and switching between searches', () => {
   it('keeps a description that was typed but not built when the recruiter looks at another search and comes back', async () => {
     await mountWithSearches()
     await enterWorkspace()
-    const editor = $('textarea[aria-label="Job description"]') as HTMLTextAreaElement
+    const editor = $('#jd-text') as HTMLTextAreaElement
     await act(async () => {
       Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')!.set!.call(editor, 'We need a data engineer')
       editor.dispatchEvent(new Event('input', { bubbles: true }))
@@ -210,7 +206,7 @@ describe('the sidebar and switching between searches', () => {
     await click(sidebarButton(/AI Engineer/))
     await act(async () => {})
     await click(button(/New search/))
-    expect(($('textarea[aria-label="Job description"]') as HTMLTextAreaElement).value).toBe('We need a data engineer')
+    expect(($('#jd-text') as HTMLTextAreaElement).value).toBe('We need a data engineer')
   })
 
   it('reopens a brief that was not searched yet, with its own boundary', async () => {
@@ -220,15 +216,11 @@ describe('the sidebar and switching between searches', () => {
     await act(async () => {})
     expect(service.loadIntakeSession).toHaveBeenCalledWith('draft-c')
     expect($('.workspace__brief')).not.toBeNull()
-    // A draft has no search yet, so the role nav opens on Understanding —
-    // Candidates stays visible but disabled (nothing to show yet). The
-    // title itself comes from makeIntakeResult()'s canned fixture (always
-    // "AI Engineer" regardless of which session id was requested) rather
-    // than this draft's own "Data Engineer" — a pre-existing fixture
-    // limitation (loadIntakeSession's mock ignores its own id argument),
-    // not a real behavior this test is meant to pin down.
-    expect($('.app-sidebar__role-title')?.textContent).toBe('AI Engineer')
-    expect($('.app-sidebar__role-nav-item.is-active')?.textContent).toBe('Understanding')
+    // A draft has no search yet, so the StepPlayer opens on Discover (the role
+    // read); Decide stays visible but disabled until a search runs.
+    expect($('.stepplayer__step.is-on')?.textContent).toContain('Discover')
+    const decide = Array.from(container.querySelectorAll('.stepplayer__step')).find((s) => s.textContent?.includes('Decide'))
+    expect((decide as HTMLButtonElement | undefined)?.disabled).toBe(true)
   })
 
   it('falls back to the new-search form when a remembered search no longer exists', async () => {
@@ -278,7 +270,7 @@ describe('roles: show more and pause, wired to the server', () => {
     // Glue-off behavior previously did for every candidateOpen transition,
     // open or close alike.
     await mountWithSearches({ kind: 'search', id: 'role-a' })
-    expect($('.app-sidebar__role-title')?.textContent).toBe('AI Engineer')
+    expect($('.app-sidebar')).not.toBeNull()
 
     const firstCard = container.querySelector('article.ws-card')!
     await click(firstCard)
