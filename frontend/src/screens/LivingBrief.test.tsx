@@ -63,12 +63,13 @@ afterEach(() => {
 describe('structure', () => {
   it('shows the sections in the agreed order', async () => {
     await render(makeIntakeResult({ issues: [EXPERIENCE_QUESTION, TITLE_NOTE], warnings: ['Something to be aware of.'] }))
+    // The Search boundary is folded into the final confirm section now (#lb-boundary
+    // lives inside #lb-confirm), so it is no longer a separate top-level row here.
     const order = [
       '.lb-header',
       '.lb-decision',
       '#lb-read',
       '#lb-requirements',
-      '#lb-boundary',
       '#lb-warnings',
       '#lb-confirm',
     ].map((selector) => $(selector))
@@ -81,9 +82,23 @@ describe('structure', () => {
   it('names Core, Supporting and Differentiator consistently — never "Preferred" as the tier name', async () => {
     await render(makeIntakeResult())
     expect($$('.lb-subheading').map((e) => e.textContent?.replace(/\s*\d+$/, ''))).toEqual(['Core', 'Supporting', 'Differentiator'])
-    expect($('.lb-facts__row')?.parentElement?.textContent).not.toMatch(/\bpreferred\b/i)
-    // "Preferred Skills" in the editable brief form below is a distinct, unrelated field label (nice-to-have
-    // skills), not the requirement-tier name this test is about — not asserted against here.
+    // The tier mover offers the same three names and never "Preferred".
+    const tierOptions = $$('.lb-tier option').map((o) => o.textContent)
+    expect(new Set(tierOptions)).toEqual(new Set(['Core', 'Supporting', 'Differentiator']))
+    expect(tierOptions).not.toContain('Preferred')
+  })
+
+  it('moves a requirement to another tier, sending the full assignment', async () => {
+    await render(makeIntakeResult())
+    const row = $$('.lb-req').find((li) => li.textContent?.startsWith('Python backend services'))!
+    const select = row.querySelector('.lb-tier') as HTMLSelectElement
+    expect(select.value).toBe('core')
+    select.value = 'supporting'
+    await act(async () => {
+      select.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    expect(handlers.onRetier).toHaveBeenCalledTimes(1)
+    expect(handlers.onRetier.mock.calls[0][0]['Python backend services']).toBe('supporting')
   })
 
   it('shows the posted title and the candidate identity as two separate things', async () => {
@@ -137,7 +152,7 @@ describe('draft and ready', () => {
     await render(makeIntakeResult({ issues: [EXPERIENCE_QUESTION] }))
     expect($('.lb-state')?.textContent).toBe('Draft')
     expect($('.lb-decision__question')?.textContent).toContain('3+ years and also 8-10 years')
-    expect($('#lb-confirm')?.textContent).toBe('Not ready to search yet')
+    expect($('.lb-confirm__title')?.textContent).toBe('Not ready to search yet')
     expect($('.lb-confirm')?.textContent).toContain('1 decision still needs your answer.')
     expect(button(/^Search$/).disabled).toBe(true)
   })
@@ -159,7 +174,8 @@ describe('draft and ready', () => {
   it('is ready when nothing is open: what will be searched, no further questions, and Search works', async () => {
     await render(makeIntakeResult())
     expect($('.lb-state')?.textContent).toBe('Ready to search')
-    expect($('#lb-confirm')?.textContent).toContain('This is what I will search for')
+    // The confirm section is the folded Search boundary now.
+    expect($('#lb-confirm')?.textContent).toContain('Search boundary')
     expect($('.lb-confirm')?.textContent).toContain("I don't need to ask anything else.")
     expect($('.lb-decision')).toBeNull()
     const search = button(/^Search$/)

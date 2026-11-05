@@ -9,12 +9,12 @@ import type { IntakeIssue, IntakeResult } from '../models/intake'
 import { offeredDecisions } from '../models/intake'
 import {
   PROVENANCE_LABEL,
-  confirmationSummary,
   fieldProvenance,
   readyStatus,
   requirementGroups,
   titleView,
   type ProvenanceKind,
+  type RequirementTier,
 } from '../models/livingBrief'
 import type { SearchBoundary } from '../models/searchBoundary'
 import type { SearchBrief } from '../models/searchBrief'
@@ -22,6 +22,14 @@ import '../components/LivingBrief.css'
 
 type FieldChange = (path: string, updater: (current: SearchBrief) => SearchBrief) => void
 
+
+// The tier a requirement sits in → the token the backend retier expects.
+const TIER_TOKEN: Record<RequirementTier, string> = { core: 'core', supporting: 'supporting', preferred: 'differentiator' }
+const TIER_CHOICES: Array<{ value: string; label: string }> = [
+  { value: 'core', label: 'Core' },
+  { value: 'supporting', label: 'Supporting' },
+  { value: 'differentiator', label: 'Differentiator' },
+]
 
 const TAG_HINT: Record<ProvenanceKind, string> = {
   stated: 'The job description says this.',
@@ -93,7 +101,7 @@ function DecisionCard({ issue, onAnswer, isAnswering, onReconsider }: { issue: I
   )
 }
 
-export function LivingBrief({ result, boundary, brief, onAnswer, isAnswering, onApplyBoundary, onSearch, isSearching, searchErrors = [] }: LivingBriefProps) {
+export function LivingBrief({ result, boundary, onAnswer, onRetier, isAnswering, onApplyBoundary, onSearch, isSearching, searchErrors = [] }: LivingBriefProps) {
   const [boundaryOpen, setBoundaryOpen] = useState(false)
   const role = result.role_understanding
   const title = titleView(result)
@@ -103,9 +111,17 @@ export function LivingBrief({ result, boundary, brief, onAnswer, isAnswering, on
   const groups = requirementGroups(result)
   const warnings = result.decision.warnings
   const limitations = result.decision.limitations ?? []
-  const summary = status.state === 'ready' ? confirmationSummary(result, boundary, brief) : []
   const zeroCore = groups[0].items.length === 0
   const provisional = status.state === 'draft'
+
+  // Move a requirement between Core / Supporting / Differentiator. We send the FULL
+  // current assignment (applied over the original read), so the map is self-consistent.
+  const changeTier = (text: string, tier: string) => {
+    const assignments: Record<string, string> = {}
+    for (const group of groups) for (const item of group.items) assignments[item.text] = TIER_TOKEN[group.tier]
+    assignments[text] = tier
+    onRetier(assignments)
+  }
 
   return (
     <div className={`lb${provisional ? ' lb--draft' : ''}`}>
@@ -184,9 +200,25 @@ export function LivingBrief({ result, boundary, brief, onAnswer, isAnswering, on
               </h4>
               <ul className="lb-list">
                 {group.items.map((item) => (
-                  <li key={item.text} title={item.evidence ?? undefined}>
-                    <span>{item.text}</span>
-                    <ProvenanceTag kind={item.provenance} />
+                  <li key={item.text} className="lb-req" title={item.evidence ?? undefined}>
+                    <span className="lb-req__text">{item.text}</span>
+                    <span className="lb-req__meta">
+                      <ProvenanceTag kind={item.provenance} />
+                      <select
+                        className="lb-tier"
+                        aria-label={`Tier for ${item.text}`}
+                        value={TIER_TOKEN[group.tier]}
+                        disabled={isAnswering}
+                        onClick={(event) => event.stopPropagation()}
+                        onChange={(event) => changeTier(item.text, event.target.value)}
+                      >
+                        {TIER_CHOICES.map((choice) => (
+                          <option key={choice.value} value={choice.value}>
+                            {choice.label}
+                          </option>
+                        ))}
+                      </select>
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -200,22 +232,13 @@ export function LivingBrief({ result, boundary, brief, onAnswer, isAnswering, on
       {role.explicit_constraints.exclusions.length ? (
         <section className="lb-section" aria-labelledby="lb-exclusions">
           <h3 id="lb-exclusions" className="lb-heading">Excluding</h3>
-          <ul className="lb-list">
+          <div className="lb-chips">
             {role.explicit_constraints.exclusions.map((item) => (
-              <li key={item}><span>{item}</span></li>
+              <span key={item} className="lb-chip">{item}</span>
             ))}
-          </ul>
+          </div>
         </section>
       ) : null}
-
-      {/* Search boundary — moved here (after Requirements/Technologies, before Notes) to follow the approved
-          visual ordering; still the same BoundaryEditor, same edit/confirm behavior, unchanged. */}
-      <section className="lb-section" aria-labelledby="lb-boundary">
-        <h3 id="lb-boundary" className="lb-heading">
-          Search boundary <ProvenanceTag kind="confirmed" />
-        </h3>
-        <BoundaryEditor boundary={boundary} onApply={onApplyBoundary} limitation={limitations[0] ?? null} open={boundaryOpen} onOpenChange={setBoundaryOpen} />
-      </section>
 
       {/* Warnings and limitations */}
       {warnings.length || limitations.length > 1 ? (
@@ -238,35 +261,30 @@ export function LivingBrief({ result, boundary, brief, onAnswer, isAnswering, on
         </section>
       ) : null}
 
-      {/* 10 Confirmation */}
-      <section className={`lb-card lb-confirm lb-confirm--${status.state}`} aria-labelledby="lb-confirm">
+      {/* Search boundary + confirm — one section now. The hard limits ARE what will be
+          searched, so the boundary and the old "this is what I'll search for" are folded together. */}
+      <section className={`lb-card lb-confirm lb-confirm--${status.state}`} id="lb-confirm" aria-labelledby="lb-boundary">
+        <h3 id="lb-boundary" className="lb-heading">
+          Search boundary <ProvenanceTag kind="confirmed" />
+        </h3>
+        <p className="lb-muted lb-confirm__hint">The hard limits, enforced at search time — only people inside them are ever pulled.</p>
+        <BoundaryEditor boundary={boundary} onApply={onApplyBoundary} limitation={limitations[0] ?? null} open={boundaryOpen} onOpenChange={setBoundaryOpen} />
+
         {provisional ? (
-          <>
-            <h3 id="lb-confirm" className="lb-heading">
-              Not ready to search yet
-            </h3>
+          <div className="lb-confirm__state">
+            <p className="lb-confirm__title">Not ready to search yet</p>
             <ul className="lb-notes">
               {status.blockers.map((blocker) => (
                 <li key={blocker}>{blocker}</li>
               ))}
             </ul>
-          </>
+          </div>
         ) : (
-          <>
-            <h3 id="lb-confirm" className="lb-heading">
-              <Check size={15} aria-hidden="true" /> This is what I will search for
-            </h3>
-            <dl className="lb-facts">
-              {summary.map((line) => (
-                <div key={line.label} className="lb-facts__row">
-                  <dt>{line.label}</dt>
-                  <dd>{line.value}</dd>
-                </div>
-              ))}
-            </dl>
-            <p className="lb-muted">{result.decision.stop_reasoning ? `I don't need to ask anything else. ${result.decision.stop_reasoning}` : "I don't need to ask anything else."}</p>
-          </>
+          <p className="lb-muted lb-confirm__ready">
+            <Check size={15} aria-hidden="true" /> {result.decision.stop_reasoning ? `I don't need to ask anything else. ${result.decision.stop_reasoning}` : "I don't need to ask anything else."}
+          </p>
         )}
+
         {searchErrors.length ? (
           <ul className="lb-errors" role="alert">
             {searchErrors.map((message) => (

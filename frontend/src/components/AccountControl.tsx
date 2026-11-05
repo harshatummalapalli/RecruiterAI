@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { initialsOf } from '../models/discovery'
-import { AppearanceControl } from './AppearanceControl'
 import { CreditMeter } from './CreditMeter'
 import './AccountControl.css'
 
 /** The account identity, shared by the global shell (every screen) — a
- * small, deliberately quiet trigger that opens Appearance + Sign out.
- * Never a settings page of its own; see screens/SettingsScreen.tsx for
- * the one place that gets a full page. */
+ * small, deliberately quiet trigger that shows credits and Sign out.
+ * Appearance lives only on the Settings page now (it used to be duplicated
+ * here); see screens/SettingsScreen.tsx. */
 export function AccountControl({ recruiterName, onSignOut }: { recruiterName: string; onSignOut: () => void }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement | null>(null)
@@ -37,9 +36,6 @@ export function AccountControl({ recruiterName, onSignOut }: { recruiterName: st
       {open ? (
         <div className="account-control__menu" role="menu">
           <CreditMeter />
-          <div className="account-control__appearance">
-            <AppearanceControl />
-          </div>
           <button
             type="button"
             role="menuitem"
