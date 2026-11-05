@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { AlertTriangle, Check } from 'lucide-react'
 import { BoundaryEditor } from '../components/BoundaryEditor'
 import type { IntakeIssue, IntakeResult } from '../models/intake'
+import { offeredDecisions } from '../models/intake'
 import {
   PROVENANCE_LABEL,
   confirmationSummary,
@@ -110,6 +111,7 @@ export function LivingBrief({ result, boundary, brief, onChangeBrief, onAnswer, 
   const title = titleView(result)
   const status = readyStatus(result, boundary)
   const nextQuestion = status.questions[0] ?? null
+  const offers = offeredDecisions(result)
   const groups = requirementGroups(result)
   const experience = experienceView(result)
   const notes = recruiterNotes(result)
@@ -170,6 +172,16 @@ export function LivingBrief({ result, boundary, brief, onChangeBrief, onAnswer, 
         <p className="lb-more">
           {status.questions.length - 1} more decision{status.questions.length - 1 === 1 ? '' : 's'} after this one.
         </p>
+      ) : null}
+
+      {/* Optional refinements — answerable, but never block Search. */}
+      {offers.length ? (
+        <section className="lb-offers" aria-label="Optional refinements">
+          <p className="lb-offers__lead">Refine the search (optional)</p>
+          {offers.map((issue) => (
+            <DecisionCard key={issue.id ?? issue.issue} issue={issue} onAnswer={onAnswer} isAnswering={isAnswering} onReconsider={() => setBoundaryOpen(true)} />
+          ))}
+        </section>
       ) : null}
 
       {/* 3 How I read this role */}
@@ -253,6 +265,19 @@ export function LivingBrief({ result, boundary, brief, onChangeBrief, onAnswer, 
           ) : null,
         )}
       </section>
+
+      {/* Exclusions — makes Tighten-to-track / company excludes visible (previously
+          applied silently). "current: X" means not currently at X. */}
+      {role.explicit_constraints.exclusions.length ? (
+        <section className="lb-section" aria-labelledby="lb-exclusions">
+          <h3 id="lb-exclusions" className="lb-heading">Excluding</h3>
+          <ul className="lb-list">
+            {role.explicit_constraints.exclusions.map((item) => (
+              <li key={item}><span>{item}</span></li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {/* 7 Technologies mentioned */}
       {role.technologies_mentioned.length ? (

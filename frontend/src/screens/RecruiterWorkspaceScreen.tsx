@@ -782,7 +782,7 @@ export function RecruiterWorkspaceScreen() {
                   <h1>{roleTitle}</h1>
                   {showIdentity ? (
                     <p className="workspace__identity">
-                      <span className="workspace__identity-label">Searching for</span> {identity}
+                      <span className="workspace__identity-label">{searchState === 'searching' ? 'Searching for' : 'Searched for'}</span> {identity}
                     </p>
                   ) : null}
                   <p className="workspace__role-subtitle">

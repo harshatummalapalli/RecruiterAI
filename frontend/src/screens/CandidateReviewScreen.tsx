@@ -6,6 +6,7 @@ import { buildDiscoveryCandidates } from '../models/discovery'
 import { buildWorkspaceCandidates, normalizeDecision, stableOrder, type Decision } from '../models/workspace'
 import { CandidateRecord, type RecordNote } from '../components/CandidateRecord'
 import { CandidateWorkspace } from '../components/CandidateWorkspace'
+import { RefinePanel } from '../components/RefinePanel'
 import { AvailabilityNotice, CalibrationNote, NewCandidatesNotice, OtherReviewed, PausedPanel, RoleBar, ShowMoreBar } from '../components/RoleControls'
 import {
   availabilityNotice,
@@ -18,7 +19,7 @@ import {
   splitByPresentation,
   type PauseAction,
 } from '../models/roleWorkspace'
-import { updateCandidateRecord } from '../services/recruiterWorkflow'
+import { refineSearch, revealNextCandidate, updateCandidateRecord, type RefineDeltas } from '../services/recruiterWorkflow'
 import type { SearchBoundary } from '../models/searchBoundary'
 import type { IntakeIssue, IntakeResult } from '../models/intake'
 import { LivingBrief } from './LivingBrief'
@@ -107,6 +108,9 @@ export function CandidateReviewScreen({
 }: CandidateReviewScreenProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isEditingBrief, setIsEditingBrief] = useState(false)
+  // The pool-first refine overlay, and the in-flight state of an Apply. Reset on a new search.
+  const [isRefining, setIsRefining] = useState(false)
+  const [refineBusy, setRefineBusy] = useState(false)
   const [decisions, setDecisions] = useState<Record<string, Decision | undefined>>({})
   const [roleBusy, setRoleBusy] = useState(false)
   const [pauseDismissed, setPauseDismissed] = useState(false)
@@ -127,6 +131,7 @@ export function CandidateReviewScreen({
   useEffect(() => {
     setSelectedId(null)
     setIsEditingBrief(false)
+    setIsRefining(false)
     setPauseDismissed(false)
     pendingDecisions.current = {}
   }, [searchGeneration, searchId])
@@ -183,6 +188,9 @@ export function CandidateReviewScreen({
 
   const progress = searchResponse?.progress
   const isRole = isRoleSearch(searchResponse)
+  // New engine: ask for a structured reason on Maybe/Reject even though it is not a
+  // multi-search "role". Legacy pre-role searches leave this off, so they are unchanged.
+  const captureFeedback = isRole || Boolean(searchResponse?.feedback_capture)
   const role = searchResponse?.role ?? null
   // While a later cycle runs, the candidates already on screen stay as they are; only the first read shows progress.
   // Retrieval counts, funnel breakdowns and "how this list was made" are deliberately not shown to the recruiter —
@@ -198,10 +206,20 @@ export function CandidateReviewScreen({
     pendingDecisions.current[id] = next ?? null
     setDecisions((current) => ({ ...current, [id]: next }))
     setWriteError(null)
+    // Pool-first reveal: a reject opens a slot, so bring the next already-read
+    // profile forward from the held pool — free, no new search — if any remain.
+    const revealAfterReject = next === 'reject' && captureFeedback && (searchResponse?.reserve_available ?? 0) > 0
     if (searchId) {
       // An empty decision clears it on the server.
       updateCandidateRecord(searchId, id, { decision: next ?? '' })
-        .then(saved)
+        .then((response) => {
+          saved(response)
+          if (revealAfterReject) {
+            revealNextCandidate(searchId)
+              .then(saved)
+              .catch(() => setWriteError('The next profile could not be brought forward — check your connection and try again.'))
+          }
+        })
         .catch(() => {
           // The save failed — roll the card back to what's actually stored and say so,
           // rather than leaving a decision that looks saved but isn't.
@@ -218,6 +236,18 @@ export function CandidateReviewScreen({
     updateCandidateRecord(searchId, id, { feedback_reason: update.reason, feedback_note: update.note })
       .then(saved)
       .catch(() => setWriteError('That change could not be saved — check your connection and try again.'))
+  }
+
+  // Pool-first refine: re-check the already-read profiles against the tighter brief.
+  // Free — no new search, no credits. The panel stays open so the recruiter sees the outcome.
+  const applyRefine = (deltas: RefineDeltas) => {
+    if (!searchId) return
+    setRefineBusy(true)
+    setWriteError(null)
+    refineSearch(searchId, deltas)
+      .then(saved)
+      .catch(() => setWriteError('That refinement could not be applied — check your connection and try again.'))
+      .finally(() => setRefineBusy(false))
   }
 
   const runRoleAction = async (task: () => Promise<void> | undefined) => {
@@ -390,7 +420,12 @@ export function CandidateReviewScreen({
             {!showSkeleton && candidates.length > 0 ? (
               <div className="discovery-toolbar">
                 {reviewedNote ? <span className="discovery-reviewed-note">{reviewedNote}</span> : <span />}
-                <button type="button" className="discovery-export" onClick={exportCsv}>Export CSV</button>
+                <div className="discovery-toolbar__actions">
+                  {captureFeedback ? (
+                    <button type="button" className="discovery-refine" onClick={() => setIsRefining(true)}>Refine search</button>
+                  ) : null}
+                  <button type="button" className="discovery-export" onClick={exportCsv}>Export CSV</button>
+                </div>
               </div>
             ) : null}
 
@@ -402,8 +437,8 @@ export function CandidateReviewScreen({
                 onOpen={setSelectedId}
                 onDecide={decide}
                 orderNote={isRole ? ROLE_ORDER_NOTE : 'Strongest matches first.'}
-                feedback={isRole ? (searchResponse?.feedback ?? {}) : undefined}
-                onFeedback={isRole ? giveFeedback : undefined}
+                feedback={captureFeedback ? (searchResponse?.feedback ?? {}) : undefined}
+                onFeedback={captureFeedback ? giveFeedback : undefined}
               />
             ) : null}
 
@@ -447,6 +482,17 @@ export function CandidateReviewScreen({
               noteDraft={noteDraft}
               onNoteDraftChange={setNoteDraft}
               onAddNote={() => addNote(selectedCandidate.id)}
+            />
+          ) : null}
+
+          {isRefining ? (
+            <RefinePanel
+              onClose={() => setIsRefining(false)}
+              intakeResult={intakeResult}
+              boundary={boundary}
+              outcome={searchResponse?.refine_outcome ?? null}
+              busy={refineBusy}
+              onApply={applyRefine}
             />
           ) : null}
         </div>

@@ -50,9 +50,13 @@ class RankingAgent:
         eligible = [c for c in candidates if not below_floor(c, min_years)]
         experience_excluded = len(candidates) - len(eligible)
 
-        # 1-2. evidence-aware baseline -> admit the top N.
+        # 1-2. evidence-aware baseline -> admit the top N; hold the rest in reserve.
+        # The reserve is baseline-ranked and NEVER judged here — it is the demand-
+        # driven pool later phases promote from, so the first view only pays the
+        # Judge for the N we admit (the judge-N / show-few hedge).
         by_baseline = sorted(eligible, key=lambda c: (-baseline_score(role, c), (c.name or "")))
         admitted = by_baseline[: self._admit_n]
+        reserve = tuple(by_baseline[self._admit_n :])
         if on_progress is not None:
             on_progress(len(admitted), 0)
 
@@ -104,5 +108,5 @@ class RankingAgent:
         return RankingResult(
             ranked=rows, shown=rows[: self._show],
             admitted=len(admitted), judged=judged, judge_failures=failures,
-            experience_excluded=experience_excluded,
+            experience_excluded=experience_excluded, reserve=reserve,
         )

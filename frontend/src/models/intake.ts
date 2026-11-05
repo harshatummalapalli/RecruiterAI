@@ -77,7 +77,9 @@ export type IntakeIssueOption = { value: string; label: string }
 
 export type IntakeIssue = {
   issue: string
-  decision: 'ask' | 'tell' | 'ignore'
+  // 'ask' blocks Search until answered; 'offer' is an optional, answerable
+  // refinement (choice card) that never blocks; 'tell' is a read-only insight.
+  decision: 'ask' | 'offer' | 'tell' | 'ignore'
   id: string | null
   reasoning: string | null
   question: string | null
@@ -174,6 +176,13 @@ export type ConfirmationResponse = {
 
 export function pendingAskIssues(result: IntakeResult): IntakeIssue[] {
   return result.decision.issues.filter((issue) => issue.decision === 'ask')
+}
+
+/** Optional, answerable refinements (capability keep/remove, which specialization,
+ * which stack). Shown as choice cards the recruiter can act on; they never block
+ * Search, and each clears once answered. */
+export function offeredDecisions(result: IntakeResult): IntakeIssue[] {
+  return result.decision.issues.filter((issue) => issue.decision === 'offer' && issue.options.length > 0)
 }
 
 export function tellInsights(result: IntakeResult): IntakeIssue[] {

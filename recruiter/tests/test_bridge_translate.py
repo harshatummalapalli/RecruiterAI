@@ -2,7 +2,14 @@
 
 import json
 
-from backend.bridge.translate import to_intake_result, to_search_intent, to_search_response
+from backend.bridge.translate import (
+    pool_snapshot,
+    refine_pool_into_record,
+    reveal_into_record,
+    to_intake_result,
+    to_search_intent,
+    to_search_response,
+)
 from recruiter.agents.intake.model import Question
 from recruiter.agents.ranking.model import RankedCandidate, RankingResult
 from recruiter.agents.search.model import SearchResult
@@ -76,14 +83,39 @@ def test_intake_result_maps_brief_and_marks_status():
     assert ru["role_interpretation"] == {"value": None, "evidence": None, "source": None}
     # capability leads the hard requirements, then the recruiter-marked dealbreaker
     assert result["decision"]["final_search_intent"]["hard_requirements"] == ["eDiscovery", "eDiscovery operations"]
-    # the capability is NOT a blocking decision card — it is a stated assumption
-    # (non-blocking "tell" with an insight note), so the brief shows straight away
+    # the capability is an OPTIONAL, interactive refinement ("offer"): the recruiter
+    # can keep or remove it (A2), but it never blocks Search, and it still carries
+    # the stated-assumption insight note so the brief reads clearly straight away.
     cap = result["decision"]["issues"][0]
     assert cap["question"] == "Require eDiscovery?"
-    assert cap["decision"] == "tell"
+    assert cap["decision"] == "offer"
     assert cap["insight_text"] and "eDiscovery" in cap["insight_text"]
     assert result["status"] == "ready"
     json.dumps(result)  # must serialize
+
+
+def test_dropped_negative_nudge_is_high_precision():
+    from dataclasses import replace
+    from recruiter.role_model import CompanyRules
+    base = RoleModel(identity="Backend Engineer", seniority=Seniority(5, None, Provenance(JD)),
+                     role_level=None, location=Location(countries=("India",)))
+    has = lambda r: any("free-text exclusions" in lim for lim in r["decision"]["limitations"])
+    # Exclusion phrasing + nothing excluded -> nudge.
+    assert has(to_intake_result("We don't want anyone from Google.", base, (), status="ready"))
+    assert has(to_intake_result("Please, not a manager for this role.", base, (), status="ready"))
+    # No exclusion phrasing -> no nudge (no false positive).
+    assert not has(to_intake_result("Backend engineer, Postgres, Kafka.", base, (), status="ready"))
+    # Default exec TITLE exclusions must NOT suppress the nudge (CoWork round 2 bug) —
+    # only a recruiter-set COMPANY exclusion means nothing was dropped.
+    titled = replace(base, exclude_titles=("Manager", "Director"))
+    assert has(to_intake_result("We don't want anyone from Google.", titled, (), status="ready"))
+    # The AUTOMATIC hiring-company exclusion ("current: Acme") must NOT suppress it
+    # (CoWork round 3 — it is always present, so it hid the nudge every time).
+    auto = replace(base, hiring_company="Acme", companies=CompanyRules(exclude_current=("Acme",)))
+    assert has(to_intake_result("We don't want anyone from Google.", auto, (), status="ready"))
+    # A real OTHER company exclusion -> no nudge.
+    excl = replace(base, companies=CompanyRules(exclude_current=("Google",)))
+    assert not has(to_intake_result("We don't want anyone from Google.", excl, (), status="ready"))
 
 
 def test_core_requirements_show_even_without_a_capability_group():
@@ -119,7 +151,9 @@ def test_search_response_maps_candidates_and_diagnostics():
     assert resp["candidate_count"] == 1 and resp["search_id"] == "s-1"
     c = resp["candidates"][0]
     assert c["name"] == "Asha" and c["final_score"] == 0.91 and c["raw_data"]["basic_profile"]["headline"] == "Relativity"
-    assert resp["explanations"][0]["why_this_candidate"] == "Strong Relativity match."
+    # "Why this candidate" is now a grounded summary, not the line-by-line fit. This
+    # record carries no judgments, so it honestly says the profile was not read in depth.
+    assert "not read in depth" in resp["explanations"][0]["why_this_candidate"]
     assert resp["diagnostics"]["pulled"] == 50 and resp["diagnostics"]["excluded_dropped"] == 3
     assert resp["diagnostics"]["experience_excluded"] == 2 and resp["status"] == "complete"
     # rich evidence now built via the keeper candidate_evidence_builder
@@ -149,3 +183,130 @@ def test_judge_judgments_flow_into_evidence_for_the_dots_and_ledger():
     rows = resp["evidence"][0]["requirement_judgments"]
     assert rows and any(r["signal_text"] == "Relativity" and r["verdict"] == "met" for r in rows)
     json.dumps(resp)
+
+
+def _judged_rc(cid, headline, score):
+    rec = CandidateRecord(cid, name=cid, title="eDiscovery Analyst", profile_url="http://x",
+                          provider_score=0.5, raw={"basic_profile": {"headline": headline}},
+                          judgments=({"tier": "core", "signal_text": "Relativity", "verdict": "met",
+                                      "quote": headline},))
+    return RankedCandidate(rec, score, f"Match: {headline}")
+
+
+def test_pool_snapshot_holds_judged_and_reserve_state():
+    shown = _judged_rc("shown", "Relativity lead", 0.9)
+    held = _judged_rc("held", "Relativity analyst", 0.6)      # judged but not shown
+    reserve_rec = CandidateRecord("reserve", name="reserve", title="Analyst",
+                                  raw={"basic_profile": {"headline": "generalist"}})
+    ranking = RankingResult(ranked=(shown, held), shown=(shown,), admitted=2, judged=2,
+                            judge_failures=0, reserve=(reserve_rec,))
+    pool = pool_snapshot(ranking)
+    assert pool["counts"] == {"judged": 2, "reserve": 1, "shown": 1, "total": 3}
+    # shown flag is set only on the surfaced row; both judged rows carry verdicts + fit
+    assert [e["shown"] for e in pool["judged"]] == [True, False]
+    assert all(e["judged"] and e["judgments"] and e["fit"] for e in pool["judged"])
+    # reserve is un-judged but keeps its raw payload for on-demand judging later
+    r = pool["reserve"][0]
+    assert r["judged"] is False and r["judgments"] is None
+    assert r["raw"]["basic_profile"]["headline"] == "generalist" and r["rank"] == 2
+    json.dumps(pool)
+
+
+def test_search_response_carries_the_pool_for_the_caller_to_lift_off():
+    rec = CandidateRecord("c1", name="Asha", title="eDiscovery Analyst",
+                          raw={"basic_profile": {"headline": "Relativity"}})
+    reserve_rec = CandidateRecord("c2", name="Bob", title="Analyst", raw={})
+    ranking = RankingResult(ranked=(RankedCandidate(rec, 0.9, "ok"),), shown=(RankedCandidate(rec, 0.9, "ok"),),
+                            admitted=1, judged=1, judge_failures=0, reserve=(reserve_rec,))
+    search = SearchResult(candidates=(rec,), pulled=50, geo_dropped=0, est_credits=1.5, excluded_dropped=0)
+    resp = to_search_response("crustdata", "s-3", _model(), search, ranking)
+    assert resp["pool"]["counts"]["total"] == 2        # 1 judged + 1 reserve
+    assert len(resp["candidates"]) == 1                 # but only the shown 5 go on the card list
+    assert resp["feedback_capture"] is True and resp["reserve_available"] == 0
+    json.dumps(resp)
+
+
+def test_reveal_brings_the_next_read_profile_forward_then_runs_dry():
+    model = _model()
+    held = {
+        "candidate_id": "held1", "name": "Ravi", "title": "eDiscovery Analyst",
+        "company": "KLDiscovery", "location": "Pune, India", "profile_url": "http://y",
+        "provider_score": 0.6, "final_score": 0.55, "fit": "Evidence: eDiscovery operations",
+        "judged": True, "shown": False, "rank": 1,
+        "judgments": [{"tier": "core", "signal_text": "eDiscovery operations", "verdict": "met",
+                       "quote": "Ran EDRM review workflows"}],
+        "matched_queries": ["natural_language"], "raw": {"basic_profile": {"headline": "EDRM reviews"}},
+    }
+    record = {
+        "response": {"candidates": [{"candidate_id": "shown1", "name": "Asha"}],
+                     "explanations": [{}], "evidence": [{}], "candidate_count": 1,
+                     "reserve_available": 1, "candidate_states": {}},
+        "internal_diagnostics": {"pool": {"judged": [{"candidate_id": "shown1", "shown": True}, held], "reserve": []}},
+    }
+    # First reveal brings held1 forward — no new search.
+    assert reveal_into_record(record, model) is True
+    resp = record["response"]
+    assert resp["candidate_count"] == 2
+    assert [c["candidate_id"] for c in resp["candidates"]] == ["shown1", "held1"]
+    assert resp["reserve_available"] == 0
+    assert held["shown"] is True                                    # never revealed twice
+    assert "eDiscovery operations" in resp["explanations"][1]["why_this_candidate"]  # grounded summary
+    # Nothing left in the free pool → a second reveal is a no-op.
+    assert reveal_into_record(record, model) is False
+    json.dumps(record)
+
+
+def test_reveal_is_a_noop_without_a_pool():
+    record = {"response": {"candidates": [], "explanations": [], "evidence": []}, "internal_diagnostics": {}}
+    assert reveal_into_record(record, _model()) is False
+
+
+def _pool_entry(cid, company, title, headline="Relativity"):
+    return {
+        "candidate_id": cid, "name": cid, "title": title, "company": company,
+        "location": "Pune, India", "profile_url": "http://x", "provider_score": 0.5,
+        "final_score": 0.5, "fit": "Evidence: eDiscovery operations", "judged": True, "shown": False, "rank": 0,
+        "judgments": [{"tier": "core", "signal_text": "eDiscovery operations", "verdict": "met", "quote": "Ran EDRM"}],
+        "matched_queries": ["natural_language"], "raw": {"basic_profile": {"headline": headline}},
+    }
+
+
+def _record_with_pool(entries):
+    return {
+        "response": {"candidates": [], "explanations": [], "evidence": [], "candidate_count": 0,
+                     "reserve_available": 0, "candidate_states": {}},
+        "internal_diagnostics": {"pool": {"judged": list(entries), "reserve": []}},
+    }
+
+
+def test_refine_pool_drops_an_excluded_company_and_rewrites_the_shown_set():
+    record = _record_with_pool([
+        _pool_entry("keep1", "KLDiscovery", "eDiscovery Analyst"),
+        _pool_entry("drop1", "Epiq", "eDiscovery Analyst"),
+        _pool_entry("keep2", "Lighthouse", "eDiscovery Analyst"),
+    ])
+    outcome = refine_pool_into_record(record, _model(), {"exclude_companies_current": ["Epiq"]}, show=5)
+    assert outcome == {"refined": True, "matched": 2, "dropped": 1, "shown": 2, "exhausted": False}
+    ids = [c["candidate_id"] for c in record["response"]["candidates"]]
+    assert "drop1" not in ids and set(ids) == {"keep1", "keep2"}
+    assert record["response"]["candidate_count"] == 2
+    json.dumps(record)
+
+
+def test_refine_pool_excludes_by_title():
+    record = _record_with_pool([
+        _pool_entry("ic", "Acme", "eDiscovery Analyst"),
+        _pool_entry("mgr", "Acme", "eDiscovery Manager"),
+    ])
+    outcome = refine_pool_into_record(record, _model(), {"exclude_titles": ["Manager"]}, show=5)
+    assert outcome["matched"] == 1 and outcome["dropped"] == 1
+    assert [c["candidate_id"] for c in record["response"]["candidates"]] == ["ic"]
+
+
+def test_refine_pool_exhausted_keeps_current_view():
+    record = _record_with_pool([_pool_entry("only", "Epiq", "eDiscovery Analyst")])
+    record["response"]["candidates"] = [{"candidate_id": "shown_before"}]
+    outcome = refine_pool_into_record(record, _model(), {"exclude_companies_current": ["Epiq"]}, show=5)
+    assert outcome["matched"] == 0 and outcome["exhausted"] is True
+    # Nobody matched → the current view is left untouched (no jarring empty screen).
+    assert record["response"]["candidates"] == [{"candidate_id": "shown_before"}]

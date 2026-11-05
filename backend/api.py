@@ -289,6 +289,14 @@ class SearchResponse(BaseModel):
     feedback: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
     new_candidates: int = 0
     retrieval_exhausted: bool = False
+    # New engine: ask for a structured reason on Maybe/Reject, and reveal the next
+    # already-read candidate from the held pool when one is rejected. Default off so
+    # legacy/role searches are unchanged.
+    feedback_capture: bool = False
+    reserve_available: int = 0
+    # The result of the last pool-first refine (matched / dropped / exhausted), so the
+    # UI can say "N of your read pool match" and offer a wider search when none do.
+    refine_outcome: Optional[Dict[str, Any]] = None
 
 
 class WorkspaceUpdateRequest(BaseModel):
@@ -302,6 +310,25 @@ class CandidateUpdateRequest(BaseModel):
     # Optional, for Maybe and Reject only: a structured reason and a short note. See backend/services/role_feedback.py.
     feedback_reason: Optional[str] = None
     feedback_note: Optional[str] = None
+
+
+class RefineRequest(BaseModel):
+    """Structured refine deltas (new engine). Every field is typed and capability-
+    grounded — no free text is interpreted. All optional; only what the recruiter
+    changed is sent. See recruiter/agents/calibration/refine.refine_model."""
+    min_years: Optional[int] = None
+    max_years: Optional[int] = None
+    work_mode: Optional[str] = None
+    location: Optional[Dict[str, Any]] = None
+    exclude_companies_current: Optional[List[str]] = None
+    exclude_companies_ever: Optional[List[str]] = None
+    only_companies: Optional[List[str]] = None
+    exclude_titles: Optional[List[str]] = None
+    industries: Optional[List[str]] = None
+    retier: Optional[Dict[str, str]] = None
+    when: Optional[Dict[str, str]] = None
+    add_requirements: Optional[List[Dict[str, Any]]] = None
+    dealbreakers: Optional[List[str]] = None
 
 
 class ShowMoreRequest(BaseModel):
@@ -997,6 +1024,45 @@ def create_app(
         logger.info("[SEARCH] Recruiter decision/note persisted | search_id=%s candidate_id=%s", search_id, update.candidate_id)
         return _search_response(record)
 
+    @app.post("/search/{search_id}/reveal", response_model=SearchResponse, dependencies=[Depends(require_session)])
+    def reveal_candidate(search_id: str) -> SearchResponse:
+        # Pool-first reveal (new engine): bring the next already-read profile forward
+        # from the held pool — no new search, no credits. A no-op (returns the search
+        # unchanged) when the free pool is exhausted; reaching wider is a separate,
+        # credit-gated step (the refine flow).
+        if intake_service is None:
+            raise HTTPException(status_code=404, detail="Reveal is not available for this search.")
+        outcome = {"revealed": False}
+
+        def apply(record: Dict[str, Any]) -> None:
+            outcome["revealed"] = intake_service.reveal_next(record)
+
+        record = search_store.update(search_id, apply)
+        if record is None:
+            raise HTTPException(status_code=404, detail="Search not found.")
+        logger.info("[SEARCH] Pool-first reveal | search_id=%s revealed=%s", search_id, outcome["revealed"])
+        return _search_response(record)
+
+    @app.post("/search/{search_id}/refine", response_model=SearchResponse, dependencies=[Depends(require_session)])
+    def refine_search(search_id: str, request: RefineRequest) -> SearchResponse:
+        # Pool-first refine (new engine): re-check + re-rank the already-read pool
+        # against the recruiter's structured deltas — free, instant, no new search.
+        # When nothing in the read pool matches, the view is kept and `refine_outcome`
+        # reports exhausted so the UI can offer a (credit-gated) wider search.
+        if intake_service is None:
+            raise HTTPException(status_code=404, detail="Refine is not available for this search.")
+        outcome: Dict[str, Any] = {}
+
+        def apply(record: Dict[str, Any]) -> None:
+            outcome.update(intake_service.refine(record, request.model_dump(exclude_none=True)))
+
+        record = search_store.update(search_id, apply)
+        if record is None:
+            raise HTTPException(status_code=404, detail="Search not found.")
+        logger.info("[SEARCH] Pool-first refine | search_id=%s matched=%s dropped=%s exhausted=%s",
+                    search_id, outcome.get("matched"), outcome.get("dropped"), outcome.get("exhausted"))
+        return _search_response(record)
+
     @app.post("/search/{search_id}/more", dependencies=[Depends(require_session)])
     def show_more(search_id: str, request: Optional[ShowMoreRequest] = None) -> Dict[str, Any]:
         """"Show me more": shows candidates already read, then continues the current retrieval when none are left."""
@@ -1148,9 +1214,14 @@ def create_app(
                 })
 
             def _run_engine_search() -> None:
+                pool = None
                 try:
                     resp = intake_service.run_search(confirmation_id, search_id, provider=provider_name,
                                                      on_progress=_save_progress)
+                    # The held pool rides out on the response; lift it off before the
+                    # snapshot is stored so it is persisted (internal, admin-only) but
+                    # never serialized into the polled SearchResponse.
+                    pool = resp.pop("pool", None)
                     status = "complete"
                 except KeyError:
                     resp = {**running, "status": "error",
@@ -1169,7 +1240,7 @@ def create_app(
                     "response": resp, "recruiter_decisions": prior.get("recruiter_decisions", {}),
                     "notes": prior.get("notes", {}), "candidate_states": prior.get("candidate_states", {}),
                     "confirmed_brief": resp.get("confirmed_brief") or prior.get("confirmed_brief"),
-                    "harvest_evidence": {}, "internal_diagnostics": {},
+                    "harvest_evidence": {}, "internal_diagnostics": {"pool": pool} if pool else {},
                 })
 
             threading.Thread(target=_run_engine_search, daemon=True,

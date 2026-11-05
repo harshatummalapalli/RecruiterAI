@@ -124,3 +124,19 @@ def test_explanation_falls_back_without_a_judge():
     role = _role()
     result = RankingAgent(admit_n=25, show=1).rank(role, [_rec("a", "AI Architect")])
     assert "not deep-verified" in result.shown[0].fit
+
+
+def test_reserve_holds_the_unadmitted_pool_unjudged():
+    # judge-N / show-few hedge: with admit_n=8 of 20 eligible, only 8 are judged and
+    # the other 12 sit in reserve — baseline-ranked, never Judge-touched — so the
+    # first view pays the Judge for 8, not 20, and nothing is discarded.
+    role = _role()
+    cands = [_rec(f"c{i}", "AI Architect", "Agentic Python" if i % 2 == 0 else "") for i in range(20)]
+    judge = _FakeJudge()
+    result = RankingAgent(judge=judge, enricher=None, admit_n=8, show=5).rank(role, cands)
+    assert result.admitted == 8 and result.judged == 8 and len(result.shown) == 5
+    assert len(result.reserve) == 12
+    # reserve is the baseline tail: un-judged, so no Judge verdicts attached
+    assert all(rec.judgments is None for rec in result.reserve)
+    # the whole eligible pool is accounted for (admitted + reserve), nothing dropped
+    assert len(result.ranked) + len(result.reserve) == 20

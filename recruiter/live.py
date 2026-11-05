@@ -31,7 +31,11 @@ def build_live_pipeline(
     *,
     memory_root: Path = _DEFAULT_MEMORY_ROOT,
     page_size: int = 50,
-    admit_n: int = 25,
+    # judge-N / show-few hedge: pull ~page_size, baseline-rank the whole pool for
+    # free, judge only the top admit_n, show the best `show`. The rest is held in
+    # reserve and judged on demand. admit_n=8/show=5 pays the Judge for 8 (not 25)
+    # on the first view — cheaper + faster — with a Judge-ranked first impression.
+    admit_n: int = int(os.environ.get("RECRUITER_ADMIT_N") or 8),
     show: int = 5,
     judge_workers: int = int(os.environ.get("RECRUITER_JUDGE_WORKERS") or 8),
     reader_model: str = READER_MODEL,

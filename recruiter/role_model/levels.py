@@ -71,6 +71,32 @@ def candidate_role_level(current_title: Optional[str]) -> str:
     return classify_role_level(current_title)
 
 
+# Opt-in "tighten to this role's track" exclusions (C1). NEVER applied by default
+# — a role at these bands suppresses the default exclusions, so off-track titles
+# can leak in; the recruiter turns this on in the brief. Reuses exclude_titles (a
+# verified keyword filter). Conservative: a band excludes clearly off-track titles,
+# never the role's own.
+_OFF_TRACK: dict = {
+    ARCHITECT: ("Manager", "Director", "Vice President", "VP", "Head of"),   # IC-technical: drop people-managers
+    MANAGER: ("Director", "Vice President", "VP", "Chief", "Head of"),        # line manager: drop higher execs
+    DIRECTOR_PLUS: ("Manager",),                                             # director+: drop non-director managers
+}
+
+_OFF_TRACK_LABEL = {
+    ARCHITECT: "people-managers (Manager / Director / VP)",
+    MANAGER: "higher-level executives (Director / VP / Chief)",
+    DIRECTOR_PLUS: "non-director managers",
+}
+
+
+def off_track_titles(role_level: str) -> Tuple[str, ...]:
+    return _OFF_TRACK.get(role_level, ())
+
+
+def off_track_label(role_level: str) -> Optional[str]:
+    return _OFF_TRACK_LABEL.get(role_level)
+
+
 def level_note(current_title: Optional[str], role_level: str) -> Optional[str]:
     """How the candidate's current title reads against the role's level — a note
     the recruiter sees ("reads above the role's ic level (architect)"), never an

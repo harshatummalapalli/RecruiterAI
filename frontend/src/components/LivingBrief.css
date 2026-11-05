@@ -142,6 +142,19 @@
   color: var(--color-muted);
 }
 
+.lb-offers {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lb-offers__lead {
+  margin: 0 2px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-secondary-text);
+}
+
 .lb-facts {
   display: grid;
   grid-template-columns: max-content 1fr;

@@ -141,14 +141,17 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
   const educationHead = candidate.education.slice(0, EDUCATION_SHOWN)
   const educationRest = candidate.education.slice(EDUCATION_SHOWN)
   const hasLedger = candidate.ledger.length > 0
+  const requirementCount = candidate.ledger.reduce((total, group) => total + group.total, 0)
   const educationLine = (entry: DiscoveryCandidate['education'][number]) =>
     [[entry.degree, entry.fieldOfStudy].filter(Boolean).join(', ') || 'Degree not specified', entry.institution, entry.years].filter(Boolean).join(' · ')
 
   // Move to the next/previous candidate without leaving the record — inspect, next, inspect, next.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null
-      if (target?.closest('input, textarea, select, [contenteditable="true"]')) return
+      const target = event.target
+      // Guard before .closest: this listener is on `window`, so the target can be
+      // `document`/`window` (no .closest) when nothing is focused — not just null.
+      if (target instanceof Element && target.closest('input, textarea, select, [contenteditable="true"]')) return
       if (event.metaKey || event.ctrlKey || event.altKey) return
       const key = event.key.toLowerCase()
       if ((key === 'j' || key === 'arrowdown') && onNext) {
@@ -159,11 +162,18 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
         onPrev()
       } else if (key === 'escape') {
         onClose()
+      } else if (key === 's' || key === 'm' || key === 'r') {
+        // Decide the open candidate from the keyboard even when focus has landed on
+        // `body` (e.g. after j/k moved the record). If a workspace card already
+        // handled this key, it will have called preventDefault — don't act twice.
+        if (event.defaultPrevented) return
+        event.preventDefault()
+        onDecision(key === 's' ? 'shortlist' : key === 'm' ? 'maybe' : 'reject')
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onNext, onPrev, onClose])
+  }, [onNext, onPrev, onClose, onDecision])
 
   return (
     <aside className="discovery-profile record" aria-label="Candidate record">
@@ -250,6 +260,11 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
         ) : (
           <p className="record-muted">{candidate.whyThisCandidate || 'Not enough information was returned to assess this candidate.'}</p>
         )}
+        {facts.coreTotal > 0 ? (
+          <p className="record-coverage">
+            <strong>{facts.shown} of {facts.coreTotal}</strong> core requirements evidenced
+          </p>
+        ) : null}
         <p className="record-position">{relevanceLabel(candidate.relevanceTier)}</p>
       </section>
 
@@ -259,10 +274,18 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
         </h3>
         {hasLedger ? (
           <>
-            <p className="record-muted record-ledger__intro">Each row is a requirement from the brief. A check needs a quote from the profile beside it.</p>
-            {candidate.ledger.map((group) => (
-              <LedgerSection key={group.tier} group={group} />
-            ))}
+            {/* The grounded summary above is the lead; the full requirement-by-
+               requirement check is here but collapsed, so the record is a summary
+               by default and the line-by-line detail is one click away. */}
+            <details className="record-ledger__all">
+              <summary className="record-ledger__toggle">
+                See the full requirement check ({requirementCount} checked)
+              </summary>
+              <p className="record-muted record-ledger__intro">Each row is a requirement from the brief. A check needs a quote from the profile beside it.</p>
+              {candidate.ledger.map((group) => (
+                <LedgerSection key={group.tier} group={group} />
+              ))}
+            </details>
             {candidate.potentialConcerns.length ? (
               <ul className="record-ledger__concerns">
                 {candidate.potentialConcerns.map((item) => (

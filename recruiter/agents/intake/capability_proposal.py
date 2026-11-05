@@ -25,6 +25,30 @@ from recruiter.role_model import CapabilityGroup
 # identity, posted_title, requirement_texts -> a proposal, or None for a broad role.
 LlmProposer = Callable[[str, Optional[str], List[str]], Optional[LearnedCapability]]
 
+# Craft/base titles that commit to a craft but NOT to any domain specialization.
+# A narrow learned capability (e.g. "ML Platform") must not be FORCED onto these
+# from one past JD — one payments backend role and one ML backend role share the
+# key "backend engineer". For these, a cached narrow group is only applied when the
+# CURRENT role's own requirements corroborate it (see propose). Specific identities
+# like "ai engineer" or "salesforce developer" are NOT here — they name a domain,
+# so their learned capability still applies directly. Replace this hardcoded set
+# with taxonomy-driven breadth detection (ROLE_UNDERSTANDING_PLAN.md Thread B).
+_GENERIC_BASE_TITLES = frozenset({
+    "engineer", "software engineer", "backend engineer", "frontend engineer",
+    "full stack engineer", "fullstack engineer", "developer", "software developer",
+    "programmer", "web developer",
+    "analyst", "associate", "consultant", "specialist", "coordinator", "manager",
+})
+
+
+def _corroborated(cap: LearnedCapability, requirement_texts: Sequence[str]) -> bool:
+    """True when the current role's own requirements name any of the learned
+    terms (or the label) — evidence that THIS role really is that specialization,
+    not just a title collision."""
+    hay = " ".join(requirement_texts).lower()
+    needles = [t.lower() for t in cap.terms if t] + ([cap.label.lower()] if cap.label else [])
+    return any(n in hay for n in needles)
+
 
 def _to_group(cap: LearnedCapability) -> CapabilityGroup:
     rationale = (
@@ -52,7 +76,15 @@ class CapabilityProposer:
 
         cached = self._memory.get(org, key)
         if cached is not None:
-            return () if cached.is_broad else (_to_group(cached),)
+            if cached.is_broad:
+                return ()
+            # A generic craft/base title must not INHERIT a narrow learned
+            # capability from a past role unless this role's own requirements
+            # corroborate it — prevents "backend engineer -> ML Platform" from one
+            # JD being forced onto every backend search (ROLE_UNDERSTANDING_PLAN.md).
+            if key in _GENERIC_BASE_TITLES and not _corroborated(cached, requirement_texts):
+                return ()
+            return (_to_group(cached),)
 
         if self._llm is None:
             return ()  # nothing learned yet, no proposer -> stay broad

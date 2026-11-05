@@ -74,6 +74,18 @@ def test_title_net_drops_leadership_but_spares_manager_with_capability():
     assert {r.candidate_id for r in dropped} == {"vp", "dir", "peoplem"}
 
 
+def test_title_that_leads_with_manager_drops_despite_capability():
+    # CoWork round 3: "Manager Solutions Architect" + "AWS" in the headline was spared.
+    # A title that LEADS with the ambiguous term is a manager first.
+    recs = [
+        _title_rec("lead", "Manager Solutions Architect", "5x AWS Certified | Cloud Adoption"),
+        _title_rec("suffix", "Solutions Manager", "AWS cloud"),   # Manager not leading -> spared
+    ]
+    kept, dropped = enforce_title_exclusions(recs, _EXEC, capability_terms=("AWS",))
+    assert {r.candidate_id for r in dropped} == {"lead"}
+    assert {r.candidate_id for r in kept} == {"suffix"}
+
+
 def test_title_net_does_not_false_match_management_word():
     kept, dropped = enforce_title_exclusions(
         [_title_rec("x", "Management Consultant")], _EXEC, capability_terms=("eDiscovery",))

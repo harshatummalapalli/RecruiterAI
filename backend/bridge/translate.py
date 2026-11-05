@@ -10,10 +10,38 @@ those legacy-only fields empty — they are the Phase-2 frontend trim targets, m
 
 from __future__ import annotations
 
+import re
 from typing import Any, Dict, List, Optional, Sequence
 
 from recruiter.agents.briefing.query import build_nl_query
+from recruiter.agents.ranking.summary import evidence_summary
 from recruiter.role_model import Location, RoleModel
+
+# Explicit exclusion phrasing in the raw notes. High precision on purpose — a
+# false nudge is worse than a missed one — so it matches clear "exclude people/
+# companies" language, not every "not".
+_EXCLUSION_INTENT_RE = re.compile(
+    r"\b(?:not from|no one from|nobody from|not at|don'?t want|do not want|"
+    r"avoid candidates|exclude\b|no\s+candidates\s+from|not\s+a\s+manager|no\s+managers)\b", re.I)
+
+
+def _dropped_negative_nudge(raw_input: Optional[str], model: RoleModel) -> Optional[str]:
+    """Free-text exclusions are deliberately NOT turned into filters. When the notes
+    clearly ask for one but nothing was excluded, say so plainly instead of dropping
+    it silently (CoWork's negative-ask finding). Suppressed only by a RECRUITER-set
+    company exclusion — not by default exec TITLE exclusions (every IC role has them)
+    nor by the automatic hiring-company exclusion (always present as 'current: <co>')."""
+    hiring = (model.hiring_company or "").strip().lower()
+    recruiter_excludes = {
+        c.strip().lower() for c in (*model.companies.exclude_current, *model.companies.exclude_ever)
+    } - {hiring, ""}
+    if recruiter_excludes:
+        return None  # the recruiter set a real company exclusion — nothing was dropped
+    if raw_input and _EXCLUSION_INTENT_RE.search(raw_input):
+        return ("Your notes look like they ask to exclude some companies or titles. I don't turn "
+                "free-text exclusions into filters automatically — add companies under Exclude "
+                "companies in the boundary, or titles in Refine, so they're actually enforced.")
+    return None
 
 
 # --- small shape helpers -----------------------------------------------------
@@ -60,6 +88,10 @@ def _display_core(model) -> list:
 # assumed as a recruiter note the recruiter can override in the requirements — no
 # back-and-forth decision card before the brief is shown.
 _BLOCKING_ISSUES = {"min_years"}
+# Optional, INTERACTIVE refinements: rendered as answerable choice cards in the
+# brief (the recruiter can act on them) but they never block Search. Everything
+# else that isn't blocking stays a read-only "tell" insight.
+_OFFER_ISSUES = {"capability", "specialization", "stack", "track"}
 
 
 def _capability_assumption(model) -> Optional[str]:
@@ -79,8 +111,9 @@ def _capability_assumption(model) -> Optional[str]:
 
 
 def _issue(q, insight_text: Optional[str] = None) -> Dict[str, Any]:
+    decision = "ask" if q.id in _BLOCKING_ISSUES else "offer" if q.id in _OFFER_ISSUES else "tell"
     return {
-        "issue": q.id, "decision": "ask" if q.id in _BLOCKING_ISSUES else "tell",
+        "issue": q.id, "decision": decision,
         "id": q.id, "reasoning": None,
         "question": q.prompt, "options": [{"value": o, "label": o} for o in q.options],
         "consequence_if_answer_a": None, "consequence_if_answer_b": None,  # brain-only -> trim
@@ -186,7 +219,7 @@ def to_intake_result(raw_input: str, model: RoleModel, questions: Sequence, stat
         "stop_reasoning": None,
         "warnings": [],
         "search_consequence_summary": None,   # brain-only -> trim
-        "limitations": list(model.limitations),
+        "limitations": [*model.limitations, *( [n] if (n := _dropped_negative_nudge(raw_input, model)) else [] )],
         "final_search_intent": {
             # The brief's "Core" list: the role-defining capability leads, then the
             # reader's core requirements, then any recruiter-marked dealbreaker not
@@ -256,6 +289,49 @@ def to_intake_result_pending(raw_input: str, u, questions: Sequence) -> Dict[str
             "decision": decision, "status": "needs_clarification"}
 
 
+# --- the held pool (persisted off-wire for the adaptive loop) ----------------
+
+def _pool_entry(record, *, judged: bool, shown: bool, rank: int,
+                fit: Optional[str] = None, score: Optional[float] = None) -> Dict[str, Any]:
+    raw = record.raw if isinstance(record.raw, dict) else {}
+    return {
+        "candidate_id": record.candidate_id or None, "name": record.name, "title": record.title,
+        "company": record.company, "location": record.location, "profile_url": record.profile_url,
+        "provider_score": record.provider_score,
+        "final_score": score if score is not None else record.final_score,
+        "fit": fit, "judged": judged, "shown": shown, "rank": rank,
+        "enriched": bool(record.enriched),
+        "judgments": list(record.judgments) if record.judgments else None,
+        "matched_queries": list(record.matched_queries),
+        # Raw provider payload kept so a reserve member can be judged / have its
+        # evidence rebuilt later WITHOUT a fresh paid pull (the loop's foundation).
+        "raw": raw,
+    }
+
+
+def pool_snapshot(ranking) -> Dict[str, Any]:
+    """The full in-scope pool with per-candidate state. `judged` rows carry the
+    Judge's verdicts + the prose fit (shown or not); `reserve` is the baseline-
+    ranked, un-judged remainder, promoted on demand by a later phase. Persisted on
+    the search record (internal, admin-only) — NOT emitted in the frontend
+    SearchResponse; the caller lifts it out before storing the response snapshot."""
+    show_n = len(ranking.shown)
+    judged = [
+        _pool_entry(rc.record, judged=rc.record.judgments is not None,
+                    shown=i < show_n, rank=i, fit=rc.fit, score=rc.score)
+        for i, rc in enumerate(ranking.ranked)
+    ]
+    reserve = [
+        _pool_entry(rec, judged=False, shown=False, rank=len(judged) + i)
+        for i, rec in enumerate(getattr(ranking, "reserve", ()) or ())
+    ]
+    return {
+        "judged": judged, "reserve": reserve,
+        "counts": {"judged": len(judged), "reserve": len(reserve),
+                   "shown": show_n, "total": len(judged) + len(reserve)},
+    }
+
+
 # --- engine -> SearchResponse ------------------------------------------------
 
 def _search_intent_dataclass(model: RoleModel):
@@ -299,58 +375,220 @@ def to_running_search_response(provider: str, search_id: str, *, pulled: int = 0
     }
 
 
-def to_search_response(provider: str, search_id: str, model: RoleModel,
-                       search_result, ranking) -> Dict[str, Any]:
-    """Map the ranked result into the frontend SearchResponse: candidates +
-    evidence-based explanations + rich CandidateEvidence (career/education/contact/
-    role-alignment, via the keeper candidate_evidence_builder) + diagnostics. An
-    evidence build never sinks the search — a bad card falls back to {}."""
+def shape_candidate(model: RoleModel, intent, record, score: float, fit: str):
+    """Shape one CandidateRecord into the (candidate, explanation, evidence) triple
+    the frontend expects — the SINGLE per-candidate shaping, reused by the initial
+    search response AND by the pool-first reveal so a brought-forward profile is
+    built identically to one shown on the first view. An evidence build never sinks
+    the card — a bad build falls back to {}."""
     from dataclasses import asdict
     from backend.models.candidate import Candidate
     from backend.services.candidate_evidence_builder import build_candidate_evidence
 
+    raw = record.raw if isinstance(record.raw, dict) else {}
+    # Surface the Judge's verified judgments so the evidence builder rebuilds the
+    # green dots AND the requirement ledger from them (it reads this exact key).
+    if record.judgments:
+        raw["__requirement_judgments"] = list(record.judgments)
+    built_evidence: Dict[str, Any] = {}
+    years = None
+    try:
+        cand = Candidate(candidate_id=record.candidate_id or None, name=record.name, title=record.title,
+                         company=record.company, location=record.location, provider_score=record.provider_score,
+                         final_score=score, profile_url=record.profile_url, source="crustdata", raw_data=raw)
+        built = build_candidate_evidence(cand, intent)
+        built_evidence = asdict(built)
+        years = getattr(built, "derived_experience_years", None)
+    except Exception:
+        built_evidence = {}
+    candidate = {
+        "candidate_id": record.candidate_id or None, "name": record.name, "title": record.title,
+        "company": record.company, "location": record.location, "provider_score": record.provider_score,
+        "final_score": score, "profile_url": record.profile_url, "source": "crustdata",
+        "experience_years": years, "years_of_experience": years, "summary": None,
+        "ai_skills": None, "raw_data": raw,
+    }
+    # "Why this candidate" leads with a grounded SUMMARY, not the line-by-line
+    # "Evidence: a; b; c" dump (fit) — the per-requirement detail lives in the
+    # ledger. fit is kept as strong_evidence only as the no-ledger fallback.
+    explanation = {
+        "relevance_tier": "direct", "why_this_candidate": evidence_summary(model, record),
+        "strong_evidence": [fit] if fit else [], "potential_concerns": [],
+        "what_we_dont_know": [], "matched_signals": [], "seniority_alignment": None,
+        "provider_fit": None, "convergence": False, "matched_queries": list(record.matched_queries),
+        "final_score": score, "review_first": [], "experience_floor": None, "level_fit": None,
+    }
+    return candidate, explanation, built_evidence
+
+
+def _record_from_pool_entry(entry: Dict[str, Any]):
+    """Rebuild a CandidateRecord from a persisted pool entry so the reveal path can
+    shape it exactly like a first-view candidate — no new provider pull, no re-judge
+    (the Judge's verdicts are stored on the entry)."""
+    from recruiter.candidates import CandidateRecord
+    return CandidateRecord(
+        candidate_id=entry.get("candidate_id") or "",
+        name=entry.get("name"), title=entry.get("title"), company=entry.get("company"),
+        location=entry.get("location"), profile_url=entry.get("profile_url"),
+        provider_score=entry.get("provider_score"),
+        raw=entry.get("raw") if isinstance(entry.get("raw"), dict) else {},
+        matched_queries=tuple(entry.get("matched_queries") or ()),
+        judgments=tuple(entry["judgments"]) if entry.get("judgments") else None,
+        final_score=entry.get("final_score"),
+    )
+
+
+def reveal_into_record(record: Dict[str, Any], model: RoleModel) -> bool:
+    """Pool-first reveal: bring the next already-read (judged) profile forward from
+    the held pool into the response — no new search, no credits. Returns True if one
+    was revealed, False when the free pool is exhausted (reach-wider is a separate,
+    credit-gated step). Mutates `record` in place; the caller persists it."""
+    diag = record.get("internal_diagnostics") or {}
+    pool = diag.get("pool") or {}
+    judged = pool.get("judged") or []
+    response = record.get("response")
+    if not isinstance(response, dict) or not judged:
+        return False
+
+    shown_ids = {c.get("candidate_id") for c in (response.get("candidates") or [])}
+    # Held = read-in-depth profiles not surfaced on the first view and not already
+    # brought forward. They keep the pool's final-score order (best first).
+    held = [e for e in judged if not e.get("shown") and e.get("candidate_id") not in shown_ids]
+    if not held:
+        return False
+
+    entry = held[0]
+    intent = _search_intent_dataclass(model)
+    rec = _record_from_pool_entry(entry)
+    candidate, explanation, built_evidence = shape_candidate(
+        model, intent, rec, entry.get("final_score") or 0.0, entry.get("fit") or "")
+
+    response.setdefault("candidates", []).append(candidate)
+    response.setdefault("explanations", []).append(explanation)
+    response.setdefault("evidence", []).append(built_evidence)
+    response["candidate_count"] = len(response["candidates"])
+    response.setdefault("candidate_states", {})[entry.get("candidate_id")] = "review_ready"
+    response["reserve_available"] = max(len(held) - 1, 0)
+    entry["shown"] = True  # so the same profile is never revealed twice
+
+    record["response"] = response
+    record["internal_diagnostics"] = diag
+    return True
+
+
+def _title_excluded(record, exclude_titles) -> bool:
+    import re
+    if not exclude_titles:
+        return False
+    raw = record.raw if isinstance(record.raw, dict) else {}
+    headline = (raw.get("basic_profile") or {}).get("headline") or ""
+    hay = f"{record.title or ''} {headline}".lower()
+    return any(re.search(r"\b" + re.escape(t.lower()) + r"\b", hay) for t in exclude_titles if t)
+
+
+def _candidate_companies(record) -> set:
+    names = set()
+    raw = record.raw if isinstance(record.raw, dict) else {}
+    exp = raw.get("experience") if isinstance(raw.get("experience"), dict) else {}
+    details = exp.get("employment_details") or {} if isinstance(exp, dict) else {}
+    for bucket in ("current", "past"):
+        for role in details.get(bucket) or []:
+            if isinstance(role, dict):
+                name = role.get("employer_name") or role.get("company") or role.get("company_name")
+                if name:
+                    names.add(str(name).lower())
+    return names
+
+
+def _company_excluded(record, exclude_current, exclude_ever) -> bool:
+    current = (record.company or "").lower()
+    if exclude_current and any(x.lower() in current for x in exclude_current if x and current):
+        return True
+    if exclude_ever:
+        ever = _candidate_companies(record) | ({current} if current else set())
+        if any(any(x.lower() in company for company in ever) for x in exclude_ever if x):
+            return True
+    return False
+
+
+def refine_pool_into_record(record: Dict[str, Any], model: RoleModel, deltas: Dict[str, Any],
+                            show: int = 5) -> Dict[str, Any]:
+    """Pool-first refine: apply structured deltas to the RoleModel, then RE-CHECK the
+    already-read (judged) pool against the refined non-negotiables and re-rank what
+    survives — free, instant, no new search. Rewrites the shown set to the refined
+    top; the rest stays held. When nothing in the read pool matches, the current view
+    is left untouched and `exhausted` is returned so the caller can offer reach-wider
+    (a separate, credit-gated step). Mutates `record`."""
+    from recruiter.agents.calibration.refine import refine_model
+    from recruiter.agents.ranking.experience import below_floor
+    from recruiter.agents.ranking.score import final_score
+
+    refined = refine_model(model, deltas)
+    diag = record.get("internal_diagnostics") or {}
+    pool = diag.get("pool") or {}
+    judged = pool.get("judged") or []
+    response = record.get("response")
+    if not isinstance(response, dict) or not judged:
+        return {"refined": False, "matched": 0, "dropped": 0, "shown": 0, "exhausted": True}
+
+    min_years = refined.seniority.min_years
+    kept = []
+    dropped = 0
+    for entry in judged:
+        rec = _record_from_pool_entry(entry)
+        if (below_floor(rec, min_years)
+                or _title_excluded(rec, refined.exclude_titles)
+                or _company_excluded(rec, refined.companies.exclude_current, refined.companies.exclude_ever)):
+            dropped += 1
+            continue
+        kept.append((final_score(refined, rec), entry, rec))
+    kept.sort(key=lambda t: (-t[0], (t[2].name or "")))
+
+    outcome = {"refined": True, "matched": len(kept), "dropped": dropped,
+               "shown": min(len(kept), show), "exhausted": len(kept) == 0}
+    if not kept:
+        # Nobody in the read pool matches the tighter brief — keep the current view
+        # and let the caller offer a (credit-gated) wider search.
+        response["refine_outcome"] = outcome
+        record["response"] = response
+        return outcome
+
+    intent = _search_intent_dataclass(refined)
+    candidates, explanations, evidence = [], [], []
+    for score, entry, rec in kept[:show]:
+        candidate, explanation, built = shape_candidate(refined, intent, rec, score, entry.get("fit") or "")
+        candidates.append(candidate)
+        explanations.append(explanation)
+        evidence.append(built)
+        entry["shown"] = True
+    for _, entry, _ in kept[show:]:
+        entry["shown"] = False
+
+    response["candidates"] = candidates
+    response["explanations"] = explanations
+    response["evidence"] = evidence
+    response["candidate_count"] = len(candidates)
+    response["candidate_states"] = {c["candidate_id"]: "review_ready" for c in candidates if c.get("candidate_id")}
+    response["reserve_available"] = max(len(kept) - len(candidates), 0)
+    response["refine_outcome"] = outcome
+    record["response"] = response
+    record["internal_diagnostics"] = diag
+    return outcome
+
+
+def to_search_response(provider: str, search_id: str, model: RoleModel,
+                       search_result, ranking) -> Dict[str, Any]:
+    """Map the ranked result into the frontend SearchResponse: candidates +
+    evidence-based explanations + rich CandidateEvidence (career/education/contact/
+    role-alignment, via the keeper candidate_evidence_builder) + diagnostics."""
     intent = _search_intent_dataclass(model)
     candidates: List[Dict[str, Any]] = []
     explanations: List[Dict[str, Any]] = []
     evidence: List[Dict[str, Any]] = []
     for rc in ranking.shown:
-        r = rc.record
-        raw = r.raw if isinstance(r.raw, dict) else {}
-        # Surface the Judge's verified requirement judgments so the evidence builder
-        # rebuilds them onto the card: this drives the green alignment dots AND the
-        # "met / not evidenced" requirement ledger. The Judge already produced these
-        # (record.judgments); without this stash they were silently dropped and the
-        # dots/ledger came back empty. build_candidate_evidence reads this exact key.
-        if r.judgments:
-            raw["__requirement_judgments"] = list(r.judgments)
-        # Build the rich evidence first so we can surface its derived years-of-
-        # experience on the candidate card (the keeper computes it from the dated
-        # career history; without this the card showed no experience at all).
-        built_evidence: Dict[str, Any] = {}
-        years = None
-        try:
-            cand = Candidate(candidate_id=r.candidate_id or None, name=r.name, title=r.title,
-                             company=r.company, location=r.location, provider_score=r.provider_score,
-                             final_score=rc.score, profile_url=r.profile_url, source="crustdata", raw_data=raw)
-            built = build_candidate_evidence(cand, intent)
-            built_evidence = asdict(built)
-            years = getattr(built, "derived_experience_years", None)
-        except Exception:
-            built_evidence = {}
-        candidates.append({
-            "candidate_id": r.candidate_id or None, "name": r.name, "title": r.title,
-            "company": r.company, "location": r.location, "provider_score": r.provider_score,
-            "final_score": rc.score, "profile_url": r.profile_url, "source": "crustdata",
-            "experience_years": years, "years_of_experience": years, "summary": None,
-            "ai_skills": None, "raw_data": raw,
-        })
-        explanations.append({
-            "relevance_tier": "direct", "why_this_candidate": rc.fit,
-            "strong_evidence": [rc.fit] if rc.fit else [], "potential_concerns": [],
-            "what_we_dont_know": [], "matched_signals": [], "seniority_alignment": None,
-            "provider_fit": None, "convergence": False, "matched_queries": list(r.matched_queries),
-            "final_score": rc.score, "review_first": [], "experience_floor": None, "level_fit": None,
-        })
+        candidate, explanation, built_evidence = shape_candidate(model, intent, rc.record, rc.score, rc.fit)
+        candidates.append(candidate)
+        explanations.append(explanation)
         evidence.append(built_evidence)
     diagnostics = {
         "pulled": search_result.pulled, "kept": len(search_result.candidates),
@@ -363,4 +601,12 @@ def to_search_response(provider: str, search_id: str, model: RoleModel,
         "provider": provider, "search_id": search_id, "candidate_count": len(candidates),
         "candidates": candidates, "explanations": explanations, "evidence": evidence,
         "diagnostics": diagnostics, "warnings": [], "status": "complete",
+        # Ask the recruiter why on Maybe/Reject, and reveal the next already-read
+        # candidate for free when one is rejected. reserve_available = the judged-
+        # but-not-shown profiles we can bring forward with no new search / no credits.
+        "feedback_capture": True,
+        "reserve_available": max(ranking.admitted - len(ranking.shown), 0),
+        # Lifted out of the frontend response by the caller (api.py) and persisted
+        # into the record's internal_diagnostics — the held pool for the loop.
+        "pool": pool_snapshot(ranking),
     }

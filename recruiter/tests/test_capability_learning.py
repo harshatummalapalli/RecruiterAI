@@ -63,3 +63,40 @@ def test_broad_role_is_cached_and_never_re_asked():
 def test_no_llm_configured_stays_broad():
     proposer = CapabilityProposer(InMemoryCapabilityMemory())
     assert proposer.propose("acme", "AI Engineer") == ()
+
+
+def test_generic_base_title_does_not_inherit_a_narrow_capability_uncorroborated():
+    # Bug #2: one ML-heavy JD taught "backend engineer -> ML Platform"; it must NOT
+    # be forced onto a later, non-ML backend role whose requirements don't mention it.
+    mem = InMemoryCapabilityMemory()
+    mem.put("acme", LearnedCapability(
+        normalise_key("Backend Engineer"), "ML Platform",
+        ("ML platform", "MLOps", "SageMaker"), "ML",
+    ))
+    proposer = CapabilityProposer(mem)  # no LLM: a hit is the only source
+    payments = proposer.propose("acme", "Senior Backend Engineer",
+                                requirement_texts=["Payments systems", "Postgres", "Kafka"])
+    assert payments == ()  # not corroborated -> not forced
+
+
+def test_generic_base_title_keeps_capability_when_requirements_corroborate():
+    mem = InMemoryCapabilityMemory()
+    mem.put("acme", LearnedCapability(
+        normalise_key("Backend Engineer"), "ML Platform",
+        ("ML platform", "MLOps", "SageMaker"), "ML",
+    ))
+    proposer = CapabilityProposer(mem)
+    ml = proposer.propose("acme", "Senior Backend Engineer",
+                          requirement_texts=["Build ML platform infra", "model serving on SageMaker"])
+    assert len(ml) == 1 and ml[0].label == "ML Platform"  # this role really is ML
+
+
+def test_specific_identity_still_applies_its_capability_without_corroboration():
+    # "ai engineer" / "salesforce developer" name a domain, so they are NOT generic
+    # base titles — their learned capability applies directly (existing behaviour).
+    mem = InMemoryCapabilityMemory()
+    mem.put("acme", LearnedCapability(normalise_key("Salesforce Developer"), "Salesforce",
+                                      ("Salesforce", "Apex"), "Salesforce"))
+    proposer = CapabilityProposer(mem)
+    out = proposer.propose("acme", "Salesforce Developer", requirement_texts=["REST APIs"])
+    assert len(out) == 1 and out[0].label == "Salesforce"

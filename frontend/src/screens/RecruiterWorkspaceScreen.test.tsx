@@ -104,7 +104,8 @@ describe('the workspace header', () => {
     await mountRestoredSearch()
     expect($('.workspace__greeting h1')?.textContent).toBe('AI Engineer')
     expect($('.workspace__identity')?.textContent).toContain('Backend-heavy AI Engineer')
-    expect($('.workspace__identity-label')?.textContent).toBe('Searching for')
+    // A restored (completed) search reads past-tense — it is no longer actively searching.
+    expect($('.workspace__identity-label')?.textContent).toBe('Searched for')
   })
 
   it('names the role after a reload from the stored search alone, with no browser state about the title', async () => {

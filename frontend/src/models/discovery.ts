@@ -133,11 +133,14 @@ export type DiscoveryCandidate = {
   sortScore: number
 }
 
+// A role-relevance read, NOT a literal title comparison — "title match"
+// overclaimed (a DevOps profile read as a "Direct title match" for a backend
+// role). Word it as the rough relevance it is.
 const RELEVANCE_LABEL: Record<RelevanceTier, string> = {
-  direct: 'Direct title match',
-  adjacent: 'Adjacent title match',
-  tangential: 'Tangential title match',
-  unclear: 'Unclear title relevance',
+  direct: 'Closely related role',
+  adjacent: 'Adjacent role',
+  tangential: 'Loosely related role',
+  unclear: 'Relevance unclear',
 }
 
 export function relevanceLabel(tier: RelevanceTier): string {

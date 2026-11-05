@@ -273,6 +273,15 @@ export interface SearchResponse {
   feedback?: Record<string, CandidateFeedback>
   new_candidates?: number
   retrieval_exhausted?: boolean
+  // New engine: ask for a structured reason on Maybe/Reject (the reason chips),
+  // and allow revealing the next held candidate when one is rejected. Absent for
+  // legacy/role searches, which keep their own feedback path via `role`.
+  feedback_capture?: boolean
+  /** New engine: how many already-read candidates are held in reserve, ready to reveal for free. */
+  reserve_available?: number
+  /** New engine: result of the last pool-first refine. `exhausted` means nobody in the
+   * already-read pool matched the tighter brief — reaching wider costs credits. */
+  refine_outcome?: { refined: boolean; matched: number; dropped: number; shown: number; exhausted: boolean } | null
 }
 
 export type PauseKind = 'no_engagement' | 'feedback' | 'narrow' | 'exhausted'

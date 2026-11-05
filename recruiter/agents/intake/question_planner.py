@@ -17,7 +17,9 @@ from __future__ import annotations
 from typing import List, Optional, Tuple
 
 from recruiter.agents.intake.model import Question, Understanding
+from recruiter.agents.intake.specialization import disambiguate, stack_question
 from recruiter.role_model import CapabilityGroup, classify_role_level
+from recruiter.role_model.levels import off_track_label
 
 FILTER, QUERY, JUDGE, RANKING, CONFIRM = "filter", "query", "judge", "ranking", "confirm"
 
@@ -50,13 +52,27 @@ def plan_refinements(
 
     questions: List[Question] = []
 
+    # (specialization) a broad super-type title ("Software Engineer", "AI Engineer",
+    # "Analyst") whose evidence doesn't pin one kind -> ask which, before anything else.
+    # If the kind IS pinned but no stack/language is named, ask that instead (never
+    # inferred from silence; "Any stack is fine" is a real answer).
+    req_texts = [r.text for r in understanding.requirements]
+    spec_question = disambiguate(identity, req_texts)
+    if spec_question:
+        questions.append(spec_question)
+    else:
+        stack_q = stack_question(identity, req_texts)
+        if stack_q:
+            questions.append(stack_q)
+
     # (capability) confirm the learned/proposed role-defining capability — this
     # is also the recruiter-confirm step of the learning loop.
     for group in capability_groups:
         shown = ", ".join(group.terms[:6]) + ("…" if len(group.terms) > 6 else "")
+        article = "an" if group.label[:1].lower() in "aeiou" else "a"
         questions.append(Question(
             id="capability", kind="capability_confirm", routing=FILTER,
-            prompt=f"This reads as a {group.label} role — require evidence of it (any of: {shown})? Remove to widen.",
+            prompt=f"This reads as {article} {group.label} role — require evidence of it (any of: {shown})? Remove to widen.",
             options=("keep", "remove"),
         ))
 
@@ -90,6 +106,17 @@ def plan_refinements(
         questions.append(Question(
             id="disqualifiers", kind="free_text", routing=JUDGE,
             prompt="Anything that should rule a candidate out? (e.g. agency-only, research-only, no production experience)",
+        ))
+
+    # (track) opt-in: tighten a role whose band suppresses default exclusions
+    # (architect/manager/director+) to its own track, excluding off-track titles.
+    # Off by default; the recruiter turns it on. Reuses exclude_titles.
+    off = off_track_label(role_level)
+    if off:
+        questions.append(Question(
+            id="track", kind="choice", routing=FILTER,
+            prompt=f"Tighten to this role's level — exclude {off}?",
+            options=("Tighten to this track", "Keep as-is"),
         ))
 
     # (7) confirm the interpretation — only where a misread is costly.

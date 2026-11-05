@@ -201,6 +201,37 @@
   color: var(--color-muted);
 }
 
+.record-coverage {
+  margin: 8px 0 2px;
+  font-size: 13.5px;
+  color: var(--color-text);
+}
+
+.record-coverage strong {
+  color: var(--color-accent, #15803d);
+}
+
+.record-ledger__all {
+  margin-top: 4px;
+}
+
+.record-ledger__toggle {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-accent, #15803d);
+  list-style: none;
+  padding: 4px 0;
+}
+
+.record-ledger__toggle::-webkit-details-marker {
+  display: none;
+}
+
+.record-ledger__all[open] .record-ledger__toggle {
+  margin-bottom: 4px;
+}
+
 .record-ledger__intro {
   margin-bottom: 2px;
 }

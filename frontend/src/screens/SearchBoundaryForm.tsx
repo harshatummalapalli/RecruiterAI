@@ -177,6 +177,9 @@ export function SearchBoundaryForm({ boundary, onChange, disabled }: SearchBound
                 onChange((current) => ({ ...current, radius_miles: value ? Number(value) : null }))
               }}
             />
+            {!boundary.city && boundary.state ? (
+              <span className="boundary-form__caption">Pick a city from the list to set a radius and continue.</span>
+            ) : null}
           </div>
         </div>
         <div className="brief-field">

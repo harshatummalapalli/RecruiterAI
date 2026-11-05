@@ -124,13 +124,16 @@ def enforce_title_exclusions(
     capability (so a hands-on "eDiscovery Manager" survives but a plain people
     "Manager" doesn't). Past titles never disqualify; an unknown title is kept."""
     hard: List[re.Pattern] = []
-    spare: List[re.Pattern] = []
+    spare: List[Tuple[str, re.Pattern]] = []
     for t in exclude_titles:
         key = (t or "").strip().lower()
         if not key:
             continue
         rx = re.compile(r"\b" + re.escape(key) + r"\b", re.I)
-        (spare if key in AMBIGUOUS_TITLES else hard).append(rx)
+        if key in AMBIGUOUS_TITLES:
+            spare.append((key, rx))
+        else:
+            hard.append(rx)
     cap = [c.strip().lower() for c in capability_terms if c and c.strip()]
     records = list(records)
     if not hard and not spare:
@@ -141,9 +144,14 @@ def enforce_title_exclusions(
         title = _candidate_current_title(r)
         if any(rx.search(title) for rx in hard):
             dropped.append(r)
-        elif any(rx.search(title) for rx in spare):
+        elif any(rx.search(title) for _, rx in spare):
+            # A title that LEADS with the ambiguous term ("Manager Solutions Architect")
+            # is a manager first — a capability in the headline must not spare it. Only
+            # spare when the ambiguous word is secondary ("eDiscovery Manager").
+            head = title.strip().lower()
+            leads = any(head.startswith(key) for key, rx in spare if rx.search(title))
             evidence = _capability_evidence_text(r)
-            if cap and any(c in evidence for c in cap):
+            if not leads and cap and any(c in evidence for c in cap):
                 kept.append(r)               # ambiguous title + capability -> senior IC, keep
             else:
                 dropped.append(r)

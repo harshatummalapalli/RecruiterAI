@@ -162,6 +162,27 @@ describe('a flat list, never grouped', () => {
   // retrieval pipeline worked. funnelCopy() itself (models/workspace.test.ts) is untouched and still tested.
 })
 
+describe('reject reason capture (new engine)', () => {
+  it('asks for a structured reason on Reject when feedback_capture is on, instead of collapsing', async () => {
+    await render(makeResponse(SPECS.slice(0, 5), { workspace_arranged: true, feedback_capture: true }))
+    await click(button(/^Reject/, card('Heavy Evidence')))
+    // The reason prompt appears and the card does NOT immediately collapse to a slim row.
+    expect($('.ws-feedback')).toBeTruthy()
+    expect($('.ws-slim[data-card-id="c1"]')).toBeNull()
+    // Choosing a reason records it against the candidate.
+    const reason = Array.from(($('.ws-feedback') as HTMLElement).querySelectorAll('button')).find((b) => /experience|technology|seniority|work|domain|other/i.test(b.textContent ?? ''))!
+    await click(reason)
+    expect(updateCandidateRecord).toHaveBeenCalledWith('test', 'c1', expect.objectContaining({ feedback_reason: expect.any(String) }))
+  })
+
+  it('does not ask for a reason when feedback_capture is off (legacy / fixture default)', async () => {
+    await render(makeResponse(SPECS.slice(0, 5), { workspace_arranged: true }))
+    await click(button(/^Reject/, card('Heavy Evidence')))
+    expect($('.ws-feedback')).toBeNull()
+    expect($('.ws-slim[data-card-id="c1"]')?.textContent).toMatch(/Rejected/)
+  })
+})
+
 describe('decisions and filter', () => {
   it('persist by candidate id and never move a card', async () => {
     await render(makeResponse(SPECS.slice(0, 5), { workspace_arranged: true }))

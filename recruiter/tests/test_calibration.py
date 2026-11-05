@@ -63,6 +63,37 @@ def test_capability_remove_widens():
     assert out.model.capability_groups == ()
 
 
+def test_specialization_answer_adds_a_soft_core_requirement():
+    # Thread B2: choosing "Backend" narrows ranking/judging, not a hard keyword gate.
+    out = CalibrationAgent().authorize(_model(), {"specialization": "Backend"})
+    backend = next((r for r in out.model.requirements if r.text == "Backend"), None)
+    assert backend is not None and backend.tier == "core" and backend.hard is False
+    assert out.model.capability_groups == _model().capability_groups  # untouched; no hard filter forced
+
+
+def test_stack_answer_adds_a_precise_capability_group():
+    # Thread B-depth2: a chosen language IS a precise hard keyword filter.
+    out = CalibrationAgent().authorize(_model(), {"stack": "Java"})
+    java = next((g for g in out.model.capability_groups if g.label == "Java"), None)
+    assert java is not None and "java" in java.terms
+
+
+def test_any_stack_answer_filters_nothing():
+    out = CalibrationAgent().authorize(_model(), {"stack": "Any stack is fine"})
+    assert out.model.capability_groups == _model().capability_groups  # unchanged
+
+
+def test_track_tighten_excludes_off_track_titles():
+    # C1: _model() is an ARCHITECT (IC-technical) role -> tightening drops people-managers.
+    out = CalibrationAgent().authorize(_model(), {"track": "Tighten to this track"})
+    assert "Manager" in out.model.exclude_titles and "Director" in out.model.exclude_titles
+
+
+def test_track_keep_as_is_changes_nothing():
+    out = CalibrationAgent().authorize(_model(), {"track": "Keep as-is"})
+    assert out.model.exclude_titles == _model().exclude_titles
+
+
 def test_retier_moves_requirements_between_tiers():
     # Option A: the recruiter overrides the reader's tier guess on the brief.
     out = CalibrationAgent().authorize(_model(), {"retier": {"Java": "differentiator", "Python": "supporting"}})

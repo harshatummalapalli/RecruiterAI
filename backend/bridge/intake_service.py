@@ -284,3 +284,27 @@ class IntakeService:
         if model is None:
             raise KeyError(confirmation_id)
         return self._pipe.preview(model)
+
+    def refine(self, record: Dict[str, Any], deltas: Dict[str, Any]) -> Dict[str, Any]:
+        """Pool-first refine: re-check + re-rank the already-read pool against the
+        recruiter's structured deltas — free, no new search. Loads the confirmed
+        RoleModel so the refined cards are shaped identically. Returns the outcome
+        (matched / dropped / exhausted). Mutates `record`."""
+        from backend.bridge.translate import refine_pool_into_record
+        confirmation_id = (record.get("confirmed_brief") or {}).get("confirmation_id")
+        model = self._confirmations.load(confirmation_id) if confirmation_id else None
+        if model is None:
+            return {"refined": False, "matched": 0, "dropped": 0, "shown": 0, "exhausted": True}
+        return refine_pool_into_record(record, model, deltas or {})
+
+    def reveal_next(self, record: Dict[str, Any]) -> bool:
+        """Bring the next already-read profile forward from the held pool (pool-
+        first, no new search, no credits). Loads the confirmed RoleModel so the
+        revealed card is shaped identically to the first view. Returns False if the
+        confirmed brief is gone or the free pool is exhausted. Mutates `record`."""
+        from backend.bridge.translate import reveal_into_record
+        confirmation_id = (record.get("confirmed_brief") or {}).get("confirmation_id")
+        model = self._confirmations.load(confirmation_id) if confirmation_id else None
+        if model is None:
+            return False
+        return reveal_into_record(record, model)

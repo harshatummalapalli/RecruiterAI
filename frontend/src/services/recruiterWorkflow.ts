@@ -269,6 +269,53 @@ export const updateCandidateRecord = async (
   return response.json() as Promise<SearchResponse>
 }
 
+/** Pool-first reveal (new engine): bring the next already-read profile forward from
+ * the held pool — no new search, no credits. Returns the updated search; a no-op
+ * (same candidates) when the free pool is exhausted. */
+export const revealNextCandidate = async (searchId: string): Promise<SearchResponse> => {
+  const response = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(searchId)}/reveal`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+  })
+  if (!response.ok) {
+    throw new Error('Failed to reveal the next candidate')
+  }
+  return response.json() as Promise<SearchResponse>
+}
+
+/** Structured refine deltas (new engine) — every field typed, no free text. */
+export type RefineDeltas = {
+  min_years?: number
+  max_years?: number
+  work_mode?: string
+  location?: { countries?: string[]; states?: string[]; cities?: string[]; preferred_cities?: string[]; radius_place?: string; radius_miles?: number }
+  exclude_companies_current?: string[]
+  exclude_companies_ever?: string[]
+  only_companies?: string[]
+  exclude_titles?: string[]
+  industries?: string[]
+  retier?: Record<string, string>
+  when?: Record<string, string>
+  add_requirements?: Array<{ text: string; tier?: string; hard?: boolean }>
+  dealbreakers?: string[]
+}
+
+/** Pool-first refine (new engine): re-check + re-rank the already-read pool against
+ * structured deltas — free, no new search. Reaching wider is a separate step. */
+export const refineSearch = async (searchId: string, deltas: RefineDeltas): Promise<SearchResponse> => {
+  const response = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(searchId)}/refine`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(deltas),
+  })
+  if (!response.ok) {
+    throw new Error('Failed to refine the search')
+  }
+  return response.json() as Promise<SearchResponse>
+}
+
 /** Every role and every unsearched brief, for the sidebar. Newest activity first. */
 export const listSearches = async (): Promise<SearchListItem[]> => {
   const response = await fetch(`${API_BASE_URL}/searches`, { credentials: 'include' })
