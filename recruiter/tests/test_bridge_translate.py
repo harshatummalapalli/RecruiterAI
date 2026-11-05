@@ -163,6 +163,36 @@ def test_search_response_maps_candidates_and_diagnostics():
     json.dumps(resp)
 
 
+def test_harvest_enrichment_reaches_the_displayed_record():
+    # The admitted candidate is read with Harvest, but the DISPLAYED record used to be
+    # rebuilt from CrustData only — About, role descriptions and skills were dropped,
+    # leaving a thin card beside a rich LinkedIn profile. The enrichment must flow into
+    # the shown evidence.
+    from backend.models.candidate_evidence import HarvestEvidence
+
+    harvest = HarvestEvidence(
+        success=True,
+        raw={"element": {
+            "about": "I build and govern the enterprise automation platform and the agentic AI framework.",
+            "experience": [{"position": "AI Platform Engineer", "companyName": "Teranet",
+                            "description": "Owned orchestration, model routing, and evaluation pipelines."}],
+            "topSkills": ["Agentic AI", "Platform Engineering", "LLM"],
+        }},
+    )
+    rec = CandidateRecord("c1", name="Hisham", title="AI Platform Engineer", company="Teranet",
+                          profile_url="http://x", provider_score=0.8,
+                          raw={"basic_profile": {"headline": "AI Platform Engineer"}, "_harvest_evidence": harvest})
+    ranking = RankingResult(ranked=(), shown=(RankedCandidate(rec, 0.9, "Strong match."),),
+                            admitted=8, judged=5, judge_failures=0)
+    search = SearchResult(candidates=(rec,), pulled=50, geo_dropped=0, est_credits=1.5, excluded_dropped=0)
+    resp = to_search_response("crustdata", "s-h", _model(), search, ranking)
+    ev = resp["evidence"][0]
+    assert "enterprise automation platform" in (ev.get("harvest_about") or "")
+    assert any("orchestration" in (c.get("description") or "") for c in ev.get("career") or [])
+    assert "Agentic AI" in (ev.get("harvest_skills") or [])
+    json.dumps(resp)
+
+
 def test_judge_judgments_flow_into_evidence_for_the_dots_and_ledger():
     # The Judge's verified judgments must reach the frontend evidence, or the green
     # alignment dots and the requirement ledger come back empty (the regression we

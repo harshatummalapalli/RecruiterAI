@@ -396,7 +396,14 @@ def shape_candidate(model: RoleModel, intent, record, score: float, fit: str):
         cand = Candidate(candidate_id=record.candidate_id or None, name=record.name, title=record.title,
                          company=record.company, location=record.location, provider_score=record.provider_score,
                          final_score=score, profile_url=record.profile_url, source="crustdata", raw_data=raw)
-        built = build_candidate_evidence(cand, intent)
+        # Pass the Harvest enrichment the admitted candidate was read with, so the
+        # DISPLAYED record carries the full profile (About, role descriptions, skills,
+        # certifications) — not just CrustData. The Judge already reads this; the card
+        # used to drop it, leaving a thin record beside a rich LinkedIn profile. Pop it
+        # off raw: it is a HarvestEvidence object (not JSON-serializable), so it must not
+        # ride along in raw_data. A reserve reveal (no enrichment) stays CrustData-only.
+        harvest_obj = raw.pop("_harvest_evidence", None)
+        built = build_candidate_evidence(cand, intent, harvest_evidence=harvest_obj if getattr(harvest_obj, "success", False) else None)
         built_evidence = asdict(built)
         years = getattr(built, "derived_experience_years", None)
     except Exception:
