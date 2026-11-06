@@ -7,10 +7,10 @@ import type { SearchListItem } from '../types'
 export type RoleStatus = 'draft' | 'searching' | 'paused' | 'complete'
 
 const OVERRIDES_KEY = 'recruiterai:roleOverrides'
-const AUTO_ARCHIVE_DAYS = 14
-const DAY_MS = 86_400_000
 
-/** A recruiter override of the automatic rule: Close → 'closed', Reopen → 'open'. */
+/** An OPTIMISTIC local override, applied instantly on Close/Reopen before the server
+ * list refresh catches up (and the sole archive signal for drafts, which the backend
+ * cannot close). The durable truth is the server's `archived` flag on each item. */
 type Override = { state: 'closed' | 'open'; at: string }
 export type Overrides = Record<string, Override>
 
@@ -44,47 +44,36 @@ export function roleStatus(item: SearchListItem): RoleStatus {
   return 'complete' // role_status null = a finished one-shot search, not a live mandate
 }
 
-function lastActivity(item: SearchListItem, overrides: Overrides): number {
-  const stamps = [item.updated_at, overrides[item.id]?.at]
-    .filter(Boolean)
-    .map((t) => new Date(t as string).getTime())
-    .filter((n) => !Number.isNaN(n))
-  return stamps.length ? Math.max(...stamps) : 0
+function lastActivity(item: SearchListItem): number {
+  const t = item.updated_at ? new Date(item.updated_at).getTime() : 0
+  return Number.isNaN(t) ? 0 : t
 }
 
-/** Completed/archived = off Home. Manual Close wins; else finished one-shots and
- * roles idle ≥ 14 days auto-archive. An explicit Reopen keeps a role Active. */
-export function isArchived(item: SearchListItem, overrides: Overrides, now: number = Date.now()): boolean {
+/** Completed/archived = off Home. The server decides it (explicit Close + the 14-day
+ * idle rule); a local override only supplies instant feedback before the next refresh,
+ * and is the sole signal for a draft (which the backend cannot close). */
+export function isArchived(item: SearchListItem, overrides: Overrides): boolean {
   const ov = overrides[item.id]
   if (ov?.state === 'open') return false
   if (ov?.state === 'closed') return true
-  if (item.kind === 'draft') return false
-  if (roleStatus(item) === 'complete') return true
-  const last = lastActivity(item, overrides)
-  return last > 0 && now - last >= AUTO_ARCHIVE_DAYS * DAY_MS
+  return item.archived === true
 }
 
 export function partitionRoles(
   items: SearchListItem[],
   overrides: Overrides,
-  now: number = Date.now(),
 ): { active: SearchListItem[]; completed: SearchListItem[] } {
   const active: SearchListItem[] = []
   const completed: SearchListItem[] = []
-  for (const item of items) (isArchived(item, overrides, now) ? completed : active).push(item)
+  for (const item of items) (isArchived(item, overrides) ? completed : active).push(item)
   return { active, completed }
 }
 
 /** The rail's quick-return list: the most recently touched Active roles. */
-export function recentRoles(
-  items: SearchListItem[],
-  overrides: Overrides,
-  limit = 4,
-  now: number = Date.now(),
-): SearchListItem[] {
-  return partitionRoles(items, overrides, now)
+export function recentRoles(items: SearchListItem[], overrides: Overrides, limit = 4): SearchListItem[] {
+  return partitionRoles(items, overrides)
     .active.slice()
-    .sort((a, b) => lastActivity(b, overrides) - lastActivity(a, overrides))
+    .sort((a, b) => lastActivity(b) - lastActivity(a))
     .slice(0, limit)
 }
 

@@ -58,6 +58,7 @@ from backend.services.role_runtime import (
     apply_candidate_update,
     derived_fields,
     draft_summary,
+    is_archived,
     search_summary,
     sidebar_label,
 )
@@ -951,11 +952,15 @@ def create_app(
         never merged or de-duplicated by title."""
         searches: List[Dict[str, Any]] = []
         used_sessions: set = set()
+        now = clock()
         for path in Path(search_store.storage_dir).glob("*.json"):
             summary = search_summary_cache.get(search_store, path)
             if summary is None:
                 continue
-            searches.append(summary["summary"])
+            # `archived` is time-dependent (explicit Close + the 14-day idle rule), so it
+            # is computed here against the live clock rather than cached in the summary.
+            item = {**summary["summary"], "archived": is_archived(summary["summary"], now)}
+            searches.append(item)
             if summary["session_id"]:
                 used_sessions.add(summary["session_id"])
         searches.sort(key=lambda item: item.get("updated_at") or "", reverse=True)

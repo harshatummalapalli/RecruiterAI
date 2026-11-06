@@ -623,6 +623,37 @@ def test_manual_pause_preserves_everything_and_resume_continues_from_the_role_hi
     assert set(states(after)["presented"]) == set(states(snapshot_before)["presented"])  # nothing was moved under the recruiter
 
 
+def test_close_archives_the_role_and_stops_it_reopen_brings_it_back(tmp_path: Path) -> None:
+    client, _, _, _, _ = build(tmp_path, total=60)
+    sid = start_role(client)["search_id"]
+
+    def summary():
+        return {item["id"]: item for item in client.get("/searches").json()["searches"]}[sid]
+
+    assert summary()["archived"] is False
+
+    closed = client.post(f"/search/{sid}/role", json={"action": "close"}).json()
+    assert closed["role"]["status"] == "paused"  # closing stops it sourcing
+    assert summary()["archived"] is True
+
+    reopened = client.post(f"/search/{sid}/role", json={"action": "reopen"}).json()
+    assert reopened["role"]["status"] == "paused"  # reopen does not auto-resume sourcing
+    assert summary()["archived"] is False
+
+
+def test_is_archived_auto_archives_an_idle_role_but_an_explicit_state_wins() -> None:
+    from backend.services.role_runtime import is_archived
+
+    now = datetime(2026, 11, 20, 9, 0, tzinfo=timezone.utc)
+    idle = {"updated_at": (now - timedelta(days=15)).isoformat()}
+    fresh = {"updated_at": (now - timedelta(days=10)).isoformat()}
+    assert is_archived(idle, now) is True   # 15 days idle -> archived
+    assert is_archived(fresh, now) is False  # 10 days idle -> still active
+    # An explicit Close archives immediately; after Reopen (no state) a fresh timestamp is active.
+    assert is_archived({**fresh, "archive_state": "closed"}, now) is True
+    assert is_archived({"updated_at": now.isoformat()}, now) is False
+
+
 def test_resume_is_refused_once_the_automatic_search_has_run_its_course(tmp_path: Path) -> None:
     client, _, clock, _, _ = build(tmp_path)
     role = start_role(client)

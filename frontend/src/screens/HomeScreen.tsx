@@ -85,7 +85,7 @@ function RoleCard({
   const foot = completed ? { text: `Closed · last active ${timeAgo(item.updated_at)}`, emphasis: false } : activitySummary(item)
 
   const menuActions = completed
-    ? [{ label: 'Open', onClick: () => actions.onOpen(item) }, { label: 'Reopen', onClick: () => actions.onReopen(item.id) }]
+    ? [{ label: 'View', onClick: () => actions.onOpen(item) }, { label: 'Reopen (move to Active)', onClick: () => actions.onReopen(item.id) }]
     : item.kind === 'draft'
       ? [{ label: 'Continue', onClick: () => actions.onOpen(item) }, { label: 'Close', onClick: () => actions.onClose(item.id) }]
       : status === 'paused'

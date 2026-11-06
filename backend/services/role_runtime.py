@@ -13,7 +13,7 @@ Manual and automatic are deliberately different things:
 
 import logging
 import threading
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
@@ -28,6 +28,27 @@ STATUS_RUNNING = "running"
 DECISIONS = ("shortlist", "maybe", "reject")
 # Cycles that show up quietly as "N new candidates" rather than being shown straight away.
 QUIET_SOURCES = ("daily", "resume")
+# A role the recruiter has not touched for this long auto-archives (moves off Home
+# to the Completed tab). An explicit Close archives immediately; Reopen clears it.
+AUTO_ARCHIVE_DAYS = 14
+
+
+def is_archived(record: Dict[str, Any], now: Optional[datetime] = None) -> bool:
+    """Completed/archived = off Home. Explicit Close wins; otherwise a role idle for
+    AUTO_ARCHIVE_DAYS auto-archives. Reopen clears the explicit state and bumps
+    updated_at, so the idle clock restarts from the reopen."""
+    if record.get("archive_state") == "closed":
+        return True
+    updated = record.get("updated_at")
+    if not updated:
+        return False
+    try:
+        last = datetime.fromisoformat(updated)
+    except (TypeError, ValueError):
+        return False
+    if last.tzinfo is None:
+        last = last.replace(tzinfo=timezone.utc)
+    return (now or _now()) - last >= timedelta(days=AUTO_ARCHIVE_DAYS)
 
 
 class RoleError(Exception):
@@ -91,6 +112,10 @@ def search_summary(record: Dict[str, Any]) -> Dict[str, Any]:
         "to_review_count": to_review,
         "updated_at": record.get("updated_at"),
         "created_at": record.get("created_at"),
+        # Explicit Close/Reopen state only. The time-dependent `archived` flag (which
+        # also folds in the 14-day idle rule) is computed live at list time against the
+        # current clock — baking it in here would go stale behind the mtime-keyed cache.
+        "archive_state": record.get("archive_state"),
     }
 
 
@@ -109,6 +134,7 @@ def draft_summary(draft: Dict[str, Any]) -> Dict[str, Any]:
         "to_review_count": None,
         "updated_at": draft.get("updated_at"),
         "created_at": draft.get("updated_at"),
+        "archived": False,
     }
 
 
@@ -345,6 +371,13 @@ class RoleRuntime:
                 if not lifecycle.resume(role, now):
                     raise RoleError(409, "This role has reached the end of its automatic search. You can still ask for more candidates.")
                 start_resume_cycle = record.get("status") != STATUS_RUNNING
+            elif action == "close":
+                # Archive: off Home into Completed, and stop sourcing so it spends nothing more.
+                record["archive_state"] = "closed"
+                lifecycle.pause(role, now)
+            elif action == "reopen":
+                # Back to active: clear the archive state; bumping updated_at (below) restarts the idle clock.
+                record.pop("archive_state", None)
             else:
                 raise RoleError(422, "Unknown action.")
             record["updated_at"] = _iso(now)

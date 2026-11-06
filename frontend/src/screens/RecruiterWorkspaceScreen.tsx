@@ -153,8 +153,18 @@ export function RecruiterWorkspaceScreen() {
       .finally(() => setSearchesLoaded(true))
   }
 
-  const closeRole = (id: string) => setOverrides((current) => setOverride(current, id, 'closed'))
-  const reopenRole = (id: string) => setOverrides((current) => setOverride(current, id, 'open'))
+  // Archive is server truth now (explicit Close + 14-day idle). The local override is
+  // just instant feedback before the list refreshes — and the only signal for a draft,
+  // which the backend has no role to close.
+  const archiveRole = (id: string, action: 'close' | 'reopen') => {
+    setOverrides((current) => setOverride(current, id, action === 'close' ? 'closed' : 'open'))
+    const item = searches.find((s) => s.id === id)
+    if (item?.kind === 'search') {
+      void setRoleAction(id, action).catch(() => {}).finally(refreshSearches)
+    }
+  }
+  const closeRole = (id: string) => archiveRole(id, 'close')
+  const reopenRole = (id: string) => archiveRole(id, 'reopen')
 
   const recents = useMemo(() => recentRoles(searches, overrides), [searches, overrides])
 

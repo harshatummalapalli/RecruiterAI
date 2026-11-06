@@ -342,7 +342,16 @@ export const showMoreCandidates = async (searchId: string, onlyNew = false): Pro
   return response.json() as Promise<ShowMoreOutcome>
 }
 
-export const setRoleAction = async (searchId: string, action: 'pause' | 'resume'): Promise<SearchResponse> => {
+export type RoleAction = 'pause' | 'resume' | 'close' | 'reopen'
+
+const ROLE_ACTION_REFUSAL: Record<RoleAction, string> = {
+  pause: 'The role could not be paused.',
+  resume: 'The role could not be resumed.',
+  close: 'The role could not be closed.',
+  reopen: 'The role could not be reopened.',
+}
+
+export const setRoleAction = async (searchId: string, action: RoleAction): Promise<SearchResponse> => {
   const response = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(searchId)}/role`, {
     method: 'POST',
     credentials: 'include',
@@ -350,7 +359,7 @@ export const setRoleAction = async (searchId: string, action: 'pause' | 'resume'
     body: JSON.stringify({ action }),
   })
   if (!response.ok) {
-    throw await readRefusal(response, action === 'pause' ? 'The role could not be paused.' : 'The role could not be resumed.')
+    throw await readRefusal(response, ROLE_ACTION_REFUSAL[action])
   }
   return response.json() as Promise<SearchResponse>
 }

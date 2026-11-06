@@ -336,4 +336,7 @@ export interface SearchListItem {
   new_count: number
   to_review_count: number | null
   updated_at: string | null
+  /** Server truth for the Active↔Completed split (explicit Close + 14-day idle).
+   * Absent only from a backend older than the archive lifecycle. */
+  archived?: boolean
 }

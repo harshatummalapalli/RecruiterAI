@@ -21,6 +21,18 @@ SESSION_COOKIE_NAME = "recruiterai_session"
 _SESSION_SALT = "recruiterai-session"
 
 
+def _dev_auth_bypass() -> bool:
+    """Local-development escape hatch: when RECRUITER_DEV_NO_AUTH is truthy, every
+    session/admin gate is open so the dev server needs no Google sign-in or cookie.
+    This env var MUST only ever be set in a local launch command — never in the
+    server's /etc/recruiterai.env, where its absence keeps the live site fully gated."""
+    return os.environ.get("RECRUITER_DEV_NO_AUTH", "").strip().lower() in ("1", "true", "yes", "on")
+
+
+if _dev_auth_bypass():
+    logger.warning("RECRUITER_DEV_NO_AUTH is on — authentication is DISABLED. Local development only; never set this on the server.")
+
+
 def verify_google_id_token(token: str) -> Dict[str, Any]:
     """Verify a Google ID token's signature, audience, and expiry. Returns the token claims."""
     client_id = get_google_client_id()
@@ -99,6 +111,8 @@ def get_session_email(request: Request) -> Optional[str]:
 def is_super_admin(request: Request) -> bool:
     """True only for the single configured SUPER_ADMIN_EMAIL. Ordinary recruiters
     get no admin surfaces and are never shown they are being gated."""
+    if _dev_auth_bypass():
+        return True
     admin_email = get_super_admin_email()
     session_email = get_session_email(request)
     return bool(admin_email and session_email and session_email.lower() == admin_email.lower())
@@ -106,6 +120,8 @@ def is_super_admin(request: Request) -> bool:
 
 def require_session(request: Request) -> None:
     """FastAPI dependency gating an endpoint behind a valid session cookie."""
+    if _dev_auth_bypass():
+        return
     cookie_value = request.cookies.get(SESSION_COOKIE_NAME)
     if not cookie_value or not verify_session_cookie(cookie_value):
         raise HTTPException(status_code=401, detail="Please sign in to continue.")
