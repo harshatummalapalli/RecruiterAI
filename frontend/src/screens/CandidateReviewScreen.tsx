@@ -317,9 +317,14 @@ export function CandidateReviewScreen({
   // larger reviewed pool. Honest, without exposing raw retrieval counts.
   const diag = (searchResponse?.diagnostics ?? {}) as Record<string, unknown>
   const reviewedCount = Number(diag.judged ?? diag.admitted ?? 0)
+  // The whole market matching the hard filters — the universe we read the strongest
+  // few from. Surfaced so "N reviewed" is never mistaken for "N found".
+  const universe = Number(diag.total_available ?? 0)
   const reviewedNote =
     !isRole && searchState === 'done' && candidates.length > 0 && reviewedCount > candidates.length
-      ? `Showing the ${candidates.length} strongest of ${reviewedCount} profiles reviewed.`
+      ? universe > reviewedCount
+        ? `Found ${universe.toLocaleString()} matching profiles — showing the ${candidates.length} strongest, read in depth.`
+        : `Showing the ${candidates.length} strongest of ${reviewedCount} read in depth.`
       : null
 
   const availability = availabilityNotice(searchResponse?.availability)
@@ -395,7 +400,13 @@ export function CandidateReviewScreen({
             ) : null}
 
             {showSkeleton ? <SkeletonRows /> : null}
-            {showSkeleton && progress?.admitted ? <p className="role-more__message">Reading profiles: {progress.review_ready ?? 0} of {progress.admitted}</p> : null}
+            {showSkeleton && progress?.admitted ? (
+              <p className="role-more__message">
+                {universe > progress.admitted
+                  ? `Found ${universe.toLocaleString()} matching profiles — reading the strongest ${progress.admitted} in depth (${progress.review_ready ?? 0} done).`
+                  : `Reading profiles: ${progress.review_ready ?? 0} of ${progress.admitted}.`}
+              </p>
+            ) : null}
 
             {!showSkeleton && !hasSearchedOnce ? <p className="discovery-empty">No candidates yet.</p> : null}
 

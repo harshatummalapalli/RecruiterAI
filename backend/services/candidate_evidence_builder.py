@@ -964,6 +964,17 @@ def _apply_harvest_normalization(evidence: CandidateEvidence, harvest: HarvestEv
             seen_skills.add(key)
             evidence.harvest_skills.append(name)
 
+    connections = element.get("connectionsCount")
+    if isinstance(connections, int) and connections >= 0:
+        evidence.connections_count = connections
+    registered = element.get("registeredAt")
+    if isinstance(registered, str) and registered.strip():
+        evidence.profile_created = registered.strip()
+    elif isinstance(registered, dict):  # LinkedIn date objects are {"year": N, "text": "..."}
+        evidence.profile_created = registered.get("text") or (str(registered.get("year")) if registered.get("year") else None)
+    elif isinstance(registered, int):
+        evidence.profile_created = str(registered)
+
     about = _clean_harvest_text(element.get("about"))
     evidence.harvest_about = about
     if about:

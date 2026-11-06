@@ -21,6 +21,17 @@ from recruiter.agents.search.model import SearchResult, SourcingProvider
 CREDITS_PER_RESULT = 0.03  # CrustData person_search charge
 
 
+def _total_available(records) -> "int | None":
+    """CrustData reports the full filter-match count on each record's response
+    metadata — the market universe we pulled the first page from."""
+    for record in records:
+        meta = (record.raw or {}).get("__response_metadata") if isinstance(getattr(record, "raw", None), dict) else None
+        total = meta.get("total_count") if isinstance(meta, dict) else None
+        if isinstance(total, int) and total > 0:
+            return total
+    return None
+
+
 class SearchAgent:
     def __init__(self, provider: SourcingProvider, page_size: int = 50) -> None:
         self._provider = provider
@@ -57,4 +68,5 @@ class SearchAgent:
             geo_dropped=len(dropped) + len(city_dropped),
             est_credits=round(len(raw) * CREDITS_PER_RESULT, 2),
             excluded_dropped=len(company_dropped) + len(title_dropped),
+            total_available=_total_available(raw),
         )

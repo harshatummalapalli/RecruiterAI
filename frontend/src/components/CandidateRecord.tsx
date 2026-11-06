@@ -198,6 +198,16 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
                 Open to work
               </span>
             ) : null}
+            {candidate.connectionsCount != null ? (
+              <span className="record-chip" title="LinkedIn connections. A weak authenticity cue, never used to rank.">
+                {candidate.connectionsCount >= 500 ? '500+' : candidate.connectionsCount.toLocaleString()} connections
+              </span>
+            ) : null}
+            {candidate.profileCreated ? (
+              <span className="record-chip" title="When this LinkedIn profile was created. A weak anti-spam cue, never used to rank.">
+                On LinkedIn since {candidate.profileCreated}
+              </span>
+            ) : null}
           </div>
         </div>
         <div className="record-head__nav">
@@ -235,15 +245,8 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
         ))}
       </div>
 
-      {candidate.aboutExcerpt || candidate.headline ? (
-        <section className="record-section" aria-labelledby="record-snapshot">
-          <h3 id="record-snapshot" className="record-section__title">
-            Candidate Snapshot
-          </h3>
-          <p className="record-muted">{candidate.aboutExcerpt || candidate.headline}</p>
-        </section>
-      ) : null}
-
+      {/* "Why this candidate" — our assessment, then their own profile summary folded in
+          (the old separate "Candidate Snapshot" section, which read as a confusing duplicate). */}
       <section className="record-section" aria-labelledby="record-review-first">
         <h3 id="record-review-first" className="record-section__title">
           Why this candidate
@@ -266,6 +269,12 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
           </p>
         ) : null}
         <p className="record-position">{relevanceLabel(candidate.relevanceTier)}</p>
+        {candidate.aboutExcerpt ? (
+          <div className="record-why__profile">
+            <p className="record-why__profile-label">In their words</p>
+            <p className="record-muted">{candidate.aboutExcerpt}</p>
+          </div>
+        ) : null}
       </section>
 
       <section className="record-section" aria-labelledby="record-ledger">
@@ -348,6 +357,27 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
         )}
       </section>
 
+      {candidate.projects.length ? (
+        <section className="record-section" aria-labelledby="record-projects">
+          <h3 id="record-projects" className="record-section__title">
+            Projects <span className="record-count">{candidate.projects.length}</span>
+          </h3>
+          <ul className="record-projects">
+            {candidate.projects.map((project, index) => (
+              <li key={`${project.title}-${index}`} className="record-project">
+                <p className="record-project__title">{project.title}</p>
+                {project.description ? (
+                  <details className="record-career__details">
+                    <summary>Details</summary>
+                    <p>{project.description}</p>
+                  </details>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       {candidate.skills.length ? (
         <section className="record-section" aria-labelledby="record-skills">
           <h3 id="record-skills" className="record-section__title">
@@ -365,6 +395,19 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
               {showAllSkills ? 'Show fewer' : `Show ${candidate.skills.length - SKILLS_SHOWN} more`}
             </button>
           ) : null}
+        </section>
+      ) : null}
+
+      {candidate.certifications.length ? (
+        <section className="record-section" aria-labelledby="record-certifications">
+          <h3 id="record-certifications" className="record-section__title">
+            Certifications <span className="record-count">{candidate.certifications.length}</span>
+          </h3>
+          <ul className="assessment-list">
+            {candidate.certifications.map((cert, index) => (
+              <li key={`${cert}-${index}`}>{cert}</li>
+            ))}
+          </ul>
         </section>
       ) : null}
 

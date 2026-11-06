@@ -218,6 +218,12 @@ export interface CandidateEvidenceRaw {
   }>
   harvest_skills?: string[]
   harvest_certifications?: string[]
+  /** [title, description] pairs from the enriched profile's Projects section. */
+  harvest_projects?: Array<[string, string]>
+  /** Display-only profile-health cues (never ranked): LinkedIn connections and
+   * when the profile was registered — weak anti-spam signals. */
+  connections_count?: number | null
+  profile_created?: string | null
   harvest_about?: string | null
   derived_experience_years?: number | null
   requirement_judgments?: RequirementJudgmentRaw[] | null

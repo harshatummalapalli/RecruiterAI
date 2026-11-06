@@ -118,6 +118,10 @@ export type DiscoveryCandidate = {
   career: CareerItem[]
   skills: string[]
   certifications: string[]
+  projects: Array<{ title: string; description: string }>
+  /** Weak profile-health cues (never ranked), shown only to help a recruiter eyeball authenticity. */
+  connectionsCount: number | null
+  profileCreated: string | null
   aboutExcerpt: string | null
   reviewFirst: string[]
   ledger: LedgerGroup[]
@@ -361,6 +365,13 @@ export function buildDiscoveryCandidates(response: SearchResponse): DiscoveryCan
       })),
       skills: readStringArray(evidence.harvest_skills),
       certifications: readStringArray(evidence.harvest_certifications),
+      projects: Array.isArray(evidence.harvest_projects)
+        ? evidence.harvest_projects
+            .filter((p): p is [string, string] => Array.isArray(p) && typeof p[0] === 'string' && p[0].trim().length > 0)
+            .map(([title, description]) => ({ title: title.trim(), description: readString(description) ?? '' }))
+        : [],
+      connectionsCount: typeof evidence.connections_count === 'number' ? evidence.connections_count : null,
+      profileCreated: readString(evidence.profile_created),
       aboutExcerpt: aboutExcerpt(evidence.harvest_about),
       reviewFirst: readStringArray(explanation.review_first),
       ledger: buildLedger(evidence.requirement_judgments),

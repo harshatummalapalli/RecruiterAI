@@ -218,6 +218,12 @@ class CandidateEvidence:
     # neutral chip when true and never used in ranking.
     photo_url: Optional[str] = None
     open_to_work: Optional[bool] = None
+    # Display-only profile-health signals (never fed into ranking): LinkedIn
+    # connections and when the profile was registered — weak anti-spam cues a
+    # recruiter can eyeball (a brand-new profile with 3 connections reads very
+    # differently from a decade-old one with 500+). A mechanism comes later.
+    connections_count: Optional[int] = None
+    profile_created: Optional[str] = None
     career: List[CareerEntry] = field(default_factory=list)
     # Verified requirement judgments (see backend/services/requirement_judge.py).
     # None = no judge ran for this candidate, so role_alignment falls back to

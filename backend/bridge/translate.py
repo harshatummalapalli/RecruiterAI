@@ -603,6 +603,7 @@ def to_search_response(provider: str, search_id: str, model: RoleModel,
         "est_credits": search_result.est_credits, "admitted": ranking.admitted,
         "judged": ranking.judged, "judge_failures": ranking.judge_failures,
         "experience_excluded": ranking.experience_excluded,
+        "total_available": search_result.total_available,
     }
     return {
         "provider": provider, "search_id": search_id, "candidate_count": len(candidates),
