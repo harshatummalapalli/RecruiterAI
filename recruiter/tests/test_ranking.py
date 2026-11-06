@@ -57,6 +57,76 @@ def test_verified_ranking_surfaces_the_real_match_first():
     assert result.judged == 2 and result.judge_failures == 0
 
 
+class _TitleScreener:
+    """Tier-1 gate: keep only candidates whose title contains 'Architect', scoring by
+    headline length — a stand-in for the real CrustData-only cheap LLM screener."""
+    def screen(self, role, records):
+        from recruiter.agents.ranking.model import ScreenResult
+        out = []
+        for record in records:
+            keep = "architect" in (record.title or "").lower()
+            hl = ((record.raw.get("basic_profile") or {}).get("headline") or "")
+            out.append(ScreenResult(keep=keep, score=min(len(hl) / 50.0, 1.0)))
+        return tuple(out)
+
+
+def test_tier1_screener_admits_only_keepers_and_reserves_the_rest():
+    role = _role()
+    keep_a = _rec("keep_a", "AI Architect", "Agentic Systems and Python in production")
+    keep_b = _rec("keep_b", "Staff Architect", "Agentic Systems")
+    drop = _rec("drop", "Data Analyst", "Agentic Systems and Python and Java expert")  # dropped on title
+    result = RankingAgent(judge=_FakeJudge(), screener=_TitleScreener(), admit_n=5, show=5).rank(role, [keep_a, keep_b, drop])
+    admitted_ids = {rc.record.candidate_id for rc in result.ranked}
+    assert admitted_ids == {"keep_a", "keep_b"}             # only the screener's keepers were judged
+    assert result.judged == 2
+    assert [c.candidate_id for c in result.reserve] == ["drop"]  # the dropped one is held, not judged
+
+
+class _FakeCareer:
+    def __init__(self, scores):
+        self.scores = scores
+
+    def assess(self, role, record):
+        return {"score": self.scores.get(record.candidate_id, 0.5), "rationale": "fake"}
+
+
+def test_career_fit_is_the_primary_ranking_driver_but_coverage_still_counts():
+    role = _role()
+    # 'sparse' has a great career (0.95) but no quotable evidence (empty headline);
+    # 'wordy' has a weak career (0.30) but full quote coverage. Career wins — yet the
+    # quote ledger still pulls 'wordy' close, so both factors move the ranking.
+    sparse = _rec("sparse", "AI Architect")
+    wordy = _rec("wordy", "AI Architect", "Agentic Systems Python Java")
+    career = _FakeCareer({"sparse": 0.95, "wordy": 0.30})
+    result = RankingAgent(judge=_FakeJudge(), career_fit=career, admit_n=5, show=2).rank(role, [wordy, sparse])
+    assert result.shown[0].record.candidate_id == "sparse"
+    # Both admitted and carry a career-fit score on the record.
+    assert all((rc.record.raw or {}).get("_career_fit", {}).get("score") is not None for rc in result.ranked)
+
+
+def test_career_fit_failure_falls_back_to_the_quote_ledger():
+    role = _role()
+    class _BoomCareer:
+        def assess(self, role, record):
+            raise RuntimeError("career read down")
+    real = _rec("real", "AI Architect", "Agentic Systems Python Java")  # full coverage
+    weak = _rec("weak", "AI Architect", "generalist")
+    result = RankingAgent(judge=_FakeJudge(), career_fit=_BoomCareer(), admit_n=5, show=2).rank(role, [weak, real])
+    assert result.shown[0].record.candidate_id == "real"  # ranking still works on coverage alone
+
+
+class _BrokenScreener:
+    def screen(self, role, records):
+        raise RuntimeError("screener down")
+
+
+def test_tier1_screener_failure_falls_back_to_baseline_admission():
+    role = _role()
+    cands = [_rec("a", "AI Architect", "Agentic Systems Python"), _rec("b", "AI Architect", "generalist")]
+    result = RankingAgent(judge=_FakeJudge(), screener=_BrokenScreener(), admit_n=5, show=5).rank(role, cands)
+    assert {rc.record.candidate_id for rc in result.ranked} == {"a", "b"}  # nobody lost to a broken gate
+
+
 class _FlakyJudge:
     def judge(self, role, record):
         return None if record.candidate_id == "top" else ()   # fails only for 'top'

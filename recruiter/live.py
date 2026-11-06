@@ -16,7 +16,9 @@ from recruiter.agents.intake.capability_proposal import CapabilityProposer
 from recruiter.agents.intake.llm_proposer import make_proposer
 from recruiter.agents.intake.native_reader import make_native_reader
 from recruiter.agents.ranking import RankingAgent
+from recruiter.agents.ranking.career_fit import CareerFitAssessor
 from recruiter.agents.ranking.judge_adapter import JudgeAdapter
+from recruiter.agents.ranking.screener_adapter import ScreenerAdapter
 from recruiter.agents.search import SearchAgent
 from recruiter.config import CAPABILITY_MODEL, JUDGE_MODEL, READER_MODEL
 from recruiter.pipeline import Pipeline
@@ -57,5 +59,13 @@ def build_live_pipeline(
         ranking=RankingAgent(
             judge=JudgeAdapter(model=judge_model), enricher=HarvestAdapter(),
             admit_n=admit_n, show=show, max_judge_workers=judge_workers,
+            # Tier-1 admission gate — opt-in while it is validated. When on, it screens
+            # the retrieved pool on CrustData-only data (cheap model) to choose who to
+            # enrich + deep-judge, instead of taking the baseline top-N blindly.
+            screener=ScreenerAdapter() if os.environ.get("RECRUITER_SCREENER") else None,
+            # Tier-2 holistic career-fit read — the primary ranking driver (see score.py),
+            # so a strong career with a sparse profile is not buried by the quote ledger.
+            # Off only when explicitly disabled, for an A/B against ledger-only ranking.
+            career_fit=None if os.environ.get("RECRUITER_NO_CAREER_FIT") else CareerFitAssessor(),
         ),
     )

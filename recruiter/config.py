@@ -10,3 +10,5 @@ switching provider later is a one-line change here.
 READER_MODEL = "claude-haiku-5-5"       # intake Task A/B understanding
 CAPABILITY_MODEL = "claude-sonnet-5-5"   # role-defining capability (rare, cached)
 JUDGE_MODEL = "claude-sonnet-5-5"        # requirement verification (quality-critical)
+SCREEN_MODEL = "claude-haiku-5-5"        # Tier-1 admission gate (high-volume, coarse, cheap)
+CAREER_MODEL = "claude-sonnet-5-5"       # Tier-2 holistic career-fit read (quality-critical ranking driver)

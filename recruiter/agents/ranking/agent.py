@@ -19,7 +19,7 @@ from typing import Callable, List, Optional, Tuple
 from recruiter.agents.ranking.evidence import verified_coverage
 from recruiter.agents.ranking.experience import below_floor
 from recruiter.agents.ranking.explain import explain_fit
-from recruiter.agents.ranking.model import Enricher, Judge, RankedCandidate, RankingResult
+from recruiter.agents.ranking.model import CareerFit, Enricher, Judge, RankedCandidate, RankingResult, Screener
 from recruiter.agents.ranking.score import baseline_score, final_score
 from recruiter.candidates import CandidateRecord
 from recruiter.role_model import RoleModel
@@ -27,15 +27,50 @@ from recruiter.role_model import RoleModel
 
 class RankingAgent:
     def __init__(self, judge: Optional[Judge] = None, enricher: Optional[Enricher] = None,
-                 admit_n: int = 25, show: int = 5, max_judge_workers: int = 8) -> None:
+                 admit_n: int = 25, show: int = 5, max_judge_workers: int = 8,
+                 screener: Optional[Screener] = None, screen_cap: int = 80,
+                 career_fit: Optional["CareerFit"] = None) -> None:
         self._judge = judge
         self._enricher = enricher
         self._admit_n = admit_n
         self._show = show
+        # Tier-1 admission gate (cheap, CrustData-only). When present, it screens (almost)
+        # the WHOLE retrieved pool — up to screen_cap, so a ~50-wide pull is fully read
+        # cheaply — and admits the best keepers, instead of the baseline top-N blindly.
+        # None = baseline-only admission (as before).
+        self._screener = screener
+        self._screen_cap = max(admit_n, screen_cap)
+        # Tier-2 career-fit read (holistic, on the ENRICHED profile). Scores overall
+        # career fit without needing a quote per requirement; blended into final_score
+        # with higher weight than the quote ledger. None = scoring as before.
+        self._career_fit = career_fit
         # The admitted candidates are enriched + judged concurrently — the calls are
         # independent per candidate and Judge-bound (an LLM call each), so this is the
         # single biggest latency lever. 1 = sequential (back to the old behaviour).
         self._max_judge_workers = max(1, max_judge_workers)
+
+    def _admit(self, role: RoleModel, by_baseline: List[CandidateRecord]) -> Tuple[List[CandidateRecord], Tuple[CandidateRecord, ...]]:
+        """Tier-1: pick who to enrich. With a screener, score a baseline shortlist on the
+        thin provider data and admit the best keepers; otherwise take the baseline top-N.
+        Returns (admitted, reserve); reserve keeps baseline order and excludes admitted."""
+        if self._screener is None or not by_baseline:
+            return by_baseline[: self._admit_n], tuple(by_baseline[self._admit_n :])
+        shortlist = by_baseline[: self._screen_cap]
+        try:
+            results = self._screener.screen(role, tuple(shortlist))
+        except Exception:
+            results = ()
+        scored = list(zip(shortlist, results)) if len(results) == len(shortlist) else []
+        kept = [(record, result) for record, result in scored if result.keep]
+        kept.sort(key=lambda pair: (-pair[1].score, -baseline_score(role, pair[0]), (pair[0].name or "")))
+        admitted = [record for record, _ in kept[: self._admit_n]]
+        # Safety net: never surface nothing because the screener was strict (or failed) —
+        # fall back to the baseline top-N so a search always produces candidates.
+        if not admitted:
+            admitted = by_baseline[: self._admit_n]
+        admitted_ids = {id(record) for record in admitted}
+        reserve = tuple(record for record in by_baseline if id(record) not in admitted_ids)
+        return admitted, reserve
 
     def rank(self, role: RoleModel, candidates: List[CandidateRecord],
              on_progress: Optional[Callable[[int, int], None]] = None) -> RankingResult:
@@ -55,8 +90,7 @@ class RankingAgent:
         # driven pool later phases promote from, so the first view only pays the
         # Judge for the N we admit (the judge-N / show-few hedge).
         by_baseline = sorted(eligible, key=lambda c: (-baseline_score(role, c), (c.name or "")))
-        admitted = by_baseline[: self._admit_n]
-        reserve = tuple(by_baseline[self._admit_n :])
+        admitted, reserve = self._admit(role, by_baseline)
         if on_progress is not None:
             on_progress(len(admitted), 0)
 
@@ -69,6 +103,13 @@ class RankingAgent:
             if self._enricher is not None:
                 self._enricher.enrich(record)
                 record.enriched = True
+            # Career-fit reads the just-enriched profile. Its own failure is swallowed so
+            # it never sinks a candidate — scoring then falls back to the quote ledger.
+            if self._career_fit is not None:
+                try:
+                    record.raw["_career_fit"] = self._career_fit.assess(role, record)
+                except Exception:
+                    pass
             if self._judge is not None:
                 record.judgments = self._judge.judge(role, record)
                 return record.judgments is not None

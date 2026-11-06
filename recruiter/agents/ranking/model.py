@@ -24,6 +24,34 @@ class Judge(Protocol):
 
 
 @dataclass(frozen=True)
+class ScreenResult:
+    """Tier-1 admission verdict on the thin provider data (no enrichment yet)."""
+    keep: bool
+    score: float        # coarse 0..1 admission priority — ranks who to enrich first
+    reason: str = ""
+
+
+class Screener(Protocol):
+    """Tier-1 admission gate (cheap, CrustData-only). Scores a BATCH of candidates on
+    the thin provider fields (title, headline, past titles, skills, years, geo) to
+    decide WHO is worth the paid Harvest enrichment + the Tier-2 Judge. Deliberately
+    different from the Judge: coarse, high-recall, no quotes, one call per batch.
+    Returns one ScreenResult per input record, in the same order."""
+
+    def screen(self, role: RoleModel, records: Tuple[CandidateRecord, ...]) -> Tuple[ScreenResult, ...]: ...
+
+
+class CareerFit(Protocol):
+    """Tier-2 holistic career read on the ENRICHED profile. Rates how well the whole
+    career fits the role — the arc, the kind of work, progression, projects, skills —
+    WITHOUT needing a verbatim quote per requirement (sparse profiles must not be
+    buried). Complements the Judge, which proves individual requirements with quotes.
+    Returns {"score": 0..1, "rationale": str}; a failure is swallowed by the caller."""
+
+    def assess(self, role: RoleModel, record: CandidateRecord) -> dict: ...
+
+
+@dataclass(frozen=True)
 class RankedCandidate:
     record: CandidateRecord
     score: float
