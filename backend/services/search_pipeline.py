@@ -208,7 +208,7 @@ def run_search_pipeline(
     `cycle` is set for a role's retrieval cycles (see role_runtime.py); it is None for the legacy single-shot search,
     which behaves exactly as before. A cycle is still ONE run of this same N -> 50 -> 25 pipeline:
       kind        "initial" | "change" (fresh retrieval, new brief) | "more" (next page, recruiter asked)
-                | "resume" (next page, on resuming a paused role) | "daily" (fresh retrieval, in the background)
+                | "resume" (next page, on resuming a paused role) | "daily" (next campaign page, in the background)
       n           the cycle number, 1 for the first
       cursor      the provider cursor to continue from ("more" only)
       dedupe      "all" (skip anyone already in the role's inventory) or "presented" (only the recruiter's review set)
@@ -302,13 +302,12 @@ def run_search_pipeline(
         retrieved = funnel.get("retrieved") or 0
         new_count = len(candidates)
         record.setdefault("cycles", []).append(
-            {"n": number, "kind": kind, "at": _now_iso(), "retrieved": retrieved, "new_candidates": new_count, "cursor_used": bool(cycle.get("cursor")), "provider_total": provider_total, "confirmation_id": cycle.get("confirmation_id")}
+            {"n": number, "kind": kind, "at": _now_iso(), "retrieved": retrieved, "credits_used": funnel.get("credits_used"), "new_candidates": new_count, "cursor_used": bool(cycle.get("cursor")), "provider_total": provider_total, "confirmation_id": cycle.get("confirmation_id")}
         )
         if kind in ("initial", "change"):
             record["availability"] = build_availability(provider_total, retrieved)
-        if kind != "daily":
-            next_cursor = funnel.get("next_cursor")
-            record["retrieval"] = {"next_cursor": next_cursor, "exhausted": (not next_cursor) or retrieved == 0, "cycle": number}
+        next_cursor = funnel.get("next_cursor")
+        record["retrieval"] = {"next_cursor": next_cursor, "exhausted": (not next_cursor) or retrieved == 0, "cycle": number}
         record["last_cycle"] = {"n": number, "kind": kind, "new_candidates": new_count, "at": _now_iso()}
 
         to_present = int(cycle.get("present") or 0)
@@ -456,6 +455,29 @@ def run_search_pipeline(
             }
         )
 
+        # Search results cost 0.03 credits each at the base rate. Prefer the
+        # provider's request header (which can include premium-field charges),
+        # counting each query response once because its metadata is copied to
+        # every profile returned by that response.
+        request_charges: Dict[tuple, float] = {}
+        for candidate in raw_candidates:
+            raw = candidate.raw_data or {}
+            metadata = raw.get("__response_metadata") or {}
+            query_names = raw.get("matched_queries") or ["unknown"]
+            reported = metadata.get("_request_credits_used")
+            if reported is None:
+                reported = metadata.get("credits_used", metadata.get("credit_usage"))
+            try:
+                if reported is not None:
+                    for query_name in query_names:
+                        request_charges[(str(query_name), float(reported))] = float(reported)
+            except (TypeError, ValueError):
+                request_charges = {}
+                break
+        funnel["credits_used"] = round(
+            sum(request_charges.values()) if request_charges else len(raw_candidates) * 0.03, 4
+        )
+
         # A role's later cycles skip anyone already in its inventory, so every cycle admits people the recruiter has not
         # had before. "change" cycles (a new brief) skip only what the recruiter is already reviewing: a profile that
         # was held in reserve under the old brief is re-read against the new one instead.
@@ -470,8 +492,8 @@ def run_search_pipeline(
                 known = {entry.get("candidate_id") for entry in prior_candidates}
             cycle_retrieved_ids.extend(c.candidate_id for c in merged_candidates if c.candidate_id)
             if cycle["kind"] == "daily":
-                # A fresh background retrieval starts from the first page again. Anyone the role has already been shown
-                # by the provider, admitted or not, is not read a second time: nothing is enriched or judged for them.
+                # Every background page excludes people already in the role inventory, admitted or not, so nothing is
+                # enriched or judged twice.
                 known = known | prior_retrieved
             before = len(merged_candidates)
             merged_candidates = [candidate for candidate in merged_candidates if candidate.candidate_id not in known]

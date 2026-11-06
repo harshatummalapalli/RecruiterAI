@@ -23,6 +23,13 @@
   color: var(--color-primary-text);
 }
 
+.role-bar__campaign {
+  margin-left: auto;
+  color: var(--color-secondary-text);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .role-bar__dot {
   width: 8px;
   height: 8px;
@@ -47,6 +54,19 @@
 @media (prefers-reduced-motion: reduce) {
   .role-bar__dot.is-working {
     animation: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .role-bar {
+    flex-wrap: wrap;
+  }
+
+  .role-bar__campaign {
+    order: 3;
+    width: 100%;
+    margin-left: 17px;
+    white-space: normal;
   }
 }
 

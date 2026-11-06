@@ -104,7 +104,19 @@ class IntakeService:
     def _result_from(self, raw_input, understanding, boundary, answers) -> Dict[str, Any]:
         outcome = self._pipe.intake.assemble(understanding, boundary, answers)
         if not outcome.ready:
-            return to_intake_result_pending(raw_input, understanding, outcome.clarifications)
+            # Tier edits are allowed while another required clarification is
+            # still open. Keep those edits visible in the pending brief too.
+            retier = answers.get("retier") or {}
+            pending_understanding = understanding
+            if isinstance(retier, dict) and retier:
+                pending_understanding = dataclasses.replace(
+                    understanding,
+                    requirements=tuple(
+                        dataclasses.replace(requirement, tier=retier.get(requirement.text, requirement.tier))
+                        for requirement in understanding.requirements
+                    ),
+                )
+            return to_intake_result_pending(raw_input, pending_understanding, outcome.clarifications)
         # Apply the recruiter's refinement answers so the brief reflects them LIVE
         # (e.g. capability 'remove' drops it from Core and widens the search; a
         # dealbreaker is marked hard) — the same apply confirm/search will use.

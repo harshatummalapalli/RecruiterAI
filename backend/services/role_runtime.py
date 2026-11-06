@@ -1,14 +1,14 @@
 """Role orchestration: multi-search summaries, recruiter decisions with feedback, one-time calibration, "Show me more",
-pause/resume, and the daily background search.
+pause/resume, and paced campaign retrieval.
 
 A role is a search record (backend/services/search_store.py). This module never runs retrieval itself: it decides WHAT
-should happen and asks `launch_cycle` (owned by backend/api.py) to run one N -> 50 -> 25 cycle through the existing
+should happen and asks `launch_cycle` (owned by backend/api.py) to run one established 50-profile retrieval cycle through the existing
 pipeline. Everything that is a rule about presentation, feedback or lifecycle lives in the small pure modules
 (candidate_presentation, role_feedback, role_lifecycle, intent_change); this file wires them to the stored record.
 
 Manual and automatic are deliberately different things:
   "Show me more"  the recruiter asks. Shows what is already read, then continues the current retrieval (next page).
-  daily search    background, fresh retrieval from the first page, deduplicated against the whole role.
+  campaign search    background, next-page retrieval every six hours, deduplicated against the whole role.
 """
 
 import logging
@@ -161,6 +161,9 @@ def role_view(record: Dict[str, Any], now: Optional[datetime] = None) -> Optiona
         "can_resume": lifecycle.can_resume(role, now or _now()),
         "has_feedback": lifecycle.has_meaningful_feedback(record),
         "exhausted": lifecycle.record_is_exhausted(record),
+        "campaign_duration_days": role.get("campaign_duration_days", 1),
+        "campaign_credit_cap": role.get("campaign_credit_cap", lifecycle.CAMPAIGN_CREDIT_CAP),
+        "campaign_credits_used": lifecycle.campaign_credits_used(record),
         "label": role.get("label") or {},
     }
 
@@ -346,7 +349,7 @@ class RoleRuntime:
 
             retrieval = record.get("retrieval") or {}
             cursor = retrieval.get("next_cursor")
-            if retrieval.get("exhausted") or not cursor:
+            if retrieval.get("exhausted") or not cursor or lifecycle.campaign_budget_exhausted(record):
                 self._store.save(search_id, record)
                 return {"presented": 0, "cycle_started": False, "exhausted": True}
             self._store.save(search_id, record)
@@ -404,8 +407,7 @@ class RoleRuntime:
     # -- the clock --------------------------------------------------------------------------------------------------------
 
     def tick_record(self, search_id: str, *, allow_launch: bool = False) -> None:
-        """Applies the lifecycle clock to one role: a finished window pauses it, and (only for the background timer) a
-        due day starts a fresh retrieval."""
+        """Applies the lifecycle clock to one role and starts a due campaign page when its budget allows."""
         with self._store.lock:
             record = self._store.load(search_id)
             role = (record or {}).get("role")
@@ -413,14 +415,22 @@ class RoleRuntime:
                 return
             now = self._clock()
             changed = lifecycle.tick(role, now)
-            due = allow_launch and lifecycle.daily_search_due(role, now) and record.get("status") != STATUS_RUNNING
+            if lifecycle.campaign_budget_exhausted(record) and role.get("status") == lifecycle.SEARCHING:
+                lifecycle.pause(role, now)
+                role["pause_reason"] = lifecycle.PAUSE_WINDOW_ENDED
+                role["campaign_budget_exhausted"] = True
+                changed = True
+            retrieval = record.get("retrieval") or {}
+            due = (allow_launch and not lifecycle.campaign_budget_exhausted(record)
+                   and not retrieval.get("exhausted") and bool(retrieval.get("next_cursor"))
+                   and lifecycle.daily_search_due(role, now) and record.get("status") != STATUS_RUNNING)
             if due:
                 role["last_auto_search_at"] = _iso(now)
                 changed = True
             if changed:
                 self._store.save(search_id, record)
             if due:
-                self._start(search_id, record, "daily", cursor=None, present=0)
+                self._start(search_id, record, "daily", cursor=retrieval.get("next_cursor"), present=0)
 
     def tick_all(self) -> None:
         for path in Path(self._store.storage_dir).glob("*.json"):

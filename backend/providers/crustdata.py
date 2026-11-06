@@ -512,7 +512,16 @@ class CrustDataProvider(BaseProvider):
                 client.close()
 
         try:
-            return response.json()
+            data = response.json()
+            # Preserve provider-reported spend so a campaign can enforce its
+            # per-role cap against actual request usage when the header exists.
+            credits_used = response.headers.get("X-Credits-Used")
+            if credits_used is not None and isinstance(data, dict):
+                try:
+                    data["_request_credits_used"] = float(credits_used)
+                except (TypeError, ValueError):
+                    pass
+            return data
         except ValueError as exc:
             logger.warning("Sourcing response was invalid")
             raise ProviderError("The sourcing service returned an invalid response.") from exc
@@ -583,7 +592,7 @@ class CrustDataProvider(BaseProvider):
 
     def _extract_response_metadata(self, response: Dict[str, Any]) -> Dict[str, Any]:
         metadata: Dict[str, Any] = {}
-        for key in ("next_cursor", "total_count", "has_more", "credits_remaining", "credits_used", "credit_usage"):
+        for key in ("next_cursor", "total_count", "has_more", "credits_remaining", "credits_used", "credit_usage", "_request_credits_used"):
             if key in response:
                 metadata[key] = response[key]
         return metadata

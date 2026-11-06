@@ -521,6 +521,39 @@
   min-width: 140px;
 }
 
+.lb-search-hint {
+  margin: 7px 0 0;
+  color: var(--color-secondary-text);
+  font-size: 12px;
+}
+
+.lb-campaign-choice {
+  display: grid;
+  gap: 5px;
+  width: min(100%, 300px);
+  margin-top: 16px;
+  color: var(--color-primary-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.lb-campaign-choice select {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+  color: inherit;
+  font: inherit;
+}
+
+.lb-campaign-choice small {
+  color: var(--color-secondary-text);
+  font-size: 12px;
+  font-weight: 400;
+}
+
 .lb-adjust {
   padding: 12px 18px;
   border: 1px dashed var(--color-border);

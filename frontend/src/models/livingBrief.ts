@@ -42,6 +42,11 @@ function normalize(text: string): string {
 export function requirementGroups(result: IntakeResult): RequirementGroup[] {
   const draft = result.decision.final_search_intent
   const evidence = draft.evidence ?? {}
+  const pending = result.status !== 'ready' &&
+    !(draft.hard_requirements?.length || draft.strong_signals?.length || draft.preferred_differentiators?.length)
+  const coreTexts = pending ? result.role_understanding.core_capabilities.map((item) => item.value) : draft.hard_requirements ?? []
+  const supportingTexts = pending ? result.role_understanding.supporting_capabilities.map((item) => item.value) : draft.strong_signals ?? []
+  const differentiatorTexts = pending ? result.role_understanding.differentiators.map((item) => item.value) : draft.preferred_differentiators ?? []
   const confirmed = new Set(
     (result.confirmed ?? []).filter((change) => change.field === 'requirement' && change.item).map((change) => normalize(change.item as string)),
   )
@@ -55,9 +60,9 @@ export function requirementGroups(result: IntakeResult): RequirementGroup[] {
     }),
   })
   return [
-    build('core', draft.hard_requirements ?? []),
-    build('supporting', draft.strong_signals ?? []),
-    build('preferred', draft.preferred_differentiators ?? []),
+    build('core', coreTexts),
+    build('supporting', supportingTexts),
+    build('preferred', differentiatorTexts),
   ]
 }
 

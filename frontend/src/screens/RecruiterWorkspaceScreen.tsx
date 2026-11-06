@@ -528,8 +528,8 @@ export function RecruiterWorkspaceScreen() {
     try {
       const { result } = await answerIntake(intakeSessionId, 'retier', JSON.stringify(assignments), '')
       setIntakeResult(result)
-    } catch {
-      setSearchErrors(['That change could not be saved. Please try again.'])
+    } catch (error) {
+      setSearchErrors(messagesOf(error, 'That change could not be saved. Please try again.'))
     } finally {
       setIsAnswering(false)
     }
@@ -552,7 +552,7 @@ export function RecruiterWorkspaceScreen() {
   // The recruiter presses Search. The server checks that the brief is ready, builds the executable search itself from
   // what was confirmed (plus only the edits made here), and stores it. The browser never supplies the search. On a role
   // that is already searching, the server decides whether the change matters to what is searched.
-  const handleSearch = async (briefOverride?: SearchBrief) => {
+  const handleSearch = async (campaignDays: 1 | 3 = 1, briefOverride?: SearchBrief) => {
     if (!intakeSessionId) {
       setSearchErrors(['This search has no brief to confirm. Start a new search.'])
       return
@@ -571,7 +571,7 @@ export function RecruiterWorkspaceScreen() {
     try {
       const confirmation = await createConfirmation(intakeSessionId, baselineBrief ? diffBriefEdits(baselineBrief, activeBrief) : {})
       setSearchGeneration((current) => current + 1)
-      const response = await runCandidateSearch(confirmation.confirmation_id, { searchId: searchId ?? undefined, debug: import.meta.env.DEV })
+      const response = await runCandidateSearch(confirmation.confirmation_id, { searchId: searchId ?? undefined, debug: import.meta.env.DEV, campaignDays })
       // The search has already started server-side — show the workspace immediately rather than waiting for the
       // whole pipeline; polling fills it in progressively.
       setSearchResponse(response)
@@ -904,7 +904,7 @@ export function RecruiterWorkspaceScreen() {
                 onRetier={handleRetier}
                 isAnswering={isAnswering}
                 onApplyBoundary={handleApplyBoundary}
-                onSearch={() => void handleSearch()}
+              onSearch={(campaignDays) => void handleSearch(campaignDays)}
                 isSearching={searchState === 'searching'}
                 searchErrors={searchErrors}
               />

@@ -241,6 +241,7 @@ class SearchRequest(ParseRequest):
     # is still accepted/stored for display and for backward-compatible
     # callers that don't send a structured intent.
     intent: Optional[SearchIntent] = None
+    campaign_duration_days: Optional[int] = 1
 
 
 class SearchResponse(BaseModel):
@@ -582,13 +583,13 @@ def create_app(
 
     def start_cycle(search_id: str, snapshot: Dict[str, Any], cycle: Dict[str, Any], guidance: Guidance, provider_name: Optional[str] = None) -> None:
         """Runs ONE retrieval cycle for a role, on the same background pipeline as any search. The role's record must
-        already exist. Retrieval sizing is backend-owned and unchanged: up to 50 retrieved, up to 25 admitted."""
+        already exist. Campaign retrieval sizing remains backend-owned at the established 50-profile page."""
         # Every cycle of a role searches with the provider the role was started with.
         provider_name = provider_name or (search_store.load(search_id) or {}).get("provider") or "crustdata"
         provider = provider_registry.get(provider_name)
         intent, location = _confirmed_intent(snapshot)
         intent, mapped_plan, friendly_warnings = _build_plan(intent, location)
-        if cycle["kind"] in ("more", "resume"):
+        if cycle["kind"] in ("more", "resume", "daily"):
             # A cursor belongs to the query that produced it: continue the primary natural-language query only.
             primary = [query for query in mapped_plan.searches if query.query_name == "natural_language"]
             if primary:
@@ -1136,7 +1137,8 @@ def create_app(
                 }
             )
             if restart:
-                role = existing_role or role_lifecycle.new_role(now, label=sidebar_label(snapshot))
+                duration_days = request.campaign_duration_days if request.campaign_duration_days in (1, 3) else 1
+                role = existing_role or role_lifecycle.new_role(now, label=sidebar_label(snapshot), duration_days=duration_days)
                 role["label"] = sidebar_label(snapshot)
                 record.update(
                     {

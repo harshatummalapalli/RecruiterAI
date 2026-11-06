@@ -99,7 +99,7 @@ export const parseJobDescription = async (jdText: string) => {
  * the browser sends no intent, no location and no requirements of its own. */
 export const runCandidateSearch = async (
   confirmationId: string,
-  options?: { searchId?: string; debug?: boolean },
+  options?: { searchId?: string; debug?: boolean; campaignDays?: 1 | 3 },
 ) => {
   const response = await fetch(`${API_BASE_URL}/search`, {
     method: 'POST',
@@ -113,6 +113,7 @@ export const runCandidateSearch = async (
       // Retrieval sizing is backend-owned; the recruiter just requests a search.
       autocomplete: true,
       search_id: options?.searchId,
+      campaign_duration_days: options?.campaignDays ?? 1,
       debug: options?.debug ?? false,
     }),
   })
@@ -176,7 +177,7 @@ export const answerIntake = async (
     body: JSON.stringify({ issue_id: issueId, value, label }),
   })
   if (!response.ok) {
-    throw new Error('Failed to update the brief')
+    throw await readRefusal(response, 'Failed to update the brief')
   }
   return response.json() as Promise<IntakeStartResponse>
 }

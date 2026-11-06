@@ -33,6 +33,14 @@ export function RoleBar({
         <span className={`role-bar__dot${running && !paused ? ' is-working' : ''}`} aria-hidden="true" />
         {roleStatusLabel(role, running)}
       </span>
+      {role.campaign_duration_days ? (
+        <span className="role-bar__campaign">
+          {role.campaign_duration_days === 1 ? '24-hour campaign' : '3-day campaign'}
+          {typeof role.campaign_credit_cap === 'number' && typeof role.campaign_credits_used === 'number'
+            ? ` · ${role.campaign_credits_used.toFixed(2)} / ${role.campaign_credit_cap.toFixed(2)} search credits`
+            : ''}
+        </span>
+      ) : null}
       {paused ? (
         role.can_resume ? (
           <button type="button" className="role-bar__action" onClick={onResume} disabled={busy}>

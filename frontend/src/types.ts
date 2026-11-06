@@ -299,6 +299,9 @@ export interface RoleState {
   can_resume: boolean
   has_feedback: boolean
   exhausted: boolean
+  campaign_duration_days?: 1 | 3
+  campaign_credit_cap?: number
+  campaign_credits_used?: number
   label: { title?: string; company?: string; place?: string }
 }
 

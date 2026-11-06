@@ -60,7 +60,7 @@ type LivingBriefProps = {
   onRetier: (assignments: Record<string, string>) => void
   isAnswering: boolean
   onApplyBoundary: (boundary: SearchBoundary) => Promise<void>
-  onSearch: () => void
+  onSearch: (campaignDays?: 1 | 3) => void
   isSearching: boolean
   /** Why the last attempt to search was refused, in plain sentences. */
   searchErrors?: string[]
@@ -102,6 +102,7 @@ function DecisionCard({ issue, onAnswer, isAnswering, onReconsider }: { issue: I
 }
 
 export function LivingBrief({ result, boundary, onAnswer, onRetier, isAnswering, onApplyBoundary, onSearch, isSearching, searchErrors = [] }: LivingBriefProps) {
+  const [campaignDays, setCampaignDays] = useState<1 | 3>(1)
   const [boundaryOpen, setBoundaryOpen] = useState(false)
   const role = result.role_understanding
   const title = titleView(result)
@@ -292,9 +293,18 @@ export function LivingBrief({ result, boundary, onAnswer, onRetier, isAnswering,
             ))}
           </ul>
         ) : null}
-        <button type="button" className="lb-button lb-button--primary lb-search" onClick={onSearch} disabled={provisional || isSearching}>
+        <label className="lb-campaign-choice">
+          <span>Campaign length</span>
+          <select value={campaignDays} onChange={(event) => setCampaignDays(Number(event.target.value) as 1 | 3)} disabled={isSearching}>
+            <option value={1}>24 hours</option>
+            <option value={3}>3 days</option>
+          </select>
+          <small>Checks for new candidates every 6 hours, within your 6-credit campaign budget.</small>
+        </label>
+        <button type="button" className="lb-button lb-button--primary lb-search" onClick={() => onSearch(campaignDays)} disabled={provisional || isSearching} title={provisional ? status.blockers.join(' ') : undefined}>
           {isSearching ? 'Searching the market…' : 'Search'}
         </button>
+        {provisional && !isSearching ? <p className="lb-search-hint" role="note">Search is unavailable: {status.blockers.join(' ')}</p> : null}
       </section>
     </div>
   )
