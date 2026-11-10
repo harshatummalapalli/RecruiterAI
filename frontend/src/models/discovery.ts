@@ -7,7 +7,7 @@
 // backend's own ranking. There is now exactly one evidence model, and the
 // frontend only formats it.
 
-import type { CandidateEvidenceRaw, MatchExplanationRaw, RequirementJudgmentRaw, SearchResponse } from '../types'
+import type { CandidateAttributesRaw, CandidateEvidenceRaw, MatchExplanationRaw, RequirementJudgmentRaw, SearchResponse } from '../types'
 
 export type MatchedSignal = { signalText: string; matchedTerm: string; source: string }
 
@@ -82,6 +82,8 @@ export type DiscoveryCandidate = {
   company: string
   location: string
   profileUrl: string | null
+  /** Deterministic CrustData-derived attributes (company kind, seniority, recency). */
+  attributes: CandidateAttributesRaw | null
 
   // System-driven processing state (Progressive Candidate Workspace) —
   // completely separate from the recruiter's own shortlist/reject decision
@@ -305,6 +307,7 @@ export function buildDiscoveryCandidates(response: SearchResponse): DiscoveryCan
       company: candidate.company?.trim() || 'Not specified',
       location: candidate.location?.trim() || 'Not specified',
       profileUrl: readString(candidate.profile_url),
+      attributes: (candidate.attributes && typeof candidate.attributes === 'object' ? candidate.attributes : null),
 
       relevanceTier: explanation.relevance_tier ?? 'unclear',
       whyThisCandidate: explanation.why_this_candidate ?? '',

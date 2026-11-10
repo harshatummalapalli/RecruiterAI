@@ -108,7 +108,29 @@ export interface Candidate {
   resumes?: Array<{ name: string; uploadedAt: string }> | null
   activity?: Array<{ id: string; type: string; label: string; detail: string; timestamp: string }> | null
   raw_data?: Record<string, unknown>
+  /** Deterministic attributes derived from the CrustData record (company kind,
+   * seniority, recency, …) — see backend/services/candidate_attributes.py. */
+  attributes?: CandidateAttributesRaw
   [key: string]: unknown
+}
+
+/** Mirrors backend CandidateAttributes. Everything here is deterministic
+ * (no LLM, no enrichment) and never used to hide a candidate — only to tag,
+ * filter and rank. */
+export interface CandidateAttributesRaw {
+  company_type?: string            // Startup | Product | Enterprise | GCC / captive | IT Services | Unknown
+  company_type_basis?: string
+  seniority_band?: string | null   // CrustData's normalized seniority_level
+  ic_level?: string | null         // parsed from the title (Senior/Lead/Staff/Principal/…)
+  function?: string | null
+  role_normalized?: string | null
+  tenure_label?: string | null
+  recently_started?: boolean
+  years_experience?: number | null
+  data_updated_at?: string | null
+  company_industries?: string[]
+  company_headcount?: number | null
+  company_hq_country?: string | null
 }
 
 // Raw shape of a backend MatchExplanation.model_dump() — evidence-based,
@@ -285,6 +307,17 @@ export interface SearchResponse {
   feedback_capture?: boolean
   /** New engine: how many already-read candidates are held in reserve, ready to reveal for free. */
   reserve_available?: number
+  pool_candidate_count?: number
+  initial_validation_pending?: boolean
+  pool_candidates?: Array<{
+    candidate_id: string
+    name: string | null
+    title: string | null
+    company: string | null
+    location: string | null
+    profile_url: string | null
+    assessment_state: 'shown' | 'assessed' | 'not_assessed'
+  }>
   /** New engine: result of the last pool-first refine. `exhausted` means nobody in the
    * already-read pool matched the tighter brief — reaching wider costs credits. */
   refine_outcome?: { refined: boolean; matched: number; dropped: number; shown: number; exhausted: boolean } | null
@@ -302,6 +335,8 @@ export interface RoleState {
   campaign_duration_days?: 1 | 3
   campaign_credit_cap?: number
   campaign_credits_used?: number
+  reserve_analysis_state?: 'running' | 'complete' | 'failed' | null
+  reserve_analysis_added?: number
   label: { title?: string; company?: string; place?: string }
 }
 
@@ -344,6 +379,11 @@ export interface SearchListItem {
   pause_kind: PauseKind | null
   new_count: number
   to_review_count: number | null
+  found_count?: number
+  shortlisted_count?: number
+  rejected_count?: number
+  maybe_count?: number
+  campaign_ends_at?: string | null
   updated_at: string | null
   /** Server truth for the Active↔Completed split (explicit Close + 14-day idle).
    * Absent only from a backend older than the archive lifecycle. */

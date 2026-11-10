@@ -1376,6 +1376,110 @@
   cursor: pointer;
 }
 
+/* Include/Exclude filters (local, free re-filter over deterministic attributes) */
+
+.candidate-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  margin-bottom: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+}
+
+.cf-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cf-hint {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.cf-count {
+  margin-left: auto;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-secondary-text);
+}
+
+.cf-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--color-accent);
+  cursor: pointer;
+}
+
+.cf-group {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cf-group__label {
+  flex: 0 0 68px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+}
+
+.cf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-preview-bg);
+  color: var(--color-secondary-text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--motion-fast, 0.15s) ease, background var(--motion-fast, 0.15s) ease, color var(--motion-fast, 0.15s) ease;
+}
+
+.cf-chip:hover {
+  border-color: var(--color-accent);
+}
+
+.cf-chip__mark {
+  font-weight: 800;
+  line-height: 1;
+}
+
+.cf-chip.is-include {
+  border-color: var(--color-success, #15803d);
+  background: rgba(21, 128, 61, 0.1);
+  color: var(--color-success, #15803d);
+}
+
+.cf-chip.is-exclude {
+  border-color: var(--color-signal-ink, #c0381f);
+  background: var(--color-signal-soft, #ffe9e3);
+  color: var(--color-signal-ink, #c0381f);
+  text-decoration: line-through;
+}
+
 /* Candidate list */
 
 .discovery-list {

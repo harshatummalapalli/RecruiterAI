@@ -3,7 +3,36 @@ import { AlertTriangle, Check, ChevronDown, ChevronUp, ExternalLink, HelpCircle,
 import { initialsOf, relevanceLabel, type DiscoveryCandidate, type LedgerGroup, type LedgerRow } from '../models/discovery'
 import { cardFacts } from '../models/workspace'
 import { EvidenceDots } from './CandidateWorkspace'
+import type { CandidateAttributesRaw } from '../types'
 import './CandidateRecord.css'
+
+function freshnessLabel(iso: string | null | undefined): string | null {
+  if (!iso) return null
+  const then = new Date(iso).getTime()
+  if (Number.isNaN(then)) return null
+  const days = Math.floor(Math.max(0, Date.now() - then) / 86_400_000)
+  return days <= 0 ? 'verified today' : `verified ${days}d ago`
+}
+
+/** Deterministic CrustData-derived tags: company kind, seniority, function, recency,
+ * freshness. Never ranked here — purely a faster read for the recruiter. */
+function AttributeTags({ attributes }: { attributes: CandidateAttributesRaw | null | undefined }) {
+  if (!attributes) return null
+  const a = attributes
+  const seniority = a.ic_level || a.seniority_band
+  const companyKnown = a.company_type && a.company_type !== 'Unknown'
+  const fresh = freshnessLabel(a.data_updated_at)
+  if (!companyKnown && !seniority && !a.function && !a.recently_started && !fresh) return null
+  return (
+    <div className="record-attrs">
+      {companyKnown ? <span className="record-attr record-attr--company" title={a.company_type_basis || undefined}>{a.company_type}</span> : null}
+      {seniority ? <span className="record-attr">{seniority}</span> : null}
+      {a.function ? <span className="record-attr">{a.function}</span> : null}
+      {a.recently_started ? <span className="record-attr record-attr--signal">Recently started</span> : null}
+      {fresh ? <span className="record-attr record-attr--muted" title="When CrustData last refreshed this record">{fresh}</span> : null}
+    </div>
+  )
+}
 
 export type RecordDecision = 'shortlist' | 'maybe' | 'reject'
 
@@ -231,6 +260,8 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
           <EvidenceDots facts={facts} />
         </div>
       ) : null}
+
+      <AttributeTags attributes={candidate.attributes} />
 
       <div className="brief-segmented record-decision" role="group" aria-label="Recruiter decision">
         {DECISIONS.map((option) => (
