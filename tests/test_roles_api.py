@@ -153,6 +153,19 @@ def decide(client, search_id, candidate_id, decision, **extra):
     return client.patch(f"/search/{search_id}/candidate", json={"candidate_id": candidate_id, "decision": decision, **extra})
 
 
+def validate_initial_five(client, search_id, decision: str = "maybe") -> List[str]:
+    """Open the first-five validation gate. Every still-undecided member of the initial five is given a plain
+    decision with no reason, which keeps the set non-positive (no 3-shortlist / 2-shortlist+1-maybe), raises no
+    calibration signal and triggers no reserve surfacing — it only unlocks "Show me more"."""
+    data = client.get(f"/search/{search_id}").json()
+    decisions = data.get("recruiter_decisions") or {}
+    five = states(data)["presented"][:5]
+    for candidate_id in five:
+        if decisions.get(candidate_id) not in ("shortlist", "maybe", "reject"):
+            decide(client, search_id, candidate_id, decision)
+    return five
+
+
 # ---- the first five, and nothing lost ---------------------------------------------------------------------------------------
 
 
@@ -245,48 +258,45 @@ def test_an_existing_search_record_still_loads_exactly_as_before(tmp_path: Path)
 def test_show_more_uses_what_is_already_read_before_searching_again(tmp_path: Path) -> None:
     client, provider, _, _, _ = build(tmp_path)
     role = start_role(client)
+    validate_initial_five(client, role["search_id"])
     calls_before = len(provider.calls)
     for expected in (10, 15, 20, 25):
         outcome = client.post(f"/search/{role['search_id']}/more").json()
-        assert outcome == {"presented": 5, "cycle_started": False, "exhausted": False}
+        assert outcome["presented"] == 5 and outcome["cycle_started"] is False and outcome["exhausted"] is False
         assert len(states(client.get(f"/search/{role['search_id']}").json())["presented"]) == expected
     assert len(provider.calls) == calls_before  # no provider call while candidates were waiting
 
 
-def test_when_the_cycle_is_exhausted_show_more_runs_the_next_retrieval_cycle_from_the_stored_cursor(tmp_path: Path) -> None:
+def test_show_more_reveals_the_held_pool_but_never_starts_a_paid_pull(tmp_path: Path) -> None:
     client, provider, _, _, _ = build(tmp_path, total=60)
     role = start_role(client)
     sid = role["search_id"]
+    validate_initial_five(client, sid)
+    calls_before = len(provider.calls)
     for _ in range(4):
-        client.post(f"/search/{sid}/more")
-    first_ids = {c["candidate_id"] for c in client.get(f"/search/{sid}").json()["candidates"]}
+        client.post(f"/search/{sid}/more")  # reveal the held reserve: 10, 15, 20, 25
 
+    # The held pool is drained. "Show me more" reports that and starts nothing: the campaign scheduler owns
+    # every paid retrieval, so no provider call is made even though the market still has more.
     outcome = client.post(f"/search/{sid}/more").json()
-    assert outcome["cycle_started"] is True and outcome["presented"] == 0
-    after = wait(client, sid)
-
-    # The same pipeline, continued from the stored cursor; only the primary query, no repeated expansion.
-    assert provider.calls[-1]["cursor"] == "off:50" and provider.calls[-1]["queries"] == ["natural_language"]
-    ids = [c["candidate_id"] for c in after["candidates"]]
-    assert len(ids) == len(set(ids)) == 35  # 25 + the 10 left in a pool of 60; nobody twice
-    assert first_ids < set(ids)
-    assert len(states(after)["presented"]) == 25 + 5  # the next five are shown when the cycle completes
-    assert after["diagnostics"]["funnel"]["retrieved"] == 50  # the first cycle's facts are not overwritten
-    assert after["retrieval_exhausted"] is False or after["retrieval_exhausted"] is True  # reported either way
+    assert outcome["cycle_started"] is False and outcome["presented"] == 0
+    assert outcome["exhausted"] is False  # more exists in the market, but only the scheduler may pull it
+    assert len(provider.calls) == calls_before
+    shown = [c["candidate_id"] for c in client.get(f"/search/{sid}").json()["candidates"]]
+    assert len(shown) == len(set(shown)) == 25
 
 
-def test_a_second_cycle_skips_people_the_role_already_has(tmp_path: Path) -> None:
+def test_the_scheduled_cycle_skips_people_the_role_already_has(tmp_path: Path) -> None:
     provider = PagedProvider(120)
     provider.overlap_on_page2 = ["p000", "p001", "p002"]  # the next page repeats three people already in the role
-    client, _, _, _, _ = build(tmp_path, provider=provider)
+    client, _, clock, _, app = build(tmp_path, provider=provider)
     role = start_role(client)
     sid = role["search_id"]
-    for _ in range(4):
-        client.post(f"/search/{sid}/more")
-    client.post(f"/search/{sid}/more")
+    clock.advance(days=0.3)
+    app.state.role_runtime.tick_all()  # the scheduler pages forward from the stored cursor
     after = wait(client, sid)
     ids = [c["candidate_id"] for c in after["candidates"]]
-    assert len(ids) == len(set(ids))
+    assert len(ids) == len(set(ids))  # the three repeats were skipped; nobody is in the role twice
     assert after["candidate_count"] == 50
 
 
@@ -309,11 +319,13 @@ def test_when_nothing_more_can_be_found_show_more_says_so_and_starts_nothing(tmp
     client, provider, _, _, _ = build(tmp_path, total=30)  # one page, no cursor
     role = start_role(client)
     sid = role["search_id"]
+    validate_initial_five(client, sid)
     for _ in range(4):
         client.post(f"/search/{sid}/more")
     calls = len(provider.calls)
     outcome = client.post(f"/search/{sid}/more").json()
-    assert outcome == {"presented": 0, "cycle_started": False, "exhausted": True}
+    # One page, no cursor: the pool is drained and there is nothing more to pull, so this is genuinely exhausted.
+    assert outcome["presented"] == 0 and outcome["cycle_started"] is False and outcome["exhausted"] is True
     assert len(provider.calls) == calls
     assert client.get(f"/search/{sid}").json()["retrieval_exhausted"] is True
 
@@ -376,6 +388,7 @@ def test_calibration_happens_once_and_later_decisions_never_reopen_it(tmp_path: 
     decide(client, sid, five[1], "reject", feedback_reason="required_technology")
     assert client.get(f"/search/{sid}").json()["calibration"]["state"] == "ready"
 
+    validate_initial_five(client, sid)  # finish validating the first five so "Show me more" is unlocked
     client.post(f"/search/{sid}/more")
     closed = client.get(f"/search/{sid}").json()["calibration"]
     assert closed["state"] == "closed"
@@ -479,23 +492,24 @@ def _spy_tie_break(monkeypatch):
     return seen
 
 
-def _drain_and_cycle(client, sid):
-    for _ in range(4):
-        client.post(f"/search/{sid}/more")
-    client.post(f"/search/{sid}/more")
+def _drain_and_cycle(client, sid, app, clock):
+    """Let the campaign scheduler run its next (page-forward) cycle. Paid retrieval is the scheduler's job now —
+    "Show me more" never pulls — so the next cycle is driven by advancing the clock past the 6-hour cadence."""
+    clock.advance(days=0.3)
+    app.state.role_runtime.tick_all()
     return wait(client, sid)
 
 
 def test_accumulated_feedback_guides_the_next_cycle_and_the_confirmed_search_is_unchanged(tmp_path: Path, monkeypatch) -> None:
     seen = _spy_tie_break(monkeypatch)
-    client, provider, _, store, _ = build(tmp_path, total=120)
+    client, provider, clock, store, app = build(tmp_path, total=120)
     role = start_role(client)
     sid, five = role["search_id"], states(role)["presented"]
     brief_before = client.get(f"/search/{sid}").json()["confirmed_brief"]
     decide(client, sid, five[0], "reject", feedback_reason="required_technology")
     decide(client, sid, five[1], "maybe", feedback_reason="skill_not_demonstrated")
     decide(client, sid, five[2], "reject", feedback_reason="seniority")
-    _drain_and_cycle(client, sid)
+    _drain_and_cycle(client, sid, app, clock)
 
     assert seen and seen[-1] == {"technology": 2, "seniority": 1}
     after = client.get(f"/search/{sid}").json()
@@ -508,13 +522,13 @@ def test_accumulated_feedback_guides_the_next_cycle_and_the_confirmed_search_is_
 
 def test_feedback_that_cannot_be_translated_falls_back_to_the_confirmed_search(tmp_path: Path, monkeypatch) -> None:
     seen = _spy_tie_break(monkeypatch)
-    client, provider, *_ = build(tmp_path, total=120)
+    client, provider, clock, _, app = build(tmp_path, total=120)
     role = start_role(client)
     sid, five = role["search_id"], states(role)["presented"]
     decide(client, sid, five[0], "reject", feedback_reason="domain", feedback_note="wants fintech")
     decide(client, sid, five[1], "reject", feedback_reason="career_background")
     decide(client, sid, five[2], "reject", feedback_reason="other")
-    after = _drain_and_cycle(client, sid)
+    after = _drain_and_cycle(client, sid, app, clock)
     assert seen == []  # no guidance applied: the cycle ran exactly as confirmed
     assert after["candidate_count"] == 50  # and it still found the next people
 
@@ -581,9 +595,9 @@ def test_the_role_pauses_by_itself_after_the_normal_window_and_says_what_to_do_n
     role = start_role(client)
     sid = role["search_id"]
     assert role["role"]["status"] == "searching"
-    clock.advance(days=2.9)
+    clock.advance(days=0.9)  # still inside the default one-day window
     assert client.get(f"/search/{sid}").json()["role"]["status"] == "searching"
-    clock.advance(days=0.2)
+    clock.advance(days=0.2)  # just past it
     paused = client.get(f"/search/{sid}").json()["role"]
     assert paused["status"] == "paused" and paused["pause_kind"] == "no_engagement" and paused["has_feedback"] is False
 
@@ -595,7 +609,7 @@ def test_a_paused_role_with_feedback_offers_to_resume(tmp_path: Path) -> None:
     decide(client, sid, five[0], "shortlist")
     decide(client, sid, five[1], "reject", feedback_reason="seniority")
     decide(client, sid, five[2], "maybe", feedback_reason="type_of_work")
-    clock.advance(days=3.1)
+    clock.advance(days=1.1)  # past the one-day window; the hard end (three days) is still open, so resume is offered
     paused = client.get(f"/search/{sid}").json()["role"]
     assert paused["status"] == "paused" and paused["pause_kind"] == "feedback" and paused["can_resume"] is True
 
@@ -669,38 +683,35 @@ def test_resume_is_refused_once_the_automatic_search_has_run_its_course(tmp_path
 # ---- the daily background search --------------------------------------------------------------------------------------------------------------------
 
 
-def test_the_daily_search_is_a_fresh_retrieval_that_only_reads_profiles_the_role_has_never_been_shown(tmp_path: Path) -> None:
+def test_the_scheduled_cycle_pages_forward_reading_only_profiles_the_role_has_never_seen(tmp_path: Path) -> None:
     client, provider, clock, store, app = build(tmp_path, total=60)
     role = start_role(client)
     sid = role["search_id"]
     presented_before = states(role)["presented"]
     order_before = [c["candidate_id"] for c in role["candidates"]]
-    cursor_before = store.load(sid)["retrieval"]["next_cursor"]
     # Retrieval history and inventory are different things: 50 profiles came back, 25 were admitted and read.
     assert len(store.load(sid)["retrieved_ids"]) == 50 and len(order_before) == 25
-    harvested_before = set(store.load(sid)["harvest_evidence"])
 
-    clock.advance(days=1.1)
-    provider.extra_on_fresh = ["new-1", "new-2", "new-3"]  # the pool gained three people since the first retrieval
+    clock.advance(days=0.3)  # past the 6-hour cadence, still inside the window
     calls = len(provider.calls)
     app.state.role_runtime.tick_all()
     after = wait(client, sid)
 
-    assert provider.calls[calls]["cursor"] is None  # fresh, from the first page, not the previous cursor
+    # The scheduled cycle pages FORWARD from the stored cursor — it is not a fresh page-one re-pull.
+    assert provider.calls[calls]["cursor"] == "off:50"
     ids = [c["candidate_id"] for c in after["candidates"]]
-    assert len(ids) == len(set(ids)) == 28  # only the three genuinely new profiles were admitted
-    assert ids[:25] == order_before  # existing candidates keep their places
-    assert set(ids[25:]) == {"new-1", "new-2", "new-3"}
-    assert after["new_candidates"] == 3
-    assert all(after["presentation"][c]["state"] == "reserve" and after["presentation"][c]["source"] == "daily" for c in ids[25:])
-    # The 25 retrieved-but-not-admitted profiles were skipped: no profile read, no evidence, no judgment for them.
+    new_ids = set(ids) - set(order_before)
+    assert len(ids) == len(set(ids)) == 35  # the remaining ten of sixty, admitted; nobody twice
+    assert set(order_before) <= set(ids)  # existing candidates are all still there
+    assert new_ids == {f"p{index:03d}" for index in range(50, 60)}
+    assert after["new_candidates"] == 10
+    assert all(after["presentation"][c]["state"] == "reserve" and after["presentation"][c]["source"] == "daily" for c in new_ids)
     record = store.load(sid)
-    assert set(record["harvest_evidence"]) == harvested_before | {"new-1", "new-2", "new-3"}
-    assert len(record["retrieved_ids"]) == 53
+    assert len(record["retrieved_ids"]) == 60  # the next page's ten were retrieved on top of the first fifty
     assert record["cycles"][-1]["kind"] == "daily" and record["response"]["diagnostics"]["funnel"]["retrieved"] == 50  # first cycle's facts
-    # Nothing about the recruiter's review or the manual cursor moved.
+    # The recruiter's review is untouched; the campaign's own cursor has advanced to the end of this market.
     assert states(after)["presented"] == presented_before
-    assert record["retrieval"]["next_cursor"] == cursor_before
+    assert record["retrieval"]["next_cursor"] is None
     assert record["role"]["last_auto_search_at"]
 
 
@@ -722,9 +733,10 @@ def test_show_me_more_still_walks_the_cursor_after_a_daily_search(tmp_path: Path
     client, provider, clock, store, app = build(tmp_path, total=120)
     role = start_role(client)
     sid = role["search_id"]
-    clock.advance(days=1.1)
+    clock.advance(days=0.3)  # past the 6-hour cadence, still inside the one-day window
     app.state.role_runtime.tick_all()
     wait(client, sid)
+    validate_initial_five(client, sid)
     for _ in range(4):
         client.post(f"/search/{sid}/more")
     client.post(f"/search/{sid}/more")
@@ -738,16 +750,16 @@ def test_new_candidates_are_shown_only_when_the_recruiter_asks(tmp_path: Path) -
     role = start_role(client)
     sid = role["search_id"]
     presented_before = states(role)["presented"]
-    clock.advance(days=1.1)
-    provider.extra_on_fresh = [f"new-{i}" for i in range(7)]
-    app.state.role_runtime.tick_all()
+    validate_initial_five(client, sid)  # unlock "Show me more" without surfacing anything (neutral, non-positive)
+    clock.advance(days=0.3)  # past the 6-hour cadence, still inside the window
+    app.state.role_runtime.tick_all()  # the scheduler pages forward, adding the remaining ten quietly
     quiet = wait(client, sid)
-    assert quiet["new_candidates"] == 7 and states(quiet)["presented"] == presented_before  # a quiet signal, nothing moved
+    assert quiet["new_candidates"] == 10 and states(quiet)["presented"] == presented_before  # a quiet signal, nothing moved
 
     outcome = client.post(f"/search/{sid}/more", json={"only_new": True}).json()
-    assert outcome["presented"] == 5 and outcome["cycle_started"] is False
+    assert outcome["presented"] == 5 and outcome["cycle_started"] is False  # the recruiter asked: reveal five of the new ten
     after = client.get(f"/search/{sid}").json()
-    assert after["new_candidates"] == 2
+    assert after["new_candidates"] == 5
     assert set(presented_before) <= set(states(after)["presented"])
 
 
@@ -792,10 +804,11 @@ def test_a_narrow_search_that_has_run_out_pauses_as_narrow_and_never_relaxes_the
     client, provider, clock, store, _ = build(tmp_path, total=12)
     role = start_role(client)
     sid = role["search_id"]
+    validate_initial_five(client, sid)
     for _ in range(3):
         client.post(f"/search/{sid}/more")
     client.post(f"/search/{sid}/more")  # nothing left: marks the retrieval exhausted
-    clock.advance(days=3.1)
+    clock.advance(days=1.1)
     paused = client.get(f"/search/{sid}").json()
     assert paused["role"]["status"] == "paused" and paused["role"]["pause_kind"] == "narrow"
     # The confirmed search was never relaxed: every retrieval sent the same plan.
@@ -834,6 +847,7 @@ def test_the_workspace_is_told_which_set_each_candidate_was_shown_in(tmp_path: P
     sid = role["search_id"]
     assert {entry["batch"] for entry in role["presentation"].values() if entry["state"] == "presented"} == {1}
     assert all(entry["batch"] is None for entry in role["presentation"].values() if entry["state"] == "reserve")
+    validate_initial_five(client, sid)
     client.post(f"/search/{sid}/more")
     after = client.get(f"/search/{sid}").json()
     assert sorted({entry["batch"] for entry in after["presentation"].values() if entry["state"] == "presented"}) == [1, 2]

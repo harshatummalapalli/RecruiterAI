@@ -38,7 +38,8 @@ class Screener(Protocol):
     different from the Judge: coarse, high-recall, no quotes, one call per batch.
     Returns one ScreenResult per input record, in the same order."""
 
-    def screen(self, role: RoleModel, records: Tuple[CandidateRecord, ...]) -> Tuple[ScreenResult, ...]: ...
+    def screen(self, role: RoleModel, records: Tuple[CandidateRecord, ...],
+               feedback_context: Optional[dict] = None) -> Tuple[ScreenResult, ...]: ...
 
 
 class CareerFit(Protocol):

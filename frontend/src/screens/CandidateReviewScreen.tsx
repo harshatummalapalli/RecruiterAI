@@ -5,6 +5,7 @@ import type { SearchResponse } from '../types'
 import { buildDiscoveryCandidates } from '../models/discovery'
 import { buildWorkspaceCandidates, normalizeDecision, stableOrder, type Decision } from '../models/workspace'
 import { CandidateRecord, type RecordNote } from '../components/CandidateRecord'
+import { CandidateFilters, candidatePassesFilters, EMPTY_FILTERS, type CandidateFilterState } from '../components/CandidateFilters'
 import { CandidateWorkspace } from '../components/CandidateWorkspace'
 import { RefinePanel } from '../components/RefinePanel'
 import { AvailabilityNotice, CalibrationNote, NewCandidatesNotice, OtherReviewed, PausedPanel, RoleBar, ShowMoreBar } from '../components/RoleControls'
@@ -19,7 +20,7 @@ import {
   splitByPresentation,
   type PauseAction,
 } from '../models/roleWorkspace'
-import { refineSearch, revealNextCandidate, updateCandidateRecord, type RefineDeltas } from '../services/recruiterWorkflow'
+import { loadPersistedSearch, refineSearch, revealNextCandidate, updateCandidateRecord, type RefineDeltas } from '../services/recruiterWorkflow'
 import type { SearchBoundary } from '../models/searchBoundary'
 import type { IntakeIssue, IntakeResult } from '../models/intake'
 import { LivingBrief } from './LivingBrief'
@@ -83,6 +84,40 @@ function SkeletonRows() {
   )
 }
 
+function CampaignPoolList({
+  entries,
+  total,
+}: {
+  entries: NonNullable<SearchResponse['pool_candidates']>
+  total: number
+}) {
+  if (entries.length === 0) return null
+  return (
+    <details className="ws-pool">
+      <summary>View all {total} profiles returned by this campaign</summary>
+      <p className="ws-pool__note">
+        “Not assessed” means the profile has not had deeper analysis. It is not a rejection or a fit decision.
+      </p>
+      <ul className="ws-pool__list">
+        {entries.map((entry) => (
+          <li key={entry.candidate_id} className="ws-pool__row">
+            <span className="ws-pool__identity">
+              <strong>{entry.name || 'Name not returned'}</strong>
+              <span>{[entry.title, entry.company, entry.location].filter(Boolean).join(' · ') || 'Profile details unavailable'}</span>
+            </span>
+            <span className={`ws-pool__state ws-pool__state--${entry.assessment_state}`}>
+              {entry.assessment_state === 'shown' ? 'Shown above' : entry.assessment_state === 'assessed' ? 'Deeply assessed' : 'Not assessed'}
+            </span>
+            {entry.profile_url ? (
+              <a href={entry.profile_url} target="_blank" rel="noreferrer" className="ws-pool__link">Profile</a>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </details>
+  )
+}
+
 export function CandidateReviewScreen({
   brief,
   onChangeBrief,
@@ -112,6 +147,8 @@ export function CandidateReviewScreen({
   const [isRefining, setIsRefining] = useState(false)
   const [refineBusy, setRefineBusy] = useState(false)
   const [decisions, setDecisions] = useState<Record<string, Decision | undefined>>({})
+  // Local Include/Exclude filters over deterministic attributes — never re-searches, never spends credits.
+  const [filters, setFilters] = useState<CandidateFilterState>(EMPTY_FILTERS)
   const [roleBusy, setRoleBusy] = useState(false)
   const [pauseDismissed, setPauseDismissed] = useState(false)
   // Recruiter working memory — separate from AI-generated evidence. Persisted per candidate via updateCandidateRecord.
@@ -122,6 +159,8 @@ export function CandidateReviewScreen({
   // Choices made here that the server has not confirmed yet. A poll that lands between a click and its save must not
   // flip the card back, so these are laid over whatever the server returns until it agrees.
   const pendingDecisions = useRef<Record<string, Decision | null>>({})
+  const feedbackPollRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const activeSearchIdRef = useRef(searchId)
   // The order candidates first arrived in, kept for the whole search. The server re-orders its own list once when the
   // search finishes; the workspace does not follow that until the recruiter chooses to group.
   const arrivalOrder = useRef<{ generation: number; ids: string[] }>({ generation: searchGeneration, ids: [] })
@@ -133,8 +172,17 @@ export function CandidateReviewScreen({
     setIsEditingBrief(false)
     setIsRefining(false)
     setPauseDismissed(false)
+    setFilters(EMPTY_FILTERS)
     pendingDecisions.current = {}
   }, [searchGeneration, searchId])
+
+  useEffect(() => () => {
+    if (feedbackPollRef.current !== null) clearTimeout(feedbackPollRef.current)
+  }, [searchId])
+
+  useEffect(() => {
+    activeSearchIdRef.current = searchId
+  }, [searchId])
 
   useEffect(() => {
     // Hydrate from whatever the backend already has persisted for this search (decisions and notes are keyed by the
@@ -175,9 +223,13 @@ export function CandidateReviewScreen({
     const byId = new Map(arrangedItems.map((item) => [item.candidate.id, item]))
     return arrivalOrder.current.ids.map((id) => byId.get(id)).filter((item): item is (typeof arrangedItems)[number] => Boolean(item))
   }, [arrangedItems, searchGeneration, searchResponse])
+  // Include/Exclude is a pure local view filter over the presented set — it narrows what's shown,
+  // it never re-searches or re-admits. Reserve ("other reviewed") is filtered the same way.
+  const filteredItems = useMemo(() => flatItems.filter((item) => candidatePassesFilters(item.candidate, filters)), [flatItems, filters])
+  const filteredReserveItems = useMemo(() => reserveItems.filter((item) => candidatePassesFilters(item.candidate, filters)), [reserveItems, filters])
   const selectedCandidate = candidates.find((candidate) => candidate.id === selectedId) ?? null
   // Prev/next inside the open record: the same order the list is already shown in, so it never jumps around.
-  const orderedIds = flatItems.map((item) => item.candidate.id)
+  const orderedIds = filteredItems.map((item) => item.candidate.id)
   const selectedIndex = selectedId ? orderedIds.indexOf(selectedId) : -1
   const prevCandidateId = selectedIndex > 0 ? orderedIds[selectedIndex - 1] : null
   const nextCandidateId = selectedIndex >= 0 && selectedIndex < orderedIds.length - 1 ? orderedIds[selectedIndex + 1] : null
@@ -201,6 +253,21 @@ export function CandidateReviewScreen({
     if (response && typeof response === 'object' && 'search_id' in response) onSearchResponse?.(response)
   }
 
+  const waitForFeedbackAnalysis = (id: string) => {
+    if (feedbackPollRef.current !== null) clearTimeout(feedbackPollRef.current)
+    let attempts = 0
+    const tick = async () => {
+      attempts += 1
+      const response = await loadPersistedSearch(id).catch(() => null)
+      if (!response || id !== activeSearchIdRef.current) return
+      saved(response)
+      if (response.role?.reserve_analysis_state === 'running' && attempts < 120) {
+        feedbackPollRef.current = setTimeout(tick, 1500)
+      }
+    }
+    void tick()
+  }
+
   const decide = (id: string, next: Decision | undefined) => {
     const previous = decisions[id]
     pendingDecisions.current[id] = next ?? null
@@ -208,12 +275,13 @@ export function CandidateReviewScreen({
     setWriteError(null)
     // Pool-first reveal: a reject opens a slot, so bring the next already-read
     // profile forward from the held pool — free, no new search — if any remain.
-    const revealAfterReject = next === 'reject' && captureFeedback && (searchResponse?.reserve_available ?? 0) > 0
+    const revealAfterReject = next === 'reject' && captureFeedback && !searchResponse?.initial_validation_pending && (searchResponse?.reserve_available ?? 0) > 0
     if (searchId) {
       // An empty decision clears it on the server.
       updateCandidateRecord(searchId, id, { decision: next ?? '' })
         .then((response) => {
           saved(response)
+          if (response.role?.reserve_analysis_state === 'running') waitForFeedbackAnalysis(searchId)
           if (revealAfterReject) {
             revealNextCandidate(searchId)
               .then(saved)
@@ -234,7 +302,10 @@ export function CandidateReviewScreen({
     if (!searchId) return
     setWriteError(null)
     updateCandidateRecord(searchId, id, { feedback_reason: update.reason, feedback_note: update.note })
-      .then(saved)
+      .then((response) => {
+        saved(response)
+        if (response.role?.reserve_analysis_state === 'running') waitForFeedbackAnalysis(searchId)
+      })
       .catch(() => setWriteError('That change could not be saved — check your connection and try again.'))
   }
 
@@ -334,6 +405,10 @@ export function CandidateReviewScreen({
   const cycleRunning = searchState === 'searching'
   const nothingMore = isRole && reserveItems.length === 0 && Boolean(searchResponse?.retrieval_exhausted)
   const moreMessage = roleMessage ?? (nothingMore ? "We haven't found additional candidates in the current search." : null)
+  const hasStoredCampaignPool = (searchResponse?.pool_candidate_count ?? 0) > 0
+  const hasMoreToReveal = hasStoredCampaignPool
+    ? (searchResponse?.reserve_available ?? 0) > 0
+    : arrangedItems.length > 0 || reserveItems.length > 0
 
   return (
     <div className="discovery">
@@ -441,8 +516,22 @@ export function CandidateReviewScreen({
             ) : null}
 
             {!showSkeleton && arrangedItems.length > 0 ? (
+              <CandidateFilters
+                candidates={flatItems.map((item) => item.candidate)}
+                state={filters}
+                onChange={setFilters}
+                shown={filteredItems.length}
+                total={flatItems.length}
+              />
+            ) : null}
+
+            {!showSkeleton && arrangedItems.length > 0 && filteredItems.length === 0 ? (
+              <p className="discovery-empty">No candidates match the current filters. <button type="button" className="record-more" onClick={() => setFilters(EMPTY_FILTERS)}>Clear filters</button></p>
+            ) : null}
+
+            {!showSkeleton && filteredItems.length > 0 ? (
               <CandidateWorkspace
-                flatItems={flatItems}
+                flatItems={filteredItems}
                 decisions={decisions}
                 selectedId={selectedId}
                 onOpen={setSelectedId}
@@ -461,15 +550,31 @@ export function CandidateReviewScreen({
               />
             ) : null}
 
-            {isRole && !showSkeleton && (arrangedItems.length > 0 || reserveItems.length > 0) && onShowMore ? (
-              <ShowMoreBar busy={cycleRunning || roleBusy} message={moreMessage} onMore={() => void runRoleAction(() => onShowMore())} />
+            {isRole && !showSkeleton && searchResponse?.initial_validation_pending ? (
+              <div className="role-more"><p className="role-more__message">Review all five initial candidates to unlock the next group.</p></div>
             ) : null}
 
-            {isRole && !showSkeleton && reserveItems.length > 0 ? (
-              <OtherReviewed count={reserveItems.length}>
+            {isRole && !showSkeleton && role?.reserve_analysis_state === 'running' ? (
+              <div className="role-more" aria-live="polite"><p className="role-more__message">Checking the remaining profiles against your validations. Only close matches will be enriched and added here.</p></div>
+            ) : null}
+
+            {isRole && !showSkeleton && role?.reserve_analysis_state === 'complete' && role.reserve_analysis_added === 0 ? (
+              <div className="role-more"><p className="role-more__message">No additional profiles were added from the stored pool. Any profiles that did not pass the screen remain un-enriched in reserve.</p></div>
+            ) : null}
+
+            {isRole && !showSkeleton && role?.reserve_analysis_state === 'failed' ? (
+              <div className="role-more"><p className="role-more__message">The held profiles could not be assessed. They remain in reserve; updating a validation will retry the screen.</p></div>
+            ) : null}
+
+            {isRole && !showSkeleton && !searchResponse?.initial_validation_pending && hasMoreToReveal && onShowMore ? (
+              <ShowMoreBar busy={cycleRunning || roleBusy || role?.reserve_analysis_state === 'running'} message={moreMessage} onMore={() => void runRoleAction(() => onShowMore())} />
+            ) : null}
+
+            {isRole && !showSkeleton && filteredReserveItems.length > 0 ? (
+              <OtherReviewed count={filteredReserveItems.length}>
                 <CandidateWorkspace
                   compact
-                  flatItems={reserveItems}
+                  flatItems={filteredReserveItems}
                   decisions={decisions}
                   selectedId={selectedId}
                   onOpen={setSelectedId}
@@ -478,6 +583,13 @@ export function CandidateReviewScreen({
                   onFeedback={giveFeedback}
                 />
               </OtherReviewed>
+            ) : null}
+
+            {isRole && !showSkeleton && (searchResponse?.pool_candidates?.length ?? 0) > 0 ? (
+              <CampaignPoolList
+                entries={searchResponse?.pool_candidates ?? []}
+                total={searchResponse?.pool_candidate_count ?? searchResponse?.pool_candidates?.length ?? 0}
+              />
             ) : null}
           </div>
 

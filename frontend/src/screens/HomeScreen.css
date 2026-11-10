@@ -156,10 +156,40 @@
   color: var(--color-muted);
 }
 
+.home__rc-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.home__rc-stats span {
+  padding: 4px 8px;
+  border-radius: 7px;
+  background: var(--color-sidebar-bg, var(--color-surface));
+  color: var(--color-muted);
+  font-size: 11.5px;
+}
+
+.home__rc-stats strong {
+  color: var(--color-primary-text);
+  font-variant-numeric: tabular-nums;
+}
+
 .home__rc-foot {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 12px;
   margin: 12px 0 0;
   font-size: 12.5px;
   color: var(--color-muted);
+}
+
+.home__rc-updated {
+  color: var(--color-faint);
+  font-size: 11.5px;
+  font-weight: 400;
 }
 
 .home__rc-foot.is-green {

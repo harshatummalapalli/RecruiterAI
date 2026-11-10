@@ -33,11 +33,9 @@ def build_live_pipeline(
     *,
     memory_root: Path = _DEFAULT_MEMORY_ROOT,
     page_size: int = 50,
-    # judge-N / show-few hedge: pull ~page_size, baseline-rank the whole pool for
-    # free, judge only the top admit_n, show the best `show`. The rest is held in
-    # reserve and judged on demand. admit_n=8/show=5 pays the Judge for 8 (not 25)
-    # on the first view — cheaper + faster — with a Judge-ranked first impression.
-    admit_n: int = int(os.environ.get("RECRUITER_ADMIT_N") or 8),
+    # First pull: screen the page, enrich/rank 10, show 5; later passes enrich
+    # every profile that clears the role-and-validation relevance gate.
+    admit_n: int = 10,
     show: int = 5,
     judge_workers: int = int(os.environ.get("RECRUITER_JUDGE_WORKERS") or 8),
     reader_model: str = READER_MODEL,
@@ -59,10 +57,8 @@ def build_live_pipeline(
         ranking=RankingAgent(
             judge=JudgeAdapter(model=judge_model), enricher=HarvestAdapter(),
             admit_n=admit_n, show=show, max_judge_workers=judge_workers,
-            # Tier-1 admission gate — opt-in while it is validated. When on, it screens
-            # the retrieved pool on CrustData-only data (cheap model) to choose who to
-            # enrich + deep-judge, instead of taking the baseline top-N blindly.
-            screener=ScreenerAdapter() if os.environ.get("RECRUITER_SCREENER") else None,
+            # Tier-1 relevance gate screens thin CrustData fields before any Harvest read.
+            screener=None if os.environ.get("RECRUITER_NO_SCREENER") else ScreenerAdapter(),
             # Tier-2 holistic career-fit read — the primary ranking driver (see score.py),
             # so a strong career with a sparse profile is not buried by the quote ledger.
             # Off only when explicitly disabled, for an A/B against ledger-only ranking.

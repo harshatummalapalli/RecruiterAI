@@ -26,3 +26,5 @@ class SearchResult:
     # The total market matching the hard filters (CrustData's reported total_count;
     # NL ranking only reorders this set). The "universe" we read the strongest N from.
     total_available: Optional[int] = None
+    next_cursor: Optional[str] = None
+    credits_used: Optional[float] = None

@@ -8,6 +8,8 @@ Search stops at a clean, de-duplicated, in-scope pool.
 
 from __future__ import annotations
 
+from typing import Optional
+
 from recruiter.agents.briefing.model import ProviderQuery
 from recruiter.agents.search.merge import (
     enforce_cities,
@@ -48,8 +50,9 @@ class SearchAgent:
         counter = getattr(self._provider, "count", None)
         return counter(query) if callable(counter) else None
 
-    def run(self, query: ProviderQuery) -> SearchResult:
-        raw = self._provider.search(query, self._page_size)
+    def run(self, query: ProviderQuery, *, cursor: Optional[str] = None) -> SearchResult:
+        search_page = getattr(self._provider, "search_page", None)
+        raw, next_cursor = search_page(query, self._page_size, cursor=cursor) if callable(search_page) else (self._provider.search(query, self._page_size), None)
         merged = merge(raw)
         kept, dropped = enforce_geo(merged, query.countries, query.states)
         city_dropped: list = []
@@ -69,4 +72,31 @@ class SearchAgent:
             est_credits=round(len(raw) * CREDITS_PER_RESULT, 2),
             excluded_dropped=len(company_dropped) + len(title_dropped),
             total_available=_total_available(raw),
+            next_cursor=next_cursor or _next_cursor(raw),
+            credits_used=_credits_used(raw),
         )
+
+
+def _next_cursor(records) -> Optional[str]:
+    for record in reversed(records):
+        raw = getattr(record, "raw", None)
+        metadata = raw.get("__response_metadata") if isinstance(raw, dict) else None
+        cursor = metadata.get("next_cursor") if isinstance(metadata, dict) else None
+        if cursor:
+            return str(cursor)
+    return None
+
+
+def _credits_used(records) -> Optional[float]:
+    for record in records:
+        raw = getattr(record, "raw", None)
+        metadata = raw.get("__response_metadata") if isinstance(raw, dict) else None
+        if isinstance(metadata, dict):
+            for key in ("credits_used", "credit_usage", "_request_credits_used"):
+                try:
+                    value = float(metadata[key])
+                    if value >= 0:
+                        return value
+                except (KeyError, TypeError, ValueError):
+                    continue
+    return None

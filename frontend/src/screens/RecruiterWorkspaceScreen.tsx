@@ -594,8 +594,7 @@ export function RecruiterWorkspaceScreen() {
     }
   }
 
-  // "Show me more": what is already read comes first; when it is used up the server runs the next retrieval and this
-  // watches it, exactly like the first one.
+  // "Show me more" reveals stored candidates only. New paid pages are started by the timed campaign scheduler.
   const handleShowMore = async (onlyNew = false) => {
     if (!searchId) return
     setRoleMessage(null)
@@ -606,6 +605,10 @@ export function RecruiterWorkspaceScreen() {
       if (outcome.cycle_started) {
         setSearchState('searching')
         pollSearch(searchId, null)
+      } else if (outcome.presented > 0) {
+        setRoleMessage(null)
+      } else if (outcome.message) {
+        setRoleMessage(outcome.message)
       } else if (outcome.exhausted) {
         setRoleMessage("We haven't found additional candidates in the current search.")
       }

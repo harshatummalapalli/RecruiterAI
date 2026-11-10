@@ -65,12 +65,19 @@ class CrustDataAdapter:
         return self._provider
 
     def search(self, query: ProviderQuery, page_size: int) -> List[CandidateRecord]:
+        records, _ = self.search_page(query, page_size)
+        return records
+
+    def search_page(self, query: ProviderQuery, page_size: int, *, cursor: str | None = None):
         from backend.models.search_plan import SearchPlan
 
         plan = SearchPlan(searches=[_to_search_query(query)], strategy="natural_language",
                           reasoning="rearch pipeline", confidence_score=None)
-        candidates = self._get().search_with_options(plan, options={"page_size": page_size, "max_pages": 1})
-        return [_to_record(c) for c in candidates]
+        candidates = self._get().search_with_options(plan, options={"page_size": page_size, "max_pages": 1, "cursor": cursor})
+        records = [_to_record(c) for c in candidates]
+        next_cursor = next((str((r.raw.get("__response_metadata") or {}).get("next_cursor")) for r in reversed(records)
+                            if (r.raw.get("__response_metadata") or {}).get("next_cursor")), None)
+        return records, next_cursor
 
     def count(self, query: ProviderQuery) -> int:
         """How many match the filters (exact mode) — the cheap preview (~0.03 cr)."""

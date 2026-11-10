@@ -145,7 +145,7 @@ export function ShowMoreBar({ busy, message, onMore }: { busy: boolean; message:
         {busy ? (
           <>
             <span className="workspace__spinner" aria-hidden="true" />
-            <span>Finding more candidates…</span>
+            <span>Showing stored candidates…</span>
           </>
         ) : (
           <span>Show me more</span>

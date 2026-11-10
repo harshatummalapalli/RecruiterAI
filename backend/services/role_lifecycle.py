@@ -1,8 +1,10 @@
 """Role lifecycle for a budgeted sourcing campaign.
 
 A role is a search record. It starts SEARCHING the day the recruiter confirms it (Day 0), and pauses on its own at the
-end of a normal three-day window unless the recruiter made a meaningful change, which extends the window by one day.
-Nothing ever runs automatically past five days from Day 0. The recruiter can pause and resume at any time.
+end of its chosen window — one day or three — unless the recruiter made a meaningful change, which extends the window by
+one day. Nothing ever runs automatically past the campaign's hard end, which sits MAX_EXTENSION_DAYS beyond the chosen
+window, so a one-day campaign can be nudged out to three days and a three-day campaign to five. The recruiter can pause
+and resume at any time.
 
 Everything here is a pure function of the record and a clock (`now`), so the rules are tested without waiting for time
 to pass. There is no scheduler in this module; role_runtime.py calls `tick` on a timer.
@@ -14,8 +16,12 @@ from typing import Any, Dict, List, Optional
 SEARCHING = "searching"
 PAUSED = "paused"
 
-# A brief change may request another day, but never beyond the chosen campaign end.
+# A brief change may request another day, but never beyond the campaign's hard end.
 EXTENSION_DAYS = 1
+# How far past the chosen window a run of meaningful changes may push the campaign. The window is the normal
+# pause point; the hard end (window + this) is the absolute ceiling. A 3-day campaign therefore ends, at most,
+# at five days from Day 0 — the same ceiling the pre-campaign model used.
+MAX_EXTENSION_DAYS = 2
 CAMPAIGN_INTERVAL = timedelta(hours=6)
 CAMPAIGN_CREDIT_CAP = 6.0
 
@@ -58,7 +64,9 @@ def new_role(now: datetime, *, label: Optional[Dict[str, Any]] = None, duration_
         "pause_reason": None,
         "day0": _iso(now),
         "window_end": _iso(now + timedelta(days=duration_days)),
-        "hard_end": _iso(now + timedelta(days=duration_days)),
+        # The hard end sits MAX_EXTENSION_DAYS past the chosen window, so a meaningful change can genuinely
+        # extend the campaign (the window) up to this ceiling, and nothing runs automatically beyond it.
+        "hard_end": _iso(now + timedelta(days=duration_days + MAX_EXTENSION_DAYS)),
         "campaign_duration_days": duration_days,
         "campaign_credit_cap": CAMPAIGN_CREDIT_CAP,
         "paused_at": None,
@@ -159,6 +167,25 @@ def campaign_budget_exhausted(record: Dict[str, Any]) -> bool:
 
 def decision_count(record: Dict[str, Any]) -> int:
     return sum(1 for value in (record.get("recruiter_decisions") or {}).values() if value in ("shortlist", "maybe", "reject"))
+
+
+def initial_validation_ids(record: Dict[str, Any]) -> List[str]:
+    """Return the true first batch, correcting records where later cycles replaced it.
+
+    Older campaign code rewrote `campaign_initial_ids` for each retrieval cycle.
+    Prefer that stored set unless the current response's first five have stronger
+    decision coverage, which identifies the original batch on those older records.
+    """
+    stored = [cid for cid in (record.get("campaign_initial_ids") or []) if cid]
+    response_ids = [candidate.get("candidate_id") for candidate in
+                    ((record.get("response") or {}).get("candidates") or [])[:5]
+                    if candidate.get("candidate_id")]
+    if not stored:
+        return response_ids
+    decisions = record.get("recruiter_decisions") or {}
+    stored_decided = sum(decisions.get(cid) in ("shortlist", "maybe", "reject") for cid in stored)
+    response_decided = sum(decisions.get(cid) in ("shortlist", "maybe", "reject") for cid in response_ids)
+    return response_ids if response_decided > stored_decided else stored
 
 
 def has_meaningful_feedback(record: Dict[str, Any]) -> bool:

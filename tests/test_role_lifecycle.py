@@ -1,5 +1,6 @@
-"""Role lifecycle: Day 0, a normal window that ends in a pause, a one-day extension for a meaningful change, a hard
-limit of five days, manual pause, and which message a paused role shows. Pure functions with an explicit clock."""
+"""Role lifecycle: Day 0, the chosen window (one day or three) that ends in a pause, a one-day extension for a
+meaningful change, a hard end MAX_EXTENSION_DAYS past that window, manual pause, and which message a paused role shows.
+Pure functions with an explicit clock."""
 
 from datetime import datetime, timedelta, timezone
 
@@ -13,15 +14,20 @@ def at(days: float) -> datetime:
 
 
 def test_a_role_starts_searching_on_the_day_it_is_confirmed() -> None:
+    # The default campaign is one day; its hard end sits MAX_EXTENSION_DAYS beyond that.
     role = lifecycle.new_role(DAY0)
     assert role["status"] == lifecycle.SEARCHING
     assert lifecycle.parse_time(role["day0"]) == DAY0
-    assert lifecycle.parse_time(role["window_end"]) == at(3)
-    assert lifecycle.parse_time(role["hard_end"]) == at(5)
+    assert lifecycle.parse_time(role["window_end"]) == at(1)
+    assert lifecycle.parse_time(role["hard_end"]) == at(1 + lifecycle.MAX_EXTENSION_DAYS)
+    # A three-day campaign is the other choice, and reproduces the old 3-day-window / 5-day-ceiling shape.
+    three = lifecycle.new_role(DAY0, duration_days=3)
+    assert lifecycle.parse_time(three["window_end"]) == at(3)
+    assert lifecycle.parse_time(three["hard_end"]) == at(5)
 
 
-def test_the_normal_window_pauses_the_role_without_calling_it_expired() -> None:
-    role = lifecycle.new_role(DAY0)
+def test_the_chosen_window_pauses_the_role_without_calling_it_expired() -> None:
+    role = lifecycle.new_role(DAY0, duration_days=3)
     assert lifecycle.tick(role, at(2.99)) is False and role["status"] == lifecycle.SEARCHING
     assert lifecycle.tick(role, at(3.01)) is True
     assert role["status"] == lifecycle.PAUSED and role["pause_reason"] == lifecycle.PAUSE_WINDOW_ENDED
@@ -30,7 +36,7 @@ def test_the_normal_window_pauses_the_role_without_calling_it_expired() -> None:
 
 
 def test_a_meaningful_change_extends_by_one_day() -> None:
-    role = lifecycle.new_role(DAY0)
+    role = lifecycle.new_role(DAY0, duration_days=3)
     assert lifecycle.extend_for_change(role, at(1), ["core requirements"]) is True
     assert lifecycle.parse_time(role["window_end"]) == at(4)
     assert role["changes"][0]["changed"] == ["core requirements"]
@@ -38,8 +44,8 @@ def test_a_meaningful_change_extends_by_one_day() -> None:
     assert lifecycle.tick(role, at(4.01)) is True
 
 
-def test_extensions_never_go_past_five_days_from_day_zero() -> None:
-    role = lifecycle.new_role(DAY0)
+def test_extensions_never_go_past_the_hard_end() -> None:
+    role = lifecycle.new_role(DAY0, duration_days=3)  # window at(3), hard end at(5)
     for day in (1, 2, 3, 3.5, 3.9, 4):
         lifecycle.extend_for_change(role, at(day), ["experience"])
     assert lifecycle.parse_time(role["window_end"]) == at(5)
@@ -50,7 +56,7 @@ def test_extensions_never_go_past_five_days_from_day_zero() -> None:
 
 
 def test_a_change_after_an_automatic_pause_resumes_within_the_limit() -> None:
-    role = lifecycle.new_role(DAY0)
+    role = lifecycle.new_role(DAY0, duration_days=3)
     lifecycle.tick(role, at(3.2))
     assert role["status"] == lifecycle.PAUSED
     lifecycle.extend_for_change(role, at(3.5), ["location or work mode"])
@@ -83,20 +89,21 @@ def test_resume_is_refused_after_the_hard_end() -> None:
 
 
 def test_resume_never_extends_past_the_hard_end() -> None:
-    role = lifecycle.new_role(DAY0)
+    role = lifecycle.new_role(DAY0, duration_days=3)  # hard end at(5)
     lifecycle.pause(role, at(4.5))
     assert lifecycle.resume(role, at(4.5)) is True
     assert lifecycle.parse_time(role["window_end"]) == at(5)
 
 
-def test_a_daily_search_is_due_a_day_after_the_last_one() -> None:
-    role = lifecycle.new_role(DAY0)
-    assert lifecycle.daily_search_due(role, at(0.5)) is False
-    assert lifecycle.daily_search_due(role, at(1.01)) is True
-    role["last_auto_search_at"] = at(1.01).isoformat()
-    assert lifecycle.daily_search_due(role, at(1.5)) is False
-    assert lifecycle.daily_search_due(role, at(2.02)) is True
-    lifecycle.pause(role, at(2.1))
+def test_a_background_search_is_due_every_six_hours() -> None:
+    # 6 hours is 0.25 of a day. Due once that much time has passed since Day 0 / the last automatic search.
+    role = lifecycle.new_role(DAY0, duration_days=3)
+    assert lifecycle.daily_search_due(role, at(0.1)) is False  # ~2.4h in, not yet
+    assert lifecycle.daily_search_due(role, at(0.26)) is True  # just past 6h
+    role["last_auto_search_at"] = at(0.26).isoformat()
+    assert lifecycle.daily_search_due(role, at(0.4)) is False  # ~3.4h since the last one
+    assert lifecycle.daily_search_due(role, at(0.6)) is True  # ~8h since the last one
+    lifecycle.pause(role, at(0.7))
     assert lifecycle.daily_search_due(role, at(9)) is False  # paused roles do not search
 
 

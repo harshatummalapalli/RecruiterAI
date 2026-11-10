@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 _SYSTEM = """You are a fast first-pass recruiting screener. For each candidate you see only thin directory data — their current title, a headline, a few recent past titles, listed skills, approximate years, and location. You do NOT see their full profile.
 
-Decide, per candidate, whether they are plausibly worth a deeper, paid look for THIS role. Be high-recall: KEEP anyone who could reasonably fit; DROP only clear mismatches (wrong field entirely, far too junior, unrelated discipline). When unsure, keep. Judge the kind of work and seniority, not exact keywords; you are gating who to read in depth, not verifying requirements.
+Decide whether each candidate is a close match worth Harvest enrichment for THIS role. The confirmed role requirements remain primary. When recruiter validation examples are supplied, use shortlisted profiles as positive examples, rejection reasons and rejected profiles as negative examples, and maybes as uncertain examples. Generalize from role and work evidence; do not copy a person's company, identity, or exact title as a requirement. Keep only likely close fits consistent with the role and recruiter feedback. Drop weak or uncertain fits so they remain in the un-enriched reserve. This is a relevance gate, not a final hiring decision.
 
 For each candidate give keep (true/false) and score (0..1 = how strong the thin signal is, for ordering who to read first).
 
@@ -71,7 +71,8 @@ class ScreenerAdapter:
     def __init__(self, model: str = SCREEN_MODEL) -> None:
         self._model = model
 
-    def screen(self, role: RoleModel, records: Tuple[CandidateRecord, ...]) -> Tuple[ScreenResult, ...]:
+    def screen(self, role: RoleModel, records: Tuple[CandidateRecord, ...],
+               feedback_context: Dict[str, Any] | None = None) -> Tuple[ScreenResult, ...]:
         if not records:
             return ()
         intent = _to_intent(role)
@@ -81,13 +82,16 @@ class ScreenerAdapter:
             "core_requirements": [r.text for r in role.tier("core")],
             "supporting_requirements": [r.text for r in role.tier("supporting")],
         }
+        feedback_context = feedback_context or {}
         out: List[ScreenResult] = []
         for start in range(0, len(records), CHUNK):
-            out.extend(self._screen_chunk(role_payload, records[start:start + CHUNK], intent))
+            out.extend(self._screen_chunk(role_payload, records[start:start + CHUNK], intent, feedback_context))
         return tuple(out)
 
-    def _screen_chunk(self, role_payload: Dict[str, Any], chunk: Tuple[CandidateRecord, ...], intent) -> List[ScreenResult]:
-        payload = {"role": role_payload, "candidates": [{"i": k, **_thin_profile(record, intent)} for k, record in enumerate(chunk)]}
+    def _screen_chunk(self, role_payload: Dict[str, Any], chunk: Tuple[CandidateRecord, ...], intent,
+                      feedback_context: Dict[str, Any]) -> List[ScreenResult]:
+        payload = {"role": role_payload, "recruiter_validation": feedback_context,
+                   "candidates": [{"i": k, **_thin_profile(record, intent)} for k, record in enumerate(chunk)]}
         try:
             from recruiter.llm import complete_json
             data = complete_json(_SYSTEM, json.dumps(payload, ensure_ascii=False), self._model,
@@ -95,14 +99,14 @@ class ScreenerAdapter:
             rows: List[Dict[str, Any]] = data.get("results") or []
             by_index = {int(row["i"]): row for row in rows if isinstance(row, dict) and "i" in row}
         except Exception:
-            logger.warning("Tier-1 screener chunk failed; keeping it (fail-open)", exc_info=True)
-            return [ScreenResult(keep=True, score=0.5) for _ in chunk]
+            logger.warning("Tier-1 screener chunk failed; holding candidates for a safe retry", exc_info=True)
+            return [ScreenResult(keep=False, score=0.0, reason="screen_failed") for _ in chunk]
 
         out: List[ScreenResult] = []
         for k in range(len(chunk)):
             row = by_index.get(k)
             if row is None:
-                out.append(ScreenResult(keep=True, score=0.5))  # unanswered = keep
+                out.append(ScreenResult(keep=False, score=0.0, reason="screen_failed"))
                 continue
             try:
                 score = float(row.get("score", 0.5))

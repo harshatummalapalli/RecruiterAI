@@ -49,31 +49,41 @@ class RankingAgent:
         # single biggest latency lever. 1 = sequential (back to the old behaviour).
         self._max_judge_workers = max(1, max_judge_workers)
 
-    def _admit(self, role: RoleModel, by_baseline: List[CandidateRecord]) -> Tuple[List[CandidateRecord], Tuple[CandidateRecord, ...]]:
-        """Tier-1: pick who to enrich. With a screener, score a baseline shortlist on the
-        thin provider data and admit the best keepers; otherwise take the baseline top-N.
-        Returns (admitted, reserve); reserve keeps baseline order and excludes admitted."""
-        if self._screener is None or not by_baseline:
-            return by_baseline[: self._admit_n], tuple(by_baseline[self._admit_n :])
+    def _admit(self, role: RoleModel, by_baseline: List[CandidateRecord], *, admit_n: int,
+               admit_all_relevant: bool = False, feedback_context: Optional[dict] = None) -> Tuple[List[CandidateRecord], Tuple[CandidateRecord, ...]]:
+        """Tier-1 screens thin provider data before Harvest, then applies the initial
+        cap or admits every relevant match. Later-page screen failures stay in reserve."""
+        if not by_baseline:
+            return [], ()
+        if self._screener is None:
+            if admit_all_relevant:
+                return [], tuple(by_baseline)
+            return by_baseline[:admit_n], tuple(by_baseline[admit_n:])
         shortlist = by_baseline[: self._screen_cap]
         try:
-            results = self._screener.screen(role, tuple(shortlist))
+            try:
+                results = self._screener.screen(role, tuple(shortlist), feedback_context)
+            except TypeError:
+                results = self._screener.screen(role, tuple(shortlist))
         except Exception:
             results = ()
-        scored = list(zip(shortlist, results)) if len(results) == len(shortlist) else []
-        kept = [(record, result) for record, result in scored if result.keep]
+        failed = len(results) != len(shortlist) or (bool(results) and all(result.reason == "screen_failed" for result in results))
+        if failed:
+            if admit_all_relevant:
+                return [], tuple(by_baseline)
+            return by_baseline[:admit_n], tuple(by_baseline[admit_n:])
+        scored = list(zip(shortlist, results))
+        kept = [(record, result) for record, result in scored if result.keep and result.reason != "screen_failed"]
         kept.sort(key=lambda pair: (-pair[1].score, -baseline_score(role, pair[0]), (pair[0].name or "")))
-        admitted = [record for record, _ in kept[: self._admit_n]]
-        # Safety net: never surface nothing because the screener was strict (or failed) —
-        # fall back to the baseline top-N so a search always produces candidates.
-        if not admitted:
-            admitted = by_baseline[: self._admit_n]
+        admitted = [record for record, _ in (kept if admit_all_relevant else kept[:admit_n])]
         admitted_ids = {id(record) for record in admitted}
         reserve = tuple(record for record in by_baseline if id(record) not in admitted_ids)
         return admitted, reserve
 
     def rank(self, role: RoleModel, candidates: List[CandidateRecord],
-             on_progress: Optional[Callable[[int, int], None]] = None) -> RankingResult:
+             on_progress: Optional[Callable[[int, int], None]] = None, *,
+             admit_n: Optional[int] = None, admit_all_relevant: bool = False,
+             feedback_context: Optional[dict] = None) -> RankingResult:
         """on_progress(admitted, processed) fires once the pool is admitted (0
         processed) and again after each admitted candidate is enriched+judged, so
         a caller can stream 'Reading profiles: N of M' while the slow per-candidate
@@ -90,7 +100,9 @@ class RankingAgent:
         # driven pool later phases promote from, so the first view only pays the
         # Judge for the N we admit (the judge-N / show-few hedge).
         by_baseline = sorted(eligible, key=lambda c: (-baseline_score(role, c), (c.name or "")))
-        admitted, reserve = self._admit(role, by_baseline)
+        admitted, reserve = self._admit(role, by_baseline, admit_n=admit_n or self._admit_n,
+                                        admit_all_relevant=admit_all_relevant,
+                                        feedback_context=feedback_context)
         if on_progress is not None:
             on_progress(len(admitted), 0)
 

@@ -1,4 +1,5 @@
 import json
+import hashlib
 import logging
 import os
 import tempfile
@@ -296,6 +297,9 @@ class SearchResponse(BaseModel):
     # legacy/role searches are unchanged.
     feedback_capture: bool = False
     reserve_available: int = 0
+    pool_candidate_count: int = 0
+    pool_candidates: List[Dict[str, Any]] = Field(default_factory=list)
+    initial_validation_pending: bool = False
     # The result of the last pool-first refine (matched / dropped / exhausted), so the
     # UI can say "N of your read pool match" and offer a wider search when none do.
     refine_outcome: Optional[Dict[str, Any]] = None
@@ -422,7 +426,7 @@ class _SummaryCache:
     def __init__(self) -> None:
         self._items: Dict[Path, tuple] = {}
 
-    def get(self, store: SearchStore, path: Path) -> Optional[Dict[str, Any]]:
+    def get(self, store: SearchStore, path: Path, model_confirmations: Any = None) -> Optional[Dict[str, Any]]:
         try:
             stat = path.stat()
         except OSError:
@@ -434,7 +438,22 @@ class _SummaryCache:
         record = store.load(path.stem)
         if not record:
             return None
-        entry = {"summary": search_summary(record), "session_id": (record.get("confirmed_brief") or {}).get("session_id")}
+        summary = search_summary(record)
+        confirmation_id = (record.get("confirmed_brief") or {}).get("confirmation_id")
+        if model_confirmations is not None and confirmation_id:
+            try:
+                model = model_confirmations.load(confirmation_id)
+                if model is not None:
+                    summary["title"] = model.posted_title or model.identity or summary["title"]
+                    summary["company"] = summary.get("company") or model.hiring_company or ""
+                    if not summary.get("place"):
+                        location = model.location
+                        summary["place"] = (f"Remote · {', '.join(location.countries)}"
+                                             if location.work_mode == "remote" and location.countries
+                                             else ", ".join(location.cities or location.states or location.countries))
+            except Exception:  # malformed/missing old confirmations do not hide the search card
+                logger.debug("Could not resolve campaign label | search_id=%s", path.stem, exc_info=True)
+        entry = {"summary": summary, "session_id": (record.get("confirmed_brief") or {}).get("session_id")}
         self._items[path] = (version, entry)
         return entry
 
@@ -584,6 +603,106 @@ def create_app(
     def start_cycle(search_id: str, snapshot: Dict[str, Any], cycle: Dict[str, Any], guidance: Guidance, provider_name: Optional[str] = None) -> None:
         """Runs ONE retrieval cycle for a role, on the same background pipeline as any search. The role's record must
         already exist. Campaign retrieval sizing remains backend-owned at the established 50-profile page."""
+        if intake_service is not None and not isinstance(snapshot, dict):
+            def run_engine_cycle() -> None:
+                try:
+                    feedback_record = search_store.load(search_id) or {}
+                    result = intake_service.run_search(snapshot.model_id, search_id,
+                                                       provider=provider_name or "crustdata",
+                                                       cursor=cycle.get("cursor"),
+                                                       feedback_record=feedback_record,
+                                                       admit_all_relevant=cycle.get("n", 1) > 1,
+                                                       surface_all=cycle.get("n", 1) > 1)
+                    pool = result.pop("pool", {})
+                    with search_store.lock:
+                        record = search_store.load(search_id) or {}
+                        current = record.get("response") or {}
+                        stored_pool = ((record.get("internal_diagnostics") or {}).get("pool") or {})
+                        old_ids = {e.get("candidate_id") for e in (stored_pool.get("judged") or []) + (stored_pool.get("reserve") or [])}
+                        old_ids.update(c.get("candidate_id") for c in current.get("candidates") or [])
+                        keep = [i for i, c in enumerate(result.get("candidates") or [])
+                                if c.get("candidate_id") not in old_ids]
+                        new_candidates = [(result.get("candidates") or [])[i] for i in keep]
+                        for field in ("candidates", "explanations", "evidence"):
+                            current[field] = list(current.get(field) or []) + [
+                                (result.get(field) or [])[i] for i in keep if i < len(result.get(field) or [])
+                            ]
+                        current["candidate_count"] = len(current.get("candidates") or [])
+                        current["diagnostics"] = result.get("diagnostics") or current.get("diagnostics") or {}
+                        current["status"] = "complete"
+                        current["recruiter_decisions"] = record.get("recruiter_decisions", {})
+                        current["notes"] = record.get("notes", {})
+
+                        diagnostics = record.setdefault("internal_diagnostics", {})
+                        old_pool = diagnostics.setdefault("pool", {"judged": [], "reserve": [], "counts": {}})
+                        known = {e.get("candidate_id") for e in (old_pool.get("judged") or []) + (old_pool.get("reserve") or [])}
+                        for state in ("judged", "reserve"):
+                            additions = [e for e in pool.get(state, []) if e.get("candidate_id") not in known]
+                            old_pool.setdefault(state, []).extend(additions)
+                            known.update(e.get("candidate_id") for e in additions)
+                        old_pool["counts"] = {
+                            "judged": len(old_pool.get("judged") or []),
+                            "reserve": len(old_pool.get("reserve") or []),
+                            "shown": len(current.get("candidates") or []),
+                            "total": len(old_pool.get("judged") or []) + len(old_pool.get("reserve") or []),
+                        }
+                        visible_ids = {c.get("candidate_id") for c in current.get("candidates") or []}
+                        current["reserve_available"] = sum(1 for e in old_pool.get("judged") or []
+                            if not e.get("shown") and e.get("candidate_id") not in visible_ids)
+                        current["candidate_states"] = {**(current.get("candidate_states") or {}),
+                            **{(current.get("candidates") or [])[i].get("candidate_id"): "review_ready" for i in keep}}
+                        presentation = record.setdefault("presentation", {})
+                        batch_number = presentation_rules.next_batch_number(record)
+                        for candidate in new_candidates:
+                            candidate_id = candidate.get("candidate_id")
+                            if candidate_id:
+                                presentation[candidate_id] = {
+                                    "state": presentation_rules.PRESENTED, "source": "daily",
+                                    "seen": True, "batch": batch_number,
+                                }
+
+                        diag = result.get("diagnostics") or {}
+                        pulled = int(diag.get("pulled") or 0)
+                        credits = float(diag.get("credits_used") if diag.get("credits_used") is not None
+                                        else (diag.get("est_credits") or (pulled * 0.03)))
+                        record.setdefault("cycles", []).append({
+                            "n": cycle["n"], "kind": cycle["kind"], "at": datetime.now(timezone.utc).isoformat(),
+                            "retrieved": pulled, "credits_used": credits,
+                            "new_candidates": len(keep), "cursor_used": bool(cycle.get("cursor")),
+                            "confirmation_id": snapshot.model_id,
+                        })
+                        next_cursor = diag.get("next_cursor")
+                        record["retrieval"] = {"next_cursor": next_cursor, "exhausted": not bool(next_cursor),
+                                                "cycle": cycle["n"]}
+                        if keep and not record.get("campaign_initial_ids"):
+                            record["campaign_initial_ids"] = [
+                                current["candidates"][len(current["candidates"]) - len(keep) + offset].get("candidate_id")
+                                for offset in range(min(5, len(keep)))
+                            ]
+                            record["role"]["reserve_analysis_state"] = None
+                        record["status"] = "complete"
+                        record["updated_at"] = datetime.now(timezone.utc).isoformat()
+                        record["response"] = current
+                        search_store.save(search_id, record)
+                except Exception:
+                    logger.exception("[SEARCH] New-engine campaign cycle failed | search_id=%s", search_id)
+                    def failed(record: Dict[str, Any]) -> None:
+                        record["status"] = "error"
+                        response = record.setdefault("response", {})
+                        response["status"] = "error"
+                        response.setdefault("warnings", []).append("The next campaign search could not be completed.")
+                        record["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    search_store.update(search_id, failed)
+
+            def mark_engine_running(record: Dict[str, Any]) -> None:
+                record["status"] = STATUS_RUNNING
+                record.setdefault("response", {})["status"] = STATUS_RUNNING
+                record["updated_at"] = datetime.now(timezone.utc).isoformat()
+            search_store.update(search_id, mark_engine_running)
+            threading.Thread(target=run_engine_cycle, daemon=True,
+                             name=f"engine-campaign-{search_id}-{cycle['n']}").start()
+            logger.info("[SEARCH] New-engine campaign cycle started | search_id=%s kind=%s n=%s", search_id, cycle["kind"], cycle["n"])
+            return
         # Every cycle of a role searches with the provider the role was started with.
         provider_name = provider_name or (search_store.load(search_id) or {}).get("provider") or "crustdata"
         provider = provider_registry.get(provider_name)
@@ -640,7 +759,8 @@ def create_app(
         ).start()
         logger.info("[SEARCH] Cycle started | search_id=%s kind=%s n=%s cursor=%s", search_id, cycle["kind"], cycle["n"], bool(cycle.get("cursor")))
 
-    role_runtime = RoleRuntime(search_store, confirmation_store, start_cycle, clock)
+    role_runtime = RoleRuntime(search_store, confirmation_store, start_cycle, clock,
+                               getattr(intake_service, "_confirmations", None))
     app.state.role_runtime = role_runtime
     if os.environ.get("RECRUITERAI_ROLE_SCHEDULER", "true").strip().lower() not in ("0", "false", "no"):
         role_scheduler = RoleScheduler(role_runtime)
@@ -943,6 +1063,52 @@ def create_app(
         response_data.update(derived_fields(record, clock()))
         return SearchResponse(**response_data)
 
+    def _restore_stored_ranked_candidates(search_id: str, record: Dict[str, Any]) -> Dict[str, Any]:
+        """Promote already-enriched reserve rows after first-batch validation.
+
+        This is a local, idempotent restore from the stored ranking pool. It makes
+        older campaign records show the same rich candidate cards without another
+        provider or Harvest call. Raw, un-enriched reserve entries are untouched.
+        """
+        if intake_service is None or not record.get("role"):
+            return record
+        first_ids = role_lifecycle.initial_validation_ids(record)
+        decisions = record.get("recruiter_decisions") or {}
+        if not first_ids or any(decisions.get(cid) not in ("shortlist", "maybe", "reject") for cid in first_ids):
+            return record
+        pool = ((record.get("internal_diagnostics") or {}).get("pool") or {})
+        response_ids = {candidate.get("candidate_id") for candidate in (record.get("response") or {}).get("candidates") or []}
+        held = [entry for entry in pool.get("judged") or []
+                if entry.get("candidate_id") and not entry.get("shown") and entry.get("candidate_id") not in response_ids]
+        if not held:
+            return record
+
+        restored: Dict[str, Any] = {}
+        def apply(current: Dict[str, Any]) -> None:
+            ids = intake_service.reveal_batch(current, len(held))
+            if not ids:
+                return
+            presentation = current.setdefault("presentation", {})
+            batch = presentation_rules.next_batch_number(current)
+            for candidate_id in ids:
+                presentation[candidate_id] = {
+                    "state": presentation_rules.PRESENTED, "source": "validated-pool",
+                    "seen": True, "batch": batch,
+                }
+            current["campaign_initial_ids"] = first_ids
+            pool_now = ((current.get("internal_diagnostics") or {}).get("pool") or {})
+            visible = {candidate.get("candidate_id") for candidate in (current.get("response") or {}).get("candidates") or []}
+            pool_now.setdefault("counts", {})["shown"] = len(visible)
+            current["response"]["reserve_available"] = sum(
+                1 for entry in pool_now.get("judged") or []
+                if not entry.get("shown") and entry.get("candidate_id") not in visible
+            )
+            current["updated_at"] = datetime.now(timezone.utc).isoformat()
+            restored["ids"] = ids
+
+        updated = search_store.update(search_id, apply)
+        return updated or record
+
     @app.get("/searches", dependencies=[Depends(require_session)])
     def list_searches() -> Dict[str, Any]:
         """The workspace sidebar: every role, plus briefs that have not been searched yet. Newest activity first
@@ -955,7 +1121,8 @@ def create_app(
         used_sessions: set = set()
         now = clock()
         for path in Path(search_store.storage_dir).glob("*.json"):
-            summary = search_summary_cache.get(search_store, path)
+            summary = search_summary_cache.get(search_store, path,
+                                               getattr(intake_service, "_confirmations", None))
             if summary is None:
                 continue
             # `archived` is time-dependent (explicit Close + the 14-day idle rule), so it
@@ -985,6 +1152,7 @@ def create_app(
         record = search_store.load(search_id)
         if record is None:
             raise HTTPException(status_code=404, detail="Search not found.")
+        record = _restore_stored_ranked_candidates(search_id, record)
         logger.info("[SEARCH] Reloaded persisted search | search_id=%s — no OpenAI or CrustData calls made", search_id)
         return _search_response(record)
 
@@ -1000,6 +1168,130 @@ def create_app(
             raise HTTPException(status_code=404, detail="Search not found.")
         logger.info("[SEARCH] Workspace arranged flag persisted | search_id=%s arranged=%s", search_id, update.arranged)
         return {"workspace_arranged": bool(record.get("workspace_arranged", False))}
+
+    def _maybe_start_feedback_pool_analysis(search_id: str) -> None:
+        """After a clear first-batch signal, deep-read the held 40 from the paid pull.
+
+        The CrustData search is not repeated here. The cheap admission screen,
+        Harvest and Judge are run against the already stored reserve profiles.
+        """
+        if intake_service is None:
+            return
+        trigger: Dict[str, Any] = {}
+
+        def claim(record: Dict[str, Any]) -> None:
+            role = record.get("role") or {}
+            first_ids = role_lifecycle.initial_validation_ids(record)
+            decisions = record.get("recruiter_decisions") or {}
+            decided = [decisions.get(cid) for cid in first_ids if decisions.get(cid) in ("shortlist", "maybe", "reject")]
+            if not first_ids or len(decided) < len(first_ids) or role.get("status") != role_lifecycle.SEARCHING:
+                return
+            record["campaign_initial_ids"] = first_ids
+            shortlist = decided.count("shortlist")
+            maybe = decided.count("maybe")
+            # Positive validation, per spec: 3 Shortlist, OR 2 Shortlist + 1 Maybe.
+            # Only a positive validation unlocks surfacing every closely-aligned reserve
+            # profile without re-admitting 10 or validating a second five. Anything short
+            # of that is a refine signal — the recruiter adjusts the brief and re-validates
+            # (via Refine), it does not dump the whole reserve.
+            positive_validation = shortlist >= 3 or (shortlist >= 2 and maybe >= 1)
+            if not positive_validation:
+                return
+            feedback_hash = hashlib.sha256(json.dumps({
+                "decisions": decisions,
+                "feedback_events": record.get("feedback_events") or [],
+            }, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+            if role.get("reserve_analysis_state") == "running" or role.get("reserve_analysis_feedback_hash") == feedback_hash:
+                return
+            pool = ((record.get("internal_diagnostics") or {}).get("pool") or {})
+            reserve = list(pool.get("reserve") or [])
+            if not reserve:
+                return
+            role["reserve_analysis_state"] = "running"
+            role["reserve_analysis_signal"] = "positive"
+            role["reserve_analysis_feedback_hash"] = feedback_hash
+            record["role"] = role
+            trigger.update({"confirmation_id": (record.get("confirmed_brief") or {}).get("confirmation_id"),
+                            "reserve": reserve, "signal": role["reserve_analysis_signal"],
+                            "feedback_record": record, "feedback_hash": feedback_hash})
+
+        search_store.update(search_id, claim)
+        if not trigger:
+            return
+
+        def analyze() -> None:
+            try:
+                result = intake_service.analyze_reserve(trigger["confirmation_id"], trigger["reserve"],
+                                                       feedback_record=trigger.get("feedback_record"))
+                new_pool = result.pop("pool", {})
+                def persist(record: Dict[str, Any]) -> None:
+                    response = record.get("response") or {}
+                    diag = record.setdefault("internal_diagnostics", {})
+                    pool = diag.setdefault("pool", {"judged": [], "reserve": [], "counts": {}})
+                    known = {e.get("candidate_id") for e in pool.get("judged") or []}
+                    analyzed = [e for e in new_pool.get("judged") or [] if e.get("candidate_id") not in known]
+                    pool["judged"] = list(pool.get("judged") or []) + analyzed
+                    pool["reserve"] = list(new_pool.get("reserve") or [])
+                    existing_ids = {c.get("candidate_id") for c in response.get("candidates") or []}
+                    additions = [i for i, c in enumerate(result.get("candidates") or [])
+                                 if c.get("candidate_id") not in existing_ids]
+                    for field in ("candidates", "explanations", "evidence"):
+                        response[field] = list(response.get(field) or []) + [
+                            (result.get(field) or [])[i] for i in additions if i < len(result.get(field) or [])
+                        ]
+                    response["candidate_count"] = len(response.get("candidates") or [])
+                    response["candidate_states"] = {**(response.get("candidate_states") or {}),
+                        **{(result.get("candidates") or [])[i].get("candidate_id"): "review_ready" for i in additions}}
+                    pool["counts"] = {"judged": len(pool.get("judged") or []),
+                        "reserve": len(pool.get("reserve") or []), "shown": response["candidate_count"],
+                        "total": len(pool.get("judged") or []) + len(pool.get("reserve") or [])}
+                    response["reserve_available"] = sum(1 for e in pool.get("judged") or []
+                        if not e.get("shown") and e.get("candidate_id") not in existing_ids)
+                    revealed_ids = intake_service.reveal_batch(record, 500)
+                    presentation = record.setdefault("presentation", {})
+                    batch_number = presentation_rules.next_batch_number(record)
+                    for candidate_id in additions + revealed_ids:
+                        presentation[candidate_id] = {
+                            "state": presentation_rules.PRESENTED, "source": "validated-pool",
+                            "seen": True, "batch": batch_number,
+                        }
+                    # Initial admitted candidates held behind the first-five
+                    # validation and feedback-qualified reserve candidates now
+                    # share one rich response. Keep evidence arrays aligned.
+                    rows = list(zip(response.get("candidates") or [], response.get("explanations") or [],
+                                    response.get("evidence") or []))
+                    rows.sort(key=lambda row: -(row[0].get("final_score") or 0.0))
+                    response["candidates"] = [row[0] for row in rows]
+                    response["explanations"] = [row[1] for row in rows]
+                    response["evidence"] = [row[2] for row in rows]
+                    response["candidate_count"] = len(rows)
+                    pool["counts"]["shown"] = len(rows)
+                    visible_ids = {candidate.get("candidate_id") for candidate in response.get("candidates") or []}
+                    response["reserve_available"] = sum(
+                        1 for entry in pool.get("judged") or []
+                        if not entry.get("shown") and entry.get("candidate_id") not in visible_ids
+                    )
+                    response["status"] = "complete"
+                    record["response"] = response
+                    record["role"]["reserve_analysis_state"] = "complete"
+                    record["role"]["reserve_analysis_signal"] = trigger["signal"]
+                    record["role"]["reserve_analysis_added"] = len(additions)
+                    record["role"]["reserve_analysis_feedback_hash"] = trigger["feedback_hash"]
+                    record["updated_at"] = datetime.now(timezone.utc).isoformat()
+                search_store.update(search_id, persist)
+                # If the recruiter refined feedback while this pass was running,
+                # screen any remaining reserve under the newest decisions too.
+                _maybe_start_feedback_pool_analysis(search_id)
+            except Exception:
+                logger.exception("[SEARCH] Feedback pool analysis failed | search_id=%s", search_id)
+                def failed(record: Dict[str, Any]) -> None:
+                    role = record.get("role") or {}
+                    role["reserve_analysis_state"] = "failed"
+                    record["role"] = role
+                    record["updated_at"] = datetime.now(timezone.utc).isoformat()
+                search_store.update(search_id, failed)
+
+        threading.Thread(target=analyze, daemon=True, name=f"feedback-pool-{search_id}").start()
 
     @app.patch("/search/{search_id}/candidate", dependencies=[Depends(require_session)])
     def update_candidate(search_id: str, update: CandidateUpdateRequest) -> SearchResponse:
@@ -1028,6 +1320,9 @@ def create_app(
         if failure:
             raise HTTPException(status_code=failure[0].status_code, detail=failure[0].message)
         logger.info("[SEARCH] Recruiter decision/note persisted | search_id=%s candidate_id=%s", search_id, update.candidate_id)
+        if intake_service is not None:
+            _maybe_start_feedback_pool_analysis(search_id)
+            record = search_store.load(search_id) or record
         return _search_response(record)
 
     @app.post("/search/{search_id}/reveal", response_model=SearchResponse, dependencies=[Depends(require_session)])
@@ -1038,10 +1333,24 @@ def create_app(
         # credit-gated step (the refine flow).
         if intake_service is None:
             raise HTTPException(status_code=404, detail="Reveal is not available for this search.")
+        current = search_store.load(search_id)
+        if current is None:
+            raise HTTPException(status_code=404, detail="Search not found.")
+        first_ids = role_lifecycle.initial_validation_ids(current)
+        decisions = current.get("recruiter_decisions") or {}
+        if first_ids and any(decisions.get(cid) not in ("shortlist", "maybe", "reject") for cid in first_ids):
+            raise HTTPException(status_code=409, detail="Please validate all five initial candidates before viewing more.")
         outcome = {"revealed": False}
 
         def apply(record: Dict[str, Any]) -> None:
-            outcome["revealed"] = intake_service.reveal_next(record)
+            ids = intake_service.reveal_batch(record, 1)
+            outcome["revealed"] = bool(ids)
+            for candidate_id in ids:
+                record.setdefault("presentation", {})[candidate_id] = {
+                    "state": presentation_rules.PRESENTED, "source": "pool-reveal", "seen": False,
+                }
+            if ids:
+                record["updated_at"] = datetime.now(timezone.utc).isoformat()
 
         record = search_store.update(search_id, apply)
         if record is None:
@@ -1071,7 +1380,47 @@ def create_app(
 
     @app.post("/search/{search_id}/more", dependencies=[Depends(require_session)])
     def show_more(search_id: str, request: Optional[ShowMoreRequest] = None) -> Dict[str, Any]:
-        """"Show me more": shows candidates already read, then continues the current retrieval when none are left."""
+        current = search_store.load(search_id)
+        if current is None:
+            raise HTTPException(status_code=404, detail="Search not found.")
+        # A cycle already in flight is refused outright — this must come before the validation gate, so "still working"
+        # is never masked by a "please validate first" reply while a retrieval is running.
+        if current.get("status") == STATUS_RUNNING:
+            raise HTTPException(status_code=409, detail="RecruiterAI is still working on this search.")
+        first_ids = role_lifecycle.initial_validation_ids(current)
+        decisions = current.get("recruiter_decisions") or {}
+        if first_ids and any(decisions.get(cid) not in ("shortlist", "maybe", "reject") for cid in first_ids):
+            return {"presented": 0, "cycle_started": False, "exhausted": False,
+                    "message": "Please validate all five initial candidates before viewing more."}
+        """"Show me more”: reveal only stored profiles; campaign scheduler owns all new paid retrieval."""
+        # "Review new" (only_new) is a different request: it surfaces the quietly-added daily candidates, not the next
+        # slice of the campaign pool, so it skips the pool reveal and uses the quiet-filtered reveal below.
+        if intake_service is not None and not (request and request.only_new):
+            record = current
+            if (record.get("internal_diagnostics") or {}).get("pool"):
+                if record.get("status") == STATUS_RUNNING:
+                    raise HTTPException(status_code=409, detail="RecruiterAI is still working on this search.")
+                outcome: Dict[str, Any] = {}
+                def reveal_stored(record_to_update: Dict[str, Any]) -> None:
+                    ids = intake_service.reveal_batch(record_to_update, presentation_rules.MORE_BATCH)
+                    # Each reveal is its own presentation batch, so the workspace can still tell the recruiter
+                    # which set a candidate was shown in (parity with the cursor-cycle reveal path).
+                    batch_number = presentation_rules.next_batch_number(record_to_update)
+                    for candidate_id in ids:
+                        record_to_update.setdefault("presentation", {})[candidate_id] = {
+                            "state": presentation_rules.PRESENTED, "source": "pool-reveal", "seen": False,
+                            "batch": batch_number,
+                        }
+                    if ids:
+                        record_to_update["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    outcome["ids"] = ids
+                record = search_store.update(search_id, reveal_stored)
+                if record is None:
+                    raise HTTPException(status_code=404, detail="Search not found.")
+                ids = outcome.get("ids") or []
+                if ids:
+                    return {"presented": len(ids), "cycle_started": False, "exhausted": False,
+                            "message": f"Revealed {len(ids)} already-assessed candidates from this campaign pool."}
         try:
             outcome = role_runtime.show_more(search_id, only_new=bool(request and request.only_new))
         except RoleError as error:
@@ -1179,8 +1528,29 @@ def create_app(
             search_id = request.search_id or str(uuid.uuid4())
             provider_name = request.provider or "crustdata"
             confirmation_id = request.confirmation_id
+            model = intake_service._confirmations.load(confirmation_id)
+            if model is None:
+                raise HTTPException(status_code=409, detail="Confirm the brief again before searching.")
             existing = search_store.load(search_id) or {}
             now = datetime.now(timezone.utc).isoformat()
+            duration_days = request.campaign_duration_days if request.campaign_duration_days in (1, 3) else 1
+            now_dt = datetime.now(timezone.utc)
+            existing_role = existing.get("role")
+            if existing_role:
+                role_lifecycle.tick(existing_role, now_dt)
+            if existing_role and role_lifecycle.campaign_budget_exhausted(existing):
+                raise HTTPException(status_code=409, detail="This campaign has used its credit allowance. Start a new search to begin another campaign.")
+            if existing_role and existing_role.get("status") == role_lifecycle.PAUSED and not role_lifecycle.resume(existing_role, now_dt):
+                raise HTTPException(status_code=409, detail="This campaign window has ended. Start a new search to begin another campaign.")
+            role = existing_role or role_lifecycle.new_role(now_dt, duration_days=duration_days)
+            cycle_number = len(existing.get("cycles") or []) + 1
+            cycle_kind = "change" if existing_role else "initial"
+            role["last_auto_search_at"] = now
+            role["label"] = {
+                "title": model.posted_title or model.identity or "Untitled role",
+                "company": model.hiring_company or "",
+                "place": f"Remote · {', '.join(model.location.countries)}" if model.location.work_mode == "remote" and model.location.countries else ", ".join(model.location.cities or model.location.states or model.location.countries),
+            }
 
             # The CrustData pull + Judge ranking take 30-90s, so — exactly like the
             # legacy Progressive Candidate Workspace — POST /search returns at once
@@ -1200,31 +1570,36 @@ def create_app(
                 "response": running, "recruiter_decisions": existing.get("recruiter_decisions", {}),
                 "notes": existing.get("notes", {}), "candidate_states": {},
                 "confirmed_brief": existing.get("confirmed_brief"), "harvest_evidence": {},
-                "internal_diagnostics": {},
+                "internal_diagnostics": {}, "role": role, "cycles": list(existing.get("cycles") or []),
+                "retrieval": None, "campaign_initial_ids": [], "campaign_label": role["label"],
             })
 
             def _save_progress(partial: Dict[str, Any]) -> None:
                 # Persist each mid-flight snapshot so polls show "Reading profiles:
                 # N of M" climbing instead of a frozen running state for minutes.
-                prior = search_store.load(search_id) or {}
-                snapshot = {**partial,
-                            "recruiter_decisions": prior.get("recruiter_decisions", {}),
-                            "notes": prior.get("notes", {})}
-                search_store.save(search_id, {
-                    "search_id": search_id, "status": STATUS_RUNNING,
-                    "created_at": prior.get("created_at", now),
-                    "updated_at": datetime.now(timezone.utc).isoformat(),
-                    "response": snapshot, "recruiter_decisions": prior.get("recruiter_decisions", {}),
-                    "notes": prior.get("notes", {}), "candidate_states": {},
-                    "confirmed_brief": prior.get("confirmed_brief"), "harvest_evidence": {},
-                    "internal_diagnostics": {},
-                })
+                def persist_progress(prior: Dict[str, Any]) -> None:
+                    snapshot = {**partial,
+                                "recruiter_decisions": prior.get("recruiter_decisions", {}),
+                                "notes": prior.get("notes", {})}
+                    prior.update({
+                        "search_id": search_id, "status": STATUS_RUNNING,
+                        "created_at": prior.get("created_at", now),
+                        "updated_at": datetime.now(timezone.utc).isoformat(),
+                        "response": snapshot, "candidate_states": {},
+                        "harvest_evidence": prior.get("harvest_evidence", {}),
+                    })
+                search_store.update(search_id, persist_progress)
 
             def _run_engine_search() -> None:
                 pool = None
                 try:
-                    resp = intake_service.run_search(confirmation_id, search_id, provider=provider_name,
-                                                     on_progress=_save_progress)
+                    resp = intake_service.run_search(
+                        confirmation_id, search_id, provider=provider_name,
+                        on_progress=_save_progress,
+                        feedback_record=existing if existing_role else None,
+                        admit_all_relevant=bool(existing_role),
+                        surface_all=bool(existing_role),
+                    )
                     # The held pool rides out on the response; lift it off before the
                     # snapshot is stored so it is persisted (internal, admin-only) but
                     # never serialized into the polled SearchResponse.
@@ -1241,13 +1616,33 @@ def create_app(
                     status = "error"
                 ended = datetime.now(timezone.utc).isoformat()
                 prior = search_store.load(search_id) or {}
+                diagnostics = resp.get("diagnostics") or {}
+                pulled = int(diagnostics.get("pulled") or 0)
+                credits = float(diagnostics.get("credits_used") if diagnostics.get("credits_used") is not None
+                                else (diagnostics.get("est_credits") or pulled * 0.03))
+                initial_candidates = resp.get("candidates") or []
+                campaign_ids = [c.get("candidate_id") for c in initial_candidates[:5] if c.get("candidate_id")]
+                campaign_ids = prior.get("campaign_initial_ids") or campaign_ids
+                old_role = prior.get("role") or role
+                if old_role.get("status") == role_lifecycle.SEARCHING:
+                    old_role["last_auto_search_at"] = ended
+                next_cursor = diagnostics.get("next_cursor")
                 search_store.save(search_id, {
                     "search_id": search_id, "status": status,
                     "created_at": prior.get("created_at", now), "updated_at": ended,
                     "response": resp, "recruiter_decisions": prior.get("recruiter_decisions", {}),
                     "notes": prior.get("notes", {}), "candidate_states": prior.get("candidate_states", {}),
+                    "feedback_events": prior.get("feedback_events", []),
                     "confirmed_brief": resp.get("confirmed_brief") or prior.get("confirmed_brief"),
                     "harvest_evidence": {}, "internal_diagnostics": {"pool": pool} if pool else {},
+                    "role": old_role, "campaign_label": old_role.get("label") or role.get("label"),
+                    "campaign_initial_ids": campaign_ids,
+                    "cycles": list(prior.get("cycles") or []) + [{"n": cycle_number, "kind": cycle_kind, "at": ended, "retrieved": pulled,
+                                "credits_used": credits, "new_candidates": len(initial_candidates),
+                                "cursor_used": False, "confirmation_id": confirmation_id}],
+                    "retrieval": {"next_cursor": next_cursor, "exhausted": not bool(next_cursor), "cycle": cycle_number},
+                    "presentation": {c.get("candidate_id"): {"state": "presented", "source": "initial", "seen": True}
+                                      for c in initial_candidates if c.get("candidate_id")},
                 })
 
             threading.Thread(target=_run_engine_search, daemon=True,

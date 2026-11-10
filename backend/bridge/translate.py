@@ -309,13 +309,13 @@ def _pool_entry(record, *, judged: bool, shown: bool, rank: int,
     }
 
 
-def pool_snapshot(ranking) -> Dict[str, Any]:
+def pool_snapshot(ranking, *, surface_all: bool = False) -> Dict[str, Any]:
     """The full in-scope pool with per-candidate state. `judged` rows carry the
     Judge's verdicts + the prose fit (shown or not); `reserve` is the baseline-
     ranked, un-judged remainder, promoted on demand by a later phase. Persisted on
     the search record (internal, admin-only) — NOT emitted in the frontend
     SearchResponse; the caller lifts it out before storing the response snapshot."""
-    show_n = len(ranking.shown)
+    show_n = len(ranking.ranked) if surface_all else len(ranking.shown)
     judged = [
         _pool_entry(rc.record, judged=rc.record.judgments is not None,
                     shown=i < show_n, rank=i, fit=rc.fit, score=rc.score)
@@ -408,12 +408,22 @@ def shape_candidate(model: RoleModel, intent, record, score: float, fit: str):
         years = getattr(built, "derived_experience_years", None)
     except Exception:
         built_evidence = {}
+    # Deterministic attributes (company kind, seniority, recency, …) read straight
+    # off the CrustData payload we already have — no LLM, no credits. Surfaced on
+    # the card and used by the include/exclude filters.
+    attributes: Dict[str, Any] = {}
+    try:
+        from backend.services.candidate_attributes import attributes_dict
+        cand_country = ((raw.get("basic_profile") or {}).get("location") or {}).get("country") if isinstance(raw, dict) else None
+        attributes = attributes_dict(raw, candidate_country=cand_country)
+    except Exception:
+        attributes = {}
     candidate = {
         "candidate_id": record.candidate_id or None, "name": record.name, "title": record.title,
         "company": record.company, "location": record.location, "provider_score": record.provider_score,
         "final_score": score, "profile_url": record.profile_url, "source": "crustdata",
         "experience_years": years, "years_of_experience": years, "summary": None,
-        "ai_skills": None, "raw_data": raw,
+        "ai_skills": None, "raw_data": raw, "attributes": attributes,
     }
     # "Why this candidate" leads with a grounded SUMMARY, not the line-by-line
     # "Evidence: a; b; c" dump (fit) — the per-requirement detail lives in the
@@ -584,7 +594,7 @@ def refine_pool_into_record(record: Dict[str, Any], model: RoleModel, deltas: Di
 
 
 def to_search_response(provider: str, search_id: str, model: RoleModel,
-                       search_result, ranking) -> Dict[str, Any]:
+                       search_result, ranking, *, surface_all: bool = False) -> Dict[str, Any]:
     """Map the ranked result into the frontend SearchResponse: candidates +
     evidence-based explanations + rich CandidateEvidence (career/education/contact/
     role-alignment, via the keeper candidate_evidence_builder) + diagnostics."""
@@ -592,7 +602,8 @@ def to_search_response(provider: str, search_id: str, model: RoleModel,
     candidates: List[Dict[str, Any]] = []
     explanations: List[Dict[str, Any]] = []
     evidence: List[Dict[str, Any]] = []
-    for rc in ranking.shown:
+    rows = ranking.ranked if surface_all else ranking.shown
+    for rc in rows:
         candidate, explanation, built_evidence = shape_candidate(model, intent, rc.record, rc.score, rc.fit)
         candidates.append(candidate)
         explanations.append(explanation)
@@ -604,6 +615,8 @@ def to_search_response(provider: str, search_id: str, model: RoleModel,
         "judged": ranking.judged, "judge_failures": ranking.judge_failures,
         "experience_excluded": ranking.experience_excluded,
         "total_available": search_result.total_available,
+        "next_cursor": search_result.next_cursor,
+        "credits_used": search_result.credits_used,
     }
     return {
         "provider": provider, "search_id": search_id, "candidate_count": len(candidates),
@@ -613,8 +626,8 @@ def to_search_response(provider: str, search_id: str, model: RoleModel,
         # candidate for free when one is rejected. reserve_available = the judged-
         # but-not-shown profiles we can bring forward with no new search / no credits.
         "feedback_capture": True,
-        "reserve_available": max(ranking.admitted - len(ranking.shown), 0),
+        "reserve_available": 0 if surface_all else max(ranking.admitted - len(ranking.shown), 0),
         # Lifted out of the frontend response by the caller (api.py) and persisted
         # into the record's internal_diagnostics — the held pool for the loop.
-        "pool": pool_snapshot(ranking),
+        "pool": pool_snapshot(ranking, surface_all=surface_all),
     }

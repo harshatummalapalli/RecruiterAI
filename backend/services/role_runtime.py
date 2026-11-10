@@ -7,7 +7,7 @@ pipeline. Everything that is a rule about presentation, feedback or lifecycle li
 (candidate_presentation, role_feedback, role_lifecycle, intent_change); this file wires them to the stored record.
 
 Manual and automatic are deliberately different things:
-  "Show me more"  the recruiter asks. Shows what is already read, then continues the current retrieval (next page).
+  "Show me more"  the recruiter asks. Reveals stored candidates only; scheduled campaign cycles own new retrieval.
   campaign search    background, next-page retrieval every six hours, deduplicated against the whole role.
 """
 
@@ -95,10 +95,14 @@ def _legacy_label(record: Dict[str, Any]) -> Dict[str, Any]:
 
 def search_summary(record: Dict[str, Any]) -> Dict[str, Any]:
     role = record.get("role") or {}
-    label = role.get("label") or _legacy_label(record)
+    label = role.get("label") or record.get("campaign_label") or _legacy_label(record)
     decisions = record.get("recruiter_decisions") or {}
     presented_ids = [cid for cid, entry in (record.get("presentation") or {}).items() if entry.get("state") == presentation.PRESENTED]
-    to_review = sum(1 for cid in presented_ids if decisions.get(cid) not in DECISIONS) if role else None
+    response_ids = [c.get("candidate_id") for c in (record.get("response") or {}).get("candidates", []) if c.get("candidate_id")]
+    visible_ids = response_ids or presented_ids
+    pool_counts = ((record.get("internal_diagnostics") or {}).get("pool") or {}).get("counts") or {}
+    diagnostics = (record.get("response") or {}).get("diagnostics") or {}
+    to_review = sum(1 for cid in visible_ids if decisions.get(cid) not in DECISIONS) if role or visible_ids else None
     return {
         "id": record.get("search_id"),
         "kind": "search",
@@ -110,6 +114,11 @@ def search_summary(record: Dict[str, Any]) -> Dict[str, Any]:
         "pause_kind": lifecycle.pause_kind(record),
         "new_count": _new_count(record) if role else 0,
         "to_review_count": to_review,
+        "found_count": pool_counts.get("total") or diagnostics.get("pulled") or len(visible_ids),
+        "shortlisted_count": sum(1 for cid in visible_ids if decisions.get(cid) == "shortlist"),
+        "rejected_count": sum(1 for cid in visible_ids if decisions.get(cid) == "reject"),
+        "maybe_count": sum(1 for cid in visible_ids if decisions.get(cid) == "maybe"),
+        "campaign_ends_at": (role or {}).get("window_end") if role else None,
         "updated_at": record.get("updated_at"),
         "created_at": record.get("created_at"),
         # Explicit Close/Reopen state only. The time-dependent `archived` flag (which
@@ -164,6 +173,9 @@ def role_view(record: Dict[str, Any], now: Optional[datetime] = None) -> Optiona
         "campaign_duration_days": role.get("campaign_duration_days", 1),
         "campaign_credit_cap": role.get("campaign_credit_cap", lifecycle.CAMPAIGN_CREDIT_CAP),
         "campaign_credits_used": lifecycle.campaign_credits_used(record),
+        "campaign_ends_at": role.get("window_end"),
+        "reserve_analysis_state": role.get("reserve_analysis_state"),
+        "reserve_analysis_added": role.get("reserve_analysis_added"),
         "label": role.get("label") or {},
     }
 
@@ -177,6 +189,26 @@ def derived_fields(record: Dict[str, Any], now: Optional[datetime] = None) -> Di
         for candidate_id, entry in (record.get("presentation") or {}).items()
     }
     calibration = record.get("calibration")
+    initial_ids = lifecycle.initial_validation_ids(record)
+    decisions = record.get("recruiter_decisions") or {}
+    initial_validation_pending = bool(initial_ids) and any(decisions.get(cid) not in DECISIONS for cid in initial_ids)
+    response_ids = {c.get("candidate_id") for c in (record.get("response") or {}).get("candidates", []) if c.get("candidate_id")}
+    pool = ((record.get("internal_diagnostics") or {}).get("pool") or {})
+    pool_candidates = []
+    for state, entries in (("assessed", pool.get("judged") or []), ("not_assessed", pool.get("reserve") or [])):
+        for entry in entries:
+            candidate_id = entry.get("candidate_id")
+            if not candidate_id:
+                continue
+            pool_candidates.append({
+                "candidate_id": candidate_id,
+                "name": entry.get("name"),
+                "title": entry.get("title"),
+                "company": entry.get("company"),
+                "location": entry.get("location"),
+                "profile_url": entry.get("profile_url"),
+                "assessment_state": "shown" if candidate_id in response_ids else state,
+            })
     return {
         "role": role_view(record, now),
         "presentation": presentation_map,
@@ -185,6 +217,9 @@ def derived_fields(record: Dict[str, Any], now: Optional[datetime] = None) -> Di
         "feedback": effective_feedback(record),
         "new_candidates": _new_count(record),
         "retrieval_exhausted": lifecycle.record_is_exhausted(record),
+        "pool_candidate_count": (pool.get("counts") or {}).get("total", len(pool_candidates)),
+        "pool_candidates": pool_candidates,
+        "initial_validation_pending": initial_validation_pending,
     }
 
 
@@ -283,17 +318,24 @@ LaunchCycle = Callable[[str, Dict[str, Any], Dict[str, Any], Guidance], None]
 
 
 class RoleRuntime:
-    def __init__(self, search_store: SearchStore, confirmation_store: Any, launch_cycle: LaunchCycle, clock: Callable[[], datetime] = _now) -> None:
+    def __init__(self, search_store: SearchStore, confirmation_store: Any, launch_cycle: LaunchCycle,
+                 clock: Callable[[], datetime] = _now, model_confirmation_store: Any = None) -> None:
         self._store = search_store
         self._confirmations = confirmation_store
         self._launch = launch_cycle
         self._clock = clock
+        self._model_confirmations = model_confirmation_store
 
     # -- helpers --------------------------------------------------------------------------------------------------------
 
     def _snapshot_for(self, record: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         confirmation_id = (record.get("confirmed_brief") or {}).get("confirmation_id")
-        return self._confirmations.load(confirmation_id) if confirmation_id else None
+        if not confirmation_id:
+            return None
+        snapshot = self._confirmations.load(confirmation_id)
+        if snapshot is None and self._model_confirmations is not None:
+            return self._model_confirmations.load(confirmation_id)
+        return snapshot
 
     def _next_cycle_number(self, record: Dict[str, Any]) -> int:
         return len(record.get("cycles") or []) + 1
@@ -303,13 +345,14 @@ class RoleRuntime:
         if snapshot is None:
             logger.warning("Cannot start a %s cycle: the confirmed brief is unavailable | search_id=%s", kind, search_id)
             return False
+        confirmation_id = snapshot.get("confirmation_id") if isinstance(snapshot, dict) else getattr(snapshot, "model_id", None)
         cycle = {
             "kind": kind,
             "n": self._next_cycle_number(record),
             "cursor": cursor,
             "dedupe": dedupe,
             "present": present,
-            "confirmation_id": snapshot["confirmation_id"],
+            "confirmation_id": confirmation_id,
         }
         self._launch(search_id, snapshot, cycle, build_guidance(record))
         return True
@@ -345,16 +388,36 @@ class RoleRuntime:
                 return {"presented": len(chosen), "cycle_started": False, "exhausted": False}
             if only_new:
                 self._store.save(search_id, record)
-                return {"presented": 0, "cycle_started": False, "exhausted": False}
+                return {"presented": 0, "cycle_started": False, "exhausted": False,
+                        "message": "There are no new campaign candidates ready to show yet."}
 
+            # A recruiter-facing reveal must never launch a provider request. Fresh
+            # pages are owned by the timed campaign scheduler; this path may only
+            # reveal profiles already held in the stored pool.
+            role = record.get("role") or {}
             retrieval = record.get("retrieval") or {}
-            cursor = retrieval.get("next_cursor")
-            if retrieval.get("exhausted") or not cursor or lifecycle.campaign_budget_exhausted(record):
-                self._store.save(search_id, record)
-                return {"presented": 0, "cycle_started": False, "exhausted": True}
+            if retrieval.get("exhausted") or not retrieval.get("next_cursor"):
+                message = "All profiles returned by this campaign are already in the role pool."
+                exhausted = True
+            elif lifecycle.campaign_budget_exhausted(record):
+                message = "The campaign has reached its credit limit. No new profiles will be pulled."
+                exhausted = True
+            elif role.get("status") != lifecycle.SEARCHING:
+                if role.get("pause_reason") == lifecycle.PAUSE_WINDOW_ENDED:
+                    message = "The campaign window has ended. Existing pool profiles remain available; no new search was started."
+                else:
+                    message = "The campaign is paused. Resume it to continue on its scheduled cycle."
+                exhausted = True
+            else:
+                last = lifecycle.parse_time(role.get("last_auto_search_at")) or lifecycle.parse_time(role.get("day0"))
+                next_cycle = last + lifecycle.CAMPAIGN_INTERVAL if last else None
+                if next_cycle and next_cycle > self._clock():
+                    message = f"No additional profiles are ready yet. The next campaign cycle is scheduled for {next_cycle.astimezone(timezone.utc).strftime('%b %d at %H:%M UTC')}."
+                else:
+                    message = "The next campaign cycle is handled by the scheduler; Show me more will not start an early paid search."
+                exhausted = False
             self._store.save(search_id, record)
-            started = self._start(search_id, record, "more", cursor=cursor, present=presentation.MORE_BATCH)
-            return {"presented": 0, "cycle_started": started, "exhausted": not started}
+            return {"presented": 0, "cycle_started": False, "exhausted": exhausted, "message": message}
 
     # -- pause / resume ---------------------------------------------------------------------------------------------------
 

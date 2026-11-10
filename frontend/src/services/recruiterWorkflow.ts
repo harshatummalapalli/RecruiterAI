@@ -326,10 +326,9 @@ export const listSearches = async (): Promise<SearchListItem[]> => {
   return ((await response.json()) as { searches: SearchListItem[] }).searches
 }
 
-export type ShowMoreOutcome = { presented: number; cycle_started: boolean; exhausted: boolean }
+export type ShowMoreOutcome = { presented: number; cycle_started: boolean; exhausted: boolean; message?: string | null }
 
-/** "Show me more": what is already read comes first, then the next retrieval. `onlyNew` shows just what the
- * background search found. */
+/** "Show me more" only reveals stored profiles. `onlyNew` limits that to unreviewed background additions. */
 export const showMoreCandidates = async (searchId: string, onlyNew = false): Promise<ShowMoreOutcome> => {
   const response = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(searchId)}/more`, {
     method: 'POST',

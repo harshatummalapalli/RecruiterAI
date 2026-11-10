@@ -23,6 +23,17 @@ function getGreeting(hour: number): string {
   return 'Good evening'
 }
 
+function campaignTimeLeft(endsAt: string | null | undefined, now: number): string | null {
+  if (!endsAt) return null
+  const remaining = new Date(endsAt).getTime() - now
+  if (!Number.isFinite(remaining) || remaining <= 0) return 'Campaign window ended'
+  const hours = Math.ceil(remaining / 3_600_000)
+  if (hours < 24) return `${hours}h left in campaign`
+  const days = Math.floor(hours / 24)
+  const extraHours = hours % 24
+  return extraHours ? `${days}d ${extraHours}h left in campaign` : `${days}d left in campaign`
+}
+
 function RowMenu({ actions, onClose }: { actions: Array<{ label: string; onClick: () => void }>; onClose: () => void }) {
   const ref = useRef<HTMLDivElement | null>(null)
   useEffect(() => {
@@ -73,16 +84,22 @@ function RoleCard({
   actions,
   openMenu,
   setOpenMenu,
+  now,
 }: {
   item: SearchListItem
   completed: boolean
   actions: CardActions
   openMenu: boolean
   setOpenMenu: (open: boolean) => void
+  now: number
 }) {
   const status = roleStatus(item)
-  const meta = sidebarSubtitle(item) || (item.kind === 'draft' ? 'Not yet searched' : '—')
-  const foot = completed ? { text: `Closed · last active ${timeAgo(item.updated_at)}`, emphasis: false } : activitySummary(item)
+  const company = sidebarSubtitle(item) || (item.kind === 'draft' ? 'Not yet searched' : 'Company not specified')
+  const foot = completed
+    ? { text: 'Closed', emphasis: false }
+    : status === 'complete'
+      ? { text: item.found_count ? `${item.found_count} profiles found` : 'Search complete', emphasis: false }
+      : activitySummary(item)
 
   const menuActions = completed
     ? [{ label: 'View', onClick: () => actions.onOpen(item) }, { label: 'Reopen (move to Active)', onClick: () => actions.onReopen(item.id) }]
@@ -101,7 +118,7 @@ function RoleCard({
           ]
 
   const badgeClass = completed ? 'complete' : status
-  const badgeText = completed ? 'Closed' : status === 'searching' ? 'Searching' : status === 'paused' ? 'Paused' : 'Draft'
+  const badgeText = completed ? 'Closed' : status === 'searching' ? 'Searching' : status === 'paused' ? 'Paused' : status === 'complete' ? 'Complete' : 'Draft'
 
   return (
     <div className="home__row" role="button" tabIndex={0} onClick={() => actions.onOpen(item)}>
@@ -112,8 +129,18 @@ function RoleCard({
           {badgeText}
         </span>
       </div>
-      <p className="home__rc-meta">{meta}</p>
-      <p className={`home__rc-foot${foot.emphasis ? ' is-green' : ''}`}>{foot.text}</p>
+      <p className="home__rc-meta">{company}</p>
+      <div className="home__rc-stats" aria-label="Candidate progress">
+        {item.kind === 'search' ? <span><strong>{item.found_count ?? 0}</strong> found</span> : <span>Not yet searched</span>}
+        {item.kind === 'search' && item.to_review_count != null ? <span><strong>{item.to_review_count}</strong> to review</span> : null}
+        {(item.shortlisted_count ?? 0) > 0 ? <span><strong>{item.shortlisted_count}</strong> shortlisted</span> : null}
+        {(item.rejected_count ?? 0) > 0 ? <span><strong>{item.rejected_count}</strong> rejected</span> : null}
+        {(item.maybe_count ?? 0) > 0 ? <span><strong>{item.maybe_count}</strong> maybe</span> : null}
+      </div>
+      <p className={`home__rc-foot${foot.emphasis ? ' is-green' : ''}`}>
+        {!completed && status === 'searching' ? campaignTimeLeft(item.campaign_ends_at, now) || foot.text : foot.text}
+        <span className="home__rc-updated">Updated {timeAgo(item.updated_at)}</span>
+      </p>
 
       <div className="home__cell--menu">
         <button
@@ -162,6 +189,11 @@ export function HomeScreen({
 }) {
   const [view, setView] = useState<'active' | 'completed'>('active')
   const [openMenuKey, setOpenMenuKey] = useState<string | null>(null)
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   const { active, completed } = useMemo(() => partitionRoles(items, overrides), [items, overrides])
   const groups = useMemo(() => groupActive(active), [active])
@@ -177,6 +209,7 @@ export function HomeScreen({
       actions={actions}
       openMenu={openMenuKey === keyOf(item)}
       setOpenMenu={(open) => setOpenMenuKey(open ? keyOf(item) : null)}
+      now={now}
     />
   )
 

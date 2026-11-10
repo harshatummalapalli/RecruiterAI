@@ -15,6 +15,7 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import json
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
@@ -263,13 +264,79 @@ class IntakeService:
             raise ConfirmationNotReady([q.prompt for q in outcome.clarifications])
         return to_search_intent(outcome.model)
 
+    @staticmethod
+    def _feedback_screen_context(record: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """Small, structured recruiter examples for the cheap relevance screen.
+
+        Free-text notes are deliberately excluded. The screen sees only profile
+        summaries and explicit shortlist/maybe/reject decisions with reason codes.
+        """
+        if not record:
+            return {}
+        from backend.services.role_lifecycle import initial_validation_ids
+        first_ids = initial_validation_ids(record)
+        decisions = record.get("recruiter_decisions") or {}
+        if first_ids and any(decisions.get(candidate_id) not in ("shortlist", "maybe", "reject")
+                             for candidate_id in first_ids):
+            return {}
+        response = record.get("response") or {}
+        candidates = response.get("candidates") or []
+        explanations = response.get("explanations") or []
+        evidence_rows = response.get("evidence") or []
+        by_id = {candidate.get("candidate_id"): i for i, candidate in enumerate(candidates)
+                 if candidate.get("candidate_id")}
+        events = {}
+        for event in record.get("feedback_events") or []:
+            events[event.get("candidate_id")] = event
+
+        def example(candidate_id: str, decision: str) -> Optional[Dict[str, Any]]:
+            index = by_id.get(candidate_id)
+            if index is None:
+                return None
+            candidate = candidates[index]
+            explanation = explanations[index] if index < len(explanations) else {}
+            evidence = evidence_rows[index] if index < len(evidence_rows) else {}
+            alignment = evidence.get("role_alignment") or {}
+            core_signals = [
+                {"signal": row.get("signal_text"), "verdict": row.get("verdict")}
+                for row in (evidence.get("requirement_judgments") or [])
+                if row.get("tier") == "core" and row.get("signal_text")
+            ][:4]
+            event = events.get(candidate_id) or {}
+            item = {
+                "decision": decision,
+                "title": candidate.get("title"),
+                "experience_years": candidate.get("experience_years"),
+                "location": candidate.get("location"),
+                "role_evidence": (explanation.get("why_this_candidate") or "")[:160],
+                "core_signals": core_signals,
+                "level_fit": alignment.get("level_fit"),
+                "experience_floor": alignment.get("experience_floor"),
+            }
+            if event.get("feedback_reason"):
+                item["reason"] = event["feedback_reason"]
+            return item
+
+        context = {"shortlisted": [], "maybe": [], "rejected": []}
+        for candidate_id, decision in decisions.items():
+            if decision not in ("shortlist", "maybe", "reject"):
+                continue
+            item = example(candidate_id, decision)
+            if item is None:
+                continue
+            bucket = "shortlisted" if decision == "shortlist" else "maybe" if decision == "maybe" else "rejected"
+            context[bucket].append(item)
+        return {key: values[-5:] for key, values in context.items()}
+
     def run_search(self, confirmation_id: str, search_id: str, provider: str = "crustdata",
-                   on_progress: Optional[Any] = None) -> Dict[str, Any]:
+                   on_progress: Optional[Any] = None, cursor: Optional[str] = None,
+                   feedback_record: Optional[Dict[str, Any]] = None,
+                   admit_all_relevant: bool = False, surface_all: bool = False) -> Dict[str, Any]:
         model = self._confirmations.load(confirmation_id)
         if model is None:
             raise KeyError(confirmation_id)
         plan = self._pipe.briefing.build(model)
-        search_result = self._pipe.search.run(plan.query)
+        search_result = self._pipe.search.run(plan.query, cursor=cursor)
         candidates = list(search_result.candidates)
         # Stream progress while the slow per-candidate Judge loop runs: the caller's
         # on_progress sink persists each snapshot so GET /search/{id} shows movement.
@@ -282,14 +349,56 @@ class IntakeService:
                 on_progress(to_running_search_response(
                     provider, search_id, pulled=search_result.pulled, kept=len(candidates),
                     admitted=admitted, processed=processed))
-        ranking = self._pipe.ranking.rank(model, candidates, on_progress=rank_progress)
-        resp = to_search_response(provider, search_id, model, search_result, ranking)
+        feedback_context = self._feedback_screen_context(feedback_record)
+        ranking = self._pipe.ranking.rank(
+            model, candidates, on_progress=rank_progress,
+            admit_all_relevant=admit_all_relevant, feedback_context=feedback_context,
+        )
+        resp = to_search_response(provider, search_id, model, search_result, ranking,
+                                  surface_all=surface_all)
         resp["confirmed_brief"] = {
             "confirmation_id": confirmation_id, "session_id": "",
             "posted_title": model.posted_title, "posted_title_source": model.posted_title_source,
             "candidate_identity": model.identity, "content_hash": confirmation_id,
         }
         return resp
+
+    def analyze_reserve(self, confirmation_id: str, entries: List[Dict[str, Any]],
+                        feedback_record: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Deep-read the best candidates from an already paid-for retrieval pool.
+
+        No CrustData search runs here. RankingAgent applies its cheap admission
+        screen, Harvest enrichment and deep Judge only to the configured admit-N.
+        """
+        from backend.bridge.translate import _record_from_pool_entry, _search_intent_dataclass, shape_candidate, to_search_response
+        from backend.services.role_feedback import apply_admission_tie_break, build_guidance, evidence_value
+        from recruiter.agents.search.model import SearchResult
+
+        model = self._confirmations.load(confirmation_id)
+        if model is None:
+            raise KeyError(confirmation_id)
+        candidates = [_record_from_pool_entry(entry) for entry in entries]
+        feedback_context = self._feedback_screen_context(feedback_record)
+        ranking = self._pipe.ranking.rank(model, candidates, admit_all_relevant=True,
+                                          feedback_context=feedback_context)
+        guidance = build_guidance(feedback_record or {})
+        if not guidance.empty and ranking.ranked:
+            intent = _search_intent_dataclass(model)
+            evidence_by_id = {}
+            for row in ranking.ranked:
+                candidate_id = row.record.candidate_id
+                _, _, evidence = shape_candidate(model, intent, row.record, row.score, row.fit)
+                evidence_by_id[candidate_id] = evidence
+            ordered = apply_admission_tie_break(
+                list(ranking.ranked), guidance,
+                lambda row, dimension: evidence_value(dimension, evidence_by_id.get(row.record.candidate_id)),
+            )
+            ranking = replace(ranking, ranked=tuple(ordered), shown=tuple(ordered[:len(ranking.shown)]))
+        result = SearchResult(
+            candidates=tuple(candidates), pulled=len(candidates), geo_dropped=0,
+            est_credits=0.0, total_available=len(candidates),
+        )
+        return to_search_response("platform", "", model, result, ranking, surface_all=True)
 
     def preview(self, confirmation_id: str):
         model = self._confirmations.load(confirmation_id)
@@ -320,3 +429,16 @@ class IntakeService:
         if model is None:
             return False
         return reveal_into_record(record, model)
+
+    def reveal_batch(self, record: Dict[str, Any], count: int = 5) -> List[str]:
+        """Reveal up to `count` already-judged profiles, without a provider request."""
+        response = record.get("response") or {}
+        before = {c.get("candidate_id") for c in response.get("candidates") or []}
+        revealed = []
+        for _ in range(max(0, count)):
+            if not self.reveal_next(record):
+                break
+            after = (record.get("response") or {}).get("candidates") or []
+            if after and after[-1].get("candidate_id"):
+                revealed.append(after[-1]["candidate_id"])
+        return [candidate_id for candidate_id in revealed if candidate_id not in before]

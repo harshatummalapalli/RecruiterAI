@@ -161,11 +161,9 @@ def test_boundary_min_years_over_http_prevents_clarification(tmp_path):
 
 def test_new_engine_search_requires_confirmation(tmp_path):
     c = _client(tmp_path)
-    # No confirmation at all is still a synchronous 409 (nothing to run).
+    # No confirmation at all is a synchronous 409 — nothing to run.
     assert c.post("/search", json={"jd_text": "", "provider": "crustdata"}).status_code == 409
-    # A bogus confirmation now starts a background search that fails: the POST
-    # returns 'running', and the error surfaces on the polled record.
+    # A confirmation id that does not resolve is rejected synchronously too, before any background
+    # work is started (the campaign validates its confirmed brief up front rather than starting a doomed cycle).
     r = c.post("/search", json={"jd_text": "", "confirmation_id": "bogus", "provider": "crustdata"})
-    assert r.status_code == 200 and r.json()["status"] == "running"
-    rec = _poll_until_done(c, r.json()["search_id"])
-    assert rec["status"] == "error"
+    assert r.status_code == 409
