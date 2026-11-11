@@ -99,14 +99,17 @@ class ScreenerAdapter:
             rows: List[Dict[str, Any]] = data.get("results") or []
             by_index = {int(row["i"]): row for row in rows if isinstance(row, dict) and "i" in row}
         except Exception:
-            logger.warning("Tier-1 screener chunk failed; holding candidates for a safe retry", exc_info=True)
-            return [ScreenResult(keep=False, score=0.0, reason="screen_failed") for _ in chunk]
+            # A broken gate must NEVER silently drop candidates — fail OPEN and
+            # let the (accurate, paid) Tier-2 decide. Dropping here loses good
+            # people whenever the cheap model hiccups (common on the small box).
+            logger.warning("Tier-1 screener chunk failed; keeping it (fail-open)", exc_info=True)
+            return [ScreenResult(keep=True, score=0.5, reason="screen_failed") for _ in chunk]
 
         out: List[ScreenResult] = []
         for k in range(len(chunk)):
             row = by_index.get(k)
             if row is None:
-                out.append(ScreenResult(keep=False, score=0.0, reason="screen_failed"))
+                out.append(ScreenResult(keep=True, score=0.5))  # unanswered = keep (fail-open)
                 continue
             try:
                 score = float(row.get("score", 0.5))
