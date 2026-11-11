@@ -118,6 +118,34 @@ def test_contact_is_preserved_but_never_used_as_ranking_relevant_evidence_field(
     assert not hasattr(evidence.role_alignment, "contact")
 
 
+def _intent() -> SearchIntent:
+    return SearchIntent(role=Role(title="Data Engineer"))
+
+
+def test_harvest_linkedin_url_takes_precedence_over_a_stale_crustdata_url() -> None:
+    # CrustData holds a stale vanity URL that 404s; Harvest's authenticated scrape
+    # resolved the current one — the card link must use Harvest's.
+    candidate = Candidate(name="Moved", title="Data Engineer", profile_url="https://www.linkedin.com/in/old-handle", raw_data={})
+    harvest = _harvest({"linkedinUrl": "https://www.linkedin.com/in/new-handle"})
+    evidence = build_candidate_evidence(candidate, _intent(), harvest_evidence=harvest)
+    assert evidence.profile_url == "https://www.linkedin.com/in/new-handle"
+
+
+def test_harvest_public_identifier_is_used_when_no_linkedin_url() -> None:
+    candidate = Candidate(name="Moved", title="Data Engineer", profile_url="https://www.linkedin.com/in/old", raw_data={})
+    harvest = _harvest({"publicIdentifier": "fresh-id"})
+    evidence = build_candidate_evidence(candidate, _intent(), harvest_evidence=harvest)
+    assert evidence.profile_url == "https://www.linkedin.com/in/fresh-id"
+
+
+def test_crustdata_url_is_kept_when_harvest_returns_no_linkedin_url() -> None:
+    candidate = Candidate(name="Fine", title="Data Engineer", profile_url="https://www.linkedin.com/in/keep-me", raw_data={})
+    harvest = _harvest({"openToWork": True})  # no url fields
+    evidence = build_candidate_evidence(candidate, _intent(), harvest_evidence=harvest)
+    assert evidence.profile_url == "https://www.linkedin.com/in/keep-me"
+    assert evidence.open_to_work is True
+
+
 def test_short_acronyms_like_ai_are_not_silently_dropped_from_title_comparison() -> None:
     # Regression: found by testing this exact model against real candidates
     # for a "Senior AI Platform Engineer" search. "Senior AI Engineer" was

@@ -1035,6 +1035,16 @@ def build_candidate_evidence(
 
     element = _element(harvest_evidence)
     evidence.photo_url = _photo_url(basic_profile, element)
+    # Prefer Harvest's live LinkedIn URL over CrustData's stored one. CrustData can hold a
+    # stale vanity handle (the person renamed their custom URL), which 404s in the browser;
+    # Harvest's authenticated scraper resolves to the current URL, so when it returns one we
+    # use it for the card link. Falls back to publicIdentifier, then to CrustData's.
+    harvest_url = element.get("linkedinUrl")
+    if not (isinstance(harvest_url, str) and "linkedin.com" in harvest_url):
+        pid = element.get("publicIdentifier")
+        harvest_url = f"https://www.linkedin.com/in/{pid.strip()}" if isinstance(pid, str) and pid.strip() else None
+    if isinstance(harvest_url, str) and "linkedin.com" in harvest_url:
+        evidence.profile_url = harvest_url
     open_flag = element.get("openToWork")
     evidence.open_to_work = open_flag if isinstance(open_flag, bool) else None
     evidence.career = _build_career(element, current, candidate.title or "", candidate.company or "", past_roles)
