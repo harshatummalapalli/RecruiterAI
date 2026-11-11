@@ -58,7 +58,11 @@ def normalize_identity(
         if sep in text:
             head, tail = text.split(sep, 1)
             # the " (" separator leaves the paren already consumed; strip any other.
-            tail_token = re.sub(r"\s*\(.*$", "", tail).strip()
+            # Splitting on " (" leaves the closing ")" on the tail ("…(FP&A)"
+            # -> "FP&A)"); strip any stray bracket chars so the specialization
+            # token doesn't carry one into the identity, the NL query, or the
+            # capability-memory key.
+            tail_token = re.sub(r"\s*\(.*$", "", tail).strip().strip("()[]{}")
             if spec is None and _is_specialization(tail_token, requirement_texts):
                 spec = tail_token
             text = head.strip()

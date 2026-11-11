@@ -120,6 +120,24 @@ def test_specialization_after_a_separator_is_kept_when_the_reqs_corroborate():
     assert _agent(v).run("notes", {"country": "India"}).model.identity == "Operations Analyst"
 
 
+def test_parenthetical_specialization_does_not_leak_a_stray_bracket():
+    # "Senior Financial Analyst (FP&A)": splitting on " (" leaves "FP&A)" on the
+    # tail; the specialization token must NOT carry the closing ")" into the
+    # identity (it would also poison the NL query and the capability-memory key).
+    u = Understanding(
+        identity="Senior Financial Analyst (FP&A)",
+        posted_title="Senior Financial Analyst (FP&A)",
+        min_years=6,
+        requirements=(
+            ReadRequirement("financial planning and analysis (FP&A)", "core"),
+            ReadRequirement("financial modeling and forecasting", "core"),
+        ),
+    )
+    identity = _agent(u).run("notes", {"country": "India"}).model.identity
+    assert ")" not in identity and "(" not in identity, identity
+    assert "FP&A" in identity and "Financial Analyst" in identity, identity
+
+
 def test_multi_city_and_hiring_company_exclusion():
     model = _agent(_architect_understanding()).run(fx.ROLE.notes, {**fx.ROLE.boundary, "hiring_company": "Acme"}).model
     assert model.location.cities == ("Hyderabad", "Bengaluru", "Pune")
