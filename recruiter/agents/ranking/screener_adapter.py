@@ -3,9 +3,10 @@
 Scores a BATCH of candidates on the thin provider data — title, headline, recent
 past titles, skills, years, location — to decide who is worth the paid Harvest
 enrichment + the Tier-2 Judge. One LLM call per batch on a cheap model. Coarse and
-high-recall on purpose: it drops only clear mismatches and never reads an enriched
-profile (that is the Judge's job). Fails OPEN — a screener error keeps everyone, so
-the gate can never silently empty a search.
+high-recall by default: it drops only clear mismatches and never reads an enriched
+profile (that is the Judge's job). It tightens to a SELECTIVE gate only when
+recruiter validation examples are supplied (campaign cycles). Fails OPEN — a
+screener error keeps everyone, so the gate can never silently empty a search.
 """
 
 from __future__ import annotations
@@ -22,13 +23,29 @@ from recruiter.role_model import RoleModel
 
 logger = logging.getLogger(__name__)
 
-_SYSTEM = """You are a fast first-pass recruiting screener. For each candidate you see only thin directory data — their current title, a headline, a few recent past titles, listed skills, approximate years, and location. You do NOT see their full profile.
+_HEADER = """You are a fast first-pass recruiting screener. For each candidate you see only thin directory data — their current title, a headline, a few recent past titles, listed skills, approximate years, and location. You do NOT see their full profile."""
 
-Decide whether each candidate is a close match worth Harvest enrichment for THIS role. The confirmed role requirements remain primary. When recruiter validation examples are supplied, use shortlisted profiles as positive examples, rejection reasons and rejected profiles as negative examples, and maybes as uncertain examples. Generalize from role and work evidence; do not copy a person's company, identity, or exact title as a requirement. Keep only likely close fits consistent with the role and recruiter feedback. Drop weak or uncertain fits so they remain in the un-enriched reserve. This is a relevance gate, not a final hiring decision.
+# Default: high-recall. Tier-1 is a cheap gate; the accurate, paid Tier-2 (Harvest
+# + Judge + career-fit) does precision, so Tier-1 must not drop a plausible fit.
+_RECALL = """Decide, per candidate, whether they are plausibly worth a deeper, paid look for THIS role. Be high-recall: KEEP anyone who could reasonably fit; DROP only clear mismatches (wrong field entirely, far too junior, unrelated discipline). When unsure, keep. Judge the kind of work and seniority, not exact keywords; you are gating who to read in depth, not verifying requirements."""
 
-For each candidate give keep (true/false) and score (0..1 = how strong the thin signal is, for ordering who to read first).
+# Selective: used ONLY once the recruiter has validated examples (campaign cycles),
+# where their shortlist/reject signal justifies tightening and saving enrichment.
+_SELECTIVE = """Decide whether each candidate is a close match worth Harvest enrichment for THIS role. The confirmed role requirements remain primary. Use the supplied recruiter validation examples: shortlisted profiles as positive examples, rejection reasons and rejected profiles as negative examples, and maybes as uncertain examples. Generalize from role and work evidence; do not copy a person's company, identity, or exact title as a requirement. Keep only likely close fits consistent with the role and recruiter feedback. Drop weak or uncertain fits so they remain in the un-enriched reserve. This is a relevance gate, not a final hiring decision."""
+
+_FOOTER = """For each candidate give keep (true/false) and score (0..1 = how strong the thin signal is, for ordering who to read first).
 
 Return only JSON: {"results":[{"i":<number>,"keep":true|false,"score":<0..1>}]}. Include every candidate exactly once."""
+
+_SYSTEM_RECALL = f"{_HEADER}\n\n{_RECALL}\n\n{_FOOTER}"
+_SYSTEM_SELECTIVE = f"{_HEADER}\n\n{_SELECTIVE}\n\n{_FOOTER}"
+
+
+def _has_feedback(feedback_context: Dict[str, Any]) -> bool:
+    """True only when recruiter validation examples are actually present. A first
+    search has none -> stay high-recall; a campaign cycle after the recruiter has
+    shortlisted/rejected does -> switch to the selective gate."""
+    return bool(feedback_context) and any(feedback_context.get(k) for k in feedback_context)
 
 MAX_SKILLS = 12
 MAX_PAST_TITLES = 4
@@ -90,11 +107,15 @@ class ScreenerAdapter:
 
     def _screen_chunk(self, role_payload: Dict[str, Any], chunk: Tuple[CandidateRecord, ...], intent,
                       feedback_context: Dict[str, Any]) -> List[ScreenResult]:
-        payload = {"role": role_payload, "recruiter_validation": feedback_context,
+        selective = _has_feedback(feedback_context)
+        payload: Dict[str, Any] = {"role": role_payload,
                    "candidates": [{"i": k, **_thin_profile(record, intent)} for k, record in enumerate(chunk)]}
+        if selective:
+            payload["recruiter_validation"] = feedback_context
         try:
             from recruiter.llm import complete_json
-            data = complete_json(_SYSTEM, json.dumps(payload, ensure_ascii=False), self._model,
+            system = _SYSTEM_SELECTIVE if selective else _SYSTEM_RECALL
+            data = complete_json(system, json.dumps(payload, ensure_ascii=False), self._model,
                                  max_tokens=min(TOKENS_BASE + TOKENS_PER_CANDIDATE * len(chunk), 4096))
             rows: List[Dict[str, Any]] = data.get("results") or []
             by_index = {int(row["i"]): row for row in rows if isinstance(row, dict) and "i" in row}

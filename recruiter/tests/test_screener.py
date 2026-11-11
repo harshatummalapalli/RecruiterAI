@@ -46,3 +46,27 @@ def test_screener_fails_open_on_an_llm_error(monkeypatch):
 
 def test_screener_on_empty_batch_is_empty():
     assert ScreenerAdapter().screen(_role(), ()) == ()
+
+
+def test_screener_is_high_recall_without_feedback_and_selective_with_it(monkeypatch):
+    seen = {}
+
+    def capture(system, user, model, *a, **k):
+        seen["system"] = system
+        return {"results": [{"i": 0, "keep": True, "score": 0.8}, {"i": 1, "keep": True, "score": 0.7}]}
+
+    monkeypatch.setattr(llm, "complete_json", capture)
+    records = (_rec("a", "AI Platform Engineer"), _rec("b", "ML Engineer"))
+
+    # No recruiter feedback (first search) -> high-recall prompt.
+    ScreenerAdapter().screen(_role(), records)
+    assert "Be high-recall" in seen["system"]
+    assert "recruiter validation" not in seen["system"].lower()
+
+    # An EMPTY feedback dict is not feedback -> still high-recall.
+    ScreenerAdapter().screen(_role(), records, {"shortlisted": [], "rejected": []})
+    assert "Be high-recall" in seen["system"]
+
+    # Real recruiter validation examples (campaign cycle) -> selective prompt.
+    ScreenerAdapter().screen(_role(), records, {"shortlisted": [{"name": "x"}]})
+    assert "Keep only likely close fits" in seen["system"]
