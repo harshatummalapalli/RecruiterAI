@@ -45,8 +45,17 @@ class SearchStore:
         # would otherwise 500 until the process restarts.
         self.storage_dir.mkdir(parents=True, exist_ok=True)
         path = self._path(search_id)
-        payload = json.dumps(record, indent=2, default=str)
         with self.lock:
+            # Sticky ownership: once a record carries an owner_email, any later write
+            # that omits it — a background pipeline/scheduler thread rebuilding the
+            # whole record dict with no HTTP session to read the owner from — inherits
+            # it from disk. Per-user isolation therefore can never be silently dropped
+            # mid-flight. A fresh "record" copy avoids mutating the caller's dict.
+            if not record.get("owner_email"):
+                existing = self.load(search_id)
+                if existing and existing.get("owner_email"):
+                    record = {**record, "owner_email": existing["owner_email"]}
+            payload = json.dumps(record, indent=2, default=str)
             temp_path = path.with_name(f"{path.name}.{os.getpid()}.{threading.get_ident()}.tmp")
             temp_path.write_text(payload, encoding="utf-8")
             os.replace(temp_path, path)

@@ -4,6 +4,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createEmptySearchBrief } from '../models/searchBrief'
 import { makeResponse, type CandidateSpec } from '../models/workspaceFixtures'
+import { makeRoleResponse, manySpecs } from '../models/roleFixtures'
 import type { SearchResponse } from '../types'
 
 vi.mock('../services/recruiterWorkflow', () => ({
@@ -374,7 +375,7 @@ describe('evidence state: met / not_evidenced / unknown', () => {
     await render(responseWithJudgments([MET_JUDGMENT, NOT_EVIDENCED_JUDGMENT, UNKNOWN_JUDGMENT]))
     await click(card('Evidence Candidate'))
     const record = $('aside.record')!
-    for (const heading of ['Why this candidate', 'Evidence for this role', 'Experience', 'Education', 'Recruiter Notes']) {
+    for (const heading of ['The case for this person', 'Evidence for this role', 'Experience', 'Education', 'Recruiter Notes']) {
       expect(record.textContent).toContain(heading)
     }
   })
@@ -384,5 +385,38 @@ describe('evidence state: met / not_evidenced / unknown', () => {
     await click(card('Evidence Candidate'))
     const record = $('aside.record')!
     expect(record.textContent).not.toMatch(/\d+%|match score|confidence|rank(ed|ing)?\b/i)
+  })
+})
+
+describe('#3 — the full retrieved pool is a separate "All profiles" tab, not an inline dump', () => {
+  const POOL: NonNullable<SearchResponse['pool_candidates']> = [
+    { candidate_id: 'p1', name: 'Pool One', title: 'Engineer', company: 'Acme', location: 'Toronto', profile_url: 'https://x/1', assessment_state: 'shown' },
+    { candidate_id: 'p2', name: 'Pool Two', title: 'Engineer', company: 'Globex', location: 'Toronto', profile_url: null, assessment_state: 'assessed' },
+    { candidate_id: 'p3', name: 'Pool Three', title: 'Engineer', company: 'Initech', location: 'Toronto', profile_url: null, assessment_state: 'not_assessed' },
+  ]
+
+  const withPool = () =>
+    makeRoleResponse(manySpecs(6), { extra: { pool_candidates: POOL, pool_candidate_count: 39 } })
+
+  it('shows an "All profiles" tab with the retrieved count and NO inline "profiles returned" expander', async () => {
+    await render(withPool())
+    expect(button(/All profiles/)).toBeTruthy()
+    expect(button(/All profiles/).textContent).toContain('39')
+    // The old always-open "View all N profiles returned by this campaign" dump is gone.
+    expect(container.textContent).not.toContain('profiles returned by this campaign')
+  })
+
+  it('reveals the full pool only when the tab is selected, and hides the surfaced-candidate list', async () => {
+    await render(withPool())
+    // Before: the drip is shown, the pool is not.
+    expect($$('.ws-pool__row')).toHaveLength(0)
+    expect($$('article.ws-card').length).toBeGreaterThan(0)
+    await click(button(/All profiles/))
+    // After: the full pool is listed, the decision list is replaced.
+    const rows = $$('.ws-pool__row')
+    expect(rows).toHaveLength(3)
+    expect(container.textContent).toContain('Pool One')
+    expect(container.textContent).toContain('Pool Three')
+    expect($$('article.ws-card')).toHaveLength(0)
   })
 })

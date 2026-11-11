@@ -307,6 +307,7 @@ def list_draft_summaries(manager: "IntakeSessionManager") -> List[Dict[str, Any]
                 "identity": ((role.get("primary_candidate_identity") or {}).get("value")),
                 "boundary": boundary,
                 "status": raw["result"].get("status"),
+                "owner_email": raw.get("owner_email"),
                 "updated_at": datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc).isoformat(),
             }
         )

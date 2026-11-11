@@ -6,30 +6,32 @@ import { EvidenceDots } from './CandidateWorkspace'
 import type { CandidateAttributesRaw } from '../types'
 import './CandidateRecord.css'
 
-function freshnessLabel(iso: string | null | undefined): string | null {
-  if (!iso) return null
-  const then = new Date(iso).getTime()
-  if (Number.isNaN(then)) return null
-  const days = Math.floor(Math.max(0, Date.now() - then) / 86_400_000)
-  return days <= 0 ? 'verified today' : `verified ${days}d ago`
+/** A raw timestamp -> "Oct 2018". A bare ISO string in a recruiter UI reads as a bug;
+ * month + year is the useful granularity. Returns the input unchanged if it isn't a date. */
+function monthYear(value: string | null | undefined): string | null {
+  if (!value) return null
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return value
+  return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
 }
 
-/** Deterministic CrustData-derived tags: company kind, seniority, function, recency,
- * freshness. Never ranked here — purely a faster read for the recruiter. */
+/** Deterministic CrustData-derived tags: company kind, seniority, function, recency.
+ * Never ranked here — purely a faster read for the recruiter. The enrichment-freshness
+ * value stays on the record (attributes.data_updated_at) but is deliberately NOT shown:
+ * "verified Nd ago" implied a human check that never happened (every record is just
+ * Harvest-enriched). The exact timestamp is kept for an eventual metrics surface. */
 function AttributeTags({ attributes }: { attributes: CandidateAttributesRaw | null | undefined }) {
   if (!attributes) return null
   const a = attributes
   const seniority = a.ic_level || a.seniority_band
   const companyKnown = a.company_type && a.company_type !== 'Unknown'
-  const fresh = freshnessLabel(a.data_updated_at)
-  if (!companyKnown && !seniority && !a.function && !a.recently_started && !fresh) return null
+  if (!companyKnown && !seniority && !a.function && !a.recently_started) return null
   return (
     <div className="record-attrs">
       {companyKnown ? <span className="record-attr record-attr--company" title={a.company_type_basis || undefined}>{a.company_type}</span> : null}
       {seniority ? <span className="record-attr">{seniority}</span> : null}
       {a.function ? <span className="record-attr">{a.function}</span> : null}
       {a.recently_started ? <span className="record-attr record-attr--signal">Recently started</span> : null}
-      {fresh ? <span className="record-attr record-attr--muted" title="When CrustData last refreshed this record">{fresh}</span> : null}
     </div>
   )
 }
@@ -234,7 +236,7 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
             ) : null}
             {candidate.profileCreated ? (
               <span className="record-chip" title="When this LinkedIn profile was created. A weak anti-spam cue, never used to rank.">
-                On LinkedIn since {candidate.profileCreated}
+                On LinkedIn since {monthYear(candidate.profileCreated)}
               </span>
             ) : null}
           </div>
@@ -280,7 +282,7 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
           (the old separate "Candidate Snapshot" section, which read as a confusing duplicate). */}
       <section className="record-section" aria-labelledby="record-review-first">
         <h3 id="record-review-first" className="record-section__title">
-          Why this candidate
+          The case for this person
         </h3>
         {candidate.reviewFirst.length ? (
           <ul className="record-review">

@@ -84,19 +84,15 @@ function SkeletonRows() {
   )
 }
 
-function CampaignPoolList({
-  entries,
-  total,
-}: {
-  entries: NonNullable<SearchResponse['pool_candidates']>
-  total: number
-}) {
+/** Every profile the campaign has retrieved so far, as a flat read-only list. Lives in
+ * the "All profiles" tab (#3): the Top-5 / To-review drip is the opinionated funnel; this
+ * is the full pulled set for a recruiter who wants to browse everything at once. */
+function CampaignPoolView({ entries }: { entries: NonNullable<SearchResponse['pool_candidates']> }) {
   if (entries.length === 0) return null
   return (
-    <details className="ws-pool">
-      <summary>View all {total} profiles returned by this campaign</summary>
+    <div className="ws-pool">
       <p className="ws-pool__note">
-        “Not assessed” means the profile has not had deeper analysis. It is not a rejection or a fit decision.
+        Everything pulled for this campaign. “Not assessed” means the profile has not had deeper analysis — it is not a rejection or a fit decision. The strongest are surfaced for review under the other tabs.
       </p>
       <ul className="ws-pool__list">
         {entries.map((entry) => (
@@ -114,7 +110,7 @@ function CampaignPoolList({
           </li>
         ))}
       </ul>
-    </details>
+    </div>
   )
 }
 
@@ -539,6 +535,14 @@ export function CandidateReviewScreen({
                 orderNote={isRole ? ROLE_ORDER_NOTE : 'Strongest matches first.'}
                 feedback={captureFeedback ? (searchResponse?.feedback ?? {}) : undefined}
                 onFeedback={captureFeedback ? giveFeedback : undefined}
+                poolTab={
+                  isRole && (searchResponse?.pool_candidates?.length ?? 0) > 0
+                    ? {
+                        count: searchResponse?.pool_candidate_count ?? searchResponse?.pool_candidates?.length ?? 0,
+                        render: () => <CampaignPoolView entries={searchResponse?.pool_candidates ?? []} />,
+                      }
+                    : undefined
+                }
               />
             ) : null}
 
@@ -567,7 +571,7 @@ export function CandidateReviewScreen({
             ) : null}
 
             {isRole && !showSkeleton && !searchResponse?.initial_validation_pending && hasMoreToReveal && onShowMore ? (
-              <ShowMoreBar busy={cycleRunning || roleBusy || role?.reserve_analysis_state === 'running'} message={moreMessage} onMore={() => void runRoleAction(() => onShowMore())} />
+              <ShowMoreBar busy={cycleRunning || roleBusy || role?.reserve_analysis_state === 'running'} message={moreMessage} remaining={searchResponse?.reserve_available ?? undefined} onMore={() => void runRoleAction(() => onShowMore())} />
             ) : null}
 
             {isRole && !showSkeleton && filteredReserveItems.length > 0 ? (
@@ -585,12 +589,9 @@ export function CandidateReviewScreen({
               </OtherReviewed>
             ) : null}
 
-            {isRole && !showSkeleton && (searchResponse?.pool_candidates?.length ?? 0) > 0 ? (
-              <CampaignPoolList
-                entries={searchResponse?.pool_candidates ?? []}
-                total={searchResponse?.pool_candidate_count ?? searchResponse?.pool_candidates?.length ?? 0}
-              />
-            ) : null}
+            {/* The full retrieved pool now lives in the workspace's "All profiles" tab (#3),
+                so the old always-open expander here is gone — no more showing the Top-5 drip
+                and all N profiles at once. */}
           </div>
 
           {selectedCandidate ? (

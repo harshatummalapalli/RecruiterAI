@@ -310,6 +310,7 @@ class RequirementJudge:
                     json.dumps({"claims": [{"i": index, "requirement": judgment["signal_text"], "quote": judgment["quote"]}]}, ensure_ascii=False),
                     self._model,
                     max_tokens=512,
+                    client=self._client,
                 )
                 reviewed = data.get("results", [])
                 supported = any(
@@ -346,7 +347,10 @@ class RequirementJudge:
         }
         from recruiter.llm import complete_json  # provider-agnostic (OpenAI or Claude by model name)
         outcome.calls += 1
-        data = complete_json(_SYSTEM_PROMPT, json.dumps(payload, ensure_ascii=False), self._model, max_tokens=2048)
+        # client=self._client is None in production (provider routing) and the injected
+        # test double otherwise — the documented "client is injectable for tests" contract.
+        data = complete_json(_SYSTEM_PROMPT, json.dumps(payload, ensure_ascii=False), self._model,
+                             max_tokens=2048, client=self._client)
         if not data:
             return None
         wanted = {index for index, _ in numbered}

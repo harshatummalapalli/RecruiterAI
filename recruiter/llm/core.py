@@ -50,9 +50,22 @@ def _loads(text: str) -> Dict[str, Any]:
         return json.loads(repair_json(t))
 
 
-def complete_json(system: str, user: str, model: str, *, max_tokens: int = 1024) -> Dict[str, Any]:
+def complete_json(system: str, user: str, model: str, *, max_tokens: int = 1024, client: Any = None) -> Dict[str, Any]:
     """Return the model's JSON reply as a dict. Raises on transport/parse errors
-    (callers decide how to fail — e.g. the proposer falls back to broad)."""
+    (callers decide how to fail — e.g. the proposer falls back to broad).
+
+    `client` is an optional injected OpenAI-shaped double (``client.responses.create``)
+    used only by tests: when given, it REPLACES provider routing and is called
+    directly, so a caller that threads its own injected client (e.g. RequirementJudge,
+    whose ``client=`` is documented as test-injectable) actually reaches it. Production
+    passes ``client=None`` and nothing changes."""
+    if client is not None:
+        resp = client.responses.create(
+            model=model,
+            input=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+            text={"format": {"type": "json_object"}},
+        )
+        return _loads(resp.output_text)
     if model.startswith("claude"):
         resp = _anthropic().messages.create(
             model=model, max_tokens=max_tokens, system=system,

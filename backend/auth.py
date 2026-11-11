@@ -64,6 +64,30 @@ def check_domain_allowed(claims: Dict[str, Any]) -> None:
         raise HTTPException(status_code=403, detail=f"Only @{allowed_domain} accounts can sign in.")
 
 
+def access_allowlist() -> set:
+    """The explicit set of invited email addresses, from RECRUITER_ALLOWED_EMAILS
+    (comma-separated). Empty = no allowlist = open sign-in."""
+    raw = os.environ.get("RECRUITER_ALLOWED_EMAILS", "")
+    return {part.strip().lower() for part in raw.split(",") if part.strip()}
+
+
+def is_email_permitted(email: Optional[str]) -> bool:
+    """The single AUTHORIZATION checkpoint — who may enter — kept distinct from
+    AUTHENTICATION (verify_google_id_token proving the identity is real and verified).
+
+    TODAY it admits any verified Google identity (open sign-in — the owner's current
+    choice, which fixes the data leak via per-user scoping without adding login
+    friction). Setting RECRUITER_ALLOWED_EMAILS to a comma-separated list flips the
+    whole product to INVITE-ONLY: only those addresses get in, every other verified
+    Google user is turned away right here, with no other code change and no
+    re-architecture. This is the 'foolproof door' left one env var away — a fresh
+    Gmail a scammer or bot just made is useless unless its address was invited."""
+    allowlist = access_allowlist()
+    if not allowlist:
+        return True
+    return bool(email) and email.strip().lower() in allowlist
+
+
 def _serializer() -> URLSafeTimedSerializer:
     secret_key = get_session_secret_key()
     if not secret_key:

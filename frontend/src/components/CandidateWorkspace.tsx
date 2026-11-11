@@ -51,6 +51,10 @@ type Props = {
   compact?: boolean
   /** What the order of the list means, when it is not simply the order the profiles were read. */
   orderNote?: string
+  /** Optional extra "All profiles" tab (the full retrieved campaign pool). When given, it
+   * appears after the decision tabs; selecting it renders `render()` instead of the
+   * surfaced-candidate list. Not shown in compact mode. */
+  poolTab?: { count: number; render: () => ReactNode }
 }
 
 function Avatar({ name, url }: { name: string; url: string | null }) {
@@ -273,8 +277,14 @@ export function CandidateWorkspace({
   onFeedback,
   compact = false,
   orderNote,
+  poolTab,
 }: Props) {
-  const [filter, setFilter] = useState<FilterKey>('all')
+  // 'pool' is the optional "All profiles" tab; the decision filters are unchanged.
+  const [filter, setFilter] = useState<FilterKey | 'pool'>('all')
+  const poolActive = filter === 'pool' && !!poolTab
+  // The decision-list logic never sees 'pool'; it falls back to 'all' so matchesFilter,
+  // the empty state and the reject-collapse rules keep their exact existing behaviour.
+  const decisionFilter: FilterKey = filter === 'pool' ? 'all' : filter
   // Cards whose decision no longer matches the filter stay in place as a slim row (with Undo) until the filter
   // changes, so nothing moves under the cursor. Maps to the decision they had before, for Undo.
   const [lingering, setLingering] = useState<Record<string, Decision | undefined>>({})
@@ -296,14 +306,14 @@ export function CandidateWorkspace({
     return true
   }
 
-  const visibleItems = items.filter((item) => item.facts.section === 'preparing' || matchesFilter(filter, decisions[item.candidate.id]) || item.candidate.id in lingering)
+  const visibleItems = items.filter((item) => item.facts.section === 'preparing' || matchesFilter(decisionFilter, decisions[item.candidate.id]) || item.candidate.id in lingering)
 
   // What each visible entry renders as.
   const modeOf = (item: WorkspaceCandidate): 'pending' | 'slim' | 'card' => {
     const id = item.candidate.id
     if (item.facts.section === 'preparing') return 'pending'
     if (id in lingering) return 'slim'
-    if (filter === 'all' && decisions[id] === 'reject' && !promptOpen(id)) return 'slim'
+    if (decisionFilter === 'all' && decisions[id] === 'reject' && !promptOpen(id)) return 'slim'
     return 'card'
   }
 
@@ -326,10 +336,11 @@ export function CandidateWorkspace({
     [],
   )
 
-  const changeFilter = (next: FilterKey) => {
+  const changeFilter = (next: FilterKey | 'pool') => {
     setFilter(next)
     setLingering({})
-    if (selectedId && !matchesFilter(next, decisions[selectedId])) onOpen(null)
+    // The pool tab is read-only and has no selection, so close any open pane when entering it.
+    if (selectedId && (next === 'pool' || !matchesFilter(next, decisions[selectedId]))) onOpen(null)
   }
 
   const decide = (id: string, choice: Decision) => {
@@ -338,10 +349,10 @@ export function CandidateWorkspace({
     // Where focus should go if this card collapses.
     const position = navIds.indexOf(id)
     const after = position >= 0 ? (navIds[position + 1] ?? navIds[position - 1] ?? null) : null
-    const leavesFilter = !matchesFilter(filter, next)
+    const leavesFilter = !matchesFilter(decisionFilter, next)
     // A reject collapses straight away unless it is about to ask why; then it collapses once that is answered.
     const asksWhy = Boolean(onFeedback) && (next === 'maybe' || next === 'reject')
-    const collapsesInAll = filter === 'all' && next === 'reject' && !asksWhy
+    const collapsesInAll = decisionFilter === 'all' && next === 'reject' && !asksWhy
     setResolved((current) => {
       const rest = new Set(current)
       rest.delete(id)
@@ -361,7 +372,7 @@ export function CandidateWorkspace({
     const position = navIds.indexOf(id)
     const after = position >= 0 ? (navIds[position + 1] ?? navIds[position - 1] ?? null) : null
     setResolved((current) => new Set(current).add(id))
-    if (filter === 'all' && decisions[id] === 'reject') setFocusId(after)
+    if (decisionFilter === 'all' && decisions[id] === 'reject') setFocusId(after)
   }
 
   const giveReason = (id: string, reason: string) => {
@@ -464,20 +475,34 @@ export function CandidateWorkspace({
             {option.label} <span className="ws-filter__count">{counts[option.key]}</span>
           </button>
         ))}
+        {poolTab ? (
+          <button
+            type="button"
+            className={`ws-filter__option${poolActive ? ' is-active' : ''}`}
+            aria-pressed={poolActive}
+            onClick={() => changeFilter('pool')}
+          >
+            All profiles <span className="ws-filter__count">{poolTab.count}</span>
+          </button>
+        ) : null}
       </div>
       )}
 
+      {poolActive ? (
+        <div className="ws-list">{poolTab?.render()}</div>
+      ) : (
       <div className="ws-list" onKeyDown={onKeyDown}>
         {visibleItems.length === 0 ? (
           <div className="ws-empty">
-            <p className="ws-empty__title">{EMPTY_STATE[filter].title}</p>
-            {EMPTY_STATE[filter].body ? <p className="ws-empty__body">{EMPTY_STATE[filter].body}</p> : null}
+            <p className="ws-empty__title">{EMPTY_STATE[decisionFilter].title}</p>
+            {EMPTY_STATE[decisionFilter].body ? <p className="ws-empty__body">{EMPTY_STATE[decisionFilter].body}</p> : null}
           </div>
         ) : null}
 
         {visibleItems.length > 0 ? <p className="ws-note">{orderNote ?? 'In the order they were read.'}</p> : null}
         <div className="ws-section__items">{visibleItems.map(renderEntry)}</div>
       </div>
+      )}
     </div>
   )
 }

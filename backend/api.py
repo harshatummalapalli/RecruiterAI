@@ -19,6 +19,8 @@ from backend.auth import (
     SESSION_COOKIE_NAME,
     check_domain_allowed,
     create_session_cookie_value,
+    get_session_email,
+    is_email_permitted,
     is_super_admin,
     require_admin,
     require_session,
@@ -453,7 +455,8 @@ class _SummaryCache:
                                              else ", ".join(location.cities or location.states or location.countries))
             except Exception:  # malformed/missing old confirmations do not hide the search card
                 logger.debug("Could not resolve campaign label | search_id=%s", path.stem, exc_info=True)
-        entry = {"summary": summary, "session_id": (record.get("confirmed_brief") or {}).get("session_id")}
+        entry = {"summary": summary, "session_id": (record.get("confirmed_brief") or {}).get("session_id"),
+                 "owner_email": record.get("owner_email")}
         self._items[path] = (version, entry)
         return entry
 
@@ -537,6 +540,71 @@ def create_app(
     requirement_judge = requirement_judge or RequirementJudge()
     search_summary_cache = _SummaryCache()
     clock = role_clock or (lambda: datetime.now(timezone.utc))
+
+    # --- Per-user isolation (owner scoping) -------------------------------------
+    # Every search and intake session belongs to the recruiter who created it.
+    # Google OAuth already proves a verified identity; these helpers make each
+    # recruiter see and act on ONLY their own work. The super admin sees all.
+    def _session_owner(request: Request) -> Optional[str]:
+        """The lowercased login email that owns anything created in this session, or None."""
+        email = get_session_email(request)
+        return email.lower() if email else None
+
+    def _can_access(record: Dict[str, Any], request: Request) -> bool:
+        """True if the caller may see/act on this record.
+
+        * The super admin sees everything.
+        * A record WITH an owner is visible only to that owner.
+        * A record with NO owner is legacy data from before per-user scoping. An
+          IDENTIFIED non-admin recruiter never sees it — that was exactly the
+          cross-account leak (a second signed-in Gmail seeing the admin's role). It
+          stays reachable to the admin, and to a session carrying no identity at all
+          (an old opaque cookie from before login emails were stored, or a test
+          client), which only ever had the old shared view anyway. Those cookies
+          expire and re-login stamps an email, closing even that transitional window.
+        """
+        if is_super_admin(request):
+            return True
+        owner = (record.get("owner_email") or "").strip().lower()
+        caller = _session_owner(request)
+        if not owner:
+            return caller is None
+        return bool(caller) and owner == caller
+
+    def _claim_owner(store: SearchStore, record_id: str, owner: Optional[str]) -> None:
+        """Stamp `owner` onto a freshly created record, once. No-op without an owner
+        (e.g. the dev auth bypass, where is_super_admin already grants full access)
+        or if the record already has one. Relies on the store's sticky-owner save to
+        then carry the owner through every later background rebuild."""
+        if not owner:
+            return
+
+        def mutate(rec: Dict[str, Any]) -> None:
+            if not rec.get("owner_email"):
+                rec["owner_email"] = owner
+
+        store.update(record_id, mutate)
+
+    def _intake_store() -> SearchStore:
+        """The file store backing intake sessions for whichever engine is live."""
+        if intake_service is not None:
+            return intake_service._sessions
+        return intake_session_manager._store
+
+    def require_owned_search(search_id: str, request: Request) -> None:
+        """Route guard for /search/{search_id}/*. A 404 (not 403 — the search is
+        invisible, not merely forbidden, so IDs can't be probed) when the caller does
+        not own it. A search_id that does not exist passes through unchanged, so the
+        handler's own 404 and the creation path are untouched."""
+        record = search_store.load(search_id)
+        if record is not None and not _can_access(record, request):
+            raise HTTPException(status_code=404, detail="Search not found.")
+
+    def require_owned_session(session_id: str, request: Request) -> None:
+        """Route guard for /intake/{session_id}/* — same contract as above."""
+        record = _intake_store().load(session_id)
+        if record is not None and not _can_access(record, request):
+            raise HTTPException(status_code=404, detail="Intake session not found.")
 
     def _build_plan(intent: SearchIntent, location: Optional[LocationOverride]) -> tuple:
         """Location override, radius handling, search plan, query expansion and provider capability mapping: everything
@@ -782,6 +850,9 @@ def create_app(
     def auth_google(request: GoogleLoginRequest, response: Response) -> Dict[str, Any]:
         claims = verify_google_id_token(request.credential)
         check_domain_allowed(claims)
+        if not is_email_permitted(claims.get("email")):
+            logger.warning("[AUTH] Rejected a verified sign-in that is not on the access allowlist")
+            raise HTTPException(status_code=403, detail="Your account isn't on the access list yet. Please ask your administrator for access.")
         response.set_cookie(
             SESSION_COOKIE_NAME,
             create_session_cookie_value(claims.get("email")),
@@ -856,7 +927,8 @@ def create_app(
             raise HTTPException(status_code=422, detail={"message": "The search boundary is incomplete.", "errors": exc.errors})
 
     @app.post("/intake/start", dependencies=[Depends(require_session)])
-    def intake_start(request: IntakeStartRequest) -> Dict[str, Any]:
+    def intake_start(request: IntakeStartRequest, http_request: Request) -> Dict[str, Any]:
+        owner_email = _session_owner(http_request)
         boundary = _validated_boundary(request.boundary)
         if not (request.raw_input or "").strip():
             raise HTTPException(status_code=422, detail={"message": "Describe the role first.", "errors": ["Paste a job description or describe the role."]})
@@ -869,6 +941,10 @@ def create_app(
                 request.raw_input, _engine_boundary(boundary, request.boundary),
                 posted_title=request.posted_title)
             session_id = started["session_id"]
+            # Claim ownership before the background read thread starts (no race): the
+            # session already exists on disk from begin(), and the store's sticky-owner
+            # save then carries owner_email through read_into() and every later write.
+            _claim_owner(_intake_store(), session_id, owner_email)
 
             def _read_role() -> None:
                 try:
@@ -886,9 +962,10 @@ def create_app(
         except RecruiterAIError as exc:
             logger.exception("Intake reasoning failed")
             _raise_recruiter_friendly_error("Please contact your administrator.")
+        _claim_owner(intake_session_manager._store, record.session_id, owner_email)
         return {"session_id": record.session_id, "result": record.result, "boundary": record.boundary}
 
-    @app.post("/intake/{session_id}/answer", dependencies=[Depends(require_session)])
+    @app.post("/intake/{session_id}/answer", dependencies=[Depends(require_session), Depends(require_owned_session)])
     def intake_answer(session_id: str, request: IntakeAnswerRequest) -> Dict[str, Any]:
         if intake_service is not None:
             try:
@@ -927,7 +1004,7 @@ def create_app(
             raise HTTPException(status_code=409, detail="Confirm the brief before searching.")
         return request, None
 
-    @app.post("/intake/{session_id}/confirmations", dependencies=[Depends(require_session)])
+    @app.post("/intake/{session_id}/confirmations", dependencies=[Depends(require_session), Depends(require_owned_session)])
     def intake_confirmations(session_id: str, request: ConfirmationRequest) -> Dict[str, Any]:
         """The recruiter presses Search. The server checks the gate, builds the executable intent itself, applies the
         whitelisted edits, and stores an immutable snapshot that /search then runs from."""
@@ -948,7 +1025,7 @@ def create_app(
         snapshot = confirmation_store.create(payload)
         return {**brief_summary(snapshot), "search_intent": snapshot["search_intent"], "edits": snapshot["edits"]}
 
-    @app.get("/intake/{session_id}", dependencies=[Depends(require_session)])
+    @app.get("/intake/{session_id}", dependencies=[Depends(require_session), Depends(require_owned_session)])
     def intake_get(session_id: str) -> Dict[str, Any]:
         """Everything needed to resume a brief after a reload. Read only: no model call."""
         if intake_service is not None:
@@ -969,7 +1046,7 @@ def create_app(
             "posted_title_input": record.posted_title_input,
         }
 
-    @app.patch("/intake/{session_id}/boundary", dependencies=[Depends(require_session)])
+    @app.patch("/intake/{session_id}/boundary", dependencies=[Depends(require_session), Depends(require_owned_session)])
     def intake_update_boundary(session_id: str, request: SearchBoundaryRequest) -> Dict[str, Any]:
         """The recruiter edits the Search Boundary. Deterministic: validated and re-applied to the pinned reading with
         no model call."""
@@ -987,7 +1064,7 @@ def create_app(
             raise HTTPException(status_code=400, detail=str(exc))
         return {"session_id": record.session_id, "result": record.result, "boundary": record.boundary}
 
-    @app.post("/intake/{session_id}/confirm", dependencies=[Depends(require_session)])
+    @app.post("/intake/{session_id}/confirm", dependencies=[Depends(require_session), Depends(require_owned_session)])
     def intake_confirm(session_id: str) -> SearchIntent:
         if intake_service is not None:
             try:
@@ -1004,7 +1081,7 @@ def create_app(
         except ValueError as exc:
             raise HTTPException(status_code=409, detail=str(exc))
 
-    @app.post("/intake/{session_id}/preview", dependencies=[Depends(require_session)])
+    @app.post("/intake/{session_id}/preview", dependencies=[Depends(require_session), Depends(require_owned_session)])
     def intake_preview(session_id: str, provider: str = "crustdata") -> Dict[str, Any]:
         """Zero-cost debug contract (no CrustData credits spent): Confirmed
         Hiring Intent -> SearchPlan -> the exact provider payload(s) that
@@ -1110,7 +1187,7 @@ def create_app(
         return updated or record
 
     @app.get("/searches", dependencies=[Depends(require_session)])
-    def list_searches() -> Dict[str, Any]:
+    def list_searches(request: Request) -> Dict[str, Any]:
         """The workspace sidebar: every role, plus briefs that have not been searched yet. Newest activity first
         within each group — but completed searches and drafts are two separate lists with two separate budgets
         (SIDEBAR_SEARCH_LIMIT, SIDEBAR_DRAFT_LIMIT), not one shared, recency-sorted list. A flood of drafts (a
@@ -1125,6 +1202,10 @@ def create_app(
                                                getattr(intake_service, "_confirmations", None))
             if summary is None:
                 continue
+            # Per-user isolation: a recruiter's sidebar lists only their own roles; the
+            # super admin sees every one. Unowned legacy records are admin-only.
+            if not _can_access({"owner_email": summary.get("owner_email")}, request):
+                continue
             # `archived` is time-dependent (explicit Close + the 14-day idle rule), so it
             # is computed here against the live clock rather than cached in the summary.
             item = {**summary["summary"], "archived": is_archived(summary["summary"], now)}
@@ -1138,6 +1219,8 @@ def create_app(
         for draft in list_draft_summaries(intake_session_manager):
             if draft["session_id"] in used_sessions or not draft.get("boundary"):
                 continue
+            if not _can_access({"owner_email": draft.get("owner_email")}, request):
+                continue
             updated = datetime.fromisoformat(draft["updated_at"]).timestamp()
             if updated >= cutoff:
                 drafts.append(draft_summary(draft))
@@ -1146,7 +1229,7 @@ def create_app(
         items = searches[:SIDEBAR_SEARCH_LIMIT] + drafts[:SIDEBAR_DRAFT_LIMIT]
         return {"searches": items}
 
-    @app.get("/search/{search_id}", response_model=SearchResponse, dependencies=[Depends(require_session)])
+    @app.get("/search/{search_id}", response_model=SearchResponse, dependencies=[Depends(require_session), Depends(require_owned_search)])
     def get_search(search_id: str) -> SearchResponse:
         role_runtime.tick_record(search_id)
         record = search_store.load(search_id)
@@ -1156,7 +1239,7 @@ def create_app(
         logger.info("[SEARCH] Reloaded persisted search | search_id=%s — no OpenAI or CrustData calls made", search_id)
         return _search_response(record)
 
-    @app.patch("/search/{search_id}/workspace", dependencies=[Depends(require_session)])
+    @app.patch("/search/{search_id}/workspace", dependencies=[Depends(require_session), Depends(require_owned_search)])
     def update_workspace(search_id: str, update: WorkspaceUpdateRequest) -> Dict[str, Any]:
         # The recruiter's one-time "group by evidence" choice. Atomic with the
         # running pipeline's own saves, like the candidate PATCH below.
@@ -1293,7 +1376,7 @@ def create_app(
 
         threading.Thread(target=analyze, daemon=True, name=f"feedback-pool-{search_id}").start()
 
-    @app.patch("/search/{search_id}/candidate", dependencies=[Depends(require_session)])
+    @app.patch("/search/{search_id}/candidate", dependencies=[Depends(require_session), Depends(require_owned_search)])
     def update_candidate(search_id: str, update: CandidateUpdateRequest) -> SearchResponse:
         failure: List[RoleError] = []
 
@@ -1325,7 +1408,7 @@ def create_app(
             record = search_store.load(search_id) or record
         return _search_response(record)
 
-    @app.post("/search/{search_id}/reveal", response_model=SearchResponse, dependencies=[Depends(require_session)])
+    @app.post("/search/{search_id}/reveal", response_model=SearchResponse, dependencies=[Depends(require_session), Depends(require_owned_search)])
     def reveal_candidate(search_id: str) -> SearchResponse:
         # Pool-first reveal (new engine): bring the next already-read profile forward
         # from the held pool — no new search, no credits. A no-op (returns the search
@@ -1358,7 +1441,7 @@ def create_app(
         logger.info("[SEARCH] Pool-first reveal | search_id=%s revealed=%s", search_id, outcome["revealed"])
         return _search_response(record)
 
-    @app.post("/search/{search_id}/refine", response_model=SearchResponse, dependencies=[Depends(require_session)])
+    @app.post("/search/{search_id}/refine", response_model=SearchResponse, dependencies=[Depends(require_session), Depends(require_owned_search)])
     def refine_search(search_id: str, request: RefineRequest) -> SearchResponse:
         # Pool-first refine (new engine): re-check + re-rank the already-read pool
         # against the recruiter's structured deltas — free, instant, no new search.
@@ -1378,7 +1461,7 @@ def create_app(
                     search_id, outcome.get("matched"), outcome.get("dropped"), outcome.get("exhausted"))
         return _search_response(record)
 
-    @app.post("/search/{search_id}/more", dependencies=[Depends(require_session)])
+    @app.post("/search/{search_id}/more", dependencies=[Depends(require_session), Depends(require_owned_search)])
     def show_more(search_id: str, request: Optional[ShowMoreRequest] = None) -> Dict[str, Any]:
         current = search_store.load(search_id)
         if current is None:
@@ -1427,7 +1510,7 @@ def create_app(
             raise HTTPException(status_code=error.status_code, detail=error.message)
         return outcome
 
-    @app.post("/search/{search_id}/role", dependencies=[Depends(require_session)])
+    @app.post("/search/{search_id}/role", dependencies=[Depends(require_session), Depends(require_owned_search)])
     def role_action(search_id: str, request: RoleActionRequest) -> SearchResponse:
         try:
             record = role_runtime.set_role_action(search_id, request.action)
@@ -1435,7 +1518,7 @@ def create_app(
             raise HTTPException(status_code=error.status_code, detail=error.message)
         return _search_response(record)
 
-    @app.post("/search/{search_id}/calibration", dependencies=[Depends(require_session)])
+    @app.post("/search/{search_id}/calibration", dependencies=[Depends(require_session), Depends(require_owned_search)])
     def calibration_correction(search_id: str, request: CalibrationRequest) -> SearchResponse:
         try:
             record = role_runtime.calibrate(search_id, request.dismiss)
@@ -1443,7 +1526,7 @@ def create_app(
             raise HTTPException(status_code=error.status_code, detail=error.message)
         return _search_response(record)
 
-    def _search_role(request: SearchRequest, snapshot: Dict[str, Any], confirmed_brief: Dict[str, Any], search_id: str) -> SearchResponse:
+    def _search_role(request: SearchRequest, snapshot: Dict[str, Any], confirmed_brief: Dict[str, Any], search_id: str, owner_email: Optional[str] = None) -> SearchResponse:
         """A search from a confirmed brief is a ROLE. The first time it is confirmed it starts (Day 0). Confirming a
         changed brief on the same role is a meaningful change when it alters what is searched: the role is extended
         by a day (within its limit) and a fresh retrieval runs. A confirmation that changes nothing searched re-runs
@@ -1473,6 +1556,7 @@ def create_app(
                 {
                     "search_id": search_id,
                     "status": STATUS_RUNNING,
+                    "owner_email": existing.get("owner_email") or owner_email,
                     "created_at": existing.get("created_at", now.isoformat()),
                     "updated_at": now.isoformat(),
                     "jd_text": snapshot["raw_input"],
@@ -1521,7 +1605,16 @@ def create_app(
             return _search_response(search_store.load(search_id) or record)
 
     @app.post("/search", response_model=SearchResponse, dependencies=[Depends(require_session)])
-    def search(request: SearchRequest) -> SearchResponse:
+    def search(request: SearchRequest, http_request: Request) -> SearchResponse:
+        owner_email = _session_owner(http_request)
+        # POST /search carries the id in the BODY, not the path, so the route guard
+        # can't run here — enforce ownership inline: a caller may only (re)run a search
+        # whose id either is new or is already theirs. Hijacking another recruiter's
+        # campaign by posting their id is a 404, same as any other cross-user access.
+        if request.search_id:
+            existing_owned = search_store.load(request.search_id)
+            if existing_owned is not None and not _can_access(existing_owned, http_request):
+                raise HTTPException(status_code=404, detail="Search not found.")
         if intake_service is not None:
             if not request.confirmation_id:
                 raise HTTPException(status_code=409, detail="Confirm the brief before searching.")
@@ -1566,6 +1659,7 @@ def create_app(
             }
             search_store.save(search_id, {
                 "search_id": search_id, "status": STATUS_RUNNING,
+                "owner_email": existing.get("owner_email") or owner_email,
                 "created_at": existing.get("created_at", now), "updated_at": now,
                 "response": running, "recruiter_decisions": existing.get("recruiter_decisions", {}),
                 "notes": existing.get("notes", {}), "candidate_states": {},
@@ -1669,7 +1763,7 @@ def create_app(
 
         try:
             if confirmed_snapshot is not None:
-                return _search_role(request, confirmed_snapshot, confirmed_brief, search_id)
+                return _search_role(request, confirmed_snapshot, confirmed_brief, search_id, owner_email)
 
             intent = _resolve_search_intent(request, jd_parser)
             if not isinstance(intent, SearchIntent):
@@ -1707,6 +1801,7 @@ def create_app(
                 {
                     "search_id": search_id,
                     "status": STATUS_RUNNING,
+                    "owner_email": existing_record.get("owner_email") or owner_email,
                     "created_at": existing_record.get("created_at", datetime.now(timezone.utc).isoformat()),
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                     "jd_text": request.jd_text,

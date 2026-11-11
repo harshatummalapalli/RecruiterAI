@@ -146,7 +146,7 @@ export function CandidateFilters({ candidates, state, onChange, shown, total }: 
   return (
     <div className="candidate-filters" role="group" aria-label="Filter candidates">
       <div className="cf-row">
-        <span className="cf-hint">Click once to keep, twice to exclude.</span>
+        <span className="cf-hint">Filters the profiles already found — click once to keep, twice to exclude.</span>
         {active ? (
           <span className="cf-count">Showing {shown} of {total}</span>
         ) : null}
@@ -159,7 +159,7 @@ export function CandidateFilters({ candidates, state, onChange, shown, total }: 
 
       {companyValues.length > 0 ? (
         <div className="cf-group">
-          <span className="cf-group__label">Company</span>
+          <span className="cf-group__label">Company Type</span>
           <div className="cf-chips">
             {companyValues.map((value) => (
               <Chip key={value} label={value} state={state.companyType[value]} onClick={() => toggleCompany(value)} />

@@ -138,7 +138,7 @@ export function CalibrationNote({ text, dimensions, onRemove }: { text: string; 
   )
 }
 
-export function ShowMoreBar({ busy, message, onMore }: { busy: boolean; message: string | null; onMore: () => void }) {
+export function ShowMoreBar({ busy, message, onMore, remaining }: { busy: boolean; message: string | null; onMore: () => void; remaining?: number }) {
   return (
     <div className="role-more">
       <button type="button" className="role-primary" onClick={onMore} disabled={busy}>
@@ -148,10 +148,14 @@ export function ShowMoreBar({ busy, message, onMore }: { busy: boolean; message:
             <span>Showing stored candidates…</span>
           </>
         ) : (
-          <span>Show me more</span>
+          <span>Show me more{remaining ? ` (${remaining} already found)` : ''}</span>
         )}
       </button>
-      {message ? <p className="role-more__message">{message}</p> : null}
+      {message ? (
+        <p className="role-more__message">{message}</p>
+      ) : (
+        <p className="role-more__message">Brought forward from the profiles already found for this campaign — free, no new search.</p>
+      )}
     </div>
   )
 }
