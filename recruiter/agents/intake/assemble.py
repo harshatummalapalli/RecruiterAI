@@ -172,9 +172,18 @@ def assemble_role_model(
     hiring_company = (boundary.get("hiring_company") or "").strip() or None
     include_companies = tuple(c.strip() for c in (boundary.get("include_companies") or []) if c and c.strip())
     exclude_companies = tuple(c.strip() for c in (boundary.get("exclude_companies") or []) if c and c.strip())
-    # The hiring company is always excluded (don't show a client its own people),
-    # plus any companies the recruiter named. Include = "ever worked at one of these".
-    exclude_current = tuple(dict.fromkeys(((hiring_company,) if hiring_company else ()) + exclude_companies))
+    # Each company list is scoped by the recruiter: "current" = current employer only,
+    # "ever" = anywhere in their history. Defaults preserve the prior behaviour
+    # (include=ever, exclude=current). The hiring company is ALWAYS excluded on the
+    # current employer (never show a client its own people now — their alumni are fine).
+    include_scope = "current" if (boundary.get("include_companies_scope") or "ever") == "current" else "ever"
+    exclude_scope = "ever" if (boundary.get("exclude_companies_scope") or "current") == "ever" else "current"
+    prefer_current = include_companies if include_scope == "current" else ()
+    prefer_ever = include_companies if include_scope == "ever" else ()
+    exclude_ever = exclude_companies if exclude_scope == "ever" else ()
+    exclude_current = tuple(dict.fromkeys(
+        ((hiring_company,) if hiring_company else ()) + (exclude_companies if exclude_scope == "current" else ())
+    ))
 
     model = RoleModel(
         identity=identity,
@@ -187,7 +196,8 @@ def assemble_role_model(
         location=loc,
         requirements=requirements,
         capability_groups=capability_groups,
-        companies=CompanyRules(exclude_current=exclude_current, prefer_ever=include_companies),
+        companies=CompanyRules(exclude_current=exclude_current, exclude_ever=exclude_ever,
+                               prefer_current=prefer_current, prefer_ever=prefer_ever),
         exclude_titles=exclude_titles,
         posted_title=understanding.posted_title,
         posted_title_source=understanding.posted_title_source,

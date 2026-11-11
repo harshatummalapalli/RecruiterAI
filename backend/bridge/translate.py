@@ -354,6 +354,8 @@ def _search_intent_dataclass(model: RoleModel):
         titles=Titles(exclude_titles=list(model.exclude_titles)),
         skills=Skills(required_skills=cores, preferred_skills=supporting),
         company_preferences=CompanyPreferences(exclude_current_companies=list(model.companies.exclude_current),
+                                               exclude_companies_ever=list(model.companies.exclude_ever),
+                                               preferred_companies=list(model.companies.prefer_current),
                                                preferred_companies_ever=list(model.companies.prefer_ever)),
         natural_language_search_query=build_nl_query(model),
         core_signals=cores, supporting_signals=supporting, differentiator_signals=diffs,

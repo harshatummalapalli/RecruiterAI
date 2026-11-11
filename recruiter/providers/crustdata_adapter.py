@@ -37,6 +37,8 @@ def _to_search_query(pq: ProviderQuery):
         # hands-on capability match. (The full list still rides pq for the net.)
         exclude_titles=list(hard_title_exclusions(pq.exclude_titles)),
         exclude_current_companies=list(pq.exclude_current_companies),
+        exclude_companies_ever=list(pq.exclude_companies_ever),
+        preferred_companies=list(pq.preferred_companies),
         preferred_companies_ever=list(pq.preferred_companies_ever),
         must_have_keyword_groups=[list(g) for g in pq.must_have_keyword_groups],
     )

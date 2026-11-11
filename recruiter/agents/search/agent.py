@@ -61,6 +61,9 @@ class SearchAgent:
         company_dropped: list = []
         if query.exclude_current_companies:   # CrustData leaks the negative company filter
             kept, company_dropped = enforce_company_exclusions(kept, query.exclude_current_companies)
+        if getattr(query, "exclude_companies_ever", None):   # "ever worked at" scope — check full history
+            kept, ever_dropped = enforce_company_exclusions(kept, query.exclude_companies_ever, include_history=True)
+            company_dropped = list(company_dropped) + ever_dropped
         title_dropped: list = []
         if query.exclude_titles:              # CrustData leaks the negative title filter too
             cap_terms = tuple(t for g in query.must_have_keyword_groups for t in g)

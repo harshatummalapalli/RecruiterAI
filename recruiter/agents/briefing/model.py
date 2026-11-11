@@ -26,8 +26,12 @@ class ProviderQuery:
     radius_miles: Optional[float] = None
     employment_type: Optional[str] = None
     exclude_titles: Tuple[str, ...] = ()
-    exclude_current_companies: Tuple[str, ...] = ()
-    preferred_companies_ever: Tuple[str, ...] = ()   # include: ever worked at one of these
+    # Company include/exclude, each scoped Current (current employer only) or Ever
+    # (anywhere in their history). The recruiter picks the scope per list in the brief.
+    exclude_current_companies: Tuple[str, ...] = ()   # exclude: currently at one of these
+    exclude_companies_ever: Tuple[str, ...] = ()      # exclude: ever worked at one of these
+    preferred_companies: Tuple[str, ...] = ()         # include: currently at one of these
+    preferred_companies_ever: Tuple[str, ...] = ()    # include: ever worked at one of these
     must_have_keyword_groups: Tuple[Tuple[str, ...], ...] = ()
     industries: Tuple[str, ...] = ()
 

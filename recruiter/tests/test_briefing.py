@@ -35,6 +35,21 @@ def _architect_model() -> RoleModel:
     )
 
 
+def test_company_include_exclude_scopes_route_to_the_right_query_fields():
+    import dataclasses
+
+    model = dataclasses.replace(
+        _architect_model(),
+        companies=CompanyRules(prefer_current=("NowCo",), prefer_ever=("EverCo",),
+                               exclude_current=("NoNow",), exclude_ever=("NoEver",)),
+    )
+    q = BriefingAgent().build(model).query
+    assert q.preferred_companies == ("NowCo",)          # include, Current scope
+    assert q.preferred_companies_ever == ("EverCo",)    # include, Ever scope
+    assert q.exclude_current_companies == ("NoNow",)    # exclude, Current scope
+    assert q.exclude_companies_ever == ("NoEver",)      # exclude, Ever scope
+
+
 def test_hard_cities_are_filtered_not_in_nl():
     plan = BriefingAgent().build(_architect_model())
     # Hard cities bind in `filters` (exact mode) and must NOT dilute the NL query.

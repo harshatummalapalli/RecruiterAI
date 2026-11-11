@@ -746,6 +746,21 @@
   gap: 8px;
 }
 
+/* Company list + its Current/Ever scope toggle, stacked. */
+.brief-company-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.brief-segmented--compact {
+  gap: 6px;
+}
+.brief-segmented--compact .brief-segmented__option {
+  padding: 5px 12px;
+  font-size: 12.5px;
+  border-radius: 8px;
+}
+
 .brief-segmented__option {
   padding: 9px 18px;
   border-radius: 10px;

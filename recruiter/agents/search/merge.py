@@ -60,26 +60,34 @@ def _candidate_location_text(record: CandidateRecord) -> str:
     return " ".join(parts).lower()
 
 
-def _candidate_company_text(record: CandidateRecord) -> str:
-    """The candidate's CURRENT employer. Prefer the mapped company; fall back to
-    the structured current employment record."""
+def _company_names(obj) -> List[str]:
+    if isinstance(obj, dict):
+        return [str(obj.get("company_name") or obj.get("name") or "")]
+    if isinstance(obj, list):
+        return [str(e.get("company_name") or e.get("name") or "") for e in obj if isinstance(e, dict)]
+    return []
+
+
+def _candidate_company_text(record: CandidateRecord, *, include_history: bool = False) -> str:
+    """The candidate's CURRENT employer (mapped company + structured current record).
+    With include_history, also every PAST employer — for an "ever worked at" exclusion."""
     parts = [record.company or ""]
     raw = record.raw if isinstance(record.raw, dict) else {}
     exp = raw.get("experience") if isinstance(raw.get("experience"), dict) else {}
-    cur = exp.get("current") if isinstance(exp, dict) else None
-    if isinstance(cur, dict):
-        parts.append(str(cur.get("company_name") or ""))
-    return " ".join(parts).lower()
+    parts += _company_names(exp.get("current"))
+    if include_history:
+        parts += _company_names(exp.get("past"))
+    return " ".join(p for p in parts if p).lower()
 
 
 def enforce_company_exclusions(
-    records: Iterable[CandidateRecord], excluded: Tuple[str, ...]
+    records: Iterable[CandidateRecord], excluded: Tuple[str, ...], *, include_history: bool = False
 ) -> Tuple[List[CandidateRecord], List[CandidateRecord]]:
-    """Hard company-exclusion gate. CrustData's negative company filter (`not_in`
-    on current.company_name) leaks — on a live run the hiring company's own
-    current employees came back despite being excluded. So we re-check each
-    candidate's current employer and drop a known match (substring, case-fold, so
-    "Epiq" also catches "Epiq Global"). An unknown employer is kept."""
+    """Hard company-exclusion gate. CrustData's negative company filter (`not_in`)
+    leaks — on a live run the hiring company's own employees came back despite being
+    excluded. So we re-check each candidate and drop a known match (substring, case-fold,
+    so "Epiq" also catches "Epiq Global"). `include_history=True` is the "ever worked at"
+    scope: it checks every past employer too, not just the current one. Unknown = kept."""
     wanted = [e.strip().lower() for e in excluded if e and e.strip()]
     records = list(records)
     if not wanted:
@@ -87,7 +95,7 @@ def enforce_company_exclusions(
     kept: List[CandidateRecord] = []
     dropped: List[CandidateRecord] = []
     for r in records:
-        hay = _candidate_company_text(r).strip()
+        hay = _candidate_company_text(r, include_history=include_history).strip()
         if hay and any(w in hay for w in wanted):
             dropped.append(r)
         else:

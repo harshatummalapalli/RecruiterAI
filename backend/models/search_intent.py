@@ -83,6 +83,9 @@ class CompanyPreferences:
     # current-only). preferred_companies_ever: include anyone who ever worked
     # at these.
     exclude_companies_ever: List[str] = field(default_factory=list)
+    # Current-employer ("currently at") include scope, the counterpart to
+    # preferred_companies_ever. Routed to current.company_name by the provider.
+    preferred_companies: List[str] = field(default_factory=list)
     preferred_companies_ever: List[str] = field(default_factory=list)
     confidence_score: Optional[float] = None
 

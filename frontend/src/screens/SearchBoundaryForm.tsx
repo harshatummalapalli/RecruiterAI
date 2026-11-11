@@ -29,6 +29,34 @@ const REMOTE_SCOPE_OPTIONS: Array<{ value: RemoteScope; label: string }> = [
   { value: 'cities', label: 'Specific cities' },
 ]
 
+type CompanyScope = 'current' | 'ever'
+const COMPANY_SCOPE_OPTIONS: Array<{ value: CompanyScope; label: string }> = [
+  { value: 'current', label: 'Currently' },
+  { value: 'ever', label: 'Ever' },
+]
+
+// Current (current employer only) vs Ever (anywhere in their history), per company list.
+function ScopeToggle({ value, disabled, ariaLabel, onChange }: {
+  value: CompanyScope; disabled?: boolean; ariaLabel: string; onChange: (v: CompanyScope) => void
+}) {
+  return (
+    <div className="brief-segmented brief-segmented--compact" role="radiogroup" aria-label={ariaLabel}>
+      {COMPANY_SCOPE_OPTIONS.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          className={`brief-segmented__option${value === o.value ? ' is-active' : ''}`}
+          disabled={disabled}
+          aria-pressed={value === o.value}
+          onClick={() => onChange(o.value)}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export function SearchBoundaryForm({ boundary, onChange, disabled }: SearchBoundaryFormProps) {
   const isOnsiteOrHybrid = boundary.work_mode === 'onsite' || boundary.work_mode === 'hybrid'
   const isRemote = boundary.work_mode === 'remote'
@@ -241,22 +269,42 @@ export function SearchBoundaryForm({ boundary, onChange, disabled }: SearchBound
       ) : null}
 
       <div className="brief-field-grid brief-field-grid--two">
-        <TagInput
-          label="Only from companies (optional)"
-          values={boundary.include_companies ?? []}
-          disabled={disabled}
-          placeholder="Type a company, press Enter"
-          caption="Candidates who ever worked at ANY of these (OR)."
-          onChange={(include_companies) => onChange((current) => ({ ...current, include_companies }))}
-        />
-        <TagInput
-          label="Exclude companies (optional)"
-          values={boundary.exclude_companies ?? []}
-          disabled={disabled}
-          placeholder="Type a company, press Enter"
-          caption="Dropped if currently at any of these. The hiring company is always excluded."
-          onChange={(exclude_companies) => onChange((current) => ({ ...current, exclude_companies }))}
-        />
+        <div className="brief-company-field">
+          <TagInput
+            label="Only from companies (optional)"
+            values={boundary.include_companies ?? []}
+            disabled={disabled}
+            placeholder="Type a company, press Enter"
+            caption={(boundary.include_companies_scope ?? 'ever') === 'current'
+              ? 'Candidates CURRENTLY at ANY of these (OR).'
+              : 'Candidates who EVER worked at ANY of these (OR).'}
+            onChange={(include_companies) => onChange((current) => ({ ...current, include_companies }))}
+          />
+          <ScopeToggle
+            ariaLabel="Include company scope"
+            value={boundary.include_companies_scope ?? 'ever'}
+            disabled={disabled || (boundary.include_companies ?? []).length === 0}
+            onChange={(include_companies_scope) => onChange((current) => ({ ...current, include_companies_scope }))}
+          />
+        </div>
+        <div className="brief-company-field">
+          <TagInput
+            label="Exclude companies (optional)"
+            values={boundary.exclude_companies ?? []}
+            disabled={disabled}
+            placeholder="Type a company, press Enter"
+            caption={(boundary.exclude_companies_scope ?? 'current') === 'ever'
+              ? 'Dropped if they EVER worked at any of these. The hiring company is always excluded.'
+              : 'Dropped if CURRENTLY at any of these. The hiring company is always excluded.'}
+            onChange={(exclude_companies) => onChange((current) => ({ ...current, exclude_companies }))}
+          />
+          <ScopeToggle
+            ariaLabel="Exclude company scope"
+            value={boundary.exclude_companies_scope ?? 'current'}
+            disabled={disabled || (boundary.exclude_companies ?? []).length === 0}
+            onChange={(exclude_companies_scope) => onChange((current) => ({ ...current, exclude_companies_scope }))}
+          />
+        </div>
       </div>
     </section>
   )

@@ -27,6 +27,10 @@ export type SearchBoundary = {
   // Optional so a boundary restored from an older session still type-checks.
   include_companies?: string[]
   exclude_companies?: string[]
+  // Per-list scope: 'current' (current employer only) or 'ever' (anywhere in their
+  // history). Optional + defaulted so an older restored session still type-checks.
+  include_companies_scope?: 'current' | 'ever'
+  exclude_companies_scope?: 'current' | 'ever'
   // Experience is a first-step recruiter input now (min required, max optional),
   // not only read from the JD — so a JD that omits it never blocks on a clarification.
   min_years?: number | null
@@ -47,6 +51,8 @@ export function createEmptySearchBoundary(): SearchBoundary {
     remote_cities: [],
     include_companies: [],
     exclude_companies: [],
+    include_companies_scope: 'ever',
+    exclude_companies_scope: 'current',
     min_years: null,
     max_years: null,
   }

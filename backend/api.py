@@ -384,6 +384,10 @@ class SearchBoundaryRequest(BaseModel):
     # Consumed by the bridge's assemble -> CompanyRules; ignored on the legacy path.
     include_companies: List[str] = Field(default_factory=list)
     exclude_companies: List[str] = Field(default_factory=list)
+    # Scope for each company list: "current" (current employer only) or "ever" (anywhere
+    # in their history). Defaults preserve prior behaviour (include=ever, exclude=current).
+    include_companies_scope: str = "ever"
+    exclude_companies_scope: str = "current"
     # Experience is now a first-step recruiter input (min required, max optional),
     # instead of only being read from the JD — so a JD that omits it never forces
     # an unanswerable clarification. Consumed by the bridge; ignored by legacy.
@@ -470,6 +474,8 @@ def _engine_boundary(validated, req) -> Dict[str, Any]:
     data = dataclasses.asdict(validated)
     data["include_companies"] = list(req.include_companies or [])
     data["exclude_companies"] = list(req.exclude_companies or [])
+    data["include_companies_scope"] = getattr(req, "include_companies_scope", "ever") or "ever"
+    data["exclude_companies_scope"] = getattr(req, "exclude_companies_scope", "current") or "current"
     data["min_years"] = req.min_years
     data["max_years"] = req.max_years
     return data

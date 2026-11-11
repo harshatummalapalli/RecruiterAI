@@ -52,6 +52,18 @@ def test_company_exclusion_drops_the_hiring_company_and_keeps_unknown():
     assert {r.candidate_id for r in dropped} == {"insider"}
 
 
+def test_company_exclusion_ever_scope_also_checks_past_employers():
+    # Currently at Consilio, but a PAST role at Epiq. Current scope keeps them;
+    # Ever scope drops them (checks the full employment history).
+    rec = CandidateRecord("switcher", name="switcher", company="Consilio",
+                          raw={"experience": {"current": {"company_name": "Consilio"},
+                                              "past": [{"company_name": "Epiq Global"}]}})
+    kept_current, _ = enforce_company_exclusions([rec], ("Epiq",))
+    assert {r.candidate_id for r in kept_current} == {"switcher"}   # current scope: past Epiq is fine
+    _, dropped_ever = enforce_company_exclusions([rec], ("Epiq",), include_history=True)
+    assert {r.candidate_id for r in dropped_ever} == {"switcher"}   # ever scope: drops a past Epiq employee
+
+
 _EXEC = ("Founder", "VP", "Director", "Head of", "Manager")
 
 
