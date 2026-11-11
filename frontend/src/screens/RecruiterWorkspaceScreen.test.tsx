@@ -92,6 +92,9 @@ beforeEach(() => {
   root = createRoot(container)
   vi.clearAllMocks()
   window.localStorage.clear()
+  // Re-running a search now asks window.confirm() before spending credits; approve it by
+  // default so the search flow proceeds (jsdom's confirm otherwise returns falsy = cancel).
+  vi.spyOn(window, 'confirm').mockReturnValue(true)
 })
 
 afterEach(() => {
@@ -153,9 +156,9 @@ describe('searching again goes through a confirmation, never a browser-built int
     expect(service.runCandidateSearch).toHaveBeenCalledTimes(1)
     const [confirmationId, options] = service.runCandidateSearch.mock.calls[0]
     expect(confirmationId).toBe('conf-2')
-    // The only things sent are the id and bookkeeping: no intent, no location, no requirements.
+    // The only things sent are the id and bookkeeping (campaign length included): no intent, no location, no requirements.
     expect(service.runCandidateSearch.mock.calls[0]).toHaveLength(2)
-    expect(Object.keys(options).sort()).toEqual(['debug', 'searchId'])
+    expect(Object.keys(options).sort()).toEqual(['campaignDays', 'debug', 'searchId'])
     // The stored working copy differs from the proposal only in ways the recruiter did not touch, so nothing is edited.
     expect(Object.keys(edits as object).every((key) => !/location|work_mode|company$/.test(key))).toBe(true)
   })

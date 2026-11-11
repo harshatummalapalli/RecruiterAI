@@ -112,6 +112,8 @@ beforeEach(() => {
   root = createRoot(container)
   vi.clearAllMocks()
   window.localStorage.clear()
+  // Re-running a search asks window.confirm() before spending credits; approve by default.
+  vi.spyOn(window, 'confirm').mockReturnValue(true)
 })
 
 afterEach(() => {
@@ -143,7 +145,9 @@ describe('the sidebar and switching between searches', () => {
     expect(container.querySelector('label[for="posted-title"]')?.textContent?.trim()).toBe('The role')
     expect(($('#posted-title') as HTMLInputElement).placeholder).toBe('e.g. AI Engineer')
     expect(container.textContent).toContain('I read this to learn what to look for')
-    expect(container.textContent).not.toMatch(/Exactly as the role is called|Kept exactly as you type it|optional/i)
+    // No verbose posted-title copy. ("optional" is NOT forbidden globally — the Maximum
+    // years field legitimately reads "(optional)".)
+    expect(container.textContent).not.toMatch(/Exactly as the role is called|Kept exactly as you type it/i)
   })
 
   it('opens a search from the sidebar, marks it active, and shows its own candidates', async () => {

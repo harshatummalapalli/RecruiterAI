@@ -346,6 +346,7 @@ def test_pipeline_records_an_honest_funnel_and_restores_diagnostics(tmp_path) ->
     assert funnel == {
         "in_scope": 725313, "has_location_scope": True, "retrieved": 30, "geo_dropped": 0, "selected": 25,
         "read_in_depth": 25, "presented": 25,
+        "credits_used": 0.9,  # 30 retrieved * 0.03/result — provider-reported campaign spend
     }
     internal = record["internal_diagnostics"]
     assert internal["crustdata"]["merged_unique_count"] == 30

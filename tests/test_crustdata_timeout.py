@@ -18,6 +18,10 @@ from backend.providers.crustdata import (
 
 
 class _FakeResponse:
+    # Real httpx.Response carries headers; the provider reads the optional
+    # X-Credits-Used off them (empty here = no reported spend, the common case).
+    headers: dict = {}
+
     def raise_for_status(self):
         return None
 

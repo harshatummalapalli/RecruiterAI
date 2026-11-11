@@ -29,6 +29,11 @@ output/confirmations/
 # New-engine (recruiter/) runtime stores — sessions + confirmed briefs (real PII)
 output/engine_intake_sessions/
 output/confirmations_v2/
+# Throwaway validation-run sessions/confirmations
+output/_validate/
+# Excel export artifacts (+ Office's ~$ lock files) — regenerated on demand, not source
+output/*.xlsx
+~$*.xlsx
 # Local dev server logs
 *_dev.log
 

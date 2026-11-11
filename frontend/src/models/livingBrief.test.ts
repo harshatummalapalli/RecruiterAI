@@ -209,7 +209,7 @@ describe('phase 2: scoped company + hard keywords diff mapping', () => {
 
 describe('phase 2: onsite/hybrid multi-city boundary completeness', () => {
   it('is complete with a cities list and no single city/radius', () => {
-    const boundary = { ...createEmptySearchBoundary(), hiring_company: 'Acme', country: 'India', work_mode: 'onsite' as const, cities: ['Bengaluru', 'Pune'] }
+    const boundary = { ...createEmptySearchBoundary(), hiring_company: 'Acme', country: 'India', work_mode: 'onsite' as const, min_years: 5, cities: ['Bengaluru', 'Pune'] }
     expect(isSearchBoundaryComplete(boundary)).toBe(true)
   })
   it('still requires single city + radius when no cities list', () => {

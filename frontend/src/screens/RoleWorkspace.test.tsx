@@ -223,7 +223,8 @@ describe('Show me more', () => {
   it('says it is finding more while the next retrieval runs, and keeps the candidates on screen', async () => {
     await render(makeRoleResponse(manySpecs(25), { extra: { status: 'running' } }), { searchState: 'searching' })
     expect(names()).toHaveLength(5)
-    expect(button(/Finding more candidates/).disabled).toBe(true)
+    // The role bar shows the live "Finding candidates" status while the cycle runs.
+    expect(container.textContent).toContain('Finding candidates')
   })
 
   it('says so plainly, without claiming no one else exists, when nothing more is found', async () => {

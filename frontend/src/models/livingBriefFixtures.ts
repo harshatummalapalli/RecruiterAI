@@ -17,6 +17,8 @@ export const HYBRID_TORONTO: SearchBoundary = {
   state: 'Ontario',
   city: 'Toronto',
   radius_miles: 25,
+  // Minimum years is now a required first-step input (isSearchBoundaryComplete gates on it).
+  min_years: 8,
   remote_scope: null,
   remote_states: [],
   remote_cities: [],

@@ -238,6 +238,3 @@ describe('the boundary', () => {
     expect($('#boundary-hiring-company')).toBeTruthy()
   })
 })
-
-describe('seniority stays separate from experience', () => {
-})

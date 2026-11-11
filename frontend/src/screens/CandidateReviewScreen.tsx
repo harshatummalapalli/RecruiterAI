@@ -532,7 +532,7 @@ export function CandidateReviewScreen({
                 selectedId={selectedId}
                 onOpen={setSelectedId}
                 onDecide={decide}
-                orderNote={isRole ? ROLE_ORDER_NOTE : 'Strongest matches first.'}
+                orderNote={isRole ? ROLE_ORDER_NOTE : 'In the order they were read.'}
                 feedback={captureFeedback ? (searchResponse?.feedback ?? {}) : undefined}
                 onFeedback={captureFeedback ? giveFeedback : undefined}
                 poolTab={

@@ -29,7 +29,8 @@ Routing rule (the consensus, incl. the agreed refinement):
                and verify downstream where possible)
 
 Seeded from live probes on 2026-10-01 (see memory: crustdata-verified-capabilities).
-Refresh with the `backend/experiments/structured_playground` probes when CrustData drifts.
+Refresh by re-probing CrustData directly (the MCP Code-Mode tools, or a throwaway
+script) when its schema/filters drift.
 """
 
 from __future__ import annotations
