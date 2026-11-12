@@ -27,7 +27,7 @@ import { SettingsScreen } from './SettingsScreen'
 import { UnderstandScreen } from './UnderstandScreen'
 import { SearchBoundaryForm } from './SearchBoundaryForm'
 import { GlobalShell, type GlobalDestination } from '../components/GlobalShell'
-import { StepPlayer, type Stage } from '../components/StepPlayer'
+import { StepPlayer, type Phase } from '../components/StepPlayer'
 import { readOverrides, recentRoles, setOverride, type Overrides } from '../models/roleLifecycle'
 import { createEmptySearchBoundary, isSearchBoundaryComplete, type SearchBoundary } from '../models/searchBoundary'
 import type { SearchListItem, SearchResponse } from '../types'
@@ -720,13 +720,15 @@ export function RecruiterWorkspaceScreen() {
   const globalDestination: GlobalDestination = step === 'home' ? 'home' : step === 'settings' ? 'settings' : 'role'
 
   const roleTitle = posted || identity || 'Untitled role'
-  // Stage navigation now lives in the top StepPlayer (Define · Discover · Decide),
-  // so the sidebar stays the saved-search list. Discover is reachable once the role
-  // has been read; Decide once a search has run.
-  const navStage = (stage: Stage) => {
-    if (stage === 'brief' && !intakeResult) return
-    if (stage === 'review' && !searchResponse) return
-    setStep(stage)
+  // Stage navigation lives in the top StepPlayer (Define · Discover · Decide). The
+  // JD, boundary, brief and clarifications are ALL Define (the jd and brief steps);
+  // Discover is the search running; Decide is reviewing the results.
+  const searchStarted = Boolean(searchResponse) || searchState === 'searching'
+  const phase: Phase = step === 'review' ? (searchState === 'searching' ? 'discover' : 'decide') : 'define'
+  const navStage = (next: Phase) => {
+    if (next === 'define') { setStep(intakeResult ? 'brief' : 'jd'); return }
+    if (next === 'discover') { if (searchStarted) setStep('review'); return }
+    if (next === 'decide') { if (searchResponse) setStep('review'); return }
   }
 
   const shellProps = {
@@ -774,7 +776,7 @@ export function RecruiterWorkspaceScreen() {
       <main className="workspace">
         <div className={`workspace__content${step === 'review' ? ' workspace__content--wide' : ''}`}>
           {step === 'jd' || step === 'brief' || step === 'review' ? (
-            <StepPlayer step={step} onStep={navStage} canDiscover={Boolean(intakeResult)} canDecide={Boolean(searchResponse)} />
+            <StepPlayer phase={phase} onGo={navStage} canDiscover={searchStarted} canDecide={Boolean(searchResponse)} />
           ) : null}
           <header className="workspace__greeting">
             <div className="workspace__greeting-row">

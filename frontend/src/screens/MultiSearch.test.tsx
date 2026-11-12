@@ -221,9 +221,12 @@ describe('the sidebar and switching between searches', () => {
     await act(async () => {})
     expect(service.loadIntakeSession).toHaveBeenCalledWith('draft-c')
     expect($('.workspace__brief')).not.toBeNull()
-    // A draft has no search yet, so the StepPlayer opens on Discover (the role
-    // read); Decide stays visible but disabled until a search runs.
-    expect($('.stepplayer__step.is-on')?.textContent).toContain('Discover')
+    // The brief and clarifications are part of Define now, so an unsearched draft
+    // opens on Define. Discover (the search) and Decide (review) stay disabled
+    // until a search runs.
+    expect($('.stepplayer__step.is-on')?.textContent).toContain('Define')
+    const discover = Array.from(container.querySelectorAll('.stepplayer__step')).find((s) => s.textContent?.includes('Discover'))
+    expect((discover as HTMLButtonElement | undefined)?.disabled).toBe(true)
     const decide = Array.from(container.querySelectorAll('.stepplayer__step')).find((s) => s.textContent?.includes('Decide'))
     expect((decide as HTMLButtonElement | undefined)?.disabled).toBe(true)
   })
