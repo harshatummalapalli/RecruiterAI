@@ -151,12 +151,16 @@ async function readRefusal(response: Response, fallback: string): Promise<Intake
   return new IntakeRequestError(fallback)
 }
 
-export const startIntake = async (rawInput: string, boundary: SearchBoundary, postedTitle?: string): Promise<IntakeStartResponse> => {
+export const startIntake = async (rawInput: string, boundary: SearchBoundary, postedTitle?: string, hmNotes?: string): Promise<IntakeStartResponse> => {
   const response = await fetch(`${API_BASE_URL}/intake/start`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ raw_input: rawInput, boundary, posted_title: postedTitle?.trim() ? postedTitle.trim() : null }),
+    body: JSON.stringify({
+      raw_input: rawInput, boundary,
+      posted_title: postedTitle?.trim() ? postedTitle.trim() : null,
+      hm_notes: hmNotes?.trim() ? hmNotes.trim() : null,
+    }),
   })
   if (!response.ok) {
     throw await readRefusal(response, 'Failed to understand this role')

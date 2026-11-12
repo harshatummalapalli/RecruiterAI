@@ -55,8 +55,29 @@ def _session_store():
     return SearchStore(storage_dir=_ROOT / "engine_intake_sessions")
 
 
+_KEEP = object()   # _save sentinel: "field not supplied — preserve what's stored"
+
+
 def _u_to_dict(u) -> Dict[str, Any]:
     return dataclasses.asdict(u)
+
+
+def _reconciliation_to_dict(recon) -> Optional[Dict[str, Any]]:
+    """Serialize the dual-source diff for the frontend validation screen. The
+    merged tiers already live on `understanding`; this adds the per-requirement
+    PROVENANCE (which source) and the soft years sanity-catch."""
+    if recon is None:
+        return None
+    exp = recon.experience
+    return {
+        "requirements": [
+            {"text": r.text, "tier": r.tier, "source": r.source, "when": r.when,
+             "evidence": r.evidence, "jd_tier": r.jd_tier, "hm_tier": r.hm_tier}
+            for r in recon.requirements
+        ],
+        "experience": ({"boundary_years": exp.boundary_years,
+                        "hm_mentioned_years": exp.hm_mentioned_years} if exp else None),
+    }
 
 
 def _u_from_dict(d: Dict[str, Any]):
@@ -129,11 +150,17 @@ class IntakeService:
         pending = tuple(q for q in outcome.refinements if q.id not in answered)
         return to_intake_result(raw_input, model, pending, "ready")
 
-    def _save(self, session_id, raw_input, understanding, boundary, answers, posted_title) -> None:
+    def _save(self, session_id, raw_input, understanding, boundary, answers, posted_title,
+              reconciliation=_KEEP, hm_notes=_KEEP) -> None:
+        # Preserve the dual-source fields across later re-saves (answer, boundary
+        # edit, confirm) that don't re-run the read — pass _KEEP, keep what's stored.
+        existing = self._sessions.load(session_id) or {}
         self._sessions.save(session_id, {
             "session_id": session_id, "raw_input": raw_input,
             "understanding": _u_to_dict(understanding), "boundary": boundary or {},
             "answers": answers or {}, "posted_title": posted_title,
+            "reconciliation": existing.get("reconciliation") if reconciliation is _KEEP else reconciliation,
+            "hm_notes": existing.get("hm_notes") if hm_notes is _KEEP else hm_notes,
         })
 
     def _seed_answers(self, boundary) -> Dict[str, Any]:
@@ -170,37 +197,59 @@ class IntakeService:
         self._save(session_id, raw_input, u, boundary or {}, answers, posted_title)
         return {"session_id": session_id, "result": result, "boundary": boundary or {}}
 
-    def begin(self, raw_input: str, boundary: Dict[str, Any], posted_title: Optional[str] = None) -> Dict[str, Any]:
+    def begin(self, raw_input: str, boundary: Dict[str, Any], posted_title: Optional[str] = None,
+              hm_notes: Optional[str] = None) -> Dict[str, Any]:
         """Allocate a session and mark it 'reading' WITHOUT running the LLM — the
         caller then runs read_into(session_id) on a background thread. Returns the
-        'understanding' placeholder brief the frontend polls on."""
+        'understanding' placeholder brief the frontend polls on. `hm_notes` is the
+        optional hiring-manager brief reconciled against the JD at read time."""
         session_id = str(uuid4())
         self._sessions.save(session_id, {
             "session_id": session_id, "raw_input": raw_input, "understanding": None,
             "boundary": boundary or {}, "answers": self._seed_answers(boundary),
             "posted_title": posted_title, "reading": True,
+            "hm_notes": (hm_notes or None), "reconciliation": None,
         })
         return {"session_id": session_id, "result": to_intake_result_reading(raw_input),
                 "boundary": boundary or {}}
 
     def read_into(self, session_id: str) -> None:
         """Run the LLM read for a session begun with begin() and store the full
-        brief. On failure, mark the session so get() raises IntakeReadError."""
+        brief. When a hiring-manager brief is present, read both sources and
+        reconcile them (feature A). On failure, mark the session so get() raises
+        IntakeReadError."""
         rec = self._sessions.load(session_id)
         if rec is None:
             return
+        boundary = rec.get("boundary") or {}
+        title = rec.get("posted_title") or boundary.get("posted_title")
+        hm_notes = rec.get("hm_notes")
+        recon_payload = None
         try:
-            u = self._pipe.intake.read(
-                rec["raw_input"],
-                rec.get("posted_title") or (rec.get("boundary") or {}).get("posted_title"))
+            if hm_notes and str(hm_notes).strip():
+                u, recon = self._pipe.intake.read_dual(
+                    rec["raw_input"], hm_notes, posted_title=title,
+                    boundary_min_years=self._boundary_min_years(boundary))
+                recon_payload = _reconciliation_to_dict(recon)
+            else:
+                u = self._pipe.intake.read(rec["raw_input"], title)
         except Exception:
             cur = self._sessions.load(session_id) or rec
             cur["reading"] = False
             cur["read_error"] = True
             self._sessions.save(session_id, cur)
             raise
-        self._save(session_id, rec["raw_input"], u, rec.get("boundary") or {},
-                   dict(rec.get("answers") or {}), rec.get("posted_title"))
+        self._save(session_id, rec["raw_input"], u, boundary,
+                   dict(rec.get("answers") or {}), rec.get("posted_title"),
+                   reconciliation=recon_payload)
+
+    @staticmethod
+    def _boundary_min_years(boundary) -> Optional[int]:
+        val = (boundary or {}).get("min_years")
+        try:
+            return int(val) if val not in (None, "") else None
+        except (TypeError, ValueError):
+            return None
 
     def answer(self, session_id: str, issue_id: str, value: Any, label: str = "") -> Dict[str, Any]:
         rec = self._require(session_id)
@@ -236,7 +285,8 @@ class IntakeService:
         u = _u_from_dict(rec["understanding"])
         result = self._result_from(rec["raw_input"], u, rec.get("boundary") or {}, rec.get("answers") or {})
         return {"session_id": session_id, "result": result, "boundary": rec.get("boundary") or {},
-                "posted_title_input": rec.get("posted_title")}
+                "posted_title_input": rec.get("posted_title"),
+                "reconciliation": rec.get("reconciliation")}
 
     def confirm(self, session_id: str, edits: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         rec = self._require(session_id)

@@ -135,10 +135,43 @@ export type IntakeResult = {
 // `boundary` is the boundary as the server stored it (validated and normalized), which is the one to display.
 export type IntakeStartResponse = { session_id: string; result: IntakeResult; boundary?: import('./searchBoundary').SearchBoundary | null }
 
+// Dual-source intake (feature A): the diff between the published JD and the HM
+// brief. The merged tiers already drive the brief; this adds provenance + the
+// soft years sanity-catch for the reconciliation panel. Present only when the
+// recruiter supplied an HM brief.
+export type ReconciliationSource = 'both' | 'jd' | 'hm'
+export type ReconciledRequirement = {
+  text: string
+  tier: string
+  source: ReconciliationSource
+  when: string
+  evidence: string | null
+  jd_tier: string | null
+  hm_tier: string | null
+}
+export type ExperienceSanity = { boundary_years: number; hm_mentioned_years: number }
+export type Reconciliation = {
+  requirements: ReconciledRequirement[]
+  experience: ExperienceSanity | null
+}
+
+export type ReconciliationGroups = {
+  both: ReconciledRequirement[]
+  hm: ReconciledRequirement[]
+  jd: ReconciledRequirement[]
+}
+
+/** Split the diff into its three story buckets, in display order. */
+export function reconciliationGroups(recon: Reconciliation): ReconciliationGroups {
+  const by = (s: ReconciliationSource) => recon.requirements.filter((r) => r.source === s)
+  return { both: by('both'), hm: by('hm'), jd: by('jd') }
+}
+
 // GET /intake/{id}: everything needed to resume a brief after a reload.
 export type IntakeSessionResponse = IntakeStartResponse & {
   boundary: import('./searchBoundary').SearchBoundary | null
   posted_title_input: string | null
+  reconciliation?: Reconciliation | null
 }
 
 // What the server needs to build the executable search from a confirmed brief. Only these fields can be edited.

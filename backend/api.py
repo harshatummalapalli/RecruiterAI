@@ -403,6 +403,9 @@ class IntakeStartRequest(BaseModel):
     # The role title exactly as the recruiter typed it. Optional; when given it
     # is the posted title, verbatim, and is never rewritten or replaced.
     posted_title: Optional[str] = None
+    # Optional hiring-manager / client brief. When present it is read alongside
+    # the JD and reconciled against it (feature A); absent, intake is unchanged.
+    hm_notes: Optional[str] = None
 
 
 class ConfirmationRequest(BaseModel):
@@ -945,7 +948,7 @@ def create_app(
             # /search). No 30s held connection to time out on OCI.
             started = intake_service.begin(
                 request.raw_input, _engine_boundary(boundary, request.boundary),
-                posted_title=request.posted_title)
+                posted_title=request.posted_title, hm_notes=request.hm_notes)
             session_id = started["session_id"]
             # Claim ownership before the background read thread starts (no race): the
             # session already exists on disk from begin(), and the store's sticky-owner

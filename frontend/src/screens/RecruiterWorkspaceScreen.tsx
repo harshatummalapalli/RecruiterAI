@@ -17,7 +17,8 @@ import {
 } from '../services/recruiterWorkflow'
 import { createEmptySearchBrief, searchIntentToBrief, type SearchBrief } from '../models/searchBrief'
 import { diffBriefEdits, formatBoundaryLocation } from '../models/livingBrief'
-import type { IntakeIssue, IntakeResult } from '../models/intake'
+import type { IntakeIssue, IntakeResult, Reconciliation } from '../models/intake'
+import { ReconciliationPanel } from '../components/ReconciliationPanel'
 import type { ActiveSearch } from '../models/roleWorkspace'
 import { CandidateReviewScreen } from './CandidateReviewScreen'
 import { HomeScreen } from './HomeScreen'
@@ -102,6 +103,8 @@ function sameTitle(a: string, b: string): boolean {
 export function RecruiterWorkspaceScreen() {
   const [postedTitle, setPostedTitle] = useState('')
   const [jdText, setJdText] = useState('')
+  const [hmNotes, setHmNotes] = useState('')
+  const [reconciliation, setReconciliation] = useState<Reconciliation | null>(null)
   const [boundary, setBoundary] = useState<SearchBoundary>(createEmptySearchBoundary)
   // The recruiter's working copy of what can still be adjusted, and what the server proposed (to send only real edits).
   const [brief, setBrief] = useState<SearchBrief>(createEmptySearchBrief)
@@ -241,6 +244,8 @@ export function RecruiterWorkspaceScreen() {
     stopIntakePolling()
     setPostedTitle('')
     setJdText('')
+    setHmNotes('')
+    setReconciliation(null)
     setBoundary(createEmptySearchBoundary())
     setBrief(createEmptySearchBrief())
     setBaselineBrief(null)
@@ -263,6 +268,7 @@ export function RecruiterWorkspaceScreen() {
     if (token !== loadToken.current || !session) return false
     setIntakeSessionId(sessionId)
     setIntakeResult(session.result)
+    setReconciliation(session.reconciliation ?? null)
     if (session.boundary) setBoundary(session.boundary)
     if (session.posted_title_input) setPostedTitle(session.posted_title_input)
     setJdText(session.result.raw_input ?? '')
@@ -423,9 +429,10 @@ export function RecruiterWorkspaceScreen() {
   // RecruiterAI understands the role before searching: the title, the description and the Search Boundary go to the
   // backend, which reads the role once and returns the brief. Nothing is searched yet.
   // The role read is done: show the brief. Shared by the fast (synchronous) path and the end of the background poll.
-  const finishParse = (sessionId: string, result: IntakeResult, stored?: SearchBoundary | null) => {
+  const finishParse = (sessionId: string, result: IntakeResult, stored?: SearchBoundary | null, recon?: Reconciliation | null) => {
     setIntakeSessionId(sessionId)
     setIntakeResult(result)
+    setReconciliation(recon ?? null)
     if (stored) setBoundary(stored)
     setBaselineBrief(null)
     setParseState('success')
@@ -468,7 +475,7 @@ export function RecruiterWorkspaceScreen() {
         intakePollRef.current = setTimeout(tick, INTAKE_POLL_INTERVAL_MS)
         return
       }
-      finishParse(sessionId, data.result, data.boundary)
+      finishParse(sessionId, data.result, data.boundary, data.reconciliation)
     }
     void tick()
   }
@@ -481,7 +488,7 @@ export function RecruiterWorkspaceScreen() {
     setParseState('parsing')
     setParseErrors([])
     try {
-      const { session_id, result, boundary: stored } = await startIntake(jdText, boundary, postedTitle)
+      const { session_id, result, boundary: stored } = await startIntake(jdText, boundary, postedTitle, hmNotes)
       if (result.status === 'understanding') {
         // Still reading — keep the spinner and poll until the brief is ready.
         setIntakeSessionId(session_id)
@@ -844,6 +851,21 @@ export function RecruiterWorkspaceScreen() {
                   />
                 </div>
 
+                <div className="brief-field">
+                  <label className="brief-field__label" htmlFor="hm-notes">
+                    Hiring-manager notes <span className="workspace__label-note">· optional — what the HM actually told you, in their words</span>
+                  </label>
+                  <textarea
+                    id="hm-notes"
+                    className="workspace__editor workspace__editor--secondary"
+                    value={hmNotes}
+                    onChange={(event) => setHmNotes(event.target.value)}
+                    placeholder="Paste call notes, an email, or a Slack message. I'll line these up against the JD and flag what the HM emphasized that the JD left out."
+                    disabled={isBusy}
+                    rows={5}
+                  />
+                </div>
+
                 <div className="workspace__fence">
                   <div className="workspace__fence-cap">
                     <Lock size={14} aria-hidden="true" /> The non-negotiables
@@ -898,6 +920,13 @@ export function RecruiterWorkspaceScreen() {
                   Edit description
                 </button>
               </div>
+              {reconciliation ? (
+                <ReconciliationPanel
+                  reconciliation={reconciliation}
+                  boundaryMinYears={boundary.min_years ?? null}
+                  onEditBoundary={() => setStep('jd')}
+                />
+              ) : null}
               <LivingBrief
                 result={intakeResult}
                 boundary={boundary}
