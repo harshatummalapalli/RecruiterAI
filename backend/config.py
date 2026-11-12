@@ -20,6 +20,9 @@ class Settings(BaseModel):
     openai_api_key: Optional[str] = Field(default=None, description="OpenAI API key")
     crustdata_api_key: Optional[str] = Field(default=None, description="CrustData API key")
     harvest_api_key: Optional[str] = Field(default=None, description="HarvestAPI (harvestapi.io) API key")
+    unipile_api_key: Optional[str] = Field(default=None, description="Unipile app Account API Key (server-side; outreach/messaging). Never the MCP test key.")
+    unipile_base_url: str = Field(default="https://api.unipile.com", description="Unipile API base URL")
+    unipile_webhook_secret: Optional[str] = Field(default=None, description="Shared secret used to verify inbound Unipile webhooks")
     harvest_enrichment_top_n: int = Field(default=25, description="How many top-ranked candidates to enrich via Harvest per search")
     harvest_enrichment_concurrency: int = Field(default=3, description="Max concurrent in-flight Harvest requests per search")
     discovery_page_size: int = Field(default=50, description="CrustData /person/search page size (results per query) — backend-owned, not the frontend's")
@@ -38,6 +41,8 @@ class Settings(BaseModel):
             "openai_api_key": source.get("OPENAI_API_KEY"),
             "crustdata_api_key": source.get("CRUSTDATA_API_KEY"),
             "harvest_api_key": source.get("HARVEST_API_KEY"),
+            "unipile_api_key": source.get("UNIPILE_API_KEY"),
+            "unipile_webhook_secret": source.get("UNIPILE_WEBHOOK_SECRET"),
             "google_client_id": source.get("GOOGLE_CLIENT_ID"),
             "allowed_email_domain": source.get("ALLOWED_EMAIL_DOMAIN"),
             "super_admin_email": source.get("SUPER_ADMIN_EMAIL"),
@@ -59,12 +64,17 @@ class Settings(BaseModel):
         discovery_max_pages = source.get("DISCOVERY_MAX_PAGES")
         if discovery_max_pages is not None and str(discovery_max_pages).strip():
             raw_values["discovery_max_pages"] = discovery_max_pages
+        unipile_base_url = source.get("UNIPILE_BASE_URL")
+        if unipile_base_url is not None and str(unipile_base_url).strip():
+            raw_values["unipile_base_url"] = str(unipile_base_url).strip()
         return cls(**raw_values)
 
     @field_validator(
         "openai_api_key",
         "crustdata_api_key",
         "harvest_api_key",
+        "unipile_api_key",
+        "unipile_webhook_secret",
         "google_client_id",
         "allowed_email_domain",
         "super_admin_email",
@@ -99,6 +109,9 @@ def get_settings() -> Settings:
         os.environ.get("OPENAI_API_KEY"),
         os.environ.get("CRUSTDATA_API_KEY"),
         os.environ.get("HARVEST_API_KEY"),
+        os.environ.get("UNIPILE_API_KEY"),
+        os.environ.get("UNIPILE_BASE_URL"),
+        os.environ.get("UNIPILE_WEBHOOK_SECRET"),
         os.environ.get("HARVEST_ENRICHMENT_TOP_N"),
         os.environ.get("HARVEST_ENRICHMENT_CONCURRENCY"),
         os.environ.get("DISCOVERY_PAGE_SIZE"),
@@ -129,6 +142,22 @@ def get_crustdata_api_key() -> Optional[str]:
 def get_harvest_api_key() -> Optional[str]:
     """Return the configured HarvestAPI (harvestapi.io) API key from the environment or .env file."""
     return get_settings().harvest_api_key
+
+
+def get_unipile_api_key() -> Optional[str]:
+    """Server-side Unipile app Account API Key (outreach/messaging). Set only on the
+    server (UNIPILE_API_KEY in /etc/recruiterai.env), never the MCP test key."""
+    return get_settings().unipile_api_key
+
+
+def get_unipile_base_url() -> str:
+    """Unipile API base URL. Configurable via UNIPILE_BASE_URL; defaults to https://api.unipile.com."""
+    return get_settings().unipile_base_url
+
+
+def get_unipile_webhook_secret() -> Optional[str]:
+    """Shared secret used to verify inbound Unipile webhooks (UNIPILE_WEBHOOK_SECRET)."""
+    return get_settings().unipile_webhook_secret
 
 
 def get_harvest_enrichment_top_n() -> int:
