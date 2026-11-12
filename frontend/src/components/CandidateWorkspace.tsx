@@ -55,6 +55,9 @@ type Props = {
    * appears after the decision tabs; selecting it renders `render()` instead of the
    * surfaced-candidate list. Not shown in compact mode. */
   poolTab?: { count: number; render: () => ReactNode }
+  /** While the first batch is still being read, cards are shown but NOT openable —
+   * so no one opens a half-processed profile. Decisions still work. */
+  locked?: boolean
 }
 
 function Avatar({ name, url }: { name: string; url: string | null }) {
@@ -278,7 +281,13 @@ export function CandidateWorkspace({
   compact = false,
   orderNote,
   poolTab,
+  locked = false,
 }: Props) {
+  // While locked, cards render but cannot be opened (decisions still work).
+  const openCard = (id: string | null) => {
+    if (locked && id !== null) return
+    onOpen(id)
+  }
   // 'pool' is the optional "All profiles" tab; the decision filters are unchanged.
   const [filter, setFilter] = useState<FilterKey | 'pool'>('all')
   const poolActive = filter === 'pool' && !!poolTab
@@ -423,7 +432,7 @@ export function CandidateWorkspace({
     }
     if ((key === 'enter' || key === ' ' || key === 'spacebar') && target.hasAttribute('data-card-id')) {
       event.preventDefault()
-      onOpen(id)
+      openCard(id)
       return
     }
     if (key === 'escape' && selectedId) {
@@ -436,7 +445,7 @@ export function CandidateWorkspace({
     const mode = modeOf(item)
     if (mode === 'pending') return <PendingRow key={id} item={item} />
     if (mode === 'slim') {
-      return <SlimRow key={id} item={item} decision={decisions[id]} onUndo={() => undo(id)} onOpen={() => onOpen(id)} register={register(id)} />
+      return <SlimRow key={id} item={item} decision={decisions[id]} onUndo={() => undo(id)} onOpen={() => openCard(id)} register={register(id)} />
     }
     const decision = decisions[id]
     const open = promptOpen(id)
@@ -453,7 +462,7 @@ export function CandidateWorkspace({
         }
         reason={recorded ? `Reason: ${recorded}` : undefined}
         selected={selectedId === id}
-        onOpen={() => onOpen(id)}
+        onOpen={() => openCard(id)}
         onDecide={(choice) => decide(id, choice)}
         register={register(id)}
       />
@@ -461,7 +470,7 @@ export function CandidateWorkspace({
   }
 
   return (
-    <div className={`ws${compact ? ' ws--compact' : ''}`}>
+    <div className={`ws${compact ? ' ws--compact' : ''}${locked ? ' ws--locked' : ''}`}>
       {compact ? null : (
       <div className="ws-filter" role="group" aria-label="Filter by decision">
         {FILTERS.map((option) => (

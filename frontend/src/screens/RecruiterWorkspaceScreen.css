@@ -1784,6 +1784,18 @@
   }
 }
 
+/* A profile that has been read: the row settles (shimmer stops) with a faint
+   accent, so the batch visibly fills in one row at a time as reading completes. */
+.candidate-row--skeleton.is-arrived {
+  border-color: color-mix(in srgb, var(--color-success) 28%, var(--color-border));
+  background: color-mix(in srgb, var(--color-success) 4%, transparent);
+}
+
+.candidate-row--skeleton.is-arrived .discovery-skeleton {
+  animation: none;
+  background: color-mix(in srgb, var(--color-secondary-text) 20%, var(--color-bg));
+}
+
 /* Candidate profile panel */
 
 .discovery-profile {

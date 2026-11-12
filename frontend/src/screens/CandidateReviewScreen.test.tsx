@@ -149,6 +149,24 @@ describe('a flat list, never grouped', () => {
     expect(cardIds()).toEqual(['c1', 'c2', 'c3', 'c4', 'c5', 'c6'])
   })
 
+  it('shows records as they stream in but locks opening until the first batch is read', async () => {
+    // 5 of 6 read — records are visible, but the list is locked (not openable yet).
+    await render(
+      makeResponse(SPECS, { status: 'running', progress: { admitted: 6, review_ready: 5, building_context: 1, surfaced: 0 } }),
+      'searching',
+    )
+    expect(cardIds()).toHaveLength(6)
+    expect($('.ws--locked')).toBeTruthy()
+  })
+
+  it('unlocks the list once the first batch (up to 10) has been read', async () => {
+    await render(
+      makeResponse(SPECS, { status: 'running', progress: { admitted: 6, review_ready: 6 } }),
+      'searching',
+    )
+    expect($('.ws--locked')).toBeNull()
+  })
+
   it('never offers grouping, sorting or comparing, even for a search that was grouped before', async () => {
     await render(makeResponse(SPECS.slice(0, 5)))
     expect($('.ws-banner')).toBeNull()

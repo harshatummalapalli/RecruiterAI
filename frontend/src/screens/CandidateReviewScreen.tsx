@@ -70,11 +70,17 @@ type CandidateReviewScreenProps = {
   onSelectionChange?: (hasSelection: boolean) => void
 }
 
-function SkeletonRows() {
+// The "coming in" preview shown while the first batch is being read. One row per
+// profile being read; each row settles from "reading…" to read as review_ready
+// climbs, so the recruiter watches the batch fill in one at a time instead of
+// staring at a blank screen. Not interactive — the real, clickable list takes
+// over once the first batch is ready.
+function SkeletonRows({ total = 4, ready = 0 }: { total?: number; ready?: number }) {
+  const rows = Math.min(Math.max(total || 4, 4), 10)
   return (
     <div className="discovery-list" aria-hidden="true">
-      {Array.from({ length: 4 }).map((_, index) => (
-        <div key={index} className="candidate-row candidate-row--skeleton">
+      {Array.from({ length: rows }).map((_, index) => (
+        <div key={index} className={`candidate-row candidate-row--skeleton${index < ready ? ' is-arrived' : ''}`}>
           <div className="discovery-skeleton discovery-skeleton--wide" />
           <div className="discovery-skeleton" />
           <div className="discovery-skeleton discovery-skeleton--narrow" />
@@ -385,8 +391,17 @@ export function CandidateReviewScreen({
   }
 
   const hasSearchedOnce = searchResponse !== null
-  // The skeleton is only for the brief window before the FIRST candidates are admitted.
+  // The skeleton is only for the brief window before the FIRST candidate is read;
+  // after that, records stream in one by one (existing behaviour).
   const showSkeleton = searchState === 'searching' && (isRole ? arrangedItems.length === 0 : candidates.length === 0)
+  // Records appear as they are read, but stay NON-CLICKABLE until the first batch
+  // (up to 10) has been read — so no one opens a half-processed profile. Falls back
+  // to "unlocked once anything is ready" when the engine reports no admitted count.
+  const admittedCount = Number(searchResponse?.progress?.admitted ?? 0)
+  const readyCount = Number(searchResponse?.progress?.review_ready ?? 0)
+  const firstBatchSize = admittedCount > 0 ? Math.min(10, admittedCount) : 0
+  const firstBatchReady = firstBatchSize > 0 ? readyCount >= firstBatchSize : readyCount > 0
+  const listLocked = searchState === 'searching' && !firstBatchReady
   const showZeroResults = searchState === 'done' && hasSearchedOnce && candidates.length === 0
   const showError = searchState === 'error' && !showSkeleton && candidates.length === 0
   // Answer "where did the other candidates go?": the shown few are the strongest of a
@@ -479,12 +494,12 @@ export function CandidateReviewScreen({
               </p>
             ) : null}
 
-            {showSkeleton ? <SkeletonRows /> : null}
+            {showSkeleton ? <SkeletonRows total={admittedCount || 4} ready={readyCount} /> : null}
             {showSkeleton && progress?.admitted ? (
               <p className="role-more__message">
                 {universe > progress.admitted
-                  ? `Found ${universe.toLocaleString()} matching profiles — reading the strongest ${progress.admitted} in depth (${progress.review_ready ?? 0} done).`
-                  : `Reading profiles: ${progress.review_ready ?? 0} of ${progress.admitted}.`}
+                  ? `Found ${universe.toLocaleString()} matching profiles — reading the strongest ${progress.admitted} in depth (${progress.review_ready ?? 0} done). You can open them once the first ${Math.min(10, progress.admitted)} are ready.`
+                  : `Reading profiles: ${progress.review_ready ?? 0} of ${progress.admitted} — open them once the first ${Math.min(10, progress.admitted)} are ready.`}
               </p>
             ) : null}
 
@@ -543,6 +558,7 @@ export function CandidateReviewScreen({
                 selectedId={selectedId}
                 onOpen={setSelectedId}
                 onDecide={decide}
+                locked={listLocked}
                 orderNote={isRole ? ROLE_ORDER_NOTE : 'In the order they were read.'}
                 feedback={captureFeedback ? (searchResponse?.feedback ?? {}) : undefined}
                 onFeedback={captureFeedback ? giveFeedback : undefined}
