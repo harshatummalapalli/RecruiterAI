@@ -311,6 +311,15 @@
   background: var(--color-surface);
 }
 
+/* A core-requirement proof reads solid; supporting matches stay light. One
+   scannable weight on the evidence the recruiter already sees — no separate grade. */
+.ws-chip--core {
+  background: color-mix(in srgb, var(--color-accent) 11%, var(--color-surface));
+  border-color: color-mix(in srgb, var(--color-accent) 30%, var(--color-border));
+  color: var(--color-primary-text);
+  font-weight: 600;
+}
+
 .ws-chip--neutral {
   font-size: 11.5px;
   color: var(--color-muted);

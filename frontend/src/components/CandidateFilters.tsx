@@ -13,6 +13,7 @@ import {
   sortValues,
   type FacetState,
   type CandidateFilterState,
+  type CandidateSort,
 } from './candidateFilterModel'
 
 // Include/Exclude filters over the deterministic, CrustData-derived attributes every
@@ -21,7 +22,7 @@ import {
 // The pure model (state shape + predicates) lives in ./candidateFilterModel so it is
 // unit-testable without React; re-exported here so existing importers are unchanged.
 export { EMPTY_FILTERS, candidatePassesFilters, filtersActive }
-export type { FacetState, CandidateFilterState }
+export type { FacetState, CandidateFilterState, CandidateSort }
 
 function Chip({ label, state, onClick, title }: { label: string; state: FacetState | undefined; onClick: () => void; title?: string }) {
   const cls = state === 'include' ? ' is-include' : state === 'exclude' ? ' is-exclude' : ''
@@ -46,9 +47,11 @@ type Props = {
   /** How many pass right now / how many there are in total, for the live count. */
   shown: number
   total: number
+  sort: CandidateSort
+  onSortChange: (sort: CandidateSort) => void
 }
 
-export function CandidateFilters({ candidates, state, onChange, shown, total }: Props) {
+export function CandidateFilters({ candidates, state, onChange, shown, total, sort, onSortChange }: Props) {
   // Facet options come from the whole presented set, so a chip never vanishes
   // just because the current filter hid every candidate that carried it.
   const companyValues = useMemo(() => {
@@ -98,14 +101,21 @@ export function CandidateFilters({ candidates, state, onChange, shown, total }: 
     <div className="candidate-filters" role="group" aria-label="Filter candidates">
       <div className="cf-row">
         <span className="cf-hint">Filters the profiles already found — click once to keep, twice to exclude.</span>
-        {active ? (
-          <span className="cf-count">Showing {shown} of {total}</span>
-        ) : null}
-        {active ? (
-          <button type="button" className="cf-clear" onClick={() => onChange(EMPTY_FILTERS)}>
-            <RotateCcw size={12} aria-hidden="true" /> Clear filters
-          </button>
-        ) : null}
+        <div className="cf-row__right">
+          {active ? <span className="cf-count">Showing {shown} of {total}</span> : null}
+          {active ? (
+            <button type="button" className="cf-clear" onClick={() => onChange(EMPTY_FILTERS)}>
+              <RotateCcw size={12} aria-hidden="true" /> Clear
+            </button>
+          ) : null}
+          <label className="cf-sort">
+            Sort
+            <select value={sort} onChange={(event) => onSortChange(event.target.value as CandidateSort)} aria-label="Sort candidates">
+              <option value="ranked">As ranked</option>
+              <option value="core">Most core evidence</option>
+            </select>
+          </label>
+        </div>
       </div>
 
       {companyValues.length > 0 ? (

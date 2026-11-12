@@ -851,19 +851,26 @@ export function RecruiterWorkspaceScreen() {
                   />
                 </div>
 
-                <div className="brief-field">
-                  <label className="brief-field__label" htmlFor="hm-notes">
-                    Hiring-manager notes <span className="workspace__label-note">· optional — what the HM actually told you, in their words</span>
-                  </label>
-                  <textarea
-                    id="hm-notes"
-                    className="workspace__editor workspace__editor--secondary"
-                    value={hmNotes}
-                    onChange={(event) => setHmNotes(event.target.value)}
-                    placeholder="Paste call notes, an email, or a Slack message. I'll line these up against the JD and flag what the HM emphasized that the JD left out."
-                    disabled={isBusy}
-                    rows={5}
-                  />
+                <div className="compose-optional">
+                  <div className="compose-optional__head">
+                    <span className="compose-optional__rule" aria-hidden="true"></span>
+                    <span className="compose-optional__tag">Optional</span>
+                    <span className="compose-optional__rule" aria-hidden="true"></span>
+                  </div>
+                  <div className="brief-field">
+                    <label className="brief-field__label" htmlFor="hm-notes">
+                      Hiring-manager notes <span className="workspace__label-note">· what the HM actually told you, in their words</span>
+                    </label>
+                    <textarea
+                      id="hm-notes"
+                      className="workspace__editor workspace__editor--secondary"
+                      value={hmNotes}
+                      onChange={(event) => setHmNotes(event.target.value)}
+                      placeholder="Paste call notes, an email, or a Slack message. I'll line these up against the JD and flag what the HM emphasized that the JD left out."
+                      disabled={isBusy}
+                      rows={5}
+                    />
+                  </div>
                 </div>
 
                 <div className="workspace__fence">

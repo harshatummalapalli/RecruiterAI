@@ -155,7 +155,7 @@ function CandidateCard({ item, decision, selected, onOpen, onDecide, register, p
       {facts.chips.length > 0 || facts.watch.length > 0 ? (
         <div className="ws-card__chips">
           {facts.chips.map((chip) => (
-            <span key={chip.label} className="ws-chip ws-chip--proof" title={chip.requirement}>
+            <span key={chip.label} className={`ws-chip ${chip.tier === 'core' ? 'ws-chip--core' : 'ws-chip--proof'}`} title={chip.requirement}>
               {chip.label}
             </span>
           ))}

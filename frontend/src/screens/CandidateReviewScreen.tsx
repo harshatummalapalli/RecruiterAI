@@ -5,7 +5,7 @@ import type { SearchResponse } from '../types'
 import { buildDiscoveryCandidates } from '../models/discovery'
 import { buildWorkspaceCandidates, normalizeDecision, stableOrder, type Decision } from '../models/workspace'
 import { CandidateRecord, type RecordNote } from '../components/CandidateRecord'
-import { CandidateFilters, candidatePassesFilters, EMPTY_FILTERS, type CandidateFilterState } from '../components/CandidateFilters'
+import { CandidateFilters, candidatePassesFilters, EMPTY_FILTERS, type CandidateFilterState, type CandidateSort } from '../components/CandidateFilters'
 import { CandidateWorkspace } from '../components/CandidateWorkspace'
 import { RefinePanel } from '../components/RefinePanel'
 import { AvailabilityNotice, CalibrationNote, NewCandidatesNotice, OtherReviewed, PausedPanel, RoleBar, ShowMoreBar } from '../components/RoleControls'
@@ -145,6 +145,7 @@ export function CandidateReviewScreen({
   const [decisions, setDecisions] = useState<Record<string, Decision | undefined>>({})
   // Local Include/Exclude filters over deterministic attributes — never re-searches, never spends credits.
   const [filters, setFilters] = useState<CandidateFilterState>(EMPTY_FILTERS)
+  const [sort, setSort] = useState<CandidateSort>('ranked')
   const [roleBusy, setRoleBusy] = useState(false)
   const [pauseDismissed, setPauseDismissed] = useState(false)
   // Recruiter working memory — separate from AI-generated evidence. Persisted per candidate via updateCandidateRecord.
@@ -221,7 +222,15 @@ export function CandidateReviewScreen({
   }, [arrangedItems, searchGeneration, searchResponse])
   // Include/Exclude is a pure local view filter over the presented set — it narrows what's shown,
   // it never re-searches or re-admits. Reserve ("other reviewed") is filtered the same way.
-  const filteredItems = useMemo(() => flatItems.filter((item) => candidatePassesFilters(item.candidate, filters)), [flatItems, filters])
+  const passFiltered = useMemo(() => flatItems.filter((item) => candidatePassesFilters(item.candidate, filters)), [flatItems, filters])
+  // Optional recruiter sort over the already-ranked list. 'core' = most core
+  // requirements evidenced first (coverage ratio, then raw count); 'ranked'
+  // leaves the engine's order untouched. A stable copy — never mutates flatItems.
+  const filteredItems = useMemo(() => {
+    if (sort !== 'core') return passFiltered
+    const coverage = (facts: { shown: number; coreTotal: number }) => (facts.coreTotal > 0 ? facts.shown / facts.coreTotal : -1)
+    return [...passFiltered].sort((a, b) => coverage(b.facts) - coverage(a.facts) || b.facts.shown - a.facts.shown)
+  }, [passFiltered, sort])
   const filteredReserveItems = useMemo(() => reserveItems.filter((item) => candidatePassesFilters(item.candidate, filters)), [reserveItems, filters])
   const selectedCandidate = candidates.find((candidate) => candidate.id === selectedId) ?? null
   // Prev/next inside the open record: the same order the list is already shown in, so it never jumps around.
@@ -518,6 +527,8 @@ export function CandidateReviewScreen({
                 onChange={setFilters}
                 shown={filteredItems.length}
                 total={flatItems.length}
+                sort={sort}
+                onSortChange={setSort}
               />
             ) : null}
 

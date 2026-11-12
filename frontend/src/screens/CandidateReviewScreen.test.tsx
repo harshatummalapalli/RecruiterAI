@@ -91,7 +91,9 @@ describe('cards', () => {
     expect(heavy.querySelector('.ws-card__why')?.textContent).toBe('')
     expect(heavy.querySelectorAll('.ws-dot')).toHaveLength(5)
     expect(heavy.querySelectorAll('.ws-dot.is-shown')).toHaveLength(5)
-    expect(heavy.querySelectorAll('.ws-chip--proof')).toHaveLength(3)
+    // Proof chips: a core-requirement proof reads solid (.ws-chip--core), a
+    // supporting one light (.ws-chip--proof) — three in total here.
+    expect(heavy.querySelectorAll('.ws-chip--core, .ws-chip--proof')).toHaveLength(3)
     for (const label of ['Shortlist', 'Maybe', 'Reject']) expect(button(new RegExp(`^${label}`), heavy)).toBeTruthy()
   })
 
@@ -209,11 +211,14 @@ describe('decisions and filter', () => {
     expect($('article.ws-card[data-card-id="c1"]')).toBeTruthy()
   })
 
-  it('offers exactly the five filters, no sort, no compare, no second filter', async () => {
+  it('offers exactly the five lifecycle filters plus a core-evidence sort, no compare, no second filter', async () => {
     await render(makeResponse(SPECS.slice(0, 5), { workspace_arranged: true }))
     expect($$('.ws-filter__option').map((option) => option.textContent?.replace(/\s*\d+$/, ''))).toEqual(['All', 'To review', 'Shortlisted', 'Maybe', 'Rejected'])
-    expect(container.textContent).not.toMatch(/Sort|Compare|Profile Updated|Relevance/)
-    expect($('select')).toBeNull()
+    expect(container.textContent).not.toMatch(/Compare|Profile Updated|Relevance/)
+    // The one select is the candidate sort (As ranked / Most core evidence).
+    const sort = $('.cf-sort select') as HTMLSelectElement | null
+    expect(sort).toBeTruthy()
+    expect([...(sort?.options ?? [])].map((o) => o.textContent)).toEqual(['As ranked', 'Most core evidence'])
     expect($('input[type="checkbox"]')).toBeNull()
   })
 

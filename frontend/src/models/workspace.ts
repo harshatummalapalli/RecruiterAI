@@ -25,7 +25,7 @@ export const SECTION_COPY: Record<SectionKey, { title: string; basis: string }> 
 }
 
 export type Dot = { label: string; shown: boolean }
-export type ProofChip = { label: string; requirement: string; quote: string; source: string | null; described: boolean }
+export type ProofChip = { label: string; requirement: string; quote: string; source: string | null; described: boolean; tier: LedgerRow['tier'] }
 export type WatchChip = { key: 'floor' | 'level' | 'title' | 'other'; label: string }
 
 export type CardFacts = {
@@ -123,7 +123,7 @@ function proofChips(candidate: DiscoveryCandidate): ProofChip[] {
     const label = proofLabel({ term: row.term, quote: row.quote, requirement: row.requirement })
     if (!label || seen.has(label.toLowerCase())) continue
     seen.add(label.toLowerCase())
-    chips.push({ label, requirement: row.requirement, quote: (row.quote ?? '').replace(/^[-•\s]+/, ''), source: row.sourceLabel, described: row.described })
+    chips.push({ label, requirement: row.requirement, quote: (row.quote ?? '').replace(/^[-•\s]+/, ''), source: row.sourceLabel, described: row.described, tier: row.tier })
     if (chips.length === MAX_CHIPS) break
   }
   return chips

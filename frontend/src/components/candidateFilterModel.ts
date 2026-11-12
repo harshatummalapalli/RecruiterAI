@@ -4,6 +4,10 @@ import type { DiscoveryCandidate } from '../models/discovery'
 
 export type FacetState = 'include' | 'exclude'
 
+// How the already-ranked list is ordered. 'ranked' leaves the engine's order
+// (default); 'core' puts the most core-requirement evidence first.
+export type CandidateSort = 'ranked' | 'core'
+
 export type CandidateFilterState = {
   // value -> include|exclude. Absent = neutral (no constraint).
   companyType: Record<string, FacetState>

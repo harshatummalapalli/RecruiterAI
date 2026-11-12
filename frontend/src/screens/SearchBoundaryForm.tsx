@@ -283,7 +283,7 @@ export function SearchBoundaryForm({ boundary, onChange, disabled }: SearchBound
           <ScopeToggle
             ariaLabel="Include company scope"
             value={boundary.include_companies_scope ?? 'ever'}
-            disabled={disabled || (boundary.include_companies ?? []).length === 0}
+            disabled={disabled}
             onChange={(include_companies_scope) => onChange((current) => ({ ...current, include_companies_scope }))}
           />
         </div>
@@ -301,7 +301,7 @@ export function SearchBoundaryForm({ boundary, onChange, disabled }: SearchBound
           <ScopeToggle
             ariaLabel="Exclude company scope"
             value={boundary.exclude_companies_scope ?? 'current'}
-            disabled={disabled || (boundary.exclude_companies ?? []).length === 0}
+            disabled={disabled}
             onChange={(exclude_companies_scope) => onChange((current) => ({ ...current, exclude_companies_scope }))}
           />
         </div>
