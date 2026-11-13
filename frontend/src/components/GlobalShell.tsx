@@ -53,7 +53,7 @@ export function GlobalShell({
         </button>
         <button type="button" className={`global-nav__item${active === 'outreach' ? ' is-active' : ''}`} onClick={onOutreach} aria-current={active === 'outreach' ? 'page' : undefined}>
           <SendIcon size={16} aria-hidden="true" />
-          <span>Outreach</span>
+          <span>Dialogue</span>
         </button>
         <button type="button" className={`global-nav__item${active === 'settings' ? ' is-active' : ''}`} onClick={onSettings} aria-current={active === 'settings' ? 'page' : undefined}>
           <SettingsIcon size={16} aria-hidden="true" />

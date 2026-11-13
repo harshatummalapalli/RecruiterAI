@@ -65,6 +65,14 @@ def test_draft_is_grounded_in_the_evidence_we_pass():
     assert sent["candidate_first_name"] == "Jane"
 
 
+def test_reply_mode_drafts_a_response_to_their_message():
+    client = FakeClient({"subject": "", "body": "Great to hear from you, Jane — are you free Thursday?"})
+    draft = draft_outreach("linkedin", candidate=CANDIDATE, evidence=EVIDENCE, role=ROLE, reply_to="Sounds interesting, tell me more.", client=client)
+    assert draft["body"].startswith("Great to hear")
+    sent = json.loads(client.last_input[1]["content"])
+    assert sent["their_reply"] == "Sounds interesting, tell me more."   # the model is given what they said
+
+
 def test_fallback_connect_is_capped_and_specific():
     draft = fallback_draft("linkedin", candidate=CANDIDATE, role=ROLE, recruiter_name="Alice", inmail=False)
     assert len(draft["body"]) <= LINKEDIN_NOTE_CAP

@@ -167,6 +167,15 @@ def test_webhook_flips_matching_candidate_to_replied(tmp_path, monkeypatch):
     assert store.load("s1")["outreach"]["c1"]["linkedin"]["state"] == "replied"
 
 
+def test_webhook_stores_reply_preview(tmp_path, monkeypatch):
+    monkeypatch.setattr(api_mod, "get_unipile_webhook_secret", lambda: "SECRET")
+    client, fake, store = _client(tmp_path)
+    _set_outreach(store, {"channel": "linkedin", "state": "invited", "target_id": "PID-JANE"})
+    fake.interp = {"owner_email": OWNER, "channel": "linkedin", "identifiers": ["PID-JANE"], "state": "replied", "preview": "Yes, let's talk."}
+    client.post("/integrations/webhook?token=SECRET", json={"type": "message.new"})
+    assert store.load("s1")["outreach"]["c1"]["linkedin"]["reply_preview"] == "Yes, let's talk."
+
+
 def test_webhook_rejects_bad_token(tmp_path, monkeypatch):
     monkeypatch.setattr(api_mod, "get_unipile_webhook_secret", lambda: "SECRET")
     client, _, _ = _client(tmp_path)

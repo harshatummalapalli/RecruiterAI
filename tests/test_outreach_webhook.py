@@ -30,18 +30,20 @@ def _svc(tmp_path, existing=None):
     return svc, client
 
 
-def test_email_reply_maps_to_owner_and_sender(tmp_path):
+def test_email_reply_maps_to_owner_sender_and_preview(tmp_path):
     svc, _ = _svc(tmp_path)
-    event = {"account_id": "acc_gm", "type": "email.new", "payload": {"from": [{"email": "Jane@Acme.com"}]}}
+    event = {"account_id": "acc_gm", "type": "email.new", "payload": {"email": {"from": [{"email": "Jane@Acme.com"}], "snippet": "Sure, happy to chat next week."}}}
     interp = svc.interpret_event(event)
-    assert interp == {"owner_email": A, "channel": "email", "identifiers": ["jane@acme.com"], "state": "replied"}
+    assert interp["owner_email"] == A and interp["identifiers"] == ["jane@acme.com"] and interp["state"] == "replied"
+    assert interp["preview"] == "Sure, happy to chat next week."
 
 
-def test_inbound_linkedin_message_is_a_reply(tmp_path):
+def test_inbound_linkedin_message_is_a_reply_with_text(tmp_path):
     svc, _ = _svc(tmp_path)
-    event = {"account_id": "acc_li", "type": "message.new", "payload": {"is_sender": False, "sender_id": "PID-JANE"}}
+    event = {"account_id": "acc_li", "type": "message.new", "payload": {"is_sender": False, "sender_id": "PID-JANE", "text": "Thanks for reaching out!"}}
     interp = svc.interpret_event(event)
     assert interp["state"] == "replied" and interp["identifiers"] == ["PID-JANE"] and interp["channel"] == "linkedin"
+    assert interp["preview"] == "Thanks for reaching out!"
 
 
 def test_our_own_outbound_message_is_not_a_reply(tmp_path):

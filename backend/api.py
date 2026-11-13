@@ -334,6 +334,7 @@ class OutreachDraftRequest(BaseModel):
     channel: str  # "linkedin" | "email"
     inmail: bool = False
     tone: Optional[str] = None  # "warm" | "direct" | None
+    reply_to: Optional[str] = None  # the candidate's inbound message, to draft a reply to it
 
 
 class OutreachSendRequest(BaseModel):
@@ -1046,6 +1047,7 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
         channel = interp["channel"]
         ids = {i for i in interp["identifiers"] if i}
         state = interp["state"]
+        preview = (interp.get("preview") or "").strip()[:500] or None
         if not ids:
             return 0
         updated = 0
@@ -1069,6 +1071,8 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
                     if state == "replied" and current != "replied":
                         entry["state"] = "replied"
                         entry["replied_at"] = now
+                        if preview:
+                            entry["reply_preview"] = preview
                         # A reply ends any active follow-up sequence (goal met).
                         seq = ((rec.get("outreach") or {}).get(cid) or {}).get("sequence")
                         if isinstance(seq, dict) and seq.get("status") == "active":
@@ -1693,7 +1697,7 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
         sender = outreach_service.sender_name(owner, channel)
         try:
             return draft_outreach(channel, candidate=candidate, evidence=evidence, role=role,
-                                  recruiter_name=sender, inmail=request.inmail, tone=request.tone)
+                                  recruiter_name=sender, inmail=request.inmail, tone=request.tone, reply_to=request.reply_to)
         except Exception:
             logger.exception("[OUTREACH] draft generation failed | search_id=%s channel=%s", search_id, channel)
             return fallback_draft(channel, candidate=candidate, role=role, recruiter_name=sender, inmail=request.inmail)

@@ -424,14 +424,16 @@ class OutreachService:
             return None
         owner_email = owned[0]
         if etype == "email.new":
-            froms = payload.get("from") or (payload.get("email") or {}).get("from") or []
+            email_obj = payload.get("email") if isinstance(payload.get("email"), dict) else payload
+            froms = payload.get("from") or email_obj.get("from") or []
             ids = [str(a.get("email")).strip().lower() for a in froms if isinstance(a, dict) and a.get("email")]
-            return {"owner_email": owner_email, "channel": "email", "identifiers": ids, "state": "replied"} if ids else None
+            preview = email_obj.get("snippet") or email_obj.get("body_plain") or email_obj.get("body")
+            return {"owner_email": owner_email, "channel": "email", "identifiers": ids, "state": "replied", "preview": preview} if ids else None
         if etype == "message.new":
             if payload.get("is_sender") is True:   # a message WE sent — not a reply
                 return None
             sender = payload.get("sender_id") or (payload.get("sender") or {}).get("id") or (payload.get("sender") or {}).get("provider_id")
-            return {"owner_email": owner_email, "channel": "linkedin", "identifiers": [str(sender)], "state": "replied"} if sender else None
+            return {"owner_email": owner_email, "channel": "linkedin", "identifiers": [str(sender)], "state": "replied", "preview": payload.get("text")} if sender else None
         if etype == "relation.new":
             uid = payload.get("member_id") or payload.get("provider_id") or payload.get("user_id") or payload.get("id")
             return {"owner_email": owner_email, "channel": "linkedin", "identifiers": [str(uid)], "state": "connected"} if uid else None

@@ -19,6 +19,9 @@ export type OutreachState = {
   kind?: string
   subject?: string
   at?: string
+  replied_at?: string
+  reply_preview?: string
+  target_id?: string
 }
 
 /** Rolling-24h send caps, keyed by action category
@@ -91,12 +94,13 @@ export async function draftOutreach(
   channel: OutreachChannel,
   inmail = false,
   tone?: OutreachTone,
+  replyTo?: string,
 ): Promise<OutreachDraft> {
   const res = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(searchId)}/outreach/draft`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ candidate_id: candidateId, channel, inmail, tone }),
+    body: JSON.stringify({ candidate_id: candidateId, channel, inmail, tone, reply_to: replyTo }),
   })
   if (!res.ok) throw new Error(await detail(res, 'Could not draft a message.'))
   return (await res.json()) as OutreachDraft
