@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Briefcase, Mail, Send, Sparkles } from 'lucide-react'
 import { listIntegrations } from '../services/integrations'
-import { draftOutreach, sendOutreach, type OutreachChannel, type OutreachState } from '../services/outreach'
+import { draftOutreach, getOutreachLimits, sendOutreach, type OutreachChannel, type OutreachLimits, type OutreachState } from '../services/outreach'
 import './CandidateOutreach.css'
 
 type Composer = { channel: OutreachChannel; inmail: boolean }
+
+// Which rolling-24h cap each action draws from.
+const CATEGORY = { connect: 'linkedin_invite', inmail: 'linkedin_message', email: 'email' } as const
 
 type Props = {
   searchId: string | null
@@ -35,6 +38,7 @@ function actionLabel(c: Composer): string {
 
 export function CandidateOutreach({ searchId, candidateId, name, profileUrl, email, initial }: Props) {
   const [connected, setConnected] = useState<Set<string> | null>(null)
+  const [limits, setLimits] = useState<OutreachLimits | null>(null)
   const [sent, setSent] = useState<Record<string, OutreachState>>(initial ?? {})
   const [composer, setComposer] = useState<Composer | null>(null)
   const [drafting, setDrafting] = useState(false)
@@ -57,12 +61,16 @@ export function CandidateOutreach({ searchId, candidateId, name, profileUrl, ema
     listIntegrations()
       .then((items) => { if (alive) setConnected(new Set(items.filter((i) => i.connected).map((i) => i.channel))) })
       .catch(() => { if (alive) setConnected(new Set()) })
+    getOutreachLimits().then((l) => { if (alive) setLimits(l) }).catch(() => {})
     return () => { alive = false }
   }, [])
 
   const hasLinkedIn = connected?.has('linkedin') && Boolean(profileUrl)
   const hasEmail = connected?.has('email') && Boolean(email)
   const overLimit = charLimit != null && body.length > charLimit
+  // remaining for a category: null when limits haven't loaded (don't block on unknowns).
+  const remaining = (category: string): number | null => (limits ? (limits[category]?.remaining ?? null) : null)
+  const capped = (category: string) => remaining(category) === 0
 
   const openComposer = async (next: Composer) => {
     setComposer(next)
@@ -93,6 +101,7 @@ export function CandidateOutreach({ searchId, candidateId, name, profileUrl, ema
         candidateId, channel: composer.channel, body, subject: subject || undefined, inmail: composer.inmail,
       })
       setSent((prev) => ({ ...prev, [res.channel]: res.outreach }))
+      if (res.limits) setLimits(res.limits)
       setComposer(null)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not send that message.')
@@ -129,23 +138,39 @@ export function CandidateOutreach({ searchId, candidateId, name, profileUrl, ema
             : 'No reachable LinkedIn link or email address on this candidate.'}
         </p>
       ) : (
-        <div className="co-actions">
-          {hasLinkedIn ? (
-            <>
-              <button type="button" className="co-btn" onClick={() => void openComposer({ channel: 'linkedin', inmail: false })}>
-                <Briefcase size={14} aria-hidden="true" /> Connect
+        <>
+          <div className="co-actions">
+            {hasLinkedIn ? (
+              <>
+                <button type="button" className="co-btn" disabled={capped(CATEGORY.connect)}
+                  title={capped(CATEGORY.connect) ? 'Daily invite limit reached' : undefined}
+                  onClick={() => void openComposer({ channel: 'linkedin', inmail: false })}>
+                  <Briefcase size={14} aria-hidden="true" /> Connect
+                </button>
+                <button type="button" className="co-btn co-btn--ghost" disabled={capped(CATEGORY.inmail)}
+                  title={capped(CATEGORY.inmail) ? 'Daily message limit reached' : undefined}
+                  onClick={() => void openComposer({ channel: 'linkedin', inmail: true })}>
+                  InMail
+                </button>
+              </>
+            ) : null}
+            {hasEmail ? (
+              <button type="button" className="co-btn" disabled={capped(CATEGORY.email)}
+                title={capped(CATEGORY.email) ? 'Daily email limit reached' : undefined}
+                onClick={() => void openComposer({ channel: 'email', inmail: false })}>
+                <Mail size={14} aria-hidden="true" /> Email
               </button>
-              <button type="button" className="co-btn co-btn--ghost" onClick={() => void openComposer({ channel: 'linkedin', inmail: true })}>
-                InMail
-              </button>
-            </>
+            ) : null}
+          </div>
+          {limits ? (
+            <p className="co-limits">
+              Left today:
+              {hasLinkedIn ? ` ${remaining(CATEGORY.connect) ?? '—'} invites · ${remaining(CATEGORY.inmail) ?? '—'} messages` : ''}
+              {hasLinkedIn && hasEmail ? ' · ' : hasEmail ? ' ' : ''}
+              {hasEmail ? `${remaining(CATEGORY.email) ?? '—'} emails` : ''}
+            </p>
           ) : null}
-          {hasEmail ? (
-            <button type="button" className="co-btn" onClick={() => void openComposer({ channel: 'email', inmail: false })}>
-              <Mail size={14} aria-hidden="true" /> Email
-            </button>
-          ) : null}
-        </div>
+        </>
       )}
 
       {composer ? (

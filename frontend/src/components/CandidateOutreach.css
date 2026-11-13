@@ -55,6 +55,12 @@
   border-color: var(--color-border);
 }
 
+.co-limits {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
 .co-composer {
   margin-top: 12px;
   padding: 12px;

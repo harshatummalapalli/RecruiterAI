@@ -15,10 +15,21 @@ export type OutreachDraft = {
 /** Per-channel outreach state persisted on the search record. */
 export type OutreachState = {
   channel: string
-  state: string // "invited" | "messaged" | "inmailed" | "emailed"
+  state: string // "invited" | "messaged" | "inmailed" | "emailed" | "replied" | "connected"
   kind?: string
   subject?: string
   at?: string
+}
+
+/** Rolling-24h send caps, keyed by action category
+ * ("linkedin_invite" | "linkedin_message" | "email"). */
+export type OutreachLimits = Record<string, { used: number; limit: number; remaining: number }>
+
+export async function getOutreachLimits(): Promise<OutreachLimits> {
+  const res = await fetch(`${API_BASE_URL}/integrations/outreach/limits`, { credentials: 'include' })
+  if (!res.ok) throw new Error('Could not load your sending limits.')
+  const data = (await res.json()) as { limits?: OutreachLimits }
+  return data.limits ?? {}
 }
 
 async function detail(res: Response, fallback: string): Promise<string> {
@@ -45,7 +56,7 @@ export async function draftOutreach(
 export async function sendOutreach(
   searchId: string,
   args: { candidateId: string; channel: OutreachChannel; body: string; subject?: string; inmail?: boolean },
-): Promise<{ candidate_id: string; channel: string; outreach: OutreachState }> {
+): Promise<{ candidate_id: string; channel: string; outreach: OutreachState; limits?: OutreachLimits }> {
   const res = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(searchId)}/outreach/send`, {
     method: 'POST',
     credentials: 'include',
@@ -59,5 +70,5 @@ export async function sendOutreach(
     }),
   })
   if (!res.ok) throw new Error(await detail(res, 'Could not send that message.'))
-  return (await res.json()) as { candidate_id: string; channel: string; outreach: OutreachState }
+  return (await res.json()) as { candidate_id: string; channel: string; outreach: OutreachState; limits?: OutreachLimits }
 }

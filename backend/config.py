@@ -28,6 +28,11 @@ class Settings(BaseModel):
     harvest_enrichment_concurrency: int = Field(default=3, description="Max concurrent in-flight Harvest requests per search")
     discovery_page_size: int = Field(default=50, description="CrustData /person/search page size (results per query) — backend-owned, not the frontend's")
     discovery_max_pages: int = Field(default=1, description="Max CrustData pages fetched per query")
+    # Per-recruiter outreach safety caps (rolling 24h) — keep LinkedIn/email
+    # sending under the thresholds that get accounts restricted. Env-overridable.
+    outreach_daily_invites: int = Field(default=20, description="Max LinkedIn connection invites per recruiter per rolling 24h")
+    outreach_daily_messages: int = Field(default=40, description="Max LinkedIn messages/InMails per recruiter per rolling 24h")
+    outreach_daily_emails: int = Field(default=100, description="Max outreach emails per recruiter per rolling 24h")
     google_client_id: Optional[str] = Field(default=None, description="Google OAuth Client ID")
     allowed_email_domain: Optional[str] = Field(default=None, description="Email domain allowed to log in")
     super_admin_email: Optional[str] = Field(default=None, description="The single email granted admin-only views (e.g. the live credit meter). Everyone else is an ordinary recruiter.")
@@ -66,6 +71,14 @@ class Settings(BaseModel):
         discovery_max_pages = source.get("DISCOVERY_MAX_PAGES")
         if discovery_max_pages is not None and str(discovery_max_pages).strip():
             raw_values["discovery_max_pages"] = discovery_max_pages
+        for env_key, field in (
+            ("OUTREACH_DAILY_INVITES", "outreach_daily_invites"),
+            ("OUTREACH_DAILY_MESSAGES", "outreach_daily_messages"),
+            ("OUTREACH_DAILY_EMAILS", "outreach_daily_emails"),
+        ):
+            value = source.get(env_key)
+            if value is not None and str(value).strip():
+                raw_values[field] = value
         unipile_base_url = source.get("UNIPILE_BASE_URL")
         if unipile_base_url is not None and str(unipile_base_url).strip():
             raw_values["unipile_base_url"] = str(unipile_base_url).strip()
@@ -120,6 +133,9 @@ def get_settings() -> Settings:
         os.environ.get("HARVEST_ENRICHMENT_CONCURRENCY"),
         os.environ.get("DISCOVERY_PAGE_SIZE"),
         os.environ.get("DISCOVERY_MAX_PAGES"),
+        os.environ.get("OUTREACH_DAILY_INVITES"),
+        os.environ.get("OUTREACH_DAILY_MESSAGES"),
+        os.environ.get("OUTREACH_DAILY_EMAILS"),
         os.environ.get("GOOGLE_CLIENT_ID"),
         os.environ.get("ALLOWED_EMAIL_DOMAIN"),
         os.environ.get("SUPER_ADMIN_EMAIL"),
@@ -191,6 +207,18 @@ def get_discovery_page_size() -> int:
 def get_discovery_max_pages() -> int:
     """Max CrustData pages fetched per query. Configurable via DISCOVERY_MAX_PAGES; defaults to 1."""
     return get_settings().discovery_max_pages
+
+
+def get_outreach_daily_limits() -> dict[str, int]:
+    """Per-recruiter rolling-24h outreach caps, keyed by action category. Keeps
+    sending under the thresholds that get LinkedIn/email accounts restricted.
+    Override via OUTREACH_DAILY_INVITES / _MESSAGES / _EMAILS."""
+    settings = get_settings()
+    return {
+        "linkedin_invite": settings.outreach_daily_invites,
+        "linkedin_message": settings.outreach_daily_messages,
+        "email": settings.outreach_daily_emails,
+    }
 
 
 def get_google_client_id() -> Optional[str]:

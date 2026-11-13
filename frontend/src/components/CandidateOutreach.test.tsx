@@ -4,10 +4,10 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../services/integrations', () => ({ listIntegrations: vi.fn() }))
-vi.mock('../services/outreach', () => ({ draftOutreach: vi.fn(), sendOutreach: vi.fn() }))
+vi.mock('../services/outreach', () => ({ draftOutreach: vi.fn(), sendOutreach: vi.fn(), getOutreachLimits: vi.fn() }))
 
 import { listIntegrations } from '../services/integrations'
-import { draftOutreach, sendOutreach } from '../services/outreach'
+import { draftOutreach, getOutreachLimits, sendOutreach } from '../services/outreach'
 import { CandidateOutreach } from './CandidateOutreach'
 
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
@@ -48,6 +48,11 @@ beforeEach(() => {
   ])
   vi.mocked(draftOutreach).mockResolvedValue({ channel: 'linkedin', subject: '', body: 'Hi Jane, loved your work.', inmail: false, char_limit: 200 })
   vi.mocked(sendOutreach).mockResolvedValue({ candidate_id: 'c1', channel: 'linkedin', outreach: { channel: 'linkedin', state: 'invited' } })
+  vi.mocked(getOutreachLimits).mockResolvedValue({
+    linkedin_invite: { used: 2, limit: 20, remaining: 18 },
+    linkedin_message: { used: 0, limit: 40, remaining: 40 },
+    email: { used: 0, limit: 100, remaining: 100 },
+  })
 })
 
 afterEach(() => {
@@ -97,5 +102,18 @@ describe('CandidateOutreach', () => {
     const chip = $('.co-chip')
     expect(chip?.textContent).toMatch(/Replied/)
     expect(chip?.className).toMatch(/co-chip--strong/)
+  })
+
+  it('shows remaining sends and blocks Connect when the invite cap is reached', async () => {
+    vi.mocked(getOutreachLimits).mockResolvedValue({
+      linkedin_invite: { used: 20, limit: 20, remaining: 0 },
+      linkedin_message: { used: 0, limit: 40, remaining: 40 },
+      email: { used: 0, limit: 100, remaining: 100 },
+    })
+    await render()
+    expect($('.co-limits')?.textContent).toMatch(/0 invites/)
+    expect((btnByText('Connect') as HTMLButtonElement).disabled).toBe(true)
+    // InMail draws from a different (unexhausted) cap, so it stays enabled.
+    expect(($$('.co-btn').find((b) => b.textContent?.includes('InMail')) as HTMLButtonElement).disabled).toBe(false)
   })
 })

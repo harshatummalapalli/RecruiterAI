@@ -24,6 +24,18 @@ class FakeOutreach:
     def sender_name(self, owner, channel):
         return "Alice R"
 
+    # send-safety caps
+    def check_limit(self, owner, category):
+        if getattr(self, "over_limit", False):
+            from backend.services.outreach import OutreachLimitError
+            raise OutreachLimitError("You've reached the daily limit of 20 LinkedIn invites.")
+
+    def record_send(self, owner, category):
+        self.calls.append(("record", owner, category))
+
+    def usage(self, owner):
+        return {"linkedin_invite": {"used": 1, "limit": 20, "remaining": 19}}
+
     def connect_linkedin(self, owner, *, profile_url, note=None):
         self.calls.append(("connect", owner, profile_url, note))
         return {"channel": "linkedin", "state": "invited", "kind": "connect", "at": "2026-11-13T00:00:00+00:00"}
@@ -86,7 +98,7 @@ def test_send_connect_persists_state_and_returns_it(tmp_path):
     resp = client.post("/search/s1/outreach/send", json={"candidate_id": "c1", "channel": "linkedin", "body": "Hi Jane"})
     assert resp.status_code == 200
     assert resp.json()["outreach"]["state"] == "invited"
-    assert fake.calls[-1][0] == "connect"
+    assert any(c[0] == "connect" for c in fake.calls)
     # Persisted on the record, keyed by candidate -> channel.
     assert store.load("s1")["outreach"]["c1"]["linkedin"]["state"] == "invited"
 
@@ -103,13 +115,15 @@ def test_send_email_resolves_candidate_address(tmp_path):
     client, fake, _ = _client(tmp_path)
     resp = client.post("/search/s1/outreach/send", json={"candidate_id": "c1", "channel": "email", "subject": "Hi", "body": "Hello Jane"})
     assert resp.status_code == 200
-    assert fake.calls[-1][0] == "email" and fake.calls[-1][2] == "jane@acme.com"
+    email_call = next(c for c in fake.calls if c[0] == "email")
+    assert email_call[2] == "jane@acme.com"
 
 
 def test_send_inmail_routes_to_message(tmp_path):
     client, fake, _ = _client(tmp_path)
     resp = client.post("/search/s1/outreach/send", json={"candidate_id": "c1", "channel": "linkedin", "body": "Hi", "inmail": True})
-    assert resp.status_code == 200 and fake.calls[-1][0] == "message" and fake.calls[-1][4] is True
+    msg_call = next(c for c in fake.calls if c[0] == "message")
+    assert resp.status_code == 200 and msg_call[4] is True
 
 
 def test_stated_action_error_is_400(tmp_path):
@@ -181,3 +195,33 @@ def test_webhook_connected_does_not_downgrade_a_reply(tmp_path, monkeypatch):
 def test_webhook_register_requires_admin(tmp_path):
     client, _, _ = _client(tmp_path)  # OWNER is not the super admin
     assert client.post("/integrations/webhook/register").status_code in (403, 404)
+
+
+# --- send-safety caps (step 5) ---------------------------------------------
+def test_send_records_against_the_cap(tmp_path):
+    client, fake, _ = _client(tmp_path)
+    client.post("/search/s1/outreach/send", json={"candidate_id": "c1", "channel": "linkedin", "body": "Hi"})
+    assert ("record", OWNER, "linkedin_invite") in fake.calls
+
+
+def test_send_blocked_when_cap_reached_returns_429(tmp_path):
+    client, fake, store = _client(tmp_path)
+    fake.over_limit = True
+    resp = client.post("/search/s1/outreach/send", json={"candidate_id": "c1", "channel": "linkedin", "body": "Hi"})
+    assert resp.status_code == 429 and "daily limit" in resp.json()["detail"]
+    # Nothing was sent or recorded, and no outreach state was written.
+    assert not any(c[0] == "connect" for c in fake.calls)
+    assert "outreach" not in (store.load("s1") or {})
+
+
+def test_limits_endpoint_is_owner_scoped(tmp_path):
+    client, _, _ = _client(tmp_path)
+    resp = client.get("/integrations/outreach/limits")
+    assert resp.status_code == 200
+    assert resp.json()["limits"]["linkedin_invite"]["remaining"] == 19
+
+
+def test_send_response_includes_fresh_limits(tmp_path):
+    client, _, _ = _client(tmp_path)
+    resp = client.post("/search/s1/outreach/send", json={"candidate_id": "c1", "channel": "linkedin", "body": "Hi"})
+    assert resp.json()["limits"]["linkedin_invite"]["limit"] == 20

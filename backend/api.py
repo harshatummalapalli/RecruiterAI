@@ -1688,10 +1688,15 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
             logger.exception("[OUTREACH] draft generation failed | search_id=%s channel=%s", search_id, channel)
             return fallback_draft(channel, candidate=candidate, role=role, recruiter_name=sender, inmail=request.inmail)
 
+    @app.get("/integrations/outreach/limits", dependencies=[Depends(require_session)])
+    def outreach_limits(http_request: Request) -> Dict[str, Any]:
+        owner = _session_owner(http_request) or ""
+        return {"limits": outreach_service.usage(owner)}
+
     @app.post("/search/{search_id}/outreach/send", dependencies=[Depends(require_session), Depends(require_owned_search)])
     def outreach_send(search_id: str, request: OutreachSendRequest, http_request: Request) -> Dict[str, Any]:
         from backend.providers.unipile import UnipileAPIError, UnipileError, UnipileNotConfiguredError
-        from backend.services.outreach import OutreachActionError
+        from backend.services.outreach import OutreachActionError, OutreachLimitError, send_category
         owner = _session_owner(http_request)
         if not owner:
             raise HTTPException(status_code=401, detail="Sign in first.")
@@ -1702,6 +1707,11 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
         if candidate is None:
             raise HTTPException(status_code=404, detail="Candidate not found in this search.")
         channel = (request.channel or "").strip().lower()
+        category = send_category(channel, inmail=request.inmail)
+        try:
+            outreach_service.check_limit(owner, category)
+        except OutreachLimitError as exc:
+            raise HTTPException(status_code=429, detail=str(exc))
         try:
             if channel == "linkedin":
                 if request.inmail:
@@ -1729,8 +1739,9 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
             rec.setdefault("outreach", {}).setdefault(request.candidate_id, {})[channel] = result
 
         search_store.update(search_id, apply)
+        outreach_service.record_send(owner, category)  # count only a send that actually went out
         logger.info("[OUTREACH] sent | search_id=%s candidate=%s channel=%s state=%s", search_id, request.candidate_id, channel, result.get("state"))
-        return {"candidate_id": request.candidate_id, "channel": channel, "outreach": result}
+        return {"candidate_id": request.candidate_id, "channel": channel, "outreach": result, "limits": outreach_service.usage(owner)}
 
     @app.post("/search/{search_id}/refine", response_model=SearchResponse, dependencies=[Depends(require_session), Depends(require_owned_search)])
     def refine_search(search_id: str, request: RefineRequest) -> SearchResponse:

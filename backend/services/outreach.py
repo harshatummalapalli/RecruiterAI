@@ -27,9 +27,10 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from backend.config import get_unipile_hosted_auth_domain, get_unipile_webhook_secret
+from backend.config import get_outreach_daily_limits, get_unipile_hosted_auth_domain, get_unipile_webhook_secret
 from backend.providers.unipile import UnipileClient
 from backend.services.connected_accounts import ConnectedAccountStore
+from backend.services.send_limits import SendLimitStore
 
 logger = logging.getLogger(__name__)
 
@@ -170,16 +171,40 @@ class OutreachActionError(Exception):
     translated at the API layer, not here."""
 
 
+class OutreachLimitError(Exception):
+    """A safety cap was hit: this recruiter has sent the daily maximum for this
+    action category. Maps to HTTP 429. Carries the human sentence to show."""
+
+
+# channel (+ InMail flag) -> safety-cap category. A connection request is the
+# risky one LinkedIn restricts hardest; messages/InMails and emails are capped
+# separately and more loosely.
+_CATEGORY_LABEL = {
+    "linkedin_invite": "LinkedIn invites",
+    "linkedin_message": "LinkedIn messages",
+    "email": "emails",
+}
+
+
+def send_category(channel: str, *, inmail: bool) -> str:
+    channel = (channel or "").strip().lower()
+    if channel == "email":
+        return "email"
+    return "linkedin_message" if inmail else "linkedin_invite"
+
+
 class OutreachService:
     def __init__(
         self,
         client: UnipileClient,
         accounts: ConnectedAccountStore,
         pending: PendingConnectStore,
+        limits: Optional[SendLimitStore] = None,
     ) -> None:
         self._client = client
         self._accounts = accounts
         self._pending = pending
+        self._limits = limits or SendLimitStore()
 
     def begin_connect(self, owner_email: str, channel: str, *, callback_url: str) -> str:
         """Mint a state token for this recruiter+channel and return the Unipile
@@ -332,6 +357,32 @@ class OutreachService:
         )
         return {"channel": "email", "state": "emailed", "kind": "email", "subject": subject or "",
                 "target_id": to_email.lower(), "at": _now().isoformat()}
+
+    # --- send-safety caps (Phase 1, step 5) --------------------------------
+    # Checked BEFORE a send and recorded only AFTER it succeeds, so a provider
+    # rejection never burns a recruiter's daily allowance.
+
+    def check_limit(self, owner_email: str, category: str) -> None:
+        """Raise OutreachLimitError if this recruiter has hit the rolling-24h cap
+        for this action category."""
+        limits = get_outreach_daily_limits()
+        limit = limits.get(category)
+        if limit is None:
+            return
+        used = self._limits.count(owner_email, category)
+        if used >= limit:
+            label = _CATEGORY_LABEL.get(category, category)
+            raise OutreachLimitError(
+                f"You've reached the daily limit of {limit} {label}. This protects your "
+                "account from being restricted — it frees up as your earlier sends pass 24 hours."
+            )
+
+    def record_send(self, owner_email: str, category: str) -> None:
+        self._limits.record(owner_email, category)
+
+    def usage(self, owner_email: str) -> Dict[str, Dict[str, int]]:
+        """{category: {used, limit, remaining}} over the trailing 24h, for the UI."""
+        return self._limits.usage(owner_email, get_outreach_daily_limits())
 
     # --- reply inbox: webhook registration + routing (Phase 1, step 4) -----
     # One application-wide webhook; every event carries account_id, which we map
