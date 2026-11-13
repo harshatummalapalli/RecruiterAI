@@ -126,6 +126,11 @@ class UnipileClient:
     def get_account(self, account_id: str) -> Dict[str, Any]:
         return self._request("GET", f"/v2/accounts/{account_id}")
 
+    def delete_account(self, account_id: str) -> Dict[str, Any]:
+        """Unlink an account at Unipile (revokes the provider session). Used on
+        disconnect so a removed integration stops billing and receiving events."""
+        return self._request("DELETE", f"/v2/accounts/{account_id}")
+
     def create_auth_link(
         self,
         *,

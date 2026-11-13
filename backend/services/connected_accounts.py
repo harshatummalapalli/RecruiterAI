@@ -79,10 +79,12 @@ class ConnectedAccountStore:
         *,
         status: str = "running",
         display_name: Optional[str] = None,
+        raw_provider: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Bind a connected account to this recruiter. Upsert per provider —
-        re-connecting the same provider replaces the account_id, preserving the
-        original connected_at."""
+        """Bind a connected account to this recruiter. `provider` is our product
+        CHANNEL (linkedin | email | whatsapp); `raw_provider` is Unipile's actual
+        provider (e.g. google/outlook under the email channel). Upsert per
+        channel — re-connecting replaces the account_id, preserving connected_at."""
         owner = _norm_owner(owner_email)
         prov = _norm_provider(provider)
         with self.lock:
@@ -91,6 +93,7 @@ class ConnectedAccountStore:
             prior = data["accounts"].get(prov) or {}
             data["accounts"][prov] = {
                 "provider": prov,
+                "raw_provider": raw_provider if raw_provider is not None else prior.get("raw_provider"),
                 "account_id": account_id,
                 "status": status,
                 "display_name": display_name if display_name is not None else prior.get("display_name"),
