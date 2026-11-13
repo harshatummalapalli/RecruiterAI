@@ -312,6 +312,11 @@ class SearchResponse(BaseModel):
     # the card show "Invited"/"Emailed" without a per-candidate fetch. See the
     # /search/{id}/outreach/* endpoints and backend/services/outreach.py (step 3).
     outreach: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
+    # RUN: the autonomous campaign opened on the recruiter's one Go-validation.
+    # None when no campaign is running. {status, budget, used, rounds, window_hours,
+    # ...} — the UI reads this (with reserve_available) to badge "N new matches
+    # waiting" instead of the system auto-pausing or re-asking for a validation.
+    campaign: Optional[Dict[str, Any]] = None
 
 
 class WorkspaceUpdateRequest(BaseModel):
@@ -1412,6 +1417,7 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
         response_data["confirmed_brief"] = record.get("confirmed_brief")
         response_data["status"] = record.get("status", response_data.get("status", "complete"))
         response_data["outreach"] = record.get("outreach", {})
+        response_data["campaign"] = record.get("campaign")
         response_data.update(derived_fields(record, clock()))
         return SearchResponse(**response_data)
 
@@ -1569,6 +1575,13 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
             role["reserve_analysis_signal"] = "positive"
             role["reserve_analysis_feedback_hash"] = feedback_hash
             record["role"] = role
+            # RUN auto-start: the one Go-validation opens the campaign. From here the
+            # search flows on its own — this first positive-validation pass is the
+            # campaign's first round; the 2h cron (/campaigns/tick) paces the rest and
+            # STEER (refine) course-corrects it. Idempotent, so a refine mid-campaign
+            # won't restart it. The deep-reads this pass spends are counted against the
+            # budget in `persist` below, so the budget cap is a single running total.
+            intake_service.start_campaign(record)
             trigger.update({"confirmation_id": (record.get("confirmed_brief") or {}).get("confirmation_id"),
                             "reserve": reserve, "signal": role["reserve_analysis_signal"],
                             "feedback_record": record, "feedback_hash": feedback_hash})
@@ -1635,6 +1648,16 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
                     record["role"]["reserve_analysis_signal"] = trigger["signal"]
                     record["role"]["reserve_analysis_added"] = len(additions)
                     record["role"]["reserve_analysis_feedback_hash"] = trigger["feedback_hash"]
+                    # Count this pass's deep-reads against the campaign budget so the
+                    # cap is one running total across the Go-pass and every cron round.
+                    campaign = record.get("campaign")
+                    if isinstance(campaign, dict) and campaign.get("status") == "active":
+                        campaign["used"] = int(campaign.get("used") or 0) + len(additions)
+                        campaign["rounds"] = int(campaign.get("rounds") or 0) + 1
+                        campaign["last_round_at"] = datetime.now(timezone.utc).isoformat()
+                        if campaign["used"] >= int(campaign.get("budget") or 0):
+                            campaign["status"] = "done"; campaign["done_reason"] = "budget"
+                        record["campaign"] = campaign
                     record["updated_at"] = datetime.now(timezone.utc).isoformat()
                 search_store.update(search_id, persist)
                 # If the recruiter refined feedback while this pass was running,
