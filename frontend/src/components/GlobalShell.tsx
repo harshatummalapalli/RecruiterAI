@@ -1,4 +1,4 @@
-import { Home as HomeIcon, Plus, Settings as SettingsIcon } from 'lucide-react'
+import { Home as HomeIcon, Plus, Send as SendIcon, Settings as SettingsIcon } from 'lucide-react'
 import { BrandMark } from './SearchSidebar'
 import { AccountControl } from './AccountControl'
 import { displayTitle, roleStatus } from '../models/roleLifecycle'
@@ -6,7 +6,7 @@ import { sidebarSubtitle } from '../models/roleWorkspace'
 import type { SearchListItem } from '../types'
 import './GlobalShell.css'
 
-export type GlobalDestination = 'home' | 'settings' | 'role'
+export type GlobalDestination = 'home' | 'settings' | 'outreach' | 'role'
 
 /** The single persistent rail — the only sidebar in the product. Brand, the two
  * global destinations (Home / Settings), New search, a short "recents" list of
@@ -16,6 +16,7 @@ export function GlobalShell({
   active,
   onHome,
   onSettings,
+  onOutreach,
   recruiterName,
   onSignOut,
   recents,
@@ -28,6 +29,7 @@ export function GlobalShell({
   active: GlobalDestination
   onHome: () => void
   onSettings: () => void
+  onOutreach: () => void
   recruiterName: string
   onSignOut: () => void
   recents: SearchListItem[]
@@ -48,6 +50,10 @@ export function GlobalShell({
         <button type="button" className={`global-nav__item${active === 'home' ? ' is-active' : ''}`} onClick={onHome} aria-current={active === 'home' ? 'page' : undefined}>
           <HomeIcon size={16} aria-hidden="true" />
           <span>Home</span>
+        </button>
+        <button type="button" className={`global-nav__item${active === 'outreach' ? ' is-active' : ''}`} onClick={onOutreach} aria-current={active === 'outreach' ? 'page' : undefined}>
+          <SendIcon size={16} aria-hidden="true" />
+          <span>Outreach</span>
         </button>
         <button type="button" className={`global-nav__item${active === 'settings' ? ' is-active' : ''}`} onClick={onSettings} aria-current={active === 'settings' ? 'page' : undefined}>
           <SettingsIcon size={16} aria-hidden="true" />

@@ -36,6 +36,9 @@ type CandidateReviewScreenProps = {
   searchState: SearchState
   onRunSearch: () => void
   searchId: string | null
+  // When set, auto-select this candidate once it's in the loaded list (deep-link from the Outreach view).
+  focusCandidateId?: string | null
+  onFocusHandled?: () => void
   // The Search Boundary is the single source for where and work mode. Null only when the brief this search came from
   // could not be resumed, in which case it is shown as unavailable rather than editable.
   boundary: SearchBoundary | null
@@ -142,6 +145,8 @@ export function CandidateReviewScreen({
   roleMessage = null,
   searchNotice = null,
   onSelectionChange,
+  focusCandidateId = null,
+  onFocusHandled,
 }: CandidateReviewScreenProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [isEditingBrief, setIsEditingBrief] = useState(false)
@@ -213,6 +218,15 @@ export function CandidateReviewScreen({
   }, [searchResponse])
 
   const candidates = useMemo(() => (searchResponse ? buildDiscoveryCandidates(searchResponse) : []), [searchResponse])
+
+  // Deep-link from the Outreach view: open the requested candidate's card once it's loaded.
+  useEffect(() => {
+    if (!focusCandidateId) return
+    if (candidates.some((c) => c.id === focusCandidateId)) {
+      setSelectedId(focusCandidateId)
+      onFocusHandled?.()
+    }
+  }, [focusCandidateId, candidates, onFocusHandled])
   const allItems = useMemo(() => buildWorkspaceCandidates(candidates), [candidates])
   // For a role only what the server presented is on screen; everything else it read is kept below. A search stored
   // before roles existed presents everything, exactly as before.

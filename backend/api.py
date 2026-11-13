@@ -1694,6 +1694,48 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
         owner = _session_owner(http_request) or ""
         return {"limits": outreach_service.usage(owner)}
 
+    @app.get("/integrations/outreach/inbox", dependencies=[Depends(require_session)])
+    def outreach_inbox(http_request: Request) -> Dict[str, Any]:
+        """Every candidate THIS recruiter has reached out to, across all their
+        searches — the replies & outreach view. Owner-scoped by reading only this
+        recruiter's own search records; replies float to the top."""
+        owner = (_session_owner(http_request) or "").lower()
+        rows: List[Dict[str, Any]] = []
+        for path in Path(search_store.storage_dir).glob("*.json"):
+            record = search_store.load(path.stem)
+            if not record or (record.get("owner_email") or "").lower() != owner:
+                continue
+            outreach = record.get("outreach") or {}
+            if not outreach:
+                continue
+            response = record.get("response") or {}
+            cand_by_id = {c.get("candidate_id"): c for c in (response.get("candidates") or [])}
+            brief = record.get("confirmed_brief") or {}
+            role_title = brief.get("posted_title") or ((record.get("role") or {}).get("label") or {}).get("title") or "Untitled role"
+            for candidate_id, channels in outreach.items():
+                if not isinstance(channels, dict):
+                    continue
+                chan = {k: v for k, v in channels.items() if isinstance(v, dict) and v.get("state")}
+                if not chan:
+                    continue
+                cand = cand_by_id.get(candidate_id) or {}
+                times = [v[key] for v in chan.values() for key in ("replied_at", "connected_at", "at") if v.get(key)]
+                replied = any(v.get("state") == "replied" for v in chan.values())
+                rows.append({
+                    "search_id": path.stem,
+                    "candidate_id": candidate_id,
+                    "name": cand.get("name") or "Candidate",
+                    "profile_url": cand.get("profile_url"),
+                    "role_title": role_title,
+                    "channels": chan,
+                    "sequence": (channels.get("sequence") if isinstance(channels.get("sequence"), dict) else None),
+                    "last_activity": max(times) if times else None,
+                    "replied": replied,
+                })
+        rows.sort(key=lambda r: r.get("last_activity") or "", reverse=True)  # most recent first
+        rows.sort(key=lambda r: 0 if r["replied"] else 1)                    # stable: replies on top
+        return {"inbox": rows, "counts": {"total": len(rows), "replied": sum(1 for r in rows if r["replied"])}}
+
     @app.post("/search/{search_id}/outreach/send", dependencies=[Depends(require_session), Depends(require_owned_search)])
     def outreach_send(search_id: str, request: OutreachSendRequest, http_request: Request) -> Dict[str, Any]:
         from backend.providers.unipile import UnipileAPIError, UnipileError, UnipileNotConfiguredError

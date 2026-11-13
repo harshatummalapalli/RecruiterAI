@@ -197,6 +197,32 @@ def test_webhook_register_requires_admin(tmp_path):
     assert client.post("/integrations/webhook/register").status_code in (403, 404)
 
 
+# --- replies & outreach view (round 2, part 2a) ----------------------------
+def test_inbox_lists_contacted_rows(tmp_path):
+    client, _, store = _client(tmp_path)
+    store.update("s1", lambda r: r.__setitem__("outreach", {
+        "c1": {"linkedin": {"channel": "linkedin", "state": "invited", "at": "2026-11-13T01:00:00+00:00", "target_id": "PID"}},
+    }))
+    data = client.get("/integrations/outreach/inbox").json()
+    assert data["counts"]["total"] == 1
+    row = data["inbox"][0]
+    assert row["candidate_id"] == "c1" and row["name"] == "Jane Doe"
+    assert row["role_title"] == "Principal Backend Engineer" and row["replied"] is False
+
+
+def test_inbox_floats_replied_and_is_owner_scoped(tmp_path):
+    client, _, store = _client(tmp_path)
+    store.update("s1", lambda r: r.__setitem__("outreach", {
+        "c1": {"linkedin": {"channel": "linkedin", "state": "replied", "at": "2026-11-13T01:00:00+00:00", "replied_at": "2026-11-13T02:00:00+00:00"}},
+    }))
+    # A different recruiter's contacted candidate must never show up here.
+    store.save("s2", {"owner_email": "other@example.com", "response": {"candidates": [{"candidate_id": "x", "name": "Bob"}]},
+                      "outreach": {"x": {"email": {"channel": "email", "state": "emailed", "at": "2026-11-13T03:00:00+00:00"}}}})
+    data = client.get("/integrations/outreach/inbox").json()
+    assert data["counts"]["total"] == 1 and data["counts"]["replied"] == 1
+    assert data["inbox"][0]["replied"] is True and data["inbox"][0]["candidate_id"] == "c1"
+
+
 # --- send-safety caps (step 5) ---------------------------------------------
 def test_send_records_against_the_cap(tmp_path):
     client, fake, _ = _client(tmp_path)

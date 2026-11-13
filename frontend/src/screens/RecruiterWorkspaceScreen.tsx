@@ -24,6 +24,7 @@ import { CandidateReviewScreen } from './CandidateReviewScreen'
 import { HomeScreen } from './HomeScreen'
 import { LivingBrief } from './LivingBrief'
 import { SettingsScreen } from './SettingsScreen'
+import { OutreachScreen } from './OutreachScreen'
 import { UnderstandScreen } from './UnderstandScreen'
 import { SearchBoundaryForm } from './SearchBoundaryForm'
 import { GlobalShell, type GlobalDestination } from '../components/GlobalShell'
@@ -34,7 +35,7 @@ import type { SearchListItem, SearchResponse } from '../types'
 import './RecruiterWorkspaceScreen.css'
 
 type ParseState = 'idle' | 'parsing' | 'success' | 'error'
-type Step = 'home' | 'settings' | 'jd' | 'brief' | 'review'
+type Step = 'home' | 'settings' | 'outreach' | 'jd' | 'brief' | 'review'
 type SearchState = 'idle' | 'searching' | 'done' | 'error'
 
 const RECRUITER_NAME = 'Harsha'
@@ -128,6 +129,9 @@ export function RecruiterWorkspaceScreen() {
   // Phase-1 Active↔Completed overrides (Close / Reopen), remembered locally.
   const [overrides, setOverrides] = useState<Overrides>(() => readOverrides())
   const [active, setActive] = useState<ActiveSearch | null>(null)
+  // When the Outreach view opens a specific person, this carries the candidate to
+  // auto-select once that search's review screen mounts; cleared after it lands.
+  const [focusCandidate, setFocusCandidate] = useState<string | null>(null)
   const [roleMessage, setRoleMessage] = useState<string | null>(null)
   const [searchNotice, setSearchNotice] = useState<string | null>(null)
   // The poll loop for a running search. A ref because it is plumbing, cleared when a search is opened or started or the
@@ -666,6 +670,18 @@ export function RecruiterWorkspaceScreen() {
     setStep('settings')
   }
 
+  const handleGoOutreach = () => {
+    setStep('outreach')
+  }
+
+  // Open a specific person from the Outreach view: load their search and auto-select
+  // the candidate so the recruiter lands on the card (not just the search).
+  const openToCandidate = (targetSearchId: string, candidateId: string) => {
+    setFocusCandidate(candidateId)
+    void openSearch({ kind: 'search', id: targetSearchId })
+    setStep('review')
+  }
+
   // Pause/Resume triggered from a Home row, for a role that is not the one currently open in the workspace.
   // Independent of searchId/searchResponse — only refreshes the Home list, never touches open-workspace state.
   const handleRoleActionFromHome = async (id: string, action: 'pause' | 'resume') => {
@@ -717,7 +733,7 @@ export function RecruiterWorkspaceScreen() {
     return parts.join(' · ')
   })()
 
-  const globalDestination: GlobalDestination = step === 'home' ? 'home' : step === 'settings' ? 'settings' : 'role'
+  const globalDestination: GlobalDestination = step === 'home' ? 'home' : step === 'settings' ? 'settings' : step === 'outreach' ? 'outreach' : 'role'
 
   const roleTitle = posted || identity || 'Untitled role'
   // Stage navigation lives in the top StepPlayer (Define · Discover · Decide). The
@@ -735,11 +751,12 @@ export function RecruiterWorkspaceScreen() {
     active: globalDestination,
     onHome: handleGoHome,
     onSettings: handleGoSettings,
+    onOutreach: handleGoOutreach,
     recruiterName: RECRUITER_NAME,
     onSignOut: handleSignOut,
     recents,
     activeId: active?.id ?? null,
-    newActive: active === null && step !== 'home' && step !== 'settings',
+    newActive: active === null && step !== 'home' && step !== 'settings' && step !== 'outreach',
     onNew: handleStartNewSearch,
     onOpenRole: (item: Pick<SearchListItem, 'kind' | 'id'>) => void openSearch(item),
   }
@@ -767,6 +784,14 @@ export function RecruiterWorkspaceScreen() {
     return (
       <GlobalShell {...shellProps}>
         <SettingsScreen recruiterName={RECRUITER_NAME} />
+      </GlobalShell>
+    )
+  }
+
+  if (step === 'outreach') {
+    return (
+      <GlobalShell {...shellProps}>
+        <OutreachScreen onOpen={openToCandidate} />
       </GlobalShell>
     )
   }
@@ -960,6 +985,8 @@ export function RecruiterWorkspaceScreen() {
               searchState={searchState}
               onRunSearch={() => void handleSearch()}
               searchId={searchId}
+              focusCandidateId={focusCandidate}
+              onFocusHandled={() => setFocusCandidate(null)}
               searchGeneration={searchGeneration}
               boundary={intakeSessionId ? boundary : null}
               onApplyBoundary={handleApplyBoundary}

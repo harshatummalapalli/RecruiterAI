@@ -25,6 +25,25 @@ export type OutreachState = {
  * ("linkedin_invite" | "linkedin_message" | "email"). */
 export type OutreachLimits = Record<string, { used: number; limit: number; remaining: number }>
 
+/** One row in the replies & outreach view — a candidate this recruiter contacted. */
+export type OutreachInboxRow = {
+  search_id: string
+  candidate_id: string
+  name: string
+  profile_url: string | null
+  role_title: string
+  channels: Record<string, OutreachState>
+  sequence?: { flow: string; status: string; current_step?: number } | null
+  last_activity: string | null
+  replied: boolean
+}
+
+export async function getOutreachInbox(): Promise<{ inbox: OutreachInboxRow[]; counts: { total: number; replied: number } }> {
+  const res = await fetch(`${API_BASE_URL}/integrations/outreach/inbox`, { credentials: 'include' })
+  if (!res.ok) throw new Error('Could not load your outreach.')
+  return (await res.json()) as { inbox: OutreachInboxRow[]; counts: { total: number; replied: number } }
+}
+
 export async function getOutreachLimits(): Promise<OutreachLimits> {
   const res = await fetch(`${API_BASE_URL}/integrations/outreach/limits`, { credentials: 'include' })
   if (!res.ok) throw new Error('Could not load your sending limits.')
