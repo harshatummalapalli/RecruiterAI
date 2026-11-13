@@ -33,6 +33,7 @@ from backend.config import (
     get_discovery_page_size,
     get_session_cookie_secure,
     get_session_max_age_seconds,
+    get_unipile_webhook_secret,
 )
 from backend.errors import ConfigurationError, ParsingError, ProviderError, RecruiterAIError, RankingError
 from backend.models.intake import IntakeResult, SearchBoundary
@@ -1013,6 +1014,88 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
         if not owner:
             raise HTTPException(status_code=401, detail="Sign in first.")
         return {"disconnected": outreach_service.disconnect(owner, request.channel)}
+
+    # --- Reply inbox (Phase 1, step 4) -------------------------------------
+    # One application-wide Unipile webhook; each event is routed to its owning
+    # recruiter (account_id -> owner) before any record is touched, so a reply
+    # only ever flips state on the recruiter who sent the outreach.
+    @app.post("/integrations/webhook/register", dependencies=[Depends(require_admin)])
+    def integrations_webhook_register(http_request: Request) -> Dict[str, Any]:
+        from backend.providers.unipile import UnipileError
+        from backend.services.outreach import OutreachActionError
+        try:
+            return outreach_service.ensure_reply_webhook(public_base_url=str(http_request.base_url))
+        except OutreachActionError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        except UnipileError:
+            logger.exception("[OUTREACH] webhook registration failed")
+            raise HTTPException(status_code=502, detail="Couldn't register the reply webhook.")
+
+    def _apply_reply(interp: Dict[str, Any]) -> int:
+        """Flip outreach state on every one of this owner's searches where a sent
+        outreach's target matches the event's sender. Precedence: `replied` wins
+        over everything but an existing `replied`; `connected` only upgrades an
+        `invited` (never downgrades a messaged/replied thread)."""
+        owner = (interp["owner_email"] or "").lower()
+        channel = interp["channel"]
+        ids = {i for i in interp["identifiers"] if i}
+        state = interp["state"]
+        if not ids:
+            return 0
+        updated = 0
+        for path in Path(search_store.storage_dir).glob("*.json"):
+            record = search_store.load(path.stem)
+            if not record or (record.get("owner_email") or "").lower() != owner:
+                continue
+            outreach = record.get("outreach") or {}
+            hits = [cid for cid, chans in outreach.items()
+                    if isinstance(chans.get(channel), dict) and str(chans[channel].get("target_id") or "") in ids]
+            if not hits:
+                continue
+
+            def apply(rec: Dict[str, Any], hits=hits) -> None:
+                now = datetime.now(timezone.utc).isoformat()
+                for cid in hits:
+                    entry = ((rec.get("outreach") or {}).get(cid) or {}).get(channel)
+                    if not isinstance(entry, dict):
+                        continue
+                    current = entry.get("state")
+                    if state == "replied" and current != "replied":
+                        entry["state"] = "replied"
+                        entry["replied_at"] = now
+                    elif state == "connected" and current == "invited":
+                        entry["state"] = "connected"
+                        entry["connected_at"] = now
+                rec["updated_at"] = now
+
+            if search_store.update(path.stem, apply) is not None:
+                updated += len(hits)
+        return updated
+
+    @app.post("/integrations/webhook")
+    async def integrations_webhook(http_request: Request, token: Optional[str] = None) -> Dict[str, Any]:
+        # No session: this is Unipile calling us. We authenticate by the token we
+        # put in the webhook URL at registration (= UNIPILE_WEBHOOK_SECRET). When a
+        # secret is configured it MUST match; always 200 otherwise so Unipile does
+        # not retry a payload we simply had no candidate match for.
+        secret = (get_unipile_webhook_secret() or "").strip()
+        if secret and token != secret:
+            raise HTTPException(status_code=401, detail="Invalid webhook token.")
+        if not secret:
+            logger.warning("[OUTREACH] webhook called with no UNIPILE_WEBHOOK_SECRET configured — accepting (dev only)")
+        try:
+            event = await http_request.json()
+        except Exception:
+            return {"ok": True, "updated": 0}
+        try:
+            interp = outreach_service.interpret_event(event)
+            updated = _apply_reply(interp) if interp else 0
+        except Exception:
+            logger.exception("[OUTREACH] webhook handling failed")
+            return {"ok": True, "updated": 0}
+        if updated:
+            logger.info("[OUTREACH] reply webhook | type=%s updated=%s", (event or {}).get("type"), updated)
+        return {"ok": True, "updated": updated}
 
     @app.post("/parse-jd", dependencies=[Depends(require_session)])
     def parse_jd(request: ParseRequest) -> SearchIntent:

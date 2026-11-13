@@ -13,8 +13,14 @@
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
+  color: var(--color-secondary-text);
+  background: var(--color-sidebar-bg, color-mix(in srgb, currentColor 10%, transparent));
+}
+
+/* A reply/acceptance is a real result — make it read as success, not just "sent". */
+.co-chip--strong {
   color: var(--color-success, #15803d);
-  background: color-mix(in srgb, var(--color-success, #15803d) 12%, transparent);
+  background: color-mix(in srgb, var(--color-success, #15803d) 14%, transparent);
 }
 
 .co-actions {

@@ -229,8 +229,24 @@ class UnipileClient:
         return self._request("POST", f"/v2/{account_id}/emails/send", json=body)
 
     # --- webhooks ----------------------------------------------------------
-    def create_webhook(self, *, request_url: str, events: List[str], name: Optional[str] = None) -> Dict[str, Any]:
-        body: Dict[str, Any] = {"request_url": request_url, "events": events}
-        if name:
-            body["name"] = name
+    def create_webhook(self, *, url: str, trigger_events: List[str], account_ids: Optional[List[str]] = None, description: Optional[str] = None) -> Dict[str, Any]:
+        """Create a webhook endpoint (v2 shape: `trigger_events` + `url`). Omitting
+        `account_ids` listens to every account in the application — we route each
+        event to its owner by account_id, so one endpoint serves all recruiters.
+        Unipile generates and returns a `secret`; we secure the receiver with our
+        own token in the `url` query instead."""
+        body: Dict[str, Any] = {"trigger_events": trigger_events, "url": url}
+        if account_ids:
+            body["account_ids"] = account_ids
+        if description:
+            body["description"] = description
         return self._request("POST", "/v2/webhooks/endpoints/", json=body)
+
+    def list_webhooks(self) -> List[Dict[str, Any]]:
+        data = self._request("GET", "/v2/webhooks/endpoints/")
+        if isinstance(data, dict):
+            return list(data.get("data", data.get("items", [])) or [])
+        return list(data) if isinstance(data, list) else []
+
+    def delete_webhook(self, webhook_id: str) -> Dict[str, Any]:
+        return self._request("DELETE", f"/v2/webhooks/endpoints/{webhook_id}")

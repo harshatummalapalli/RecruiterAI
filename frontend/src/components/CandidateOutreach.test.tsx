@@ -91,4 +91,11 @@ describe('CandidateOutreach', () => {
     await render({ initial: { email: { channel: 'email', state: 'emailed' } } })
     expect($('.co-chip')?.textContent).toMatch(/Email sent/)
   })
+
+  it('shows a reply as a strong (result) chip', async () => {
+    await render({ initial: { linkedin: { channel: 'linkedin', state: 'replied' } } })
+    const chip = $('.co-chip')
+    expect(chip?.textContent).toMatch(/Replied/)
+    expect(chip?.className).toMatch(/co-chip--strong/)
+  })
 })

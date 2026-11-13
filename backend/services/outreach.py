@@ -27,7 +27,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from backend.config import get_unipile_hosted_auth_domain
+from backend.config import get_unipile_hosted_auth_domain, get_unipile_webhook_secret
 from backend.providers.unipile import UnipileClient
 from backend.services.connected_accounts import ConnectedAccountStore
 
@@ -35,6 +35,10 @@ logger = logging.getLogger(__name__)
 
 # Product channels shown in Settings → Integrations, in display order.
 CHANNELS: Tuple[str, ...] = ("linkedin", "email", "whatsapp")
+
+# Unipile events the reply inbox listens for: an inbound LinkedIn message, an
+# inbound email, and an accepted connection request. See interpret_event.
+REPLY_EVENTS: Tuple[str, ...] = ("message.new", "email.new", "relation.new")
 
 # channel -> Unipile hosted-auth `providers` value. "email" offers every
 # email-capable provider (Gmail/Outlook/IMAP) on Unipile's page.
@@ -285,7 +289,9 @@ class OutreachService:
         account_id, user_id, _ = self._resolve_linkedin(owner_email, profile_url)
         note = (note or "").strip()[:LINKEDIN_NOTE_CAP] or None
         self._client.send_relation_request(account_id, user_id, note)
-        return {"channel": "linkedin", "state": "invited", "kind": "connect", "at": _now().isoformat()}
+        # target_id = the provider user id, so a later inbound message/acceptance
+        # from this person (webhook, step 4) can be matched back to this candidate.
+        return {"channel": "linkedin", "state": "invited", "kind": "connect", "target_id": user_id, "at": _now().isoformat()}
 
     def message_linkedin(self, owner_email: str, *, profile_url: Optional[str], text: str, inmail: bool = False) -> Dict[str, Any]:
         """Message a candidate on LinkedIn. A 1st-degree connection gets a normal
@@ -301,6 +307,7 @@ class OutreachService:
             "channel": "linkedin",
             "state": "inmailed" if use_inmail else "messaged",
             "kind": "inmail" if use_inmail else "message",
+            "target_id": user_id,
             "at": _now().isoformat(),
         }
 
@@ -323,4 +330,58 @@ class OutreachService:
             html=_text_to_html(body),
             plain_text=body,
         )
-        return {"channel": "email", "state": "emailed", "kind": "email", "subject": subject or "", "at": _now().isoformat()}
+        return {"channel": "email", "state": "emailed", "kind": "email", "subject": subject or "",
+                "target_id": to_email.lower(), "at": _now().isoformat()}
+
+    # --- reply inbox: webhook registration + routing (Phase 1, step 4) -----
+    # One application-wide webhook; every event carries account_id, which we map
+    # back to the owning recruiter (owner_of_account) before touching any record,
+    # so a reply only ever updates the recruiter who sent the outreach.
+
+    def ensure_reply_webhook(self, *, public_base_url: str) -> Dict[str, Any]:
+        """Idempotently register the single reply webhook. The receiver is secured
+        by our own token in the URL query (= UNIPILE_WEBHOOK_SECRET); Unipile's
+        own generated secret isn't relied on. Safe to call repeatedly."""
+        secret = (get_unipile_webhook_secret() or "").strip()
+        if not secret:
+            raise OutreachActionError("Set UNIPILE_WEBHOOK_SECRET before registering the reply webhook.")
+        url = public_base_url.rstrip("/") + "/integrations/webhook?token=" + secret
+        for hook in (self._client.list_webhooks() or []):
+            if "/integrations/webhook" in str(hook.get("url") or ""):
+                return {"registered": False, "id": hook.get("id"), "url": hook.get("url"), "events": REPLY_EVENTS}
+        created = self._client.create_webhook(url=url, trigger_events=list(REPLY_EVENTS), description="RecruiterAI outreach replies")
+        logger.info("Registered reply webhook | id=%s", created.get("id"))
+        return {"registered": True, "id": created.get("id"), "url": url, "events": REPLY_EVENTS}
+
+    def interpret_event(self, event: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """Map a Unipile webhook event to a state change for ONE recruiter, or None
+        if it isn't a reply/acceptance we track or the account isn't one we own.
+        Returns {owner_email, channel, identifiers:[...], state}. Matching on the
+        sender identifier is what makes it inbound-only — a message from the
+        candidate carries the candidate's id, never ours."""
+        if not isinstance(event, dict):
+            return None
+        account_id = event.get("account_id") or (event.get("account") or {}).get("id")
+        etype = (event.get("type") or "").strip().lower()
+        payload = event.get("payload")
+        if not isinstance(payload, dict):
+            payload = event  # some deliveries flatten the object onto the envelope
+        if not account_id:
+            return None
+        owned = self._accounts.owner_of_account(account_id)
+        if not owned:
+            return None
+        owner_email = owned[0]
+        if etype == "email.new":
+            froms = payload.get("from") or (payload.get("email") or {}).get("from") or []
+            ids = [str(a.get("email")).strip().lower() for a in froms if isinstance(a, dict) and a.get("email")]
+            return {"owner_email": owner_email, "channel": "email", "identifiers": ids, "state": "replied"} if ids else None
+        if etype == "message.new":
+            if payload.get("is_sender") is True:   # a message WE sent — not a reply
+                return None
+            sender = payload.get("sender_id") or (payload.get("sender") or {}).get("id") or (payload.get("sender") or {}).get("provider_id")
+            return {"owner_email": owner_email, "channel": "linkedin", "identifiers": [str(sender)], "state": "replied"} if sender else None
+        if etype == "relation.new":
+            uid = payload.get("member_id") or payload.get("provider_id") or payload.get("user_id") or payload.get("id")
+            return {"owner_email": owner_email, "channel": "linkedin", "identifiers": [str(uid)], "state": "connected"} if uid else None
+        return None

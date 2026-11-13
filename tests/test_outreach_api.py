@@ -1,5 +1,6 @@
 """/search/{id}/outreach/{draft,send} — owned-search scoped, state persisted."""
 
+import backend.api as api_mod
 import backend.services.outreach_draft as draft_mod
 from fastapi.testclient import TestClient
 
@@ -15,6 +16,10 @@ URL = "https://www.linkedin.com/in/jane-doe-123/"
 class FakeOutreach:
     def __init__(self):
         self.calls = []
+        self.interp = None  # canned interpret_event result for webhook tests
+
+    def interpret_event(self, event):
+        return self.interp
 
     def sender_name(self, owner, channel):
         return "Alice R"
@@ -131,3 +136,48 @@ def test_another_recruiter_cannot_reach_this_search(tmp_path):
     client.cookies.set(SESSION_COOKIE_NAME, create_session_cookie_value(OWNER))
     resp = client.post("/search/s1/outreach/send", json={"candidate_id": "c1", "channel": "linkedin", "body": "Hi"})
     assert resp.status_code == 404
+
+
+# --- reply webhook (step 4) ------------------------------------------------
+def _set_outreach(store, entry):
+    store.update("s1", lambda r: r.setdefault("outreach", {}).__setitem__("c1", {"linkedin": entry}))
+
+
+def test_webhook_flips_matching_candidate_to_replied(tmp_path, monkeypatch):
+    monkeypatch.setattr(api_mod, "get_unipile_webhook_secret", lambda: "SECRET")
+    client, fake, store = _client(tmp_path)
+    _set_outreach(store, {"channel": "linkedin", "state": "invited", "target_id": "PID-JANE"})
+    fake.interp = {"owner_email": OWNER, "channel": "linkedin", "identifiers": ["PID-JANE"], "state": "replied"}
+    resp = client.post("/integrations/webhook?token=SECRET", json={"account_id": "acc_li", "type": "message.new", "payload": {}})
+    assert resp.status_code == 200 and resp.json()["updated"] == 1
+    assert store.load("s1")["outreach"]["c1"]["linkedin"]["state"] == "replied"
+
+
+def test_webhook_rejects_bad_token(tmp_path, monkeypatch):
+    monkeypatch.setattr(api_mod, "get_unipile_webhook_secret", lambda: "SECRET")
+    client, _, _ = _client(tmp_path)
+    assert client.post("/integrations/webhook?token=wrong", json={}).status_code == 401
+
+
+def test_webhook_no_match_is_a_quiet_200(tmp_path, monkeypatch):
+    monkeypatch.setattr(api_mod, "get_unipile_webhook_secret", lambda: "SECRET")
+    client, fake, store = _client(tmp_path)
+    _set_outreach(store, {"channel": "linkedin", "state": "invited", "target_id": "PID-JANE"})
+    fake.interp = {"owner_email": OWNER, "channel": "linkedin", "identifiers": ["SOMEONE-ELSE"], "state": "replied"}
+    resp = client.post("/integrations/webhook?token=SECRET", json={"type": "message.new"})
+    assert resp.status_code == 200 and resp.json()["updated"] == 0
+    assert store.load("s1")["outreach"]["c1"]["linkedin"]["state"] == "invited"
+
+
+def test_webhook_connected_does_not_downgrade_a_reply(tmp_path, monkeypatch):
+    monkeypatch.setattr(api_mod, "get_unipile_webhook_secret", lambda: "SECRET")
+    client, fake, store = _client(tmp_path)
+    _set_outreach(store, {"channel": "linkedin", "state": "replied", "target_id": "PID-JANE"})
+    fake.interp = {"owner_email": OWNER, "channel": "linkedin", "identifiers": ["PID-JANE"], "state": "connected"}
+    client.post("/integrations/webhook?token=SECRET", json={"type": "relation.new"})
+    assert store.load("s1")["outreach"]["c1"]["linkedin"]["state"] == "replied"
+
+
+def test_webhook_register_requires_admin(tmp_path):
+    client, _, _ = _client(tmp_path)  # OWNER is not the super admin
+    assert client.post("/integrations/webhook/register").status_code in (403, 404)

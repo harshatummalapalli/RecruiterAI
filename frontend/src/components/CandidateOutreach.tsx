@@ -21,7 +21,12 @@ const STATE_LABEL: Record<string, string> = {
   messaged: 'Message sent',
   inmailed: 'InMail sent',
   emailed: 'Email sent',
+  connected: 'Connection accepted',
+  replied: 'Replied',
 }
+
+// States worth calling out — a reply/acceptance is a result, not just a sent touch.
+const STRONG_STATES = new Set(['replied', 'connected'])
 
 function actionLabel(c: Composer): string {
   if (c.channel === 'email') return 'Email'
@@ -107,7 +112,7 @@ export function CandidateOutreach({ searchId, candidateId, name, profileUrl, ema
       {chips.length ? (
         <div className="co-status">
           {chips.map((s) => (
-            <span key={s.channel} className="co-chip" title={s.at ? new Date(s.at).toLocaleString() : undefined}>
+            <span key={s.channel} className={`co-chip${STRONG_STATES.has(s.state) ? ' co-chip--strong' : ''}`} title={s.at ? new Date(s.at).toLocaleString() : undefined}>
               {s.channel === 'email' ? <Mail size={12} aria-hidden="true" /> : <Briefcase size={12} aria-hidden="true" />}
               {STATE_LABEL[s.state] ?? s.state}
             </span>
