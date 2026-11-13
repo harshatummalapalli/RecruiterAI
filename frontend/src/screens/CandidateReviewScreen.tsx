@@ -633,6 +633,8 @@ export function CandidateReviewScreen({
               noteDraft={noteDraft}
               onNoteDraftChange={setNoteDraft}
               onAddNote={() => addNote(selectedCandidate.id)}
+              searchId={searchId}
+              outreach={searchResponse?.outreach?.[selectedCandidate.id] ?? null}
             />
           ) : null}
 

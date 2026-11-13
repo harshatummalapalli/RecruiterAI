@@ -3,6 +3,8 @@ import { AlertTriangle, Check, ChevronDown, ChevronUp, ExternalLink, HelpCircle,
 import { initialsOf, relevanceLabel, type DiscoveryCandidate, type LedgerGroup, type LedgerRow } from '../models/discovery'
 import { cardFacts } from '../models/workspace'
 import { EvidenceDots } from './CandidateWorkspace'
+import { CandidateOutreach } from './CandidateOutreach'
+import type { OutreachState } from '../services/outreach'
 import type { CandidateAttributesRaw } from '../types'
 import './CandidateRecord.css'
 
@@ -63,6 +65,10 @@ type CandidateRecordProps = {
   noteDraft: string
   onNoteDraftChange: (value: string) => void
   onAddNote: () => void
+  /** For the Reach-out panel: the current search and any outreach already recorded
+   * for this candidate (by channel). Omitted/null hides the panel (e.g. no search). */
+  searchId?: string | null
+  outreach?: Record<string, OutreachState> | null
 }
 
 function Avatar({ name, url }: { name: string; url: string | null }) {
@@ -152,7 +158,7 @@ function LedgerSection({ group }: { group: LedgerGroup }) {
   )
 }
 
-export function CandidateRecord({ candidate, decision, onDecision, onClose, onPrev, onNext, notes, noteDraft, onNoteDraftChange, onAddNote }: CandidateRecordProps) {
+export function CandidateRecord({ candidate, decision, onDecision, onClose, onPrev, onNext, notes, noteDraft, onNoteDraftChange, onAddNote, searchId, outreach }: CandidateRecordProps) {
   const [showAllCareer, setShowAllCareer] = useState(false)
   const [showAllSkills, setShowAllSkills] = useState(false)
   const noteInputRef = useRef<HTMLTextAreaElement>(null)
@@ -277,6 +283,17 @@ export function CandidateRecord({ candidate, decision, onDecision, onClose, onPr
           </button>
         ))}
       </div>
+
+      {searchId ? (
+        <CandidateOutreach
+          searchId={searchId}
+          candidateId={candidate.id}
+          name={candidate.name}
+          profileUrl={candidate.profileUrl}
+          email={candidate.contactEmail}
+          initial={outreach ?? null}
+        />
+      ) : null}
 
       {/* "Why this candidate" — our assessment, then their own profile summary folded in
           (the old separate "Candidate Snapshot" section, which read as a confusing duplicate). */}

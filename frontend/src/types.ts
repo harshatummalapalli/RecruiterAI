@@ -321,6 +321,9 @@ export interface SearchResponse {
   /** New engine: result of the last pool-first refine. `exhausted` means nobody in the
    * already-read pool matched the tighter brief — reaching wider costs credits. */
   refine_outcome?: { refined: boolean; matched: number; dropped: number; shown: number; exhausted: boolean } | null
+  /** Per-candidate outreach state for this recruiter, keyed by candidate_id then channel
+   * (e.g. { c1: { linkedin: { state: 'invited', ... } } }). Step 3. */
+  outreach?: Record<string, Record<string, { channel: string; state: string; kind?: string; subject?: string; at?: string }>>
 }
 
 export type PauseKind = 'no_engagement' | 'feedback' | 'narrow' | 'exhausted'

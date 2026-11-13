@@ -46,7 +46,11 @@ def _svc(tmp_path):
 def test_begin_connect_mints_link_and_maps_channel(tmp_path):
     svc, client = _svc(tmp_path)
     link = svc.begin_connect(A, "linkedin", callback_url=CB)
-    assert link.startswith("https://auth.unipile.com/")
+    # Host-agnostic: the hosted host is the white-label domain when
+    # UNIPILE_HOSTED_AUTH_DOMAIN is set, else auth.unipile.com — either way the
+    # single-use state token rides the link. Don't couple the test to ambient env.
+    assert link.startswith("https://")
+    assert link.endswith(client.auth_links[0]["state"])
     assert client.auth_links[0]["providers"] == ["linkedin"]
     assert client.auth_links[0]["redirect_uri"] == CB
 

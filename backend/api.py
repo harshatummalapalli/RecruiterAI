@@ -305,6 +305,12 @@ class SearchResponse(BaseModel):
     # The result of the last pool-first refine (matched / dropped / exhausted), so the
     # UI can say "N of your read pool match" and offer a wider search when none do.
     refine_outcome: Optional[Dict[str, Any]] = None
+    # Per-candidate outreach state for THIS recruiter (they own this search), keyed
+    # by candidate_id, then by channel: {candidate_id: {"linkedin": {state, kind, at},
+    # "email": {state, subject, at}}}. Populated from the persisted record; it lets
+    # the card show "Invited"/"Emailed" without a per-candidate fetch. See the
+    # /search/{id}/outreach/* endpoints and backend/services/outreach.py (step 3).
+    outreach: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
 
 
 class WorkspaceUpdateRequest(BaseModel):
@@ -318,6 +324,25 @@ class CandidateUpdateRequest(BaseModel):
     # Optional, for Maybe and Reject only: a structured reason and a short note. See backend/services/role_feedback.py.
     feedback_reason: Optional[str] = None
     feedback_note: Optional[str] = None
+
+
+class OutreachDraftRequest(BaseModel):
+    """Ask for an AI draft for one candidate on one channel. `inmail` only applies
+    to LinkedIn (InMail vs a connection note)."""
+    candidate_id: str
+    channel: str  # "linkedin" | "email"
+    inmail: bool = False
+
+
+class OutreachSendRequest(BaseModel):
+    """Send a (recruiter-reviewed) outreach message. The candidate is identified
+    only by id within the owned search; the account is resolved server-side from
+    the session, never from the client."""
+    candidate_id: str
+    channel: str  # "linkedin" | "email"
+    body: str
+    subject: Optional[str] = None
+    inmail: bool = False
 
 
 class RefineRequest(BaseModel):
@@ -1239,6 +1264,7 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
         response_data["workspace_arranged"] = bool(record.get("workspace_arranged", False))
         response_data["confirmed_brief"] = record.get("confirmed_brief")
         response_data["status"] = record.get("status", response_data.get("status", "complete"))
+        response_data["outreach"] = record.get("outreach", {})
         response_data.update(derived_fields(record, clock()))
         return SearchResponse(**response_data)
 
@@ -1542,6 +1568,86 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
             raise HTTPException(status_code=404, detail="Search not found.")
         logger.info("[SEARCH] Pool-first reveal | search_id=%s revealed=%s", search_id, outcome["revealed"])
         return _search_response(record)
+
+    # --- Outreach on a candidate (Phase 1, step 3) -------------------------
+    # Both are scoped to an owned search (require_owned_search), so the candidate
+    # and the evidence to draft from come from the recruiter's own record, and the
+    # sending account is resolved from the session owner — never from the client.
+    def _find_candidate(record: Dict[str, Any], candidate_id: str) -> tuple:
+        response = record.get("response") or {}
+        candidates = response.get("candidates") or []
+        evidence = response.get("evidence") or []
+        for index, candidate in enumerate(candidates):
+            if candidate.get("candidate_id") == candidate_id:
+                return candidate, (evidence[index] if index < len(evidence) else {})
+        return None, None
+
+    def _candidate_email(candidate: Dict[str, Any], evidence: Optional[Dict[str, Any]]) -> Optional[str]:
+        return candidate.get("email") or ((evidence or {}).get("contact") or {}).get("email")
+
+    @app.post("/search/{search_id}/outreach/draft", dependencies=[Depends(require_session), Depends(require_owned_search)])
+    def outreach_draft(search_id: str, request: OutreachDraftRequest, http_request: Request) -> Dict[str, Any]:
+        from backend.services.outreach_draft import draft_outreach, fallback_draft
+        record = search_store.load(search_id)
+        if record is None:
+            raise HTTPException(status_code=404, detail="Search not found.")
+        candidate, evidence = _find_candidate(record, request.candidate_id)
+        if candidate is None:
+            raise HTTPException(status_code=404, detail="Candidate not found in this search.")
+        owner = _session_owner(http_request) or ""
+        role = record.get("confirmed_brief") or record.get("role") or {}
+        channel = (request.channel or "").strip().lower()
+        sender = outreach_service.sender_name(owner, channel)
+        try:
+            return draft_outreach(channel, candidate=candidate, evidence=evidence, role=role,
+                                  recruiter_name=sender, inmail=request.inmail)
+        except Exception:
+            logger.exception("[OUTREACH] draft generation failed | search_id=%s channel=%s", search_id, channel)
+            return fallback_draft(channel, candidate=candidate, role=role, recruiter_name=sender, inmail=request.inmail)
+
+    @app.post("/search/{search_id}/outreach/send", dependencies=[Depends(require_session), Depends(require_owned_search)])
+    def outreach_send(search_id: str, request: OutreachSendRequest, http_request: Request) -> Dict[str, Any]:
+        from backend.providers.unipile import UnipileAPIError, UnipileError, UnipileNotConfiguredError
+        from backend.services.outreach import OutreachActionError
+        owner = _session_owner(http_request)
+        if not owner:
+            raise HTTPException(status_code=401, detail="Sign in first.")
+        record = search_store.load(search_id)
+        if record is None:
+            raise HTTPException(status_code=404, detail="Search not found.")
+        candidate, evidence = _find_candidate(record, request.candidate_id)
+        if candidate is None:
+            raise HTTPException(status_code=404, detail="Candidate not found in this search.")
+        channel = (request.channel or "").strip().lower()
+        try:
+            if channel == "linkedin":
+                if request.inmail:
+                    result = outreach_service.message_linkedin(owner, profile_url=candidate.get("profile_url"), text=request.body, inmail=True)
+                else:
+                    result = outreach_service.connect_linkedin(owner, profile_url=candidate.get("profile_url"), note=request.body)
+            elif channel == "email":
+                result = outreach_service.email_candidate(
+                    owner, to_email=_candidate_email(candidate, evidence),
+                    subject=request.subject, body=request.body, display_name=candidate.get("name"),
+                )
+            else:
+                raise HTTPException(status_code=400, detail="Unknown outreach channel.")
+        except OutreachActionError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        except UnipileNotConfiguredError:
+            raise HTTPException(status_code=503, detail="Outreach isn't enabled yet.")
+        except UnipileAPIError as exc:
+            raise HTTPException(status_code=502, detail=(exc.detail or exc.title or "That message was rejected by the provider."))
+        except UnipileError:
+            logger.exception("[OUTREACH] send failed | search_id=%s channel=%s", search_id, channel)
+            raise HTTPException(status_code=502, detail="Couldn't send that right now. Please try again.")
+
+        def apply(rec: Dict[str, Any]) -> None:
+            rec.setdefault("outreach", {}).setdefault(request.candidate_id, {})[channel] = result
+
+        search_store.update(search_id, apply)
+        logger.info("[OUTREACH] sent | search_id=%s candidate=%s channel=%s state=%s", search_id, request.candidate_id, channel, result.get("state"))
+        return {"candidate_id": request.candidate_id, "channel": channel, "outreach": result}
 
     @app.post("/search/{search_id}/refine", response_model=SearchResponse, dependencies=[Depends(require_session), Depends(require_owned_search)])
     def refine_search(search_id: str, request: RefineRequest) -> SearchResponse:

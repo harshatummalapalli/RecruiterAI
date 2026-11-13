@@ -1,0 +1,129 @@
+.co-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.co-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-success, #15803d);
+  background: color-mix(in srgb, var(--color-success, #15803d) 12%, transparent);
+}
+
+.co-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.co-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-accent-ink, #fff);
+  cursor: pointer;
+}
+
+.co-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.co-btn--ghost {
+  background: transparent;
+  color: var(--color-secondary-text);
+  border-color: var(--color-border);
+}
+
+.co-composer {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+}
+
+.co-composer__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.co-composer__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary-text);
+}
+
+.co-drafting {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-accent);
+}
+
+.co-subject,
+.co-body {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--color-primary-text);
+  background: var(--color-sidebar-bg, transparent);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.co-subject {
+  margin-bottom: 8px;
+}
+
+.co-body {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.co-composer__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.co-composer__buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.co-count {
+  font-size: 12px;
+  color: var(--color-muted);
+}
+
+.co-count.is-over {
+  color: var(--color-danger, #b91c1c);
+  font-weight: 700;
+}
+
+.co-error {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  color: var(--color-danger, #b91c1c);
+}

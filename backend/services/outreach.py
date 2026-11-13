@@ -16,9 +16,11 @@ PendingConnectStore, so the whole flow is unit-testable offline.
 
 from __future__ import annotations
 
+import html as _html
 import json
 import logging
 import os
+import re
 import secrets
 import threading
 from datetime import datetime, timedelta, timezone
@@ -54,9 +56,39 @@ _CHANNEL_FOR_RAW: Dict[str, str] = {
 CONNECT_TTL_SECONDS = 900  # 15 min
 _DEFAULT_PENDING_DIR = Path(__file__).resolve().parents[2] / "output" / "connect_tokens"
 
+# LinkedIn caps the custom note on a connection request (~200 chars on a free
+# seat). We truncate rather than let the provider 400 — the draft aims shorter.
+LINKEDIN_NOTE_CAP = 200
+
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def _linkedin_public_id(profile_url: Optional[str]) -> Optional[str]:
+    """The /in/<slug> identifier from a LinkedIn profile URL — what Unipile's
+    get_profile accepts to resolve the internal provider_id. None if the URL has
+    no /in/ segment (e.g. a company page or a missing link)."""
+    if not profile_url:
+        return None
+    match = re.search(r"/in/([^/?#]+)", str(profile_url))
+    return match.group(1).strip() if match else None
+
+
+def _is_first_degree(network_distance: Optional[str]) -> bool:
+    """Whether the candidate is already a 1st-degree connection — in which case a
+    normal message is sent instead of (and without spending) an InMail."""
+    value = (network_distance or "").upper()
+    return "1" in value or "FIRST" in value
+
+
+def _text_to_html(text: str) -> str:
+    """Plain draft text -> safe minimal HTML (blank lines split paragraphs,
+    single newlines become <br>). `html` is required by Unipile for email
+    tracking and renders consistently across clients."""
+    blocks = [block.strip() for block in re.split(r"\n\s*\n", (text or "").strip()) if block.strip()]
+    paras = ["<p>" + _html.escape(block).replace("\n", "<br>") + "</p>" for block in blocks]
+    return "".join(paras) or "<p></p>"
 
 
 class PendingConnectStore:
@@ -124,6 +156,14 @@ class PendingConnectStore:
 
 class OutreachConnectError(Exception):
     """A connect attempt that cannot proceed (unknown channel, bad/expired token)."""
+
+
+class OutreachActionError(Exception):
+    """An outreach action that cannot proceed for a reason we state to the
+    recruiter: the channel isn't connected, the candidate has no reachable
+    LinkedIn link / email, or there's nothing to send. Provider-side rejections
+    (char cap, already-connected, rate limit) surface as UnipileAPIError and are
+    translated at the API layer, not here."""
 
 
 class OutreachService:
@@ -207,3 +247,80 @@ class OutreachService:
             except Exception:  # local unbind still proceeds
                 logger.warning("Unipile account delete failed on disconnect | account_id=%s", rec.get("account_id"))
         return self._accounts.unbind(owner_email, channel)
+
+    # --- outreach actions (Phase 1, step 3) --------------------------------
+    # Every action resolves the recruiter's own account_id from owner_email via
+    # the ConnectedAccountStore — the account is NEVER taken from client input,
+    # so one recruiter can only ever send from accounts they connected.
+
+    def sender_name(self, owner_email: str, channel: str) -> Optional[str]:
+        """Display name of the recruiter's connected account for this channel, to
+        sign a draft with. None if not connected."""
+        rec = self._accounts.account_for(owner_email, (channel or "").strip().lower())
+        return (rec or {}).get("display_name")
+
+    def _require_account_id(self, owner_email: str, channel: str) -> str:
+        rec = self._accounts.account_for(owner_email, channel)
+        if not rec or not rec.get("account_id"):
+            label = {"linkedin": "LinkedIn", "email": "email", "whatsapp": "WhatsApp"}.get(channel, channel)
+            raise OutreachActionError(f"Connect your {label} in Settings → Integrations first.")
+        return rec["account_id"]
+
+    def _resolve_linkedin(self, owner_email: str, profile_url: Optional[str]) -> Tuple[str, str, Optional[str]]:
+        """(account_id, provider user_id, network_distance) for a candidate's
+        LinkedIn profile, resolved through the recruiter's own account."""
+        account_id = self._require_account_id(owner_email, "linkedin")
+        public_id = _linkedin_public_id(profile_url)
+        if not public_id:
+            raise OutreachActionError("This candidate has no LinkedIn profile link to reach out to.")
+        profile = self._client.get_profile(account_id, public_id) or {}
+        user_id = profile.get("provider_id") or profile.get("id")
+        if not user_id:
+            raise OutreachActionError("Couldn't open this LinkedIn profile to send a message.")
+        return account_id, str(user_id), profile.get("network_distance")
+
+    def connect_linkedin(self, owner_email: str, *, profile_url: Optional[str], note: Optional[str] = None) -> Dict[str, Any]:
+        """Send a LinkedIn connection request (with an optional note) from the
+        recruiter's account."""
+        account_id, user_id, _ = self._resolve_linkedin(owner_email, profile_url)
+        note = (note or "").strip()[:LINKEDIN_NOTE_CAP] or None
+        self._client.send_relation_request(account_id, user_id, note)
+        return {"channel": "linkedin", "state": "invited", "kind": "connect", "at": _now().isoformat()}
+
+    def message_linkedin(self, owner_email: str, *, profile_url: Optional[str], text: str, inmail: bool = False) -> Dict[str, Any]:
+        """Message a candidate on LinkedIn. A 1st-degree connection gets a normal
+        message; otherwise `inmail=True` sends an InMail (needs a Premium/Recruiter
+        seat and spends an InMail credit)."""
+        text = (text or "").strip()
+        if not text:
+            raise OutreachActionError("There's nothing to send.")
+        account_id, user_id, distance = self._resolve_linkedin(owner_email, profile_url)
+        use_inmail = bool(inmail) and not _is_first_degree(distance)
+        self._client.start_chat(account_id, user_id, text, inmail=use_inmail)
+        return {
+            "channel": "linkedin",
+            "state": "inmailed" if use_inmail else "messaged",
+            "kind": "inmail" if use_inmail else "message",
+            "at": _now().isoformat(),
+        }
+
+    def email_candidate(self, owner_email: str, *, to_email: Optional[str], subject: Optional[str], body: str, display_name: Optional[str] = None) -> Dict[str, Any]:
+        """Send an email to a candidate from the recruiter's connected mailbox."""
+        account_id = self._require_account_id(owner_email, "email")
+        to_email = (to_email or "").strip()
+        if not to_email:
+            raise OutreachActionError("There's no email address on file for this candidate.")
+        body = (body or "").strip()
+        if not body:
+            raise OutreachActionError("There's nothing to send.")
+        recipient: Dict[str, str] = {"email": to_email}
+        if display_name:
+            recipient["display_name"] = display_name
+        self._client.send_email(
+            account_id,
+            to=[recipient],
+            subject=(subject or None),
+            html=_text_to_html(body),
+            plain_text=body,
+        )
+        return {"channel": "email", "state": "emailed", "kind": "email", "subject": subject or "", "at": _now().isoformat()}

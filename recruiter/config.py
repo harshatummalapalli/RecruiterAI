@@ -12,3 +12,4 @@ CAPABILITY_MODEL = "claude-sonnet-5-5"   # role-defining capability (rare, cache
 JUDGE_MODEL = "claude-sonnet-5-5"        # requirement verification (quality-critical)
 SCREEN_MODEL = "claude-haiku-5-5"        # Tier-1 admission gate (high-volume, coarse, cheap)
 CAREER_MODEL = "claude-sonnet-5-5"       # Tier-2 holistic career-fit read (quality-critical ranking driver)
+OUTREACH_MODEL = "claude-sonnet-5-5"     # first-touch outreach drafting (tone-critical, recruiter edits before send)
