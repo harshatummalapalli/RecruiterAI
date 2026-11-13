@@ -73,13 +73,33 @@ describe('CandidateOutreach', () => {
     await render()
     await act(async () => { btnByText('Connect').dispatchEvent(new MouseEvent('click', { bubbles: true })) })
     await flush()
-    expect(draftOutreach).toHaveBeenCalledWith('s1', 'c1', 'linkedin', false)
+    expect(draftOutreach).toHaveBeenCalledWith('s1', 'c1', 'linkedin', false, 'warm')
     expect(($('.co-body') as HTMLTextAreaElement).value).toBe('Hi Jane, loved your work.')
 
     await act(async () => { btnByText('Send connect').dispatchEvent(new MouseEvent('click', { bubbles: true })) })
     await flush()
     expect(sendOutreach).toHaveBeenCalledWith('s1', expect.objectContaining({ candidateId: 'c1', channel: 'linkedin', inmail: false }))
     expect($('.co-chip')?.textContent).toMatch(/Invitation sent/)
+  })
+
+  it('switching tone to Direct re-drafts', async () => {
+    await render()
+    await act(async () => { btnByText('Connect').dispatchEvent(new MouseEvent('click', { bubbles: true })) })
+    await flush()
+    vi.mocked(draftOutreach).mockClear()
+    const direct = $$('.co-tone__opt').find((b) => b.textContent === 'Direct')!
+    await act(async () => { direct.dispatchEvent(new MouseEvent('click', { bubbles: true })) })
+    await flush()
+    expect(draftOutreach).toHaveBeenCalledWith('s1', 'c1', 'linkedin', false, 'direct')
+  })
+
+  it('shows a reconnect notice when a connected channel is not running', async () => {
+    vi.mocked(listIntegrations).mockResolvedValue([
+      { channel: 'linkedin', connected: true, status: 'credentials' },
+      { channel: 'email', connected: false },
+    ])
+    await render()
+    expect($('.co-reconnect')?.textContent).toMatch(/reconnect/i)
   })
 
   it('hints to connect an account when none are connected', async () => {

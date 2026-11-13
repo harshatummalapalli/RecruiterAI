@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Briefcase, Mail, Send, Sparkles } from 'lucide-react'
+import { AlertTriangle, Briefcase, Mail, RefreshCw, Send, Sparkles } from 'lucide-react'
 import { listIntegrations } from '../services/integrations'
-import { draftOutreach, getOutreachLimits, sendOutreach, type OutreachChannel, type OutreachLimits, type OutreachState } from '../services/outreach'
+import { draftOutreach, getOutreachLimits, sendOutreach, type OutreachChannel, type OutreachLimits, type OutreachState, type OutreachTone } from '../services/outreach'
 import './CandidateOutreach.css'
 
 type Composer = { channel: OutreachChannel; inmail: boolean }
@@ -38,9 +38,11 @@ function actionLabel(c: Composer): string {
 
 export function CandidateOutreach({ searchId, candidateId, name, profileUrl, email, initial }: Props) {
   const [connected, setConnected] = useState<Set<string> | null>(null)
+  const [needsReconnect, setNeedsReconnect] = useState<Set<string>>(new Set())
   const [limits, setLimits] = useState<OutreachLimits | null>(null)
   const [sent, setSent] = useState<Record<string, OutreachState>>(initial ?? {})
   const [composer, setComposer] = useState<Composer | null>(null)
+  const [tone, setTone] = useState<OutreachTone>('warm')
   const [drafting, setDrafting] = useState(false)
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
@@ -59,7 +61,12 @@ export function CandidateOutreach({ searchId, candidateId, name, profileUrl, ema
   useEffect(() => {
     let alive = true
     listIntegrations()
-      .then((items) => { if (alive) setConnected(new Set(items.filter((i) => i.connected).map((i) => i.channel))) })
+      .then((items) => {
+        if (!alive) return
+        setConnected(new Set(items.filter((i) => i.connected).map((i) => i.channel)))
+        // Connected but the provider session has dropped — prompt a reconnect.
+        setNeedsReconnect(new Set(items.filter((i) => i.connected && i.status && i.status !== 'running').map((i) => i.channel)))
+      })
       .catch(() => { if (alive) setConnected(new Set()) })
     getOutreachLimits().then((l) => { if (alive) setLimits(l) }).catch(() => {})
     return () => { alive = false }
@@ -72,16 +79,12 @@ export function CandidateOutreach({ searchId, candidateId, name, profileUrl, ema
   const remaining = (category: string): number | null => (limits ? (limits[category]?.remaining ?? null) : null)
   const capped = (category: string) => remaining(category) === 0
 
-  const openComposer = async (next: Composer) => {
-    setComposer(next)
-    setError(null)
-    setSubject('')
-    setBody('')
-    setCharLimit(null)
+  const loadDraft = async (comp: Composer, toneVal: OutreachTone) => {
     if (!searchId) return
     setDrafting(true)
+    setError(null)
     try {
-      const draft = await draftOutreach(searchId, candidateId, next.channel, next.inmail)
+      const draft = await draftOutreach(searchId, candidateId, comp.channel, comp.inmail, toneVal)
       setSubject(draft.subject ?? '')
       setBody(draft.body ?? '')
       setCharLimit(draft.char_limit)
@@ -90,6 +93,20 @@ export function CandidateOutreach({ searchId, candidateId, name, profileUrl, ema
     } finally {
       setDrafting(false)
     }
+  }
+
+  const openComposer = (next: Composer) => {
+    setComposer(next)
+    setError(null)
+    setSubject('')
+    setBody('')
+    setCharLimit(null)
+    void loadDraft(next, tone)
+  }
+
+  const pickTone = (next: OutreachTone) => {
+    setTone(next)
+    if (composer) void loadDraft(composer, next)
   }
 
   const send = async () => {
@@ -117,6 +134,13 @@ export function CandidateOutreach({ searchId, candidateId, name, profileUrl, ema
   return (
     <section className="record-section co" aria-labelledby="record-outreach">
       <h3 id="record-outreach" className="record-section__title">Reach out</h3>
+
+      {needsReconnect.size ? (
+        <p className="co-reconnect" role="alert">
+          <AlertTriangle size={13} aria-hidden="true" />
+          {' '}Your {Array.from(needsReconnect).map((c) => (c === 'email' ? 'email' : 'LinkedIn')).join(' & ')} needs reconnecting — fix it in Settings → Integrations.
+        </p>
+      ) : null}
 
       {chips.length ? (
         <div className="co-status">
@@ -180,6 +204,16 @@ export function CandidateOutreach({ searchId, candidateId, name, profileUrl, ema
               {actionLabel(composer)} to {name.split(' ')[0] || name}
             </span>
             {drafting ? <span className="co-drafting"><Sparkles size={12} aria-hidden="true" /> Drafting…</span> : null}
+          </div>
+
+          <div className="co-tone">
+            <div className="co-tone__seg" role="group" aria-label="Draft tone">
+              <button type="button" className={`co-tone__opt${tone === 'warm' ? ' is-active' : ''}`} onClick={() => pickTone('warm')} disabled={drafting}>Warm</button>
+              <button type="button" className={`co-tone__opt${tone === 'direct' ? ' is-active' : ''}`} onClick={() => pickTone('direct')} disabled={drafting}>Direct</button>
+            </div>
+            <button type="button" className="co-regen" onClick={() => void loadDraft(composer, tone)} disabled={drafting} title="Regenerate the draft">
+              <RefreshCw size={12} aria-hidden="true" /> Regenerate
+            </button>
           </div>
 
           {(composer.channel === 'email' || composer.inmail) ? (

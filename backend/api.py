@@ -333,6 +333,7 @@ class OutreachDraftRequest(BaseModel):
     candidate_id: str
     channel: str  # "linkedin" | "email"
     inmail: bool = False
+    tone: Optional[str] = None  # "warm" | "direct" | None
 
 
 class OutreachSendRequest(BaseModel):
@@ -1683,7 +1684,7 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
         sender = outreach_service.sender_name(owner, channel)
         try:
             return draft_outreach(channel, candidate=candidate, evidence=evidence, role=role,
-                                  recruiter_name=sender, inmail=request.inmail)
+                                  recruiter_name=sender, inmail=request.inmail, tone=request.tone)
         except Exception:
             logger.exception("[OUTREACH] draft generation failed | search_id=%s channel=%s", search_id, channel)
             return fallback_draft(channel, candidate=candidate, role=role, recruiter_name=sender, inmail=request.inmail)

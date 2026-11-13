@@ -37,17 +37,20 @@ async function detail(res: Response, fallback: string): Promise<string> {
   return (body && body.detail) || fallback
 }
 
+export type OutreachTone = 'warm' | 'direct'
+
 export async function draftOutreach(
   searchId: string,
   candidateId: string,
   channel: OutreachChannel,
   inmail = false,
+  tone?: OutreachTone,
 ): Promise<OutreachDraft> {
   const res = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(searchId)}/outreach/draft`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ candidate_id: candidateId, channel, inmail }),
+    body: JSON.stringify({ candidate_id: candidateId, channel, inmail, tone }),
   })
   if (!res.ok) throw new Error(await detail(res, 'Could not draft a message.'))
   return (await res.json()) as OutreachDraft
