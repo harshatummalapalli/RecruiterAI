@@ -23,6 +23,7 @@ class Settings(BaseModel):
     unipile_api_key: Optional[str] = Field(default=None, description="Unipile app Account API Key (server-side; outreach/messaging). Never the MCP test key.")
     unipile_base_url: str = Field(default="https://api.unipile.com", description="Unipile API base URL")
     unipile_webhook_secret: Optional[str] = Field(default=None, description="Shared secret used to verify inbound Unipile webhooks")
+    unipile_hosted_auth_domain: Optional[str] = Field(default=None, description="White-label Hosted Auth hostname (e.g. connect.dayzero.partners), verified with Unipile, so recruiters never see the vendor. Falls back to Unipile's host when unset.")
     harvest_enrichment_top_n: int = Field(default=25, description="How many top-ranked candidates to enrich via Harvest per search")
     harvest_enrichment_concurrency: int = Field(default=3, description="Max concurrent in-flight Harvest requests per search")
     discovery_page_size: int = Field(default=50, description="CrustData /person/search page size (results per query) — backend-owned, not the frontend's")
@@ -43,6 +44,7 @@ class Settings(BaseModel):
             "harvest_api_key": source.get("HARVEST_API_KEY"),
             "unipile_api_key": source.get("UNIPILE_API_KEY"),
             "unipile_webhook_secret": source.get("UNIPILE_WEBHOOK_SECRET"),
+            "unipile_hosted_auth_domain": source.get("UNIPILE_HOSTED_AUTH_DOMAIN"),
             "google_client_id": source.get("GOOGLE_CLIENT_ID"),
             "allowed_email_domain": source.get("ALLOWED_EMAIL_DOMAIN"),
             "super_admin_email": source.get("SUPER_ADMIN_EMAIL"),
@@ -75,6 +77,7 @@ class Settings(BaseModel):
         "harvest_api_key",
         "unipile_api_key",
         "unipile_webhook_secret",
+        "unipile_hosted_auth_domain",
         "google_client_id",
         "allowed_email_domain",
         "super_admin_email",
@@ -112,6 +115,7 @@ def get_settings() -> Settings:
         os.environ.get("UNIPILE_API_KEY"),
         os.environ.get("UNIPILE_BASE_URL"),
         os.environ.get("UNIPILE_WEBHOOK_SECRET"),
+        os.environ.get("UNIPILE_HOSTED_AUTH_DOMAIN"),
         os.environ.get("HARVEST_ENRICHMENT_TOP_N"),
         os.environ.get("HARVEST_ENRICHMENT_CONCURRENCY"),
         os.environ.get("DISCOVERY_PAGE_SIZE"),
@@ -158,6 +162,12 @@ def get_unipile_base_url() -> str:
 def get_unipile_webhook_secret() -> Optional[str]:
     """Shared secret used to verify inbound Unipile webhooks (UNIPILE_WEBHOOK_SECRET)."""
     return get_settings().unipile_webhook_secret
+
+
+def get_unipile_hosted_auth_domain() -> Optional[str]:
+    """White-label Hosted Auth hostname (UNIPILE_HOSTED_AUTH_DOMAIN) so the connect
+    page is served on our own domain and recruiters never see the vendor."""
+    return get_settings().unipile_hosted_auth_domain
 
 
 def get_harvest_enrichment_top_n() -> int:

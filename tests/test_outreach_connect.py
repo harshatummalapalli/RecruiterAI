@@ -20,9 +20,10 @@ class FakeClient:
         self.deleted = []
         self.accounts = {}  # account_id -> {"name": ...}
 
-    def create_auth_link(self, *, providers, redirect_uri, state, expires_on):
-        self.auth_links.append({"providers": providers, "state": state, "redirect_uri": redirect_uri})
-        return {"object": "HostedAuthLink", "link": f"https://auth.unipile.com/{state}"}
+    def create_auth_link(self, *, providers, redirect_uri, state, expires_on, domain=None):
+        self.auth_links.append({"providers": providers, "state": state, "redirect_uri": redirect_uri, "domain": domain})
+        host = domain or "auth.unipile.com"
+        return {"object": "HostedAuthLink", "link": f"https://{host}/{state}"}
 
     def get_account(self, account_id):
         return self.accounts.get(account_id, {"name": None})

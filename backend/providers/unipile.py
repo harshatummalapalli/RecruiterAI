@@ -139,10 +139,13 @@ class UnipileClient:
         state: str,
         expires_on: str,
         notify_url: Optional[str] = None,
+        domain: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Hosted-auth link. `state` is our opaque, single-use recruiter token —
         it returns on the redirect AND the account.add webhook, binding the new
-        account to the right recruiter (see the isolation model in the spec)."""
+        account to the right recruiter (see the isolation model in the spec).
+        `domain` serves the wizard on our white-label host (must be verified with
+        Unipile) so recruiters never see the vendor."""
         body: Dict[str, Any] = {
             "providers": providers,
             "redirect_uri": redirect_uri,
@@ -151,6 +154,8 @@ class UnipileClient:
         }
         if notify_url:
             body["notify_url"] = notify_url
+        if domain:
+            body["domain"] = domain
         return self._request("POST", "/v2/auth/link", json=body)
 
     # --- people / profiles -------------------------------------------------

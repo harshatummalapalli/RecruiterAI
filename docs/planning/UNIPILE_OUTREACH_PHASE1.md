@@ -37,7 +37,14 @@ account_for(owner_email, provider) -> account_id | None   # ALWAYS filtered by o
 ```
 
 ### 1.3 Connect flow (hosted auth) — binds the account to the right recruiter
-Credentials never touch our servers; Unipile's hosted page handles them.
+Credentials never touch our servers; the hosted page handles them. **No vendor is
+ever exposed:** the page is served on our **white-label host**
+`connect.dayzero.partners` via the auth-link `domain` param (set
+`UNIPILE_HOSTED_AUTH_DOMAIN`). PREREQUISITE (one-time, owner): verify that subdomain
+with Unipile (DNS + their dashboard); until then the link falls back to the vendor
+host. (A fully in-modal "native auth" path exists — `/v2/auth/intent` — but was
+declined to keep us out of the LinkedIn credential path.) Connecting Gmail/Outlook
+still uses the recruiter's own provider OAuth (Google/Microsoft), which is expected.
 
 1. Recruiter (session `owner_email = R`) clicks **Connect LinkedIn**.
 2. Backend mints a **single-use, opaque connect token** `t`, stores `t → R` (short TTL, e.g. 15 min), and calls `POST /v2/auth/link`:
@@ -117,7 +124,8 @@ Base URL `https://api.unipile.com`; auth header `X-API-KEY`.
 ---
 
 ## 5. Secrets / config
-- `UNIPILE_API_KEY` (server-side app Account key) + `UNIPILE_DSN`/base `https://api.unipile.com` + `UNIPILE_WEBHOOK_SECRET` — all in `/etc/recruiterai.env` only, never the repo. The MCP test key stays out of production.
+- `UNIPILE_API_KEY` (server-side app Account key) + `UNIPILE_BASE_URL` (default `https://api.unipile.com`) + `UNIPILE_WEBHOOK_SECRET` + `UNIPILE_HOSTED_AUTH_DOMAIN` (white-label connect host) — all in `/etc/recruiterai.env` only, never the repo. The MCP test key stays out of production.
+- **Deploy note:** the new `/integrations/*` routes must be added to the nginx proxy regex on the server (see [[production-deployment]] — new backend routes otherwise fall through to the SPA).
 
 ---
 

@@ -25,6 +25,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from backend.config import get_unipile_hosted_auth_domain
 from backend.providers.unipile import UnipileClient
 from backend.services.connected_accounts import ConnectedAccountStore
 
@@ -150,6 +151,7 @@ class OutreachService:
             redirect_uri=callback_url,
             state=token,
             expires_on=expires_on,
+            domain=get_unipile_hosted_auth_domain(),  # white-label host; no vendor shown
         )
         link = data.get("link") if isinstance(data, dict) else None
         if not link:

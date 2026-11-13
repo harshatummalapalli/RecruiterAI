@@ -12,7 +12,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 
 from backend.auth import (
@@ -418,6 +418,14 @@ class IntakeAnswerRequest(BaseModel):
     label: str
 
 
+class IntegrationConnectRequest(BaseModel):
+    channel: str  # linkedin | email | whatsapp
+
+
+class IntegrationDisconnectRequest(BaseModel):
+    channel: str
+
+
 # The sidebar lists at most this many roles, and an unsearched brief only while it is recent.
 # Completed searches and drafts each get their OWN budget, rather than competing for one shared, recency-sorted
 # slot list — a burst of drafts (real or test-generated) can then never push a completed search out of view; it
@@ -503,6 +511,7 @@ def create_app(
     require_confirmation: Optional[bool] = None,
     role_clock: Optional[Callable[[], datetime]] = None,
     intake_service: Optional[Any] = None,
+    outreach_service: Optional[Any] = None,
 ) -> FastAPI:
     app = FastAPI(title="RecruiterAI API")
     app.add_middleware(
@@ -547,6 +556,14 @@ def create_app(
     send_confirmed_sentence = os.environ.get("RECRUITERAI_SEND_CONFIRMED_SEARCH_SENTENCE", "false").strip().lower() in ("1", "true", "yes")
     harvest_enrichment_service = harvest_enrichment_service or HarvestEnrichmentService()
     requirement_judge = requirement_judge or RequirementJudge()
+    # Outreach (Unipile) — per-recruiter connected accounts + hosted-auth connect
+    # flow. Always available; the actual Unipile calls no-op until UNIPILE_API_KEY
+    # is set on the server (connecting an account then fails friendly, not crashes).
+    if outreach_service is None:
+        from backend.providers.unipile import UnipileClient
+        from backend.services.connected_accounts import ConnectedAccountStore
+        from backend.services.outreach import OutreachService, PendingConnectStore
+        outreach_service = OutreachService(UnipileClient(), ConnectedAccountStore(), PendingConnectStore())
     search_summary_cache = _SummaryCache()
     clock = role_clock or (lambda: datetime.now(timezone.utc))
 
@@ -895,6 +912,82 @@ def create_app(
     @app.get("/providers", dependencies=[Depends(require_session)])
     def providers() -> Dict[str, List[str]]:
         return {"providers": provider_registry.available()}
+
+    # --- Outreach integrations (Settings → Connect LinkedIn / Email / WhatsApp) ---
+    # Per-recruiter: every account binds to the authenticated owner_email and is
+    # resolved from the session, never from client input. The connect page runs on
+    # our white-label host (UNIPILE_HOSTED_AUTH_DOMAIN), so no vendor is exposed.
+    def _connect_result_page(ok: bool, message: str, channel: Optional[str] = None) -> HTMLResponse:
+        # Our-branded callback page. It tells the opener (the Settings tab) the
+        # result and closes; a plain "return" link is the fallback if it can't close.
+        import html as _html
+        safe = _html.escape(message)
+        payload = json.dumps({"type": "recruiterai:integration", "ok": ok, "channel": channel})
+        body = f"""<!doctype html><html><head><meta charset="utf-8"><title>RecruiterAI</title>
+<style>body{{font-family:-apple-system,Segoe UI,Inter,sans-serif;background:#fbfbfd;color:#18223a;
+display:grid;place-items:center;height:100vh;margin:0}}.card{{max-width:360px;text-align:center;padding:28px}}
+.badge{{width:44px;height:44px;border-radius:50%;margin:0 auto 14px;display:grid;place-items:center;font-size:22px;
+background:{('#ecfaf1' if ok else '#fdecec')};color:{('#15803d' if ok else '#b91c1c')}}}
+p{{color:#46506a;font-size:14px}} a{{color:#16203a;font-weight:600}}</style></head>
+<body><div class="card"><div class="badge">{('✓' if ok else '!')}</div>
+<p>{safe}</p><p><a href="#" onclick="window.close();return false;">You can close this tab</a></p></div>
+<script>try{{if(window.opener)window.opener.postMessage({payload},"*");}}catch(e){{}}
+setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></body></html>"""
+        return HTMLResponse(content=body)
+
+    @app.get("/integrations", dependencies=[Depends(require_session)])
+    def list_integrations(http_request: Request) -> Dict[str, Any]:
+        owner = _session_owner(http_request)
+        return {"integrations": outreach_service.list_integrations(owner or "")}
+
+    @app.post("/integrations/connect", dependencies=[Depends(require_session)])
+    def integrations_connect(request: IntegrationConnectRequest, http_request: Request) -> Dict[str, str]:
+        from backend.providers.unipile import UnipileError, UnipileNotConfiguredError
+        from backend.services.outreach import OutreachConnectError
+        owner = _session_owner(http_request)
+        if not owner:
+            raise HTTPException(status_code=401, detail="Sign in to connect an account.")
+        callback = str(http_request.base_url).rstrip("/") + "/integrations/callback"
+        try:
+            link = outreach_service.begin_connect(owner, request.channel, callback_url=callback)
+        except OutreachConnectError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+        except UnipileNotConfiguredError:
+            raise HTTPException(status_code=503, detail="Account connections aren't enabled yet.")
+        except UnipileError:
+            logger.exception("[INTEGRATIONS] begin_connect failed | owner=%s channel=%s", owner, request.channel)
+            raise HTTPException(status_code=502, detail="Couldn't start the connection. Please try again.")
+        return {"link": link}
+
+    @app.get("/integrations/callback")
+    def integrations_callback(
+        account_id: Optional[str] = None,
+        provider: Optional[str] = None,
+        state: Optional[str] = None,
+        error_title: Optional[str] = None,
+    ) -> HTMLResponse:
+        # Unipile's redirect target. No session dependency — the binding is proven
+        # by the single-use `state` token (tied to the recruiter who started it),
+        # which the browser's session cookie can't be relied upon here.
+        from backend.services.outreach import OutreachConnectError
+        if error_title or not (account_id and state):
+            return _connect_result_page(False, error_title or "The connection was cancelled.")
+        try:
+            _owner, channel = outreach_service.complete_connect(state, account_id, provider or "")
+        except OutreachConnectError as exc:
+            return _connect_result_page(False, str(exc))
+        except Exception:
+            logger.exception("[INTEGRATIONS] complete_connect failed")
+            return _connect_result_page(False, "We couldn't finish connecting that account.")
+        label = {"linkedin": "LinkedIn", "email": "email", "whatsapp": "WhatsApp"}.get(channel, channel)
+        return _connect_result_page(True, f"Connected your {label}. Returning to RecruiterAI…", channel)
+
+    @app.post("/integrations/disconnect", dependencies=[Depends(require_session)])
+    def integrations_disconnect(request: IntegrationDisconnectRequest, http_request: Request) -> Dict[str, bool]:
+        owner = _session_owner(http_request)
+        if not owner:
+            raise HTTPException(status_code=401, detail="Sign in first.")
+        return {"disconnected": outreach_service.disconnect(owner, request.channel)}
 
     @app.post("/parse-jd", dependencies=[Depends(require_session)])
     def parse_jd(request: ParseRequest) -> SearchIntent:
