@@ -210,6 +210,36 @@ def test_inbox_lists_contacted_rows(tmp_path):
     assert row["role_title"] == "Principal Backend Engineer" and row["replied"] is False
 
 
+def test_sequence_enroll_then_send_advances(tmp_path):
+    client, _, store = _client(tmp_path)
+    enroll = client.post("/search/s1/outreach/sequence/enroll", json={"candidate_id": "c1"})
+    assert enroll.status_code == 200
+    assert enroll.json()["sequence"]["status"] == "active"
+    assert enroll.json()["due"]["step"] == "connect"
+    # Sending the connect step (the human did it) advances the sequence.
+    send = client.post("/search/s1/outreach/send", json={"candidate_id": "c1", "channel": "linkedin", "body": "Hi"})
+    steps = [s["step"] for s in send.json()["sequence"]["steps"]]
+    assert steps == ["connect"]
+    assert [s["step"] for s in store.load("s1")["outreach"]["c1"]["sequence"]["steps"]] == ["connect"]
+
+
+def test_sequence_stop(tmp_path):
+    client, _, store = _client(tmp_path)
+    client.post("/search/s1/outreach/sequence/enroll", json={"candidate_id": "c1"})
+    resp = client.post("/search/s1/outreach/sequence/stop", json={"candidate_id": "c1"})
+    assert resp.status_code == 200 and resp.json()["sequence"]["status"] == "stopped"
+
+
+def test_inbox_includes_sequence_due(tmp_path):
+    client, _, _ = _client(tmp_path)
+    client.post("/search/s1/outreach/sequence/enroll", json={"candidate_id": "c1"})
+    client.post("/search/s1/outreach/send", json={"candidate_id": "c1", "channel": "linkedin", "body": "Hi"})
+    row = client.get("/integrations/outreach/inbox").json()["inbox"][0]
+    # After connect, with no acceptance yet, the next step is waiting.
+    assert row["sequence"]["status"] == "active"
+    assert row["sequence_due"]["status"] == "waiting"
+
+
 def test_inbox_floats_replied_and_is_owner_scoped(tmp_path):
     client, _, store = _client(tmp_path)
     store.update("s1", lambda r: r.__setitem__("outreach", {

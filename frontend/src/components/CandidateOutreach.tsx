@@ -1,8 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, Briefcase, Mail, RefreshCw, Send, Sparkles } from 'lucide-react'
+import { AlertTriangle, Briefcase, Mail, RefreshCw, Send, Sparkles, Workflow } from 'lucide-react'
 import { listIntegrations } from '../services/integrations'
-import { draftOutreach, getOutreachLimits, sendOutreach, type OutreachChannel, type OutreachLimits, type OutreachState, type OutreachTone } from '../services/outreach'
+import { draftOutreach, enrollSequence, getOutreachLimits, sendOutreach, stopSequence, type OutreachChannel, type OutreachLimits, type OutreachSequence, type OutreachState, type OutreachTone } from '../services/outreach'
 import './CandidateOutreach.css'
+
+/** Split the stored outreach entry into per-channel states and the sequence object. */
+function splitInitial(init?: Record<string, OutreachState> | null): { channels: Record<string, OutreachState>; sequence: OutreachSequence | null } {
+  const channels: Record<string, OutreachState> = {}
+  let sequence: OutreachSequence | null = null
+  for (const [k, v] of Object.entries(init ?? {})) {
+    if (k === 'sequence') { sequence = v as unknown as OutreachSequence; continue }
+    if (v && (v as OutreachState).state) channels[k] = v as OutreachState
+  }
+  return { channels, sequence }
+}
 
 type Composer = { channel: OutreachChannel; inmail: boolean }
 
@@ -40,7 +51,9 @@ export function CandidateOutreach({ searchId, candidateId, name, profileUrl, ema
   const [connected, setConnected] = useState<Set<string> | null>(null)
   const [needsReconnect, setNeedsReconnect] = useState<Set<string>>(new Set())
   const [limits, setLimits] = useState<OutreachLimits | null>(null)
-  const [sent, setSent] = useState<Record<string, OutreachState>>(initial ?? {})
+  const [sent, setSent] = useState<Record<string, OutreachState>>(() => splitInitial(initial).channels)
+  const [sequence, setSequence] = useState<OutreachSequence | null>(() => splitInitial(initial).sequence)
+  const [seqBusy, setSeqBusy] = useState(false)
   const [composer, setComposer] = useState<Composer | null>(null)
   const [tone, setTone] = useState<OutreachTone>('warm')
   const [drafting, setDrafting] = useState(false)
@@ -52,7 +65,9 @@ export function CandidateOutreach({ searchId, candidateId, name, profileUrl, ema
 
   // Fresh candidate -> reset everything (the record pane reuses this component as you page through).
   useEffect(() => {
-    setSent(initial ?? {})
+    const split = splitInitial(initial)
+    setSent(split.channels)
+    setSequence(split.sequence)
     setComposer(null)
     setError(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -119,6 +134,7 @@ export function CandidateOutreach({ searchId, candidateId, name, profileUrl, ema
       })
       setSent((prev) => ({ ...prev, [res.channel]: res.outreach }))
       if (res.limits) setLimits(res.limits)
+      if (res.sequence !== undefined) setSequence(res.sequence ?? null)
       setComposer(null)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not send that message.')
@@ -128,6 +144,21 @@ export function CandidateOutreach({ searchId, candidateId, name, profileUrl, ema
   }
 
   const chips = useMemo(() => Object.values(sent), [sent])
+  const seqActive = sequence?.status === 'active'
+
+  const toggleSequence = async () => {
+    if (!searchId) return
+    setSeqBusy(true)
+    setError(null)
+    try {
+      const res = seqActive ? await stopSequence(searchId, candidateId) : await enrollSequence(searchId, candidateId)
+      setSequence(res.sequence)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not update the sequence.')
+    } finally {
+      setSeqBusy(false)
+    }
+  }
 
   if (!searchId) return null
 
@@ -193,6 +224,21 @@ export function CandidateOutreach({ searchId, candidateId, name, profileUrl, ema
               {hasLinkedIn && hasEmail ? ' · ' : hasEmail ? ' ' : ''}
               {hasEmail ? `${remaining(CATEGORY.email) ?? '—'} emails` : ''}
             </p>
+          ) : null}
+
+          {(hasLinkedIn || seqActive) ? (
+            <div className="co-seq">
+              {seqActive ? (
+                <>
+                  <span className="co-seq__on"><Workflow size={13} aria-hidden="true" /> In follow-up sequence — next step shows in Outreach</span>
+                  <button type="button" className="co-regen" onClick={() => void toggleSequence()} disabled={seqBusy}>{seqBusy ? '…' : 'Stop'}</button>
+                </>
+              ) : (
+                <button type="button" className="co-seq__start" onClick={() => void toggleSequence()} disabled={seqBusy}>
+                  <Workflow size={13} aria-hidden="true" /> {seqBusy ? 'Starting…' : 'Start follow-up sequence'}
+                </button>
+              )}
+            </div>
           ) : null}
         </>
       )}

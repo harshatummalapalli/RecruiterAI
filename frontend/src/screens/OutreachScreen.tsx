@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Briefcase, ExternalLink, Mail, MessageSquare, RefreshCw } from 'lucide-react'
+import { Briefcase, Clock, ExternalLink, Mail, RefreshCw, Workflow } from 'lucide-react'
 import { getOutreachInbox, type OutreachInboxRow } from '../services/outreach'
 import { initialsOf } from '../models/discovery'
 import './OutreachScreen.css'
@@ -111,8 +111,12 @@ export function OutreachScreen({ onOpen }: { onOpen: (searchId: string, candidat
                       {STATE_LABEL[c.state] ?? c.state}
                     </span>
                   ))}
-                  {row.sequence && row.sequence.status === 'active' ? (
-                    <span className="outreach-chip outreach-chip--seq"><MessageSquare size={11} aria-hidden="true" /> In sequence</span>
+                  {row.sequence_due && row.sequence_due.status === 'ready' ? (
+                    <span className="outreach-chip outreach-chip--ready"><Workflow size={11} aria-hidden="true" /> Next: {row.sequence_due.label}</span>
+                  ) : row.sequence_due && row.sequence_due.status === 'waiting' ? (
+                    <span className="outreach-chip outreach-chip--seq"><Clock size={11} aria-hidden="true" /> {row.sequence_due.label}</span>
+                  ) : row.sequence && row.sequence.status === 'active' ? (
+                    <span className="outreach-chip outreach-chip--seq"><Workflow size={11} aria-hidden="true" /> In sequence</span>
                   ) : null}
                 </span>
                 <span className="outreach-row__when">{since(row.last_activity)}</span>

@@ -147,6 +147,7 @@
 }
 
 .outreach-chip--seq { color: var(--color-accent); background: var(--color-accent-subtle, color-mix(in srgb, var(--color-accent) 12%, transparent)); }
+.outreach-chip--ready { color: #fff; background: var(--color-accent); }
 
 .outreach-row__when { flex: none; font-size: 12px; color: var(--color-muted); width: 64px; text-align: right; }
 

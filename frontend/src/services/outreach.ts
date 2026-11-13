@@ -25,6 +25,14 @@ export type OutreachState = {
  * ("linkedin_invite" | "linkedin_message" | "email"). */
 export type OutreachLimits = Record<string, { used: number; limit: number; remaining: number }>
 
+export type OutreachSequence = { flow: string; status: string; enrolled_at?: string; steps?: Array<{ step: string; at: string }> }
+/** What the recruiter should do next for an enrolled candidate (approve-each). */
+export type SequenceDue =
+  | { status: 'ready'; step: string; channel: string; inmail: boolean; label: string }
+  | { status: 'waiting'; label: string }
+  | { status: 'done' }
+  | null
+
 /** One row in the replies & outreach view — a candidate this recruiter contacted. */
 export type OutreachInboxRow = {
   search_id: string
@@ -33,9 +41,28 @@ export type OutreachInboxRow = {
   profile_url: string | null
   role_title: string
   channels: Record<string, OutreachState>
-  sequence?: { flow: string; status: string; current_step?: number } | null
+  sequence?: OutreachSequence | null
+  sequence_due?: SequenceDue
   last_activity: string | null
   replied: boolean
+}
+
+export async function enrollSequence(searchId: string, candidateId: string): Promise<{ sequence: OutreachSequence; due: SequenceDue }> {
+  const res = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(searchId)}/outreach/sequence/enroll`, {
+    method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ candidate_id: candidateId }),
+  })
+  if (!res.ok) throw new Error(await detail(res, 'Could not start the sequence.'))
+  return (await res.json()) as { sequence: OutreachSequence; due: SequenceDue }
+}
+
+export async function stopSequence(searchId: string, candidateId: string): Promise<{ sequence: OutreachSequence }> {
+  const res = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(searchId)}/outreach/sequence/stop`, {
+    method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ candidate_id: candidateId }),
+  })
+  if (!res.ok) throw new Error(await detail(res, 'Could not stop the sequence.'))
+  return (await res.json()) as { sequence: OutreachSequence }
 }
 
 export async function getOutreachInbox(): Promise<{ inbox: OutreachInboxRow[]; counts: { total: number; replied: number } }> {
@@ -78,7 +105,7 @@ export async function draftOutreach(
 export async function sendOutreach(
   searchId: string,
   args: { candidateId: string; channel: OutreachChannel; body: string; subject?: string; inmail?: boolean },
-): Promise<{ candidate_id: string; channel: string; outreach: OutreachState; limits?: OutreachLimits }> {
+): Promise<{ candidate_id: string; channel: string; outreach: OutreachState; sequence?: OutreachSequence | null; limits?: OutreachLimits }> {
   const res = await fetch(`${API_BASE_URL}/search/${encodeURIComponent(searchId)}/outreach/send`, {
     method: 'POST',
     credentials: 'include',
@@ -92,5 +119,5 @@ export async function sendOutreach(
     }),
   })
   if (!res.ok) throw new Error(await detail(res, 'Could not send that message.'))
-  return (await res.json()) as { candidate_id: string; channel: string; outreach: OutreachState; limits?: OutreachLimits }
+  return (await res.json()) as { candidate_id: string; channel: string; outreach: OutreachState; sequence?: OutreachSequence | null; limits?: OutreachLimits }
 }

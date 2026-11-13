@@ -347,6 +347,11 @@ class OutreachSendRequest(BaseModel):
     inmail: bool = False
 
 
+class SequenceRequest(BaseModel):
+    """Enroll/stop a candidate in the one built-in follow-up flow."""
+    candidate_id: str
+
+
 class RefineRequest(BaseModel):
     """Structured refine deltas (new engine). Every field is typed and capability-
     grounded — no free text is interpreted. All optional; only what the recruiter
@@ -1064,6 +1069,10 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
                     if state == "replied" and current != "replied":
                         entry["state"] = "replied"
                         entry["replied_at"] = now
+                        # A reply ends any active follow-up sequence (goal met).
+                        seq = ((rec.get("outreach") or {}).get(cid) or {}).get("sequence")
+                        if isinstance(seq, dict) and seq.get("status") == "active":
+                            seq["status"] = "done"
                     elif state == "connected" and current == "invited":
                         entry["state"] = "connected"
                         entry["connected_at"] = now
@@ -1699,6 +1708,7 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
         """Every candidate THIS recruiter has reached out to, across all their
         searches — the replies & outreach view. Owner-scoped by reading only this
         recruiter's own search records; replies float to the top."""
+        from backend.services.sequence import next_due as _sequence_due
         owner = (_session_owner(http_request) or "").lower()
         rows: List[Dict[str, Any]] = []
         for path in Path(search_store.storage_dir).glob("*.json"):
@@ -1721,6 +1731,7 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
                 cand = cand_by_id.get(candidate_id) or {}
                 times = [v[key] for v in chan.values() for key in ("replied_at", "connected_at", "at") if v.get(key)]
                 replied = any(v.get("state") == "replied" for v in chan.values())
+                seq = channels.get("sequence") if isinstance(channels.get("sequence"), dict) else None
                 rows.append({
                     "search_id": path.stem,
                     "candidate_id": candidate_id,
@@ -1728,7 +1739,8 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
                     "profile_url": cand.get("profile_url"),
                     "role_title": role_title,
                     "channels": chan,
-                    "sequence": (channels.get("sequence") if isinstance(channels.get("sequence"), dict) else None),
+                    "sequence": seq,
+                    "sequence_due": (_sequence_due(seq, channels) if seq else None),
                     "last_activity": max(times) if times else None,
                     "replied": replied,
                 })
@@ -1779,12 +1791,55 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
             raise HTTPException(status_code=502, detail="Couldn't send that right now. Please try again.")
 
         def apply(rec: Dict[str, Any]) -> None:
-            rec.setdefault("outreach", {}).setdefault(request.candidate_id, {})[channel] = result
+            from backend.services.sequence import advance_on_send
+            entry = rec.setdefault("outreach", {}).setdefault(request.candidate_id, {})
+            entry[channel] = result
+            # If this candidate is mid-sequence, a send advances it (approve-each:
+            # the human just sent the step, we only record the progress).
+            seq = entry.get("sequence")
+            if isinstance(seq, dict) and seq.get("status") == "active":
+                advance_on_send(seq, channel, request.inmail)
 
-        search_store.update(search_id, apply)
+        updated = search_store.update(search_id, apply)
         outreach_service.record_send(owner, category)  # count only a send that actually went out
         logger.info("[OUTREACH] sent | search_id=%s candidate=%s channel=%s state=%s", search_id, request.candidate_id, channel, result.get("state"))
-        return {"candidate_id": request.candidate_id, "channel": channel, "outreach": result, "limits": outreach_service.usage(owner)}
+        entry = ((updated or {}).get("outreach") or {}).get(request.candidate_id, {})
+        return {"candidate_id": request.candidate_id, "channel": channel, "outreach": result,
+                "sequence": entry.get("sequence"), "limits": outreach_service.usage(owner)}
+
+    @app.post("/search/{search_id}/outreach/sequence/enroll", dependencies=[Depends(require_session), Depends(require_owned_search)])
+    def outreach_sequence_enroll(search_id: str, request: SequenceRequest) -> Dict[str, Any]:
+        from backend.services.sequence import new_enrollment, next_due
+        record = search_store.load(search_id)
+        if record is None:
+            raise HTTPException(status_code=404, detail="Search not found.")
+        candidate, _ = _find_candidate(record, request.candidate_id)
+        if candidate is None:
+            raise HTTPException(status_code=404, detail="Candidate not found in this search.")
+
+        def apply(rec: Dict[str, Any]) -> None:
+            entry = rec.setdefault("outreach", {}).setdefault(request.candidate_id, {})
+            seq = entry.get("sequence")
+            if not (isinstance(seq, dict) and seq.get("status") == "active"):
+                entry["sequence"] = new_enrollment()
+
+        updated = search_store.update(search_id, apply) or record
+        entry = (updated.get("outreach") or {}).get(request.candidate_id, {})
+        seq = entry.get("sequence")
+        return {"sequence": seq, "due": next_due(seq, entry)}
+
+    @app.post("/search/{search_id}/outreach/sequence/stop", dependencies=[Depends(require_session), Depends(require_owned_search)])
+    def outreach_sequence_stop(search_id: str, request: SequenceRequest) -> Dict[str, Any]:
+        def apply(rec: Dict[str, Any]) -> None:
+            seq = ((rec.get("outreach") or {}).get(request.candidate_id) or {}).get("sequence")
+            if isinstance(seq, dict) and seq.get("status") == "active":
+                seq["status"] = "stopped"
+
+        updated = search_store.update(search_id, apply)
+        if updated is None:
+            raise HTTPException(status_code=404, detail="Search not found.")
+        seq = ((updated.get("outreach") or {}).get(request.candidate_id) or {}).get("sequence")
+        return {"sequence": seq}
 
     @app.post("/search/{search_id}/refine", response_model=SearchResponse, dependencies=[Depends(require_session), Depends(require_owned_search)])
     def refine_search(search_id: str, request: RefineRequest) -> SearchResponse:
