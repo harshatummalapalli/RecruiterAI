@@ -457,16 +457,50 @@ class IntakeService:
         return self._pipe.preview(model)
 
     def refine(self, record: Dict[str, Any], deltas: Dict[str, Any]) -> Dict[str, Any]:
-        """Pool-first refine: re-check + re-rank the already-read pool against the
-        recruiter's structured deltas — free, no new search. Loads the confirmed
-        RoleModel so the refined cards are shaped identically. Returns the outcome
-        (matched / dropped / exhausted). Mutates `record`."""
-        from backend.bridge.translate import refine_pool_into_record
+        """Refine against the whole paid pull. First reach into the UN-enriched
+        reserve: cheap-screen it against the refined intent and enrich + judge only
+        the matches (the non-matches stay un-enriched — no spend), folding the
+        matches into the read pool. Then re-check + re-rank the read pool (old +
+        newly enriched) against the refined non-negotiables and surface the top.
+        A fresh CrustData pull stays the caller's separate, credit-gated step,
+        offered only when neither the read pool nor the reserve has a match
+        (`exhausted`). Mutates `record`."""
+        from backend.bridge.translate import _pool_entry, _record_from_pool_entry, refine_pool_into_record
+        from recruiter.agents.calibration.refine import refine_model
         confirmation_id = (record.get("confirmed_brief") or {}).get("confirmation_id")
         model = self._confirmations.load(confirmation_id) if confirmation_id else None
         if model is None:
             return {"refined": False, "matched": 0, "dropped": 0, "shown": 0, "exhausted": True}
-        return refine_pool_into_record(record, model, deltas or {})
+
+        # STEER — screen-gated enrichment of the reserve against the new intent.
+        reserve_enriched = 0
+        diag = record.get("internal_diagnostics") or {}
+        pool = diag.get("pool") or {}
+        reserve = pool.get("reserve") or []
+        if reserve:
+            refined = refine_model(model, deltas or {})
+            candidates = [_record_from_pool_entry(entry) for entry in reserve]
+            # admit_all_relevant: the (now-working) Tier-1 screener keeps everyone who
+            # matches the refined target — could be all of them or none, relevance decides.
+            ranking = self._pipe.ranking.rank(refined, candidates, admit_all_relevant=True)
+            matched = list(ranking.ranked)
+            matched_ids = {rc.record.candidate_id for rc in matched}
+            base_rank = len(pool.get("judged") or [])
+            new_entries = [
+                _pool_entry(rc.record, judged=rc.record.judgments is not None, shown=False,
+                            rank=base_rank + i, fit=rc.fit, score=rc.score)
+                for i, rc in enumerate(matched)
+            ]
+            pool["judged"] = (pool.get("judged") or []) + new_entries
+            pool["reserve"] = [e for e in reserve if e.get("candidate_id") not in matched_ids]
+            diag["pool"] = pool
+            record["internal_diagnostics"] = diag
+            reserve_enriched = len(new_entries)
+
+        outcome = refine_pool_into_record(record, model, deltas or {})
+        outcome["reserve_enriched"] = reserve_enriched
+        outcome["reserve_remaining"] = len((record.get("internal_diagnostics") or {}).get("pool", {}).get("reserve") or [])
+        return outcome
 
     def reveal_next(self, record: Dict[str, Any]) -> bool:
         """Bring the next already-read profile forward from the held pool (pool-
