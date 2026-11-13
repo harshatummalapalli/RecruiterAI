@@ -117,7 +117,11 @@ class ScreenerAdapter:
             system = _SYSTEM_SELECTIVE if selective else _SYSTEM_RECALL
             data = complete_json(system, json.dumps(payload, ensure_ascii=False), self._model,
                                  max_tokens=min(TOKENS_BASE + TOKENS_PER_CANDIDATE * len(chunk), 4096))
-            rows: List[Dict[str, Any]] = data.get("results") or []
+            # The cheap model sometimes returns a bare JSON array instead of
+            # {"results":[...]} — accept both, or the whole gate fails open and
+            # enriches everyone (seen live: 'list' object has no attribute 'get').
+            rows_raw = data.get("results") if isinstance(data, dict) else data
+            rows: List[Dict[str, Any]] = rows_raw if isinstance(rows_raw, list) else []
             by_index = {int(row["i"]): row for row in rows if isinstance(row, dict) and "i" in row}
         except Exception:
             # A broken gate must NEVER silently drop candidates — fail OPEN and

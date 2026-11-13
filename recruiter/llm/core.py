@@ -9,9 +9,49 @@ Clients are lazy + cached; both read keys from .env via backend.config.
 from __future__ import annotations
 
 import json
-from typing import Any, Dict
+import os
+import threading
+from typing import Any, Dict, List
 
 _clients: Dict[str, Any] = {}
+
+# --- cost ledger (opt-in: RECRUITER_COST_LEDGER=1) --------------------------
+# Records real token usage per LLM call so a search's Claude spend can be
+# measured instead of estimated. Off by default so production never accumulates.
+_usage_lock = threading.Lock()
+_usage_log: List[Dict[str, Any]] = []
+
+
+def _ledger_on() -> bool:
+    return os.environ.get("RECRUITER_COST_LEDGER", "").strip().lower() in ("1", "true", "yes")
+
+
+def reset_usage() -> None:
+    with _usage_lock:
+        _usage_log.clear()
+
+
+def usage_log() -> List[Dict[str, Any]]:
+    with _usage_lock:
+        return list(_usage_log)
+
+
+def _record(model: str, usage: Any) -> None:
+    if not _ledger_on() or usage is None:
+        return
+    def _i(name: str) -> int:
+        try:
+            return int(getattr(usage, name, 0) or 0)
+        except (TypeError, ValueError):
+            return 0
+    with _usage_lock:
+        _usage_log.append({
+            "model": model,
+            "input_tokens": _i("input_tokens"),
+            "output_tokens": _i("output_tokens"),
+            "cache_read_input_tokens": _i("cache_read_input_tokens"),
+            "cache_creation_input_tokens": _i("cache_creation_input_tokens"),
+        })
 
 
 def _openai():
@@ -67,10 +107,18 @@ def complete_json(system: str, user: str, model: str, *, max_tokens: int = 1024,
         )
         return _loads(resp.output_text)
     if model.startswith("claude"):
+        # Cache the (large, identical-across-candidates) system prompt. Within a
+        # search the Judge/career/screener system is reused across many calls, so
+        # after the first call the rest read it from cache at ~1/10th the input
+        # price. Anthropic ignores caching when the block is below the min size, so
+        # small prompts (intake) are unaffected. Same model, same output — no
+        # quality change, just stops re-billing the instructions each call.
         resp = _anthropic().messages.create(
-            model=model, max_tokens=max_tokens, system=system,
+            model=model, max_tokens=max_tokens,
+            system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
             messages=[{"role": "user", "content": user}],
         )
+        _record(model, getattr(resp, "usage", None))
         text = "".join(b.text for b in resp.content if getattr(b, "type", None) == "text")
     else:
         kwargs = dict(
@@ -85,5 +133,6 @@ def complete_json(system: str, user: str, model: str, *, max_tokens: int = 1024,
                 resp = _openai().responses.create(**kwargs)
             else:
                 raise
+        _record(model, getattr(resp, "usage", None))
         text = resp.output_text
     return _loads(text)
