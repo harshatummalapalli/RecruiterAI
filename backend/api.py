@@ -353,6 +353,12 @@ class SequenceRequest(BaseModel):
     candidate_id: str
 
 
+class CampaignStartRequest(BaseModel):
+    """Open a paced, budget-capped campaign on a search (the recruiter's Go)."""
+    window_hours: int = 72
+    budget: int = 100
+
+
 class RefineRequest(BaseModel):
     """Structured refine deltas (new engine). Every field is typed and capability-
     grounded — no free text is interpreted. All optional; only what the recruiter
@@ -1111,6 +1117,50 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
             logger.info("[OUTREACH] reply webhook | type=%s updated=%s", (event or {}).get("type"), updated)
         return {"ok": True, "updated": updated}
 
+    # --- RUN: campaign tick (a cron on the server calls this every ~2h) -----
+    @app.post("/campaigns/tick")
+    def campaigns_tick(token: Optional[str] = None) -> Dict[str, Any]:
+        # Token-gated (CAMPAIGN_TICK_SECRET), not session-auth — it's the server's
+        # own scheduler calling in. Processes each ACTIVE, due campaign one paced
+        # round: enrich the next budgeted batch of reserve matches toward the target.
+        secret = (os.environ.get("CAMPAIGN_TICK_SECRET") or "").strip()
+        if not secret or token != secret:
+            raise HTTPException(status_code=401, detail="Invalid tick token.")
+        if intake_service is None:
+            return {"ok": True, "processed": 0, "enriched": 0, "note": "engine off"}
+        MAX_PER_TICK = 20   # protect the small box — cap campaigns worked per tick
+        processed = enriched_total = 0
+        for path in Path(search_store.storage_dir).glob("*.json"):
+            if processed >= MAX_PER_TICK:
+                break
+            record = search_store.load(path.stem)
+            if not record or not isinstance(record.get("campaign"), dict):
+                continue
+            if not intake_service.campaign_due(record):
+                continue
+            # The round does real Harvest + Claude work (slow); run it on the loaded
+            # copy OUTSIDE the store lock, then persist only the campaign/pool/response
+            # so a recruiter decision made meanwhile (recruiter_decisions) is not lost.
+            try:
+                result = intake_service.campaign_round(record)
+            except Exception:
+                logger.exception("[CAMPAIGN] round failed | search_id=%s", path.stem)
+                continue
+
+            def persist(fresh: Dict[str, Any], src=record) -> None:
+                fresh["campaign"] = src.get("campaign")
+                if src.get("internal_diagnostics") is not None:
+                    fresh["internal_diagnostics"] = src["internal_diagnostics"]
+                if src.get("response") is not None:
+                    fresh["response"] = src["response"]
+                fresh["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+            search_store.update(path.stem, persist)
+            processed += 1
+            enriched_total += int(result.get("enriched", 0) or 0)
+        logger.info("[CAMPAIGN] tick | processed=%s enriched=%s", processed, enriched_total)
+        return {"ok": True, "processed": processed, "enriched": enriched_total}
+
     @app.post("/parse-jd", dependencies=[Depends(require_session)])
     def parse_jd(request: ParseRequest) -> SearchIntent:
         if intake_service is not None:
@@ -1844,6 +1894,31 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
             raise HTTPException(status_code=404, detail="Search not found.")
         seq = ((updated.get("outreach") or {}).get(request.candidate_id) or {}).get("sequence")
         return {"sequence": seq}
+
+    @app.post("/search/{search_id}/campaign/start", dependencies=[Depends(require_session), Depends(require_owned_search)])
+    def campaign_start(search_id: str, request: CampaignStartRequest) -> Dict[str, Any]:
+        if intake_service is None:
+            raise HTTPException(status_code=400, detail="Campaigns need the new engine.")
+        record = search_store.load(search_id)
+        if record is None:
+            raise HTTPException(status_code=404, detail="Search not found.")
+        # Go: open the campaign and run the first paced batch now so the recruiter
+        # sees results immediately; the cron continues subsequent rounds. Heavy work
+        # on the loaded copy outside the store lock, then persist campaign/pool/response.
+        intake_service.start_campaign(record, window_hours=request.window_hours, budget=request.budget)
+        result = intake_service.campaign_round(record)
+
+        def persist(fresh: Dict[str, Any]) -> None:
+            fresh["campaign"] = record.get("campaign")
+            if record.get("internal_diagnostics") is not None:
+                fresh["internal_diagnostics"] = record["internal_diagnostics"]
+            if record.get("response") is not None:
+                fresh["response"] = record["response"]
+            fresh["updated_at"] = datetime.now(timezone.utc).isoformat()
+
+        search_store.update(search_id, persist)
+        logger.info("[CAMPAIGN] started | search_id=%s round=%s", search_id, result)
+        return {"campaign": record.get("campaign"), "round": result}
 
     @app.post("/search/{search_id}/refine", response_model=SearchResponse, dependencies=[Depends(require_session), Depends(require_owned_search)])
     def refine_search(search_id: str, request: RefineRequest) -> SearchResponse:

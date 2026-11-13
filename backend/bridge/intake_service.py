@@ -456,51 +456,133 @@ class IntakeService:
             raise KeyError(confirmation_id)
         return self._pipe.preview(model)
 
+    def _enrich_reserve_matches(self, record: Dict[str, Any], model, *, admit_n: Optional[int] = None,
+                                feedback_context: Optional[Dict[str, Any]] = None) -> int:
+        """Cheap-screen the UN-enriched reserve against `model` and enrich + judge
+        the matches, folding them into the read pool. `admit_n=None` enriches every
+        match (STEER, relevance-driven); an int caps it to the top-N best matches
+        (RUN, budget-paced). Non-matches and un-admitted keepers stay un-enriched in
+        reserve for a later round. Returns how many were enriched. Mutates `record`."""
+        from backend.bridge.translate import _pool_entry, _record_from_pool_entry
+        diag = record.get("internal_diagnostics") or {}
+        pool = diag.get("pool") or {}
+        reserve = pool.get("reserve") or []
+        if not reserve:
+            return 0
+        candidates = [_record_from_pool_entry(entry) for entry in reserve]
+        if admit_n is None:
+            ranking = self._pipe.ranking.rank(model, candidates, admit_all_relevant=True, feedback_context=feedback_context)
+        else:
+            ranking = self._pipe.ranking.rank(model, candidates, admit_n=admit_n, feedback_context=feedback_context)
+        matched = list(ranking.ranked)
+        matched_ids = {rc.record.candidate_id for rc in matched}
+        base_rank = len(pool.get("judged") or [])
+        new_entries = [
+            _pool_entry(rc.record, judged=rc.record.judgments is not None, shown=False,
+                        rank=base_rank + i, fit=rc.fit, score=rc.score)
+            for i, rc in enumerate(matched)
+        ]
+        pool["judged"] = (pool.get("judged") or []) + new_entries
+        pool["reserve"] = [e for e in reserve if e.get("candidate_id") not in matched_ids]
+        diag["pool"] = pool
+        record["internal_diagnostics"] = diag
+        return len(new_entries)
+
     def refine(self, record: Dict[str, Any], deltas: Dict[str, Any]) -> Dict[str, Any]:
-        """Refine against the whole paid pull. First reach into the UN-enriched
-        reserve: cheap-screen it against the refined intent and enrich + judge only
-        the matches (the non-matches stay un-enriched — no spend), folding the
-        matches into the read pool. Then re-check + re-rank the read pool (old +
-        newly enriched) against the refined non-negotiables and surface the top.
-        A fresh CrustData pull stays the caller's separate, credit-gated step,
-        offered only when neither the read pool nor the reserve has a match
-        (`exhausted`). Mutates `record`."""
-        from backend.bridge.translate import _pool_entry, _record_from_pool_entry, refine_pool_into_record
+        """Refine against the whole paid pull. First STEER: reach into the
+        UN-enriched reserve, cheap-screen it against the refined intent and enrich +
+        judge every match (relevance-driven, no cap), leaving non-matches un-touched.
+        Then re-check + re-rank the read pool (old + newly enriched) and surface the
+        top. A fresh CrustData pull stays the caller's separate, credit-gated step,
+        offered only when neither the read pool nor the reserve matches (`exhausted`).
+        Mutates `record`."""
+        from backend.bridge.translate import refine_pool_into_record
         from recruiter.agents.calibration.refine import refine_model
         confirmation_id = (record.get("confirmed_brief") or {}).get("confirmation_id")
         model = self._confirmations.load(confirmation_id) if confirmation_id else None
         if model is None:
             return {"refined": False, "matched": 0, "dropped": 0, "shown": 0, "exhausted": True}
-
-        # STEER — screen-gated enrichment of the reserve against the new intent.
-        reserve_enriched = 0
-        diag = record.get("internal_diagnostics") or {}
-        pool = diag.get("pool") or {}
-        reserve = pool.get("reserve") or []
-        if reserve:
-            refined = refine_model(model, deltas or {})
-            candidates = [_record_from_pool_entry(entry) for entry in reserve]
-            # admit_all_relevant: the (now-working) Tier-1 screener keeps everyone who
-            # matches the refined target — could be all of them or none, relevance decides.
-            ranking = self._pipe.ranking.rank(refined, candidates, admit_all_relevant=True)
-            matched = list(ranking.ranked)
-            matched_ids = {rc.record.candidate_id for rc in matched}
-            base_rank = len(pool.get("judged") or [])
-            new_entries = [
-                _pool_entry(rc.record, judged=rc.record.judgments is not None, shown=False,
-                            rank=base_rank + i, fit=rc.fit, score=rc.score)
-                for i, rc in enumerate(matched)
-            ]
-            pool["judged"] = (pool.get("judged") or []) + new_entries
-            pool["reserve"] = [e for e in reserve if e.get("candidate_id") not in matched_ids]
-            diag["pool"] = pool
-            record["internal_diagnostics"] = diag
-            reserve_enriched = len(new_entries)
-
+        reserve_enriched = self._enrich_reserve_matches(record, refine_model(model, deltas or {}))
         outcome = refine_pool_into_record(record, model, deltas or {})
         outcome["reserve_enriched"] = reserve_enriched
         outcome["reserve_remaining"] = len((record.get("internal_diagnostics") or {}).get("pool", {}).get("reserve") or [])
         return outcome
+
+    # --- RUN: the paced, budget-capped autonomous campaign loop ------------
+    CAMPAIGN_PER_ROUND = 15     # at most this many deep-reads surface per round
+
+    def start_campaign(self, record: Dict[str, Any], *, window_hours: int = 72,
+                       budget: int = 100, cadence_hours: int = 2) -> Dict[str, Any]:
+        """Open a campaign on the search: after the recruiter's one Go-validation it
+        flows on its own. Budget caps total deep-reads over the window; cadence paces
+        the rounds. Idempotent — an already-active campaign is left as is."""
+        from datetime import datetime, timezone
+        existing = record.get("campaign")
+        if isinstance(existing, dict) and existing.get("status") == "active":
+            return existing
+        record["campaign"] = {"status": "active", "started_at": datetime.now(timezone.utc).isoformat(), "window_hours": window_hours,
+                              "budget": budget, "used": 0, "cadence_hours": cadence_hours,
+                              "last_round_at": None, "rounds": 0}
+        return record["campaign"]
+
+    def campaign_due(self, record: Dict[str, Any], *, now=None) -> bool:
+        """True when an active campaign is within its window + budget and its cadence
+        has elapsed — i.e. a round should run now."""
+        from datetime import datetime, timezone
+        c = record.get("campaign") or {}
+        if c.get("status") != "active":
+            return False
+        now = now or datetime.now(timezone.utc)
+        if (now - datetime.fromisoformat(c["started_at"])).total_seconds() > c["window_hours"] * 3600:
+            return False
+        if c["used"] >= c["budget"]:
+            return False
+        last = c.get("last_round_at")
+        return last is None or (now - datetime.fromisoformat(last)).total_seconds() >= c["cadence_hours"] * 3600
+
+    def campaign_round(self, record: Dict[str, Any], *, now=None) -> Dict[str, Any]:
+        """One budgeted round: enrich the next batch of reserve matches toward the
+        campaign target (the recruiter's validated intent), surface them, and stop
+        when the window closes, the budget is spent, or the reserve is exhausted.
+        Mutates `record`."""
+        from datetime import datetime, timezone
+        from backend.bridge.translate import refine_pool_into_record
+        c = record.get("campaign") or {}
+        now = now or datetime.now(timezone.utc)
+
+        def _stop(reason: str) -> Dict[str, Any]:
+            c["status"] = "done"; c["done_reason"] = reason
+            record["campaign"] = c
+            return {"enriched": 0, "status": "done", "done_reason": reason}
+
+        if c.get("status") != "active":
+            return {"enriched": 0, "status": c.get("status", "none")}
+        if (now - datetime.fromisoformat(c["started_at"])).total_seconds() > c["window_hours"] * 3600:
+            return _stop("window")
+        if c["used"] >= c["budget"]:
+            return _stop("budget")
+        confirmation_id = (record.get("confirmed_brief") or {}).get("confirmation_id")
+        model = self._confirmations.load(confirmation_id) if confirmation_id else None
+        if model is None:
+            return _stop("no_model")
+
+        batch = min(self.CAMPAIGN_PER_ROUND, c["budget"] - c["used"])
+        try:
+            feedback = self._feedback_screen_context(record)
+        except Exception:
+            feedback = None
+        enriched = self._enrich_reserve_matches(record, model, admit_n=batch, feedback_context=feedback)
+        c["used"] += enriched
+        c["rounds"] = c.get("rounds", 0) + 1
+        c["last_round_at"] = now.isoformat()
+        if enriched:
+            refine_pool_into_record(record, model, {})   # fold + re-rank + surface
+            if c["used"] >= c["budget"]:
+                c["status"] = "done"; c["done_reason"] = "budget"
+        else:
+            c["status"] = "done"; c["done_reason"] = "exhausted"   # reserve picked clean for this target
+        record["campaign"] = c
+        return {"enriched": enriched, "status": c["status"], "used": c["used"], "done_reason": c.get("done_reason")}
 
     def reveal_next(self, record: Dict[str, Any]) -> bool:
         """Bring the next already-read profile forward from the held pool (pool-
