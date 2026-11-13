@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react'
 import { useTheme, type ThemePreference } from '../theme/ThemeProvider'
 import { initialsOf } from '../models/discovery'
+import { IntegrationsSection } from '../components/IntegrationsSection'
 import './SettingsScreen.css'
 
 const APPEARANCE_OPTIONS: Array<{ value: ThemePreference; label: string }> = [
@@ -50,6 +51,8 @@ export function SettingsScreen({ recruiterName }: { recruiterName: string }) {
           ))}
         </div>
       </section>
+
+      <IntegrationsSection />
     </div>
   )
 }
