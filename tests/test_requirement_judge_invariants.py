@@ -243,6 +243,27 @@ def test_unparseable_model_output_falls_back_instead_of_breaking() -> None:
     assert RequirementJudge(client=Garbage()).judge(_candidate(), intent, harvest_evidence=_harvest("Wrote Python.")) is None
 
 
+def test_top_level_array_model_output_is_consumed_not_dropped(monkeypatch) -> None:
+    # The model sometimes returns a bare top-level ARRAY of result rows instead of
+    # {"results": [...]} (Claude, or the tolerant-parse repair path). That used to
+    # crash _ask on data.get(...) and silently degrade the judgment to term-matching.
+    # The first pass must consume the array and still verify a real quote.
+    def fake_complete_json(system, user, model, **kwargs):
+        payload = json.loads(user)
+        if "claims" in payload:  # the review pass stays a normal object
+            return {"results": [{"i": c["i"], "supports": True} for c in payload["claims"]]}
+        # first pass: a BARE ARRAY (no "results" wrapper); point p at the real passage
+        p = next((pp["p"] for pp in payload["passages"] if "Postgres" in pp["text"]), 0)
+        return [{"r": r["r"], "p": p, "verdict": "met", "quote": "Designed Postgres schemas.", "term": "Postgres"}
+                for r in payload["requirements"]]
+
+    monkeypatch.setattr("recruiter.llm.complete_json", fake_complete_json)
+    intent = _intent(DB_REQ)
+    judgments = RequirementJudge().judge(_candidate(), intent, harvest_evidence=_harvest("Designed Postgres schemas."))
+    assert judgments is not None
+    assert any(j.get("verdict") == "met" and "Postgres" in (j.get("quote") or "") for j in judgments)
+
+
 # Second-pass review: a real-but-irrelevant quote must not survive ------------------------------------------
 def test_review_pass_downgrades_a_real_quote_that_does_not_state_the_requirement() -> None:
     # The quote EXISTS in the profile (so the deterministic gate passes), but it is

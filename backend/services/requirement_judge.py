@@ -353,10 +353,14 @@ class RequirementJudge:
                              max_tokens=2048, client=self._client)
         if not data:
             return None
+        # The model usually returns {"results": [...]} but sometimes a bare top-level
+        # array of the result rows (Claude in particular). Accept either, rather than
+        # crashing on data.get and silently degrading the judgment to term-matching.
+        results = data if isinstance(data, list) else data.get("results", [])
         wanted = {index for index, _ in numbered}
         return {
             int(r["r"]): r
-            for r in data.get("results", [])
+            for r in results
             if isinstance(r, dict) and "r" in r and int(r["r"]) in wanted
         }
 
