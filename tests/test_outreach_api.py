@@ -182,6 +182,23 @@ def test_webhook_rejects_bad_token(tmp_path, monkeypatch):
     assert client.post("/integrations/webhook?token=wrong", json={}).status_code == 401
 
 
+def test_webhook_fails_closed_when_outreach_live_but_secret_unset(tmp_path, monkeypatch):
+    # The pre-launch foot-gun: API key set but webhook secret forgotten -> an
+    # unauthenticated POST must be rejected, not accepted (PHASE1 §1.5/§7).
+    monkeypatch.setattr(api_mod, "get_unipile_webhook_secret", lambda: "")
+    monkeypatch.setenv("UNIPILE_API_KEY", "live-key")
+    client, _, _ = _client(tmp_path)
+    assert client.post("/integrations/webhook", json={"type": "message.new"}).status_code == 401
+
+
+def test_webhook_accepts_when_fully_unconfigured_dev(tmp_path, monkeypatch):
+    # Both unset = local dev / tests: still a quiet 200 so nothing breaks offline.
+    monkeypatch.setattr(api_mod, "get_unipile_webhook_secret", lambda: "")
+    monkeypatch.delenv("UNIPILE_API_KEY", raising=False)
+    client, _, _ = _client(tmp_path)
+    assert client.post("/integrations/webhook", json={"type": "message.new"}).status_code == 200
+
+
 def test_webhook_no_match_is_a_quiet_200(tmp_path, monkeypatch):
     monkeypatch.setattr(api_mod, "get_unipile_webhook_secret", lambda: "SECRET")
     client, fake, store = _client(tmp_path)

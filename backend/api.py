@@ -1107,6 +1107,13 @@ setTimeout(function(){{try{{window.close();}}catch(e){{}}}},1200);</script></bod
         if secret and token != secret:
             raise HTTPException(status_code=401, detail="Invalid webhook token.")
         if not secret:
+            # Fail closed in production: if outreach is LIVE (UNIPILE_API_KEY set) but
+            # the webhook secret is missing, an unauthenticated POST could inject
+            # forged reply events (flip candidate states, poison stored message PII) —
+            # exactly the forged-webhook threat in the isolation model (PHASE1 §1.5/§7).
+            # Only the fully-unconfigured dev case (no API key either) still accepts.
+            if (os.environ.get("UNIPILE_API_KEY") or "").strip():
+                raise HTTPException(status_code=401, detail="Webhook secret not configured.")
             logger.warning("[OUTREACH] webhook called with no UNIPILE_WEBHOOK_SECRET configured — accepting (dev only)")
         try:
             event = await http_request.json()
