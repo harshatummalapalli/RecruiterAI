@@ -82,3 +82,27 @@ export function isSearchBoundaryComplete(boundary: SearchBoundary): boolean {
   if (boundary.remote_scope === 'cities') return boundary.remote_cities.length > 0
   return false
 }
+
+/** The non-negotiables still missing, phrased for a recruiter — so a disabled
+ * "Read & plan" button can say exactly what it is waiting for instead of nothing.
+ * Mirrors isSearchBoundaryComplete field-for-field. */
+export function missingBoundaryFields(boundary: SearchBoundary): string[] {
+  const missing: string[] = []
+  if (!boundary.hiring_company.trim()) missing.push('the hiring company')
+  if (!boundary.country.trim()) missing.push('a country')
+  if (boundary.min_years == null || boundary.min_years < 0) missing.push('minimum years')
+  if (!boundary.work_mode) {
+    missing.push('a work mode')
+  } else if (boundary.work_mode === 'onsite' || boundary.work_mode === 'hybrid') {
+    const hasCities = (boundary.cities?.length ?? 0) > 0
+    const hasClassic = Boolean(boundary.state?.trim() && boundary.city?.trim() && boundary.radius_miles && boundary.radius_miles > 0)
+    if (!hasCities && !hasClassic) missing.push('a location (cities, or state + city + radius)')
+  } else {
+    const ok =
+      boundary.remote_scope === 'anywhere' ||
+      (boundary.remote_scope === 'states' && boundary.remote_states.length > 0) ||
+      (boundary.remote_scope === 'cities' && boundary.remote_cities.length > 0)
+    if (!ok) missing.push('a remote scope (anywhere, or at least one state/city)')
+  }
+  return missing
+}

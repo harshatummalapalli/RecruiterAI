@@ -5,7 +5,7 @@
 import { useState } from 'react'
 import { AlertTriangle, Check } from 'lucide-react'
 import { BoundaryEditor } from '../components/BoundaryEditor'
-import type { IntakeIssue, IntakeResult } from '../models/intake'
+import type { IntakeIssue, IntakeResult, Reconciliation } from '../models/intake'
 import { offeredDecisions } from '../models/intake'
 import {
   PROVENANCE_LABEL,
@@ -35,6 +35,7 @@ const TAG_HINT: Record<ProvenanceKind, string> = {
   stated: 'The job description says this.',
   inferred: 'RecruiterAI concluded this. The job description does not say it outright.',
   confirmed: 'You answered a question that set this.',
+  hm: 'The hiring manager raised this. It is not in the published JD.',
   warning: 'Something argues against the brief as written.',
   limitation: 'The search cannot enforce this.',
 }
@@ -50,6 +51,8 @@ export function ProvenanceTag({ kind }: { kind: ProvenanceKind | null }) {
 
 type LivingBriefProps = {
   result: IntakeResult
+  /** Present only when an HM brief was supplied; used to label HM-surfaced requirements correctly. */
+  reconciliation?: Reconciliation | null
   boundary: SearchBoundary
   /** The "Adjust before searching" panel's working copy. */
   brief: SearchBrief
@@ -101,7 +104,7 @@ function DecisionCard({ issue, onAnswer, isAnswering, onReconsider }: { issue: I
   )
 }
 
-export function LivingBrief({ result, boundary, onAnswer, onRetier, isAnswering, onApplyBoundary, onSearch, isSearching, searchErrors = [] }: LivingBriefProps) {
+export function LivingBrief({ result, reconciliation, boundary, onAnswer, onRetier, isAnswering, onApplyBoundary, onSearch, isSearching, searchErrors = [] }: LivingBriefProps) {
   const [campaignDays, setCampaignDays] = useState<1 | 3>(1)
   const [boundaryOpen, setBoundaryOpen] = useState(false)
   const role = result.role_understanding
@@ -109,7 +112,7 @@ export function LivingBrief({ result, boundary, onAnswer, onRetier, isAnswering,
   const status = readyStatus(result, boundary)
   const nextQuestion = status.questions[0] ?? null
   const offers = offeredDecisions(result)
-  const groups = requirementGroups(result)
+  const groups = requirementGroups(result, reconciliation)
   const warnings = result.decision.warnings
   const limitations = result.decision.limitations ?? []
   const zeroCore = groups[0].items.length === 0

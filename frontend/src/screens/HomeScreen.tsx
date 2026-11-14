@@ -34,8 +34,13 @@ function campaignTimeLeft(endsAt: string | null | undefined, now: number): strin
   return extraHours ? `${days}d ${extraHours}h left in campaign` : `${days}d left in campaign`
 }
 
-function RowMenu({ actions, onClose }: { actions: Array<{ label: string; onClick: () => void }>; onClose: () => void }) {
+type MenuAction = { label: string; onClick: () => void; confirm?: string }
+
+function RowMenu({ actions, onClose }: { actions: MenuAction[]; onClose: () => void }) {
   const ref = useRef<HTMLDivElement | null>(null)
+  // A destructive-ish action (Close) arms on the first click and only fires on the
+  // second, so it can never move a role to Completed on a single mis-click.
+  const [armed, setArmed] = useState<string | null>(null)
   useEffect(() => {
     const onDocClick = (event: MouseEvent) => {
       if (ref.current && !ref.current.contains(event.target as Node)) onClose()
@@ -52,20 +57,27 @@ function RowMenu({ actions, onClose }: { actions: Array<{ label: string; onClick
   }, [onClose])
   return (
     <div className="home-row-menu" ref={ref} role="menu">
-      {actions.map((action) => (
-        <button
-          key={action.label}
-          type="button"
-          role="menuitem"
-          className="home-row-menu__item"
-          onClick={() => {
-            action.onClick()
-            onClose()
-          }}
-        >
-          {action.label}
-        </button>
-      ))}
+      {actions.map((action) => {
+        const isArmed = armed === action.label
+        return (
+          <button
+            key={action.label}
+            type="button"
+            role="menuitem"
+            className={`home-row-menu__item${isArmed ? ' home-row-menu__item--armed' : ''}`}
+            onClick={() => {
+              if (action.confirm && !isArmed) {
+                setArmed(action.label)
+                return
+              }
+              action.onClick()
+              onClose()
+            }}
+          >
+            {isArmed ? action.confirm : action.label}
+          </button>
+        )
+      })}
     </div>
   )
 }
@@ -101,20 +113,20 @@ function RoleCard({
       ? { text: item.found_count ? `${item.found_count} profiles found` : 'Search complete', emphasis: false }
       : activitySummary(item)
 
-  const menuActions = completed
+  const menuActions: MenuAction[] = completed
     ? [{ label: 'View', onClick: () => actions.onOpen(item) }, { label: 'Reopen (move to Active)', onClick: () => actions.onReopen(item.id) }]
     : item.kind === 'draft'
-      ? [{ label: 'Continue', onClick: () => actions.onOpen(item) }, { label: 'Close', onClick: () => actions.onClose(item.id) }]
+      ? [{ label: 'Continue', onClick: () => actions.onOpen(item) }, { label: 'Close', onClick: () => actions.onClose(item.id), confirm: 'Confirm close' }]
       : status === 'paused'
         ? [
             { label: 'Open', onClick: () => actions.onOpen(item) },
             { label: 'Resume', onClick: () => actions.onResume(item.id) },
-            { label: 'Close', onClick: () => actions.onClose(item.id) },
+            { label: 'Close', onClick: () => actions.onClose(item.id), confirm: 'Confirm close' },
           ]
         : [
             { label: 'Open', onClick: () => actions.onOpen(item) },
             { label: 'Pause', onClick: () => actions.onPause(item.id) },
-            { label: 'Close', onClick: () => actions.onClose(item.id) },
+            { label: 'Close', onClick: () => actions.onClose(item.id), confirm: 'Confirm close' },
           ]
 
   const badgeClass = completed ? 'complete' : status

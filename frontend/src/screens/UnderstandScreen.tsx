@@ -96,7 +96,7 @@ export function UnderstandScreen({ jd, title, boundary }: { jd: string; title: s
             })}
           </ul>
           <p className="understand__reading" aria-live="polite">
-            Reading the role… this takes about 30 seconds.
+            Reading the role… this usually takes a minute or two.
           </p>
         </section>
       </div>

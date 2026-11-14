@@ -8,18 +8,19 @@
 //   warning      something argues against the brief as written
 //   limitation   something the system cannot enforce
 
-import type { ConfirmationEdits, FieldValue, IntakeIssue, IntakeResult } from './intake'
+import type { ConfirmationEdits, FieldValue, IntakeIssue, IntakeResult, Reconciliation } from './intake'
 import { pendingAskIssues, tellInsights } from './intake'
 import type { SearchBoundary } from './searchBoundary'
 import { isSearchBoundaryComplete } from './searchBoundary'
 import type { SearchBrief } from './searchBrief'
 
-export type ProvenanceKind = 'stated' | 'inferred' | 'confirmed' | 'warning' | 'limitation'
+export type ProvenanceKind = 'stated' | 'inferred' | 'confirmed' | 'hm' | 'warning' | 'limitation'
 
 export const PROVENANCE_LABEL: Record<ProvenanceKind, string> = {
   stated: 'Stated in JD',
   inferred: 'Inferred',
   confirmed: 'Confirmed by you',
+  hm: 'From the hiring manager',
   warning: 'Warning',
   limitation: 'System limitation',
 }
@@ -28,7 +29,7 @@ export type RequirementTier = 'core' | 'supporting' | 'preferred'
 
 export const TIER_LABEL: Record<RequirementTier, string> = { core: 'Core', supporting: 'Supporting', preferred: 'Differentiator' }
 
-export type RequirementItem = { text: string; provenance: 'stated' | 'inferred' | 'confirmed'; evidence: string | null }
+export type RequirementItem = { text: string; provenance: 'stated' | 'inferred' | 'confirmed' | 'hm'; evidence: string | null }
 export type RequirementGroup = { tier: RequirementTier; label: string; items: RequirementItem[] }
 
 function normalize(text: string): string {
@@ -38,8 +39,10 @@ function normalize(text: string): string {
     .trim()
 }
 
-/** Core / Supporting / Preferred exactly as the search will use them, each with where it came from. */
-export function requirementGroups(result: IntakeResult): RequirementGroup[] {
+/** Core / Supporting / Preferred exactly as the search will use them, each with where it came from.
+ * `reconciliation` (present only when an HM brief was supplied) lets an HM-surfaced requirement be
+ * labelled "From the hiring manager" instead of the wrong "Stated in JD". */
+export function requirementGroups(result: IntakeResult, reconciliation?: Reconciliation | null): RequirementGroup[] {
   const draft = result.decision.final_search_intent
   const evidence = draft.evidence ?? {}
   const pending = result.status !== 'ready' &&
@@ -50,12 +53,24 @@ export function requirementGroups(result: IntakeResult): RequirementGroup[] {
   const confirmed = new Set(
     (result.confirmed ?? []).filter((change) => change.field === 'requirement' && change.item).map((change) => normalize(change.item as string)),
   )
+  // When a hiring-manager brief was supplied, the server tells us which requirements
+  // the HM surfaced (source === 'hm') — those are NOT in the JD, so they must not be
+  // labelled "Stated in JD". 'both'/'jd' stay 'stated' (they are in the JD).
+  const hmSourced = new Set(
+    (reconciliation?.requirements ?? []).filter((r) => r.source === 'hm').map((r) => normalize(r.text)),
+  )
   const build = (tier: RequirementTier, texts: string[]): RequirementGroup => ({
     tier,
     label: TIER_LABEL[tier],
     items: texts.map((text) => {
       const quote = evidence[text] ?? null
-      const provenance = confirmed.has(normalize(text)) ? 'confirmed' : quote ? 'stated' : 'inferred'
+      const provenance = confirmed.has(normalize(text))
+        ? 'confirmed'
+        : hmSourced.has(normalize(text))
+          ? 'hm'
+          : quote
+            ? 'stated'
+            : 'inferred'
       return { text, provenance, evidence: quote }
     }),
   })

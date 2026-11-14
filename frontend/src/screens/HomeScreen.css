@@ -322,6 +322,14 @@
   background: var(--color-sidebar-bg);
 }
 
+/* Close armed for its confirming second click. */
+.home-row-menu__item--armed,
+.home-row-menu__item--armed:hover {
+  background: var(--color-warning-bg, #fef2f2);
+  color: var(--color-warning, #b4232a);
+  font-weight: 600;
+}
+
 .home__empty {
   padding: 40px 0;
   max-width: 440px;

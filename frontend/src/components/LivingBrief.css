@@ -363,6 +363,12 @@
   color: #ffffff;
 }
 
+/* HM-surfaced requirement: not in the JD — matches the reconciliation panel's HM accent. */
+.lb-tag--hm {
+  border-color: rgba(234, 88, 12, 0.45);
+  color: #c2410c;
+}
+
 .lb-tag--warning {
   background: var(--color-warning-bg);
   border-color: var(--color-warning-border);

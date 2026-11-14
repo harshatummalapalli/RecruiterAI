@@ -30,7 +30,7 @@ import { SearchBoundaryForm } from './SearchBoundaryForm'
 import { GlobalShell, type GlobalDestination } from '../components/GlobalShell'
 import { StepPlayer, type Phase } from '../components/StepPlayer'
 import { readOverrides, recentRoles, setOverride, type Overrides } from '../models/roleLifecycle'
-import { createEmptySearchBoundary, isSearchBoundaryComplete, type SearchBoundary } from '../models/searchBoundary'
+import { createEmptySearchBoundary, isSearchBoundaryComplete, missingBoundaryFields, type SearchBoundary } from '../models/searchBoundary'
 import type { SearchListItem, SearchResponse } from '../types'
 import './RecruiterWorkspaceScreen.css'
 
@@ -150,6 +150,9 @@ export function RecruiterWorkspaceScreen() {
   const isBoundaryComplete = isSearchBoundaryComplete(boundary)
   const canParse = hasJdText && isBoundaryComplete && parseState !== 'parsing'
   const isBusy = parseState === 'parsing'
+  // What the disabled "Read & plan" button is still waiting for, in the recruiter's
+  // terms — shown beside it so a greyed-out button is never a dead end.
+  const parseBlockers = [...(hasJdText ? [] : ['a job description']), ...missingBoundaryFields(boundary)]
 
   const refreshSearches = () => {
     void listSearches()
@@ -927,11 +930,22 @@ export function RecruiterWorkspaceScreen() {
                       ) : null}
                     </div>
 
-                    <button type="button" className={`workspace__parse${isBusy ? ' workspace__parse--busy' : ''}`} onClick={handleParse} disabled={!canParse}>
+                    {!isBusy && parseBlockers.length ? (
+                      <p className="workspace__parse-missing" aria-live="polite">
+                        Add {parseBlockers.join(', ')} to start.
+                      </p>
+                    ) : null}
+                    <button
+                      type="button"
+                      className={`workspace__parse${isBusy ? ' workspace__parse--busy' : ''}`}
+                      onClick={handleParse}
+                      disabled={!canParse}
+                      title={!isBusy && parseBlockers.length ? `Still needed: ${parseBlockers.join(', ')}` : undefined}
+                    >
                       {isBusy ? (
                         <>
                           <span className="workspace__spinner" aria-hidden="true" />
-                          <span>Reading the role… this takes ~30s</span>
+                          <span>Reading the role… this usually takes a minute or two</span>
                         </>
                       ) : (
                         <span>Read &amp; plan the search</span>
@@ -963,6 +977,7 @@ export function RecruiterWorkspaceScreen() {
               ) : null}
               <LivingBrief
                 result={intakeResult}
+                reconciliation={reconciliation}
                 boundary={boundary}
                 brief={brief}
                 onChangeBrief={(_path, updater) => setBrief((current) => updater(current))}
