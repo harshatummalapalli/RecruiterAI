@@ -77,11 +77,19 @@ _SYSTEM = (
     "- a DOMAIN dimension — the specialization itself (the platform, product, field), named "
     "by API/SDK/component/acronym tokens only a real builder of it would carry;\n"
     "- a CRAFT dimension — the languages/stack that prove the person BUILDS the domain rather "
-    "than merely USES it (for a Relativity *developer*: C#, .NET, SQL — NOT for a reviewer).\n"
-    "Emit a dimension ONLY when the role genuinely requires it to qualify a match; do not pad. "
-    "A plain role with no specialization is broad.\n\n"
+    "than merely USES it (for a Relativity *developer*: C#, .NET, SQL — NOT for a reviewer).\n\n"
+    "CRITICAL — mark which dimensions actually GATE the match with `required`:\n"
+    "- required=true ONLY for the few dimensions a candidate MUST evidence to be worth looking "
+    "at: the domain specialization the hiring manager insists on, and the core craft/stack for "
+    "the primary job. MOST ROLES HAVE 1-2 REQUIRED DIMENSIONS.\n"
+    "- required=false for everything the posting merely lists as useful, preferred, 'a plus', or "
+    "a secondary/adjacent stack (e.g. a cloud provider, a nice-to-have ML framework, DevOps "
+    "tooling). These still inform ranking; they must NOT be hard filters.\n"
+    "- Over-requiring is the main failure mode: requiring every listed technology AND-ed together "
+    "returns NO ONE. When unsure, mark required=false.\n\n"
     "Return ONLY one JSON object:\n"
-    '{"broad": bool, "dimensions": [{"label": str, "kind": "domain"|"craft"|"other", "terms": [str]}]}\n'
+    '{"broad": bool, "dimensions": [{"label": str, "kind": "domain"|"craft"|"other", '
+    '"required": bool, "terms": [str]}]}\n'
     "- broad=true ONLY when the role has no single defining specialization (a plain 'Backend "
     "Engineer' with no domain). Then dimensions is ignored.\n"
     "- label: a short name for the dimension, never the job title.\n"
@@ -92,12 +100,15 @@ _SYSTEM = (
     "SQL Server, T-SQL...). On a craft dimension these ARE the evidence — include them.\n"
     "- back the domain vocabulary with sources you actually found; if the web does not support a "
     "specific domain vocabulary, return broad=true.\n\n"
-    "Example — a hiring manager wants 'a .NET/C# engineer with prior Relativity API experience, "
-    "converting SQL to .NET': after research you return\n"
+    "Example — a hiring manager insists on 'prior Relativity API experience', in a JD for a "
+    ".NET/C# engineer that ALSO lists Azure, some AI/ML, Python and Docker as useful: after "
+    "research you return (note only the core two are required)\n"
     '{"broad": false, "dimensions": ['
-    '{"label": "Relativity Platform Development", "kind": "domain", "terms": '
-    '["Relativity","RelativityOne","Object Manager","Kepler","RSAPI","RDO","Event Handlers","Relativity Dynamic Objects"]},'
-    '{"label": ".NET / SQL Development", "kind": "craft", "terms": ["C#",".NET","ASP.NET","SQL Server","T-SQL"]}]}'
+    '{"label": "Relativity Platform Development", "kind": "domain", "required": true, "terms": '
+    '["Relativity","RelativityOne","RSAPI","Kepler","RDO","Relativity Dynamic Objects"]},'
+    '{"label": ".NET / SQL Development", "kind": "craft", "required": true, "terms": ["C#",".NET","ASP.NET","SQL Server","T-SQL"]},'
+    '{"label": "AI / ML", "kind": "other", "required": false, "terms": ["RAG","LLM","LangChain"]},'
+    '{"label": "Cloud / DevOps", "kind": "other", "required": false, "terms": ["Azure","Docker","Kubernetes"]}]}'
 )
 
 
@@ -117,14 +128,16 @@ def _parse(data, identity: str) -> Tuple[CapabilityDimension, ...]:
     dimension left empty after sanitizing; broad / no usable dimension -> ()."""
     if not isinstance(data, dict) or data.get("broad"):
         return ()
-    domain_dims: List[CapabilityDimension] = []
-    other_dims: List[CapabilityDimension] = []
-    dropped: List[str] = []  # domain terms rejected as non-anchors (for the note)
+    # (kind, required, dim) per parsed dimension, before required/supporting routing.
+    parsed: List[Tuple[str, bool, CapabilityDimension]] = []
+    dropped: List[str] = []       # domain terms rejected as non-anchors (for the note)
+    supporting: List[str] = []    # dimension labels demoted to rank-only (for the note)
     for d in (data.get("dimensions") or []):
         if not isinstance(d, dict):
             continue
         label = (d.get("label") or "").strip()
         kind = (d.get("kind") or "").strip().lower()
+        required = bool(d.get("required", kind in ("domain", "craft")))  # fallback if omitted
         raw = [t for t in (d.get("terms") or []) if isinstance(t, str) and t.strip()]
         # Craft dimension: the languages/stack ARE the evidence — keep them.
         terms = _sanitize_terms(raw, identity, label, keep_languages=(kind == "craft"))
@@ -136,25 +149,41 @@ def _parse(data, identity: str) -> Tuple[CapabilityDimension, ...]:
             terms = kept
         if not label or not terms:
             continue
-        dim = CapabilityDimension(label=label, terms=tuple(dict.fromkeys(terms)), source_qualifier=label)
-        (domain_dims if kind == "domain" else other_dims).append(dim)
-    dims = tuple(domain_dims + other_dims)
-    _log_feasibility_note(identity, dims, dropped)
+        parsed.append((kind, required, CapabilityDimension(
+            label=label, terms=tuple(dict.fromkeys(terms)), source_qualifier=label)))
+
+    # HARD vs RANK-ONLY: only REQUIRED dimensions become hard keyword groups. A
+    # role that lists many useful technologies would otherwise AND them all and
+    # return no one; the supporting ones still inform ranking via the requirements.
+    hard = [(k, dim) for (k, req, dim) in parsed if req]
+    if not hard:  # nothing marked -> fall back to the domain/craft core, not everything
+        hard = [(k, dim) for (k, req, dim) in parsed if k in ("domain", "craft")]
+    supporting = [dim.label for (k, req, dim) in parsed if (k, dim) not in hard]
+    # Domain-first, and cap the hard groups so an over-eager proposal can't AND the
+    # set down to nothing (prefer domain, then craft, then any other required).
+    order = {"domain": 0, "craft": 1}
+    hard.sort(key=lambda kd: order.get(kd[0], 2))
+    dims = tuple(dim for _, dim in hard[:3])
+    _log_feasibility_note(identity, dims, dropped, supporting)
     return dims
 
 
-def _log_feasibility_note(identity: str, dims: Tuple[CapabilityDimension, ...], dropped: List[str]) -> None:
+def _log_feasibility_note(identity: str, dims: Tuple[CapabilityDimension, ...],
+                          dropped: List[str], supporting: List[str]) -> None:
     """Internal honesty note (logged, not a UI): the hard-filter strategy this
-    role resolved to, the domain terms demoted as non-anchors, and the standing
-    residual that CrustData cannot express — so a reader knows what the set does
-    and does NOT guarantee, and the ranking pass knows what it must still judge."""
+    role resolved to, the dimensions demoted to rank-only, the domain terms
+    dropped as non-anchors, and the standing residual that CrustData cannot
+    express — so a reader knows what the set does and does NOT guarantee, and the
+    ranking pass knows what it must still judge."""
     if not dims:
         _log.info("capability feasibility [%s]: no hard dimension — role stays broad", identity)
         return
     groups = " AND ".join(f"{d.label}({'|'.join(d.terms)})" for d in dims)
     note = f"capability feasibility [{identity}]: hard groups = {groups}"
+    if supporting:
+        note += f"; rank-only (NOT hard-filtered — too broad/secondary to gate): {', '.join(supporting)}"
     if dropped:
-        note += f"; domain terms demoted as non-anchors (rank-only/noise): {', '.join(dropped)}"
+        note += f"; domain terms dropped as non-anchors: {', '.join(dropped)}"
     if len(dims) >= 2:
         note += ("; RESIDUAL (not keyword-expressible): builder-vs-user of the domain cannot be "
                  "proven from CrustData fields — approximated by requiring the craft co-constraint, "

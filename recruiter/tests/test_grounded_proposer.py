@@ -92,6 +92,35 @@ def test_dimension_with_only_generic_terms_is_dropped():
     assert make_grounded_proposer(research=research)("Engineer", None, []) == ()
 
 
+def test_only_required_dimensions_become_hard_groups():
+    # The JD lists useful extras (AI, Cloud) but only the core two GATE the match.
+    payload = {"broad": False, "dimensions": [
+        {"label": "Relativity Platform", "kind": "domain", "required": True, "terms": ["RSAPI", "RelativityOne"]},
+        {"label": ".NET / SQL", "kind": "craft", "required": True, "terms": ["C#", ".NET"]},
+        {"label": "AI / ML", "kind": "other", "required": False, "terms": ["RAG", "LLM", "LangChain"]},
+        {"label": "Cloud", "kind": "other", "required": False, "terms": ["Azure", "Docker"]},
+    ]}
+    research, _ = _research_returning(payload)
+    dims = make_grounded_proposer(research=research)("Software Engineer", None, [])
+    labels = [d.label for d in dims]
+    assert labels == ["Relativity Platform", ".NET / SQL"]  # domain-first, supporting dropped
+
+
+def test_hard_groups_are_capped_to_avoid_over_filtering():
+    # Even if the proposer marks many dimensions required, at most 3 become hard
+    # groups (prefer domain, then craft) so the AND can't collapse the set to zero.
+    payload = {"broad": False, "dimensions": [
+        {"label": "D1", "kind": "domain", "required": True, "terms": ["RSAPI"]},
+        {"label": "C1", "kind": "craft", "required": True, "terms": ["C#"]},
+        {"label": "O1", "kind": "other", "required": True, "terms": ["Kafka"]},
+        {"label": "O2", "kind": "other", "required": True, "terms": ["GraphQL"]},
+    ]}
+    research, _ = _research_returning(payload)
+    dims = make_grounded_proposer(research=research)("Engineer", None, [])
+    assert len(dims) == 3
+    assert [d.label for d in dims][:2] == ["D1", "C1"]  # domain + craft kept first
+
+
 def test_research_error_falls_back_to_broad():
     def research(system, user, model):
         raise RuntimeError("web search unavailable")
