@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import os
 import threading
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 _clients: Dict[str, Any] = {}
 
@@ -136,3 +136,43 @@ def complete_json(system: str, user: str, model: str, *, max_tokens: int = 1024,
         _record(model, getattr(resp, "usage", None))
         text = resp.output_text
     return _loads(text)
+
+
+def research_json(
+    system: str, user: str, model: str, *, max_tokens: int = 8000, max_searches: int = 6
+) -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+    """A web-GROUNDED JSON call: the model may run Anthropic's server-side web
+    search tool, then returns a JSON object. Returns (parsed_dict, sources) where
+    sources is the list of {url,title} the search actually surfaced. Anthropic only
+    (Claude models support the server tool); raises on transport/parse errors —
+    callers decide how to fail (the grounded proposer falls back to broad).
+
+    Network. Offline tests inject a fake `research` into the proposer instead of
+    calling this. Server-tool errors arrive as a non-list `content` on HTTP 200, so
+    source collection branches on that; a long run can pause with stop_reason
+    'pause_turn', which is resumed by resending the accumulated content."""
+    tool = {"type": "web_search_20260209", "name": "web_search", "max_uses": max_searches}
+    messages: List[Dict[str, Any]] = [{"role": "user", "content": user}]
+    sources: List[Dict[str, Any]] = []
+    text = ""
+    for _ in range(8):  # bound the pause_turn resume loop
+        resp = _anthropic().messages.create(
+            model=model, max_tokens=max_tokens,
+            system=[{"type": "text", "text": system}],
+            messages=messages, tools=[tool],
+        )
+        _record(model, getattr(resp, "usage", None))
+        for block in resp.content:
+            if getattr(block, "type", None) == "web_search_tool_result":
+                found = getattr(block, "content", None)
+                if isinstance(found, list):  # an error result is an object, not a list
+                    for r in found:
+                        url = getattr(r, "url", None)
+                        if url:
+                            sources.append({"url": url, "title": getattr(r, "title", None)})
+        if getattr(resp, "stop_reason", None) == "pause_turn":
+            messages.append({"role": "assistant", "content": resp.content})
+            continue
+        text = "".join(getattr(b, "text", "") for b in resp.content if getattr(b, "type", None) == "text")
+        break
+    return _loads(text), sources

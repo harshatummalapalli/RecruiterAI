@@ -14,6 +14,7 @@ from recruiter.agents.intake import IntakeAgent
 from recruiter.agents.intake.capability_memory import FileCapabilityMemory
 from recruiter.agents.intake.capability_proposal import CapabilityProposer
 from recruiter.agents.intake.llm_proposer import make_proposer
+from recruiter.agents.intake.grounded_proposer import make_grounded_proposer
 from recruiter.agents.intake.native_reader import make_native_reader
 from recruiter.agents.ranking import RankingAgent
 from recruiter.agents.ranking.career_fit import CareerFitAssessor
@@ -42,10 +43,18 @@ def build_live_pipeline(
     capability_model: str = CAPABILITY_MODEL,
     judge_model: str = JUDGE_MODEL,
 ) -> Pipeline:
+    # The capability proposer is the role-understanding brain. Default = closed-book
+    # (the base model's own knowledge). With RECRUITER_GROUNDED_CAPABILITY set, it
+    # RESEARCHES the role on the web first, so a niche domain the recruiter can't
+    # describe (eDiscovery/Relativity, a vertical SDK) still yields the builder
+    # vocabulary that becomes the hard keyword filter. Rare + cached either way.
+    make_capability_proposer = (
+        make_grounded_proposer if os.environ.get("RECRUITER_GROUNDED_CAPABILITY") else make_proposer
+    )
     intake = IntakeAgent(
         reader=make_native_reader(reader_model),
         capability_proposer=CapabilityProposer(
-            FileCapabilityMemory(memory_root), make_proposer(model=capability_model)
+            FileCapabilityMemory(memory_root), make_capability_proposer(model=capability_model)
         ),
         org=org,
     )
