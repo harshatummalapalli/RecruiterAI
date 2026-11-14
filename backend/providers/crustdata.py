@@ -16,34 +16,22 @@ logger = logging.getLogger(__name__)
 
 # --- Keyword match-operator selection (Slice 2: feasibility at the token level) --
 # CrustData's "(.)" operator is typo-TOLERANT: it matches each word's lookalikes,
-# so a common word inflates a hard keyword group with noise ("Relativity" also
-# catches "relatively"; a bare "Object"/"Manager" catches every manager). The
-# exact-whole-word "[.]" operator does not. So we pick the operator per token:
-#   - a DISTINCTIVE token (acronym / product name / a token with a digit or #./+)
-#     keeps "(.)" for its useful typo tolerance (RSAPI, RelativityOne, C#, .NET);
-#   - a common word is matched EXACTLY with "[.]" (Relativity, Kepler, dotnet);
-#   - a multi-word PHRASE requires EVERY content word present, each exact
-#     ("SQL Server" => "SQL" AND "Server"; stops "Object Manager" from matching
-#     any "manager"). This is verified on /person/search free-text and measured:
-#     for the Relativity role it cut the domain group's noise ~2.7x.
+# so it inflates a hard keyword group with noise — a common word ("Relativity" ->
+# "relatively"), and worse, a short acronym ("RAP" -> "rap", "RDO" -> lookalikes).
+# The exact-whole-word "[.]" operator does not. We therefore DEFAULT to exact
+# "[.]" for words, acronyms and phrases, and use "(.)" ONLY for tokens whose
+# special characters "[.]" cannot match cleanly (C#, .NET, ASP.NET). A multi-word
+# PHRASE requires EVERY content word present, each exact ("SQL Server" => "SQL"
+# AND "Server"; stops "Object Manager" from matching any "manager"). Verified on
+# /person/search free-text: for the Relativity role this (with anchor admission
+# upstream) cut the hard-filtered set from ~19k to a few hundred real matches.
 _KEYWORD_STOPWORDS = {"of", "the", "a", "an", "and", "or", "for", "to", "in", "on"}
 
 
-def _is_distinctive_token(token: str) -> bool:
-    """True for a single token safe to fuzzy-match — an acronym / product / tech
-    token unlikely to collide with a common English word under "(.)"."""
-    t = (token or "").strip()
-    if not t:
-        return False
-    if any(ch.isdigit() for ch in t):
-        return True                        # log4j, s3
-    if any(ch in "#./+" for ch in t):
-        return True                        # C#, .NET, ASP.NET
-    if t.isupper() and 2 <= len(t) <= 7 and any(c.isalpha() for c in t):
-        return True                        # RSAPI, RDO, RAP
-    if any(c.isupper() for c in t[1:]):
-        return True                        # RelativityOne, LangChain
-    return False
+def _needs_fuzzy(token: str) -> bool:
+    """True only when a token's special characters block a clean exact match, so
+    it must use "(.)": C#, .NET, ASP.NET, C++. Plain words and acronyms do not."""
+    return any(ch in "#./+" for ch in (token or ""))
 
 
 def _keyword_match_condition(term: str, fields: List[str]) -> Optional[Dict[str, Any]]:
@@ -62,7 +50,7 @@ def _keyword_match_condition(term: str, fields: List[str]) -> Optional[Dict[str,
             for w in content
         ]}
     token = content[0]
-    op = "(.)" if _is_distinctive_token(token) else "[.]"
+    op = "(.)" if _needs_fuzzy(token) else "[.]"
     return {"op": "or", "conditions": [{"field": f, "type": op, "value": token} for f in fields]}
 
 

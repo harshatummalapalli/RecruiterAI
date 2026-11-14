@@ -528,7 +528,7 @@ def test_build_payload_hard_capability_keywords_operator_per_token() -> None:
 
 def test_build_payload_keyword_group_operator_per_token_and_phrase() -> None:
     # §1(C) + Slice 2: a capability's synonym set becomes ONE OR-group with one
-    # term-condition per synonym. Distinctive acronyms (AI/LLM) keep fuzzy "(.)";
+    # term-condition per synonym. Plain words/acronyms (AI/LLM) match EXACT "[.]";
     # a multi-word phrase ("machine learning") requires BOTH words, each exact.
     provider = CrustDataProvider()
     payload = provider._build_payload(
@@ -540,23 +540,24 @@ def test_build_payload_keyword_group_operator_per_token_and_phrase() -> None:
     term_conds = group["conditions"]
     assert len(term_conds) == 3  # AI, machine learning, LLM
     ai = next(t for t in term_conds if any(l["value"] == "AI" for l in _leaves(t)))
-    assert all(l["type"] == "(.)" for l in _leaves(ai))
+    assert all(l["type"] == "[.]" for l in _leaves(ai))
     phrase = next(t for t in term_conds if t.get("op") == "and")
     assert {l["value"] for l in _leaves(phrase)} == {"machine", "learning"}
     assert all(l["type"] == "[.]" for l in _leaves(phrase))
 
 
 def test_keyword_operator_classifier_rule() -> None:
-    from backend.providers.crustdata import _is_distinctive_token, _keyword_match_condition
-    # Distinctive -> safe to fuzzy-match.
-    for tok in ["RSAPI", "RDO", "RelativityOne", "C#", ".NET", "ASP.NET", "log4j", "T-SQL"]:
-        assert _is_distinctive_token(tok), tok
-    # Common words -> must be matched exactly to avoid lookalike noise.
-    for tok in ["Relativity", "Kepler", "dotnet", "manager", "object"]:
-        assert not _is_distinctive_token(tok), tok
+    from backend.providers.crustdata import _needs_fuzzy, _keyword_match_condition
+    # Only special-char tokens need fuzzy "(.)"; everything else matches EXACT "[.]"
+    # (so short acronyms like RAP/RDO stop catching lookalikes).
+    for tok in ["C#", ".NET", "ASP.NET", "C++"]:
+        assert _needs_fuzzy(tok), tok
+    for tok in ["Relativity", "RSAPI", "RDO", "RAP", "Kepler", "dotnet"]:
+        assert not _needs_fuzzy(tok), tok
     F = ["basic_profile.headline"]
     assert _keyword_match_condition("Relativity", F)["conditions"][0]["type"] == "[.]"
-    assert _keyword_match_condition("RSAPI", F)["conditions"][0]["type"] == "(.)"
+    assert _keyword_match_condition("RSAPI", F)["conditions"][0]["type"] == "[.]"
+    assert _keyword_match_condition("C#", F)["conditions"][0]["type"] == "(.)"
     # A phrase requires every content word, each exact.
     phrase = _keyword_match_condition("SQL Server", F)
     assert phrase["op"] == "and"

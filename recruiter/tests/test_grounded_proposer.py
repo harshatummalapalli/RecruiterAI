@@ -42,10 +42,13 @@ def test_composition_maps_domain_and_craft():
     # Domain is first (it is the corroboration/primary signal).
     domain, craft = dims
     assert domain.label == "Relativity Platform Development"
-    # Distinctive Relativity anchors are kept...
-    assert "RelativityOne" in domain.terms and "Kepler" in domain.terms and "RSAPI" in domain.terms
-    # ...generic-only domain terms are DEMOTED (would only add noise to the hard OR)...
+    # Anchored Relativity terms are kept: distinctive acronyms/products + the label word.
+    assert "RelativityOne" in domain.terms and "RSAPI" in domain.terms and "RDO" in domain.terms
+    assert "Relativity" in domain.terms  # shares the domain label word
+    # ...non-anchor domain terms are DEMOTED: generic phrases, and a plain word that
+    # is neither distinctive nor in the label ("Kepler") would only add noise.
     assert "Object Manager" not in domain.terms and "Event Handlers" not in domain.terms
+    assert "Kepler" not in domain.terms
     # ...and languages are context on the DOMAIN dimension — dropped there...
     assert "C#" not in domain.terms and ".NET" not in domain.terms
     # ...but the CRAFT dimension keeps them: they are the builder-vs-user evidence.
@@ -137,7 +140,7 @@ def test_composition_reaches_two_hard_keyword_groups_via_the_real_proposer():
     groups = proposer.propose("dayzero.partners", "Software Engineer", "Software Engineer", reqs)
     assert len(groups) == 2
     domain, craft = groups
-    assert "Kepler" in domain.terms and "RSAPI" in domain.terms
+    assert "RSAPI" in domain.terms and "RDO" in domain.terms
     assert "Object Manager" not in domain.terms  # demoted non-anchor
     assert "C#" in craft.terms and ".NET" in craft.terms
     assert calls["n"] == 1
@@ -146,5 +149,5 @@ def test_composition_reaches_two_hard_keyword_groups_via_the_real_proposer():
     # is NOT re-run, and BOTH dimensions survive the round-trip through memory.
     again = proposer.propose("dayzero.partners", "Software Engineer", "Software Engineer", reqs)
     assert len(again) == 2
-    assert "Kepler" in again[0].terms and "C#" in again[1].terms
+    assert "RSAPI" in again[0].terms and "C#" in again[1].terms
     assert calls["n"] == 1

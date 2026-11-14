@@ -33,23 +33,13 @@ from recruiter.agents.intake.llm_proposer import _sanitize_terms
 
 _log = logging.getLogger(__name__)
 
-# Generic programming/domain words that are NOT a distinctive hard-filter anchor on
-# their own. A DOMAIN term made ONLY of these (e.g. "Object Manager", "Event
-# Handlers") is a real API concept but, decoupled from the domain, matches every
-# generic .NET profile — so it is not admitted to the hard keyword group (it would
-# only add noise to an OR). It is the term-level HARD vs RANK-ONLY call. A CRAFT
-# dimension is exempt: its stack words (SQL, Server, .NET) ARE the evidence.
-_GENERIC_DOMAIN_WORDS = {
-    "object", "manager", "event", "handler", "handlers", "service", "services",
-    "api", "apis", "data", "dynamic", "custom", "framework", "application",
-    "applications", "system", "systems", "integration", "platform", "development",
-    "developer", "engineer", "software", "web", "cloud", "database", "server",
-    "tool", "tools", "module", "modules", "component", "components", "pipeline",
-}
 _STOP = {"of", "the", "a", "an", "and", "or", "for", "to", "in", "on"}
 
 
 def _is_distinctive(token: str) -> bool:
+    """A token with internal STRUCTURE that marks it as a specific name/acronym
+    rather than a common word — a digit, a special char, ALL-CAPS (RSAPI, RDO,
+    RAP), or internal capitals (RelativityOne, LangChain)."""
     t = (token or "").strip()
     if not t:
         return False
@@ -60,12 +50,17 @@ def _is_distinctive(token: str) -> bool:
     return any(c.isupper() for c in t[1:])
 
 
-def _is_domain_anchor(term: str) -> bool:
-    """A domain term is a usable hard anchor if ANY of its content words is
-    distinctive OR is not a generic programming word — otherwise it is only
-    noise in the hard filter and is dropped (kept out of must_have_keyword_groups)."""
+def _is_domain_anchor(term: str, label: str) -> bool:
+    """A DOMAIN term is a usable hard anchor only if it is specific to the domain:
+    some word is distinctively structured (an acronym/product like RSAPI/RDO), OR
+    it shares a word with the domain's own label (e.g. "Relativity Object Model"
+    carries "Relativity"). A term made of plain generic words with no tie to the
+    domain ("Application Deployment System") is NOT an anchor — it would only add
+    noise to the OR — so it is kept out of the hard group. This is a principled
+    rule, not a word blocklist: the domain's label IS the anchor set."""
+    label_words = {w.lower() for w in re.split(r"[\s/]+", label or "") if w and w.lower() not in _STOP}
     words = [w for w in re.split(r"[\s/]+", (term or "").strip()) if w and w.lower() not in _STOP]
-    return any(_is_distinctive(w) or w.lower() not in _GENERIC_DOMAIN_WORDS for w in words)
+    return any(_is_distinctive(w) or w.lower() in label_words for w in words)
 
 _SYSTEM = (
     "You are a technical sourcing researcher. Given a role, work out what it ACTUALLY "
@@ -144,7 +139,7 @@ def _parse(data, identity: str) -> Tuple[CapabilityDimension, ...]:
         if kind == "domain":
             # Admit to the hard keyword group only distinctive-anchored terms; a
             # generic-only term ("Object Manager") would just add noise to the OR.
-            kept = [t for t in terms if _is_domain_anchor(t)]
+            kept = [t for t in terms if _is_domain_anchor(t, label)]
             dropped += [t for t in terms if t not in kept]
             terms = kept
         if not label or not terms:
