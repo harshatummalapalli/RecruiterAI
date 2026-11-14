@@ -38,16 +38,22 @@ _STOP = {"of", "the", "a", "an", "and", "or", "for", "to", "in", "on"}
 
 def _is_distinctive(token: str) -> bool:
     """A token with internal STRUCTURE that marks it as a specific name/acronym
-    rather than a common word — a digit, a special char, ALL-CAPS (RSAPI, RDO,
-    RAP), or internal capitals (RelativityOne, LangChain)."""
+    rather than a common word — a digit, a special char, a LONG all-caps acronym
+    (RSAPI, EDRM), or internal capitals in a mixed-case word (RelativityOne,
+    LangChain). A SHORT all-caps acronym (RDO, RAP, AI) is NOT distinctive on its
+    own: 2-3 letter codes collide with common abbreviations (RDO -> roster day
+    off) and leak non-domain people into the hard filter — measured 84 false RDO
+    matches on the Relativity role. Their real signal is carried by the spelled-
+    out phrase (e.g. 'Relativity Dynamic Objects'), which survives on its own."""
     t = (token or "").strip()
     if not t:
         return False
     if any(ch.isdigit() for ch in t) or any(ch in "#./+" for ch in t):
         return True
-    if t.isupper() and 2 <= len(t) <= 7 and any(c.isalpha() for c in t):
+    if t.isupper() and len(t) >= 4:
         return True
-    return any(c.isupper() for c in t[1:])
+    has_lower = any(c.islower() for c in t)
+    return has_lower and any(c.isupper() for c in t[1:])
 
 
 def _is_domain_anchor(term: str, label: str) -> bool:

@@ -42,13 +42,13 @@ def test_composition_maps_domain_and_craft():
     # Domain is first (it is the corroboration/primary signal).
     domain, craft = dims
     assert domain.label == "Relativity Platform Development"
-    # Anchored Relativity terms are kept: distinctive acronyms/products + the label word.
-    assert "RelativityOne" in domain.terms and "RSAPI" in domain.terms and "RDO" in domain.terms
+    # Anchored Relativity terms are kept: long acronyms/products + the label word.
+    assert "RelativityOne" in domain.terms and "RSAPI" in domain.terms
     assert "Relativity" in domain.terms  # shares the domain label word
-    # ...non-anchor domain terms are DEMOTED: generic phrases, and a plain word that
-    # is neither distinctive nor in the label ("Kepler") would only add noise.
+    # ...non-anchor domain terms are DEMOTED: generic phrases, a plain word not in
+    # the label ("Kepler"), and a SHORT collision-prone acronym ("RDO").
     assert "Object Manager" not in domain.terms and "Event Handlers" not in domain.terms
-    assert "Kepler" not in domain.terms
+    assert "Kepler" not in domain.terms and "RDO" not in domain.terms
     # ...and languages are context on the DOMAIN dimension — dropped there...
     assert "C#" not in domain.terms and ".NET" not in domain.terms
     # ...but the CRAFT dimension keeps them: they are the builder-vs-user evidence.
@@ -140,8 +140,8 @@ def test_composition_reaches_two_hard_keyword_groups_via_the_real_proposer():
     groups = proposer.propose("dayzero.partners", "Software Engineer", "Software Engineer", reqs)
     assert len(groups) == 2
     domain, craft = groups
-    assert "RSAPI" in domain.terms and "RDO" in domain.terms
-    assert "Object Manager" not in domain.terms  # demoted non-anchor
+    assert "RSAPI" in domain.terms and "RelativityOne" in domain.terms
+    assert "Object Manager" not in domain.terms and "RDO" not in domain.terms  # demoted non-anchors
     assert "C#" in craft.terms and ".NET" in craft.terms
     assert calls["n"] == 1
 
