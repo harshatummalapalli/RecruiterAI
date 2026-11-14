@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Optional, Protocol, Tuple
 
@@ -31,12 +31,28 @@ def normalise_key(identity: Optional[str]) -> str:
 
 
 @dataclass(frozen=True)
+class CapabilityDimension:
+    """One required dimension of a role (e.g. the DOMAIN 'Relativity platform',
+    or the CRAFT '.NET/SQL development'). A composition role has several; each
+    becomes its own hard keyword group, AND-ed with the others. The primary
+    dimension lives on LearnedCapability.label/terms for backward compatibility;
+    any additional dimensions ride in LearnedCapability.extra_dimensions."""
+    label: str
+    terms: Tuple[str, ...]
+    source_qualifier: str = ""
+
+
+@dataclass(frozen=True)
 class LearnedCapability:
     key: str
     label: str
     terms: Tuple[str, ...]
     source_qualifier: str
     is_broad: bool = False   # True = this role shape has no defining capability
+    # Additional REQUIRED dimensions beyond the primary (label/terms). Empty for a
+    # single-axis role — so nothing about the single-dimension path changes. Each
+    # extra dimension is AND-ed as its own keyword group (Slice 1: composition).
+    extra_dimensions: Tuple[CapabilityDimension, ...] = ()
 
 
 class CapabilityMemory(Protocol):
@@ -80,18 +96,36 @@ class FileCapabilityMemory:
         row = self._load(org).get(key)
         if not isinstance(row, dict):
             return None
+        extra = tuple(
+            CapabilityDimension(
+                label=(e.get("label") or "").strip(),
+                terms=tuple(e.get("terms", []) or []),
+                source_qualifier=e.get("source_qualifier", ""),
+            )
+            for e in (row.get("extra_dimensions") or [])
+            if isinstance(e, dict) and (e.get("terms") or [])
+        )
         return LearnedCapability(
             key=key,
             label=row.get("label", ""),
             terms=tuple(row.get("terms", []) or []),
             source_qualifier=row.get("source_qualifier", ""),
             is_broad=bool(row.get("is_broad", False)),
+            extra_dimensions=extra,
         )
 
     def put(self, org: str, cap: LearnedCapability) -> None:
         data = self._load(org)
-        row = asdict(cap)
-        row.pop("key", None)
-        row["terms"] = list(cap.terms)
+        row = {
+            "label": cap.label,
+            "terms": list(cap.terms),
+            "source_qualifier": cap.source_qualifier,
+            "is_broad": cap.is_broad,
+        }
+        if cap.extra_dimensions:
+            row["extra_dimensions"] = [
+                {"label": d.label, "terms": list(d.terms), "source_qualifier": d.source_qualifier}
+                for d in cap.extra_dimensions
+            ]
         data[cap.key] = row
         self._path(org).write_text(json.dumps(data, indent=2), encoding="utf-8")

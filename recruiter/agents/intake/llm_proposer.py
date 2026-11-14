@@ -48,15 +48,24 @@ def _is_generic(term: str) -> bool:
     return bool(tokens) and all(tok in _GENERIC_TOKENS for tok in tokens)
 
 
-def _sanitize_terms(terms: List[str], identity: str, label: str) -> List[str]:
+def _sanitize_terms(terms: List[str], identity: str, label: str, keep_languages: bool = False) -> List[str]:
     # Drop the role title itself (a title is not a capability synonym), but NOT
     # the label — the capability's own name (e.g. "Salesforce") is a valid term.
+    #
+    # keep_languages=True is for a CRAFT dimension, where the languages/stack ARE
+    # the evidence that the person BUILDS (not merely uses) the domain — so C#,
+    # .NET, SQL must survive. Without it (a DOMAIN dimension) a leaked language is
+    # still stripped as incidental context. This is why dropping C#/.NET wholesale
+    # was wrong for a .NET-engineer role: the language is the craft co-constraint.
     drop_exact = {(identity or "").strip().lower()}
     out: List[str] = []
     for t in terms:
         clean = t.strip()
-        if clean and clean.lower() not in drop_exact and not _is_generic(clean):
-            out.append(clean)
+        if not clean or clean.lower() in drop_exact:
+            continue
+        if not keep_languages and _is_generic(clean):
+            continue
+        out.append(clean)
     return out
 
 

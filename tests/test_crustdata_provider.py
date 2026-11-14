@@ -494,41 +494,73 @@ def test_build_payload_any_time_company_scope_maps_to_unscoped_company_field() -
     } in conditions
 
 
-def test_build_payload_hard_capability_keywords_or_across_freetext_fields() -> None:
-    # Phase 2 §2.4: each must-have keyword is a whole-word (.) match OR'd across
-    # description/headline/summary; multiple terms are AND-ed (own OR-group each).
+def _leaves(cond):
+    """Flatten a (possibly nested op/conditions) filter tree to its leaf
+    {field,type,value} dicts — the keyword conditions are now nested (phrases are
+    an AND of exact-word OR-groups), so leaf extraction must recurse."""
+    if isinstance(cond, dict) and "conditions" in cond:
+        for c in cond["conditions"]:
+            yield from _leaves(c)
+    elif isinstance(cond, dict):
+        yield cond
+
+
+def test_build_payload_hard_capability_keywords_operator_per_token() -> None:
+    # Phase 2 §2.4 + Slice 2: each must-have keyword is OR'd across
+    # description/headline/summary; the match OPERATOR fits the token — a common
+    # word like "Java"/"Spark" is matched EXACTLY ("[.]"), not fuzzily, so it no
+    # longer catches lookalikes. Multiple terms are AND-ed (own group each).
     provider = CrustDataProvider()
     payload = provider._build_payload(SearchQuery(must_have_keywords=["Java", "Spark"]))
     conditions = payload["filters"]["conditions"]
-    or_groups = [c for c in conditions if c.get("op") == "or"]
-    assert len(or_groups) == 2
-    java_group = next(g for g in or_groups if any(leaf["value"] == "Java" for leaf in g["conditions"]))
-    fields = {leaf["field"] for leaf in java_group["conditions"]}
+    kw_groups = [c for c in conditions if c.get("op") == "or"
+                 and {l["value"] for l in _leaves(c)} <= {"Java", "Spark"}]
+    assert len(kw_groups) == 2
+    java_group = next(g for g in kw_groups if any(l["value"] == "Java" for l in _leaves(g)))
+    fields = {l["field"] for l in _leaves(java_group)}
     assert fields == {
         "experience.employment_details.description",
         "basic_profile.headline",
         "basic_profile.summary",
     }
-    assert all(leaf["type"] == "(.)" for leaf in java_group["conditions"])
+    assert all(l["type"] == "[.]" for l in _leaves(java_group))
 
 
-def test_build_payload_keyword_group_ors_synonyms_within_one_condition() -> None:
-    # §1(C): a single capability expressed as a synonym set becomes ONE OR-group
-    # whose leaves are every (term x field) pair — any spelling satisfies it,
-    # unlike the flat list which would AND each term.
+def test_build_payload_keyword_group_operator_per_token_and_phrase() -> None:
+    # §1(C) + Slice 2: a capability's synonym set becomes ONE OR-group with one
+    # term-condition per synonym. Distinctive acronyms (AI/LLM) keep fuzzy "(.)";
+    # a multi-word phrase ("machine learning") requires BOTH words, each exact.
     provider = CrustDataProvider()
     payload = provider._build_payload(
         SearchQuery(must_have_keyword_groups=[["AI", "machine learning", "LLM"]])
     )
     conditions = payload["filters"]["conditions"]
-    or_groups = [c for c in conditions if c.get("op") == "or"]
-    assert len(or_groups) == 1  # one capability -> one AND'd condition
-    group = or_groups[0]
-    values = {leaf["value"] for leaf in group["conditions"]}
-    assert values == {"AI", "machine learning", "LLM"}
-    # 3 terms x 3 free-text fields = 9 OR'd leaves, all whole-word.
-    assert len(group["conditions"]) == 9
-    assert all(leaf["type"] == "(.)" for leaf in group["conditions"])
+    group = next(c for c in conditions if c.get("op") == "or"
+                 and {l["value"] for l in _leaves(c)} >= {"AI", "LLM"})
+    term_conds = group["conditions"]
+    assert len(term_conds) == 3  # AI, machine learning, LLM
+    ai = next(t for t in term_conds if any(l["value"] == "AI" for l in _leaves(t)))
+    assert all(l["type"] == "(.)" for l in _leaves(ai))
+    phrase = next(t for t in term_conds if t.get("op") == "and")
+    assert {l["value"] for l in _leaves(phrase)} == {"machine", "learning"}
+    assert all(l["type"] == "[.]" for l in _leaves(phrase))
+
+
+def test_keyword_operator_classifier_rule() -> None:
+    from backend.providers.crustdata import _is_distinctive_token, _keyword_match_condition
+    # Distinctive -> safe to fuzzy-match.
+    for tok in ["RSAPI", "RDO", "RelativityOne", "C#", ".NET", "ASP.NET", "log4j", "T-SQL"]:
+        assert _is_distinctive_token(tok), tok
+    # Common words -> must be matched exactly to avoid lookalike noise.
+    for tok in ["Relativity", "Kepler", "dotnet", "manager", "object"]:
+        assert not _is_distinctive_token(tok), tok
+    F = ["basic_profile.headline"]
+    assert _keyword_match_condition("Relativity", F)["conditions"][0]["type"] == "[.]"
+    assert _keyword_match_condition("RSAPI", F)["conditions"][0]["type"] == "(.)"
+    # A phrase requires every content word, each exact.
+    phrase = _keyword_match_condition("SQL Server", F)
+    assert phrase["op"] == "and"
+    assert {l["value"] for sub in phrase["conditions"] for l in sub["conditions"]} == {"SQL", "Server"}
 
 
 def test_build_payload_multiple_keyword_groups_are_anded() -> None:
@@ -538,8 +570,7 @@ def test_build_payload_multiple_keyword_groups_are_anded() -> None:
         SearchQuery(must_have_keyword_groups=[["AI", "ML"], ["Python", "PySpark"]])
     )
     or_groups = [c for c in payload["filters"]["conditions"] if c.get("op") == "or"]
-    assert len(or_groups) == 2
-    group_values = [{leaf["value"] for leaf in g["conditions"]} for g in or_groups]
+    group_values = [{l["value"] for l in _leaves(g)} for g in or_groups]
     assert {"AI", "ML"} in group_values
     assert {"Python", "PySpark"} in group_values
 

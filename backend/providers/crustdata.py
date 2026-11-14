@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import time
 from typing import Any, Dict, List, Optional
 
@@ -12,6 +13,58 @@ from backend.models.search_plan import SearchPlan, SearchQuery
 from backend.providers.base import BaseProvider
 
 logger = logging.getLogger(__name__)
+
+# --- Keyword match-operator selection (Slice 2: feasibility at the token level) --
+# CrustData's "(.)" operator is typo-TOLERANT: it matches each word's lookalikes,
+# so a common word inflates a hard keyword group with noise ("Relativity" also
+# catches "relatively"; a bare "Object"/"Manager" catches every manager). The
+# exact-whole-word "[.]" operator does not. So we pick the operator per token:
+#   - a DISTINCTIVE token (acronym / product name / a token with a digit or #./+)
+#     keeps "(.)" for its useful typo tolerance (RSAPI, RelativityOne, C#, .NET);
+#   - a common word is matched EXACTLY with "[.]" (Relativity, Kepler, dotnet);
+#   - a multi-word PHRASE requires EVERY content word present, each exact
+#     ("SQL Server" => "SQL" AND "Server"; stops "Object Manager" from matching
+#     any "manager"). This is verified on /person/search free-text and measured:
+#     for the Relativity role it cut the domain group's noise ~2.7x.
+_KEYWORD_STOPWORDS = {"of", "the", "a", "an", "and", "or", "for", "to", "in", "on"}
+
+
+def _is_distinctive_token(token: str) -> bool:
+    """True for a single token safe to fuzzy-match — an acronym / product / tech
+    token unlikely to collide with a common English word under "(.)"."""
+    t = (token or "").strip()
+    if not t:
+        return False
+    if any(ch.isdigit() for ch in t):
+        return True                        # log4j, s3
+    if any(ch in "#./+" for ch in t):
+        return True                        # C#, .NET, ASP.NET
+    if t.isupper() and 2 <= len(t) <= 7 and any(c.isalpha() for c in t):
+        return True                        # RSAPI, RDO, RAP
+    if any(c.isupper() for c in t[1:]):
+        return True                        # RelativityOne, LangChain
+    return False
+
+
+def _keyword_match_condition(term: str, fields: List[str]) -> Optional[Dict[str, Any]]:
+    """One CrustData filter condition for a single capability term, matched over
+    `fields` with the operator that fits the token (see note above). None if the
+    term is empty."""
+    words = [w for w in re.split(r"[\s/]+", (term or "").strip()) if w]
+    if not words:
+        return None
+    content = [w for w in words if w.lower() not in _KEYWORD_STOPWORDS] or words
+    if len(content) >= 2:
+        # Phrase: every content word present, each an exact whole-word OR'd across
+        # the fields.
+        return {"op": "and", "conditions": [
+            {"op": "or", "conditions": [{"field": f, "type": "[.]", "value": w} for f in fields]}
+            for w in content
+        ]}
+    token = content[0]
+    op = "(.)" if _is_distinctive_token(token) else "[.]"
+    return {"op": "or", "conditions": [{"field": f, "type": op, "value": token} for f in fields]}
+
 
 API_VERSION = "2025-11-01"
 DEFAULT_LIMIT = 25
@@ -375,9 +428,9 @@ class CrustDataProvider(BaseProvider):
             "basic_profile.summary",
         ]
         for term in self._clean_string_values(getattr(search, "must_have_keywords", []) or []):
-            conditions.append({"op": "or", "conditions": [
-                {"field": field, "type": "(.)", "value": term} for field in keyword_fields
-            ]})
+            cond = _keyword_match_condition(term, keyword_fields)
+            if cond:
+                conditions.append(cond)
 
         # Hard capability keyword GROUPS (§1(C)): one capability expressed as a
         # synonym set. Within a group the terms are OR'd (any spelling counts),
@@ -388,13 +441,11 @@ class CrustDataProvider(BaseProvider):
         # all-terms-required semantics over-filtering genuine matches.
         for group in getattr(search, "must_have_keyword_groups", []) or []:
             terms = self._clean_string_values(group or [])
-            if not terms:
-                continue
-            conditions.append({"op": "or", "conditions": [
-                {"field": field, "type": "(.)", "value": term}
-                for term in terms
-                for field in keyword_fields
-            ]})
+            leaves = [c for c in (_keyword_match_condition(t, keyword_fields) for t in terms) if c]
+            if leaves:
+                # Within a group the terms are OR'd (any spelling counts); each
+                # term carries its own fitted operator (phrase => all words).
+                conditions.append({"op": "or", "conditions": leaves})
 
         return conditions
 
